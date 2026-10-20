@@ -9,8 +9,7 @@ export type ProfiledInteraction = {
   name: string;
   commits: Commit[];
   swr: SwrKeyStats;
-  // Number of requests by endpoint
-  requests: { [endpoint: string]: number };
+  requests: number;
 };
 
 const avoidableKinds: RenderKind[] = ['unstable-reference', 'parent'];
@@ -41,7 +40,6 @@ function summarizeComponents(renders: Render[]) {
       unstableReference: count('unstable-reference'),
       parent: count('parent'),
       selfDuration: sum(componentRenders.map(({ selfDuration }) => selfDuration)),
-      avoidableDuration: sum(avoidable.map(({ selfDuration }) => selfDuration)),
       // The most frequent reasons of the avoidable renders, a parent render has none
       causes: countBy(avoidable.flatMap(({ causes }) => causes))
         .slice(0, 3)
@@ -59,9 +57,7 @@ function summarizeInteraction({ name, commits, swr, requests }: ProfiledInteract
     renders: renders.length,
     avoidableRenders: avoidable.length,
     duration: sum(commits.map(({ duration }) => duration)),
-    avoidableDuration: sum(avoidable.map(({ selfDuration }) => selfDuration)),
-    requests: sum(Object.values(requests)),
-    requestsByEndpoint: requests,
+    requests,
     swrKeyLength: sum(Object.values(swr.serializedByKey)),
     swrKeys: Object.entries(swr.serializedByKey)
       .map(([key, length]) => ({ key, length }))

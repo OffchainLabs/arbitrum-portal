@@ -1,7 +1,7 @@
 // Compares the render profile of the PR with the same profile run on master, and posts the result
 // as a PR comment. The profile is packages/arb-token-bridge-ui/src/components/MainContent/
-// MainContent.profile.tsx. To read profiles locally, run:
-// node .github/render-profile/report.js <PR profile or directory> [<master profile or directory>]
+// MainContent.profile.tsx. To compare profiles locally, run:
+// node .github/render-profile/report.js <PR profile or directory> <master profile or directory>
 const fs = require('fs');
 const path = require('path');
 
@@ -9,45 +9,70 @@ const marker = '<!-- render-profile-report -->';
 // One directory per run, e.g. render-profile/pr/1/render-profile.json
 const resultsDirectory = 'render-profile/pr';
 const baselineDirectory = 'render-profile/master';
-const rowsPerTable = 10;
-// GitHub rejects comments longer than 65,536 characters
-const maxLength = 60_000;
-// Time changes smaller than this ratio, or than the spread of the runs, are noise
-const minTimeRatio = 0.1;
+const componentsPerInteraction = 5;
 
-const icons = { better: '🟢', same: '⚪', worse: '🔴' };
-
-function formatCount(value) {
-  return value.toLocaleString('en-US');
-}
-
-function formatTime(milliseconds) {
-  return `${formatCount(Math.round(milliseconds))} ms`;
-}
+const icons = { better: '🟢', same: '⚪', worse: '🔴', new: '🆕' };
 
 // Keys are ASCII, a character is a byte
 function formatSize(characters) {
   const [value, unit] =
-    characters >= 1e9
+    Math.abs(characters) >= 1e9
       ? [characters / 1e9, 'GB']
-      : characters >= 1e6
+      : Math.abs(characters) >= 1e6
         ? [characters / 1e6, 'MB']
         : [characters / 1e3, 'KB'];
   return `${value.toFixed(1)} ${unit}`;
 }
 
-// Lower is better for all of them. Counts are the same on every run, so any change comes from the
-// code. Times are the median of the runs and change with the load of the runner.
-const metrics = [
-  { key: 'duration', label: 'Render time', format: formatTime, isTime: true },
-  { key: 'avoidableDuration', label: 'Avoidable time', format: formatTime, isTime: true },
-  { key: 'renders', label: 'Renders', format: formatCount },
-  { key: 'avoidableRenders', label: 'Avoidable renders', format: formatCount },
-  { key: 'commits', label: 'Commits', format: formatCount },
-  { key: 'requests', label: 'Requests', format: formatCount },
-  { key: 'swrKeyLength', label: 'SWR keys hashed', format: formatSize },
-  { key: 'swrCacheKeyLength', label: 'SWR cache keys', format: formatSize },
-];
+function formatCount(value) {
+  return Math.round(value).toLocaleString('en-US');
+}
+
+function formatTime(milliseconds) {
+  return `${formatCount(milliseconds)} ms`;
+}
+
+// Counts are the same on every run, so any change comes from the code. Times change with the load
+// of the runner, so they're the median of the runs and need a larger change to count.
+const metrics = {
+  speed: {
+    label: 'Time of all components',
+    format: (value) => `${Math.round(value * 100)}%`,
+    minRatio: 0.1,
+    description: "median across components, compared with master's",
+  },
+  duration: { label: 'Render time', format: formatTime, minRatio: 0.1 },
+  renders: { label: 'Renders', format: formatCount },
+  avoidableRenders: {
+    label: 'Avoidable renders',
+    format: formatCount,
+    description: 'only references changed, or nothing changed and the parent rendered',
+  },
+  commits: { label: 'Commits', format: formatCount },
+  requests: { label: 'Requests', format: formatCount },
+  swrKeyLength: {
+    label: 'SWR keys hashed',
+    format: formatSize,
+    description: 'SWR serializes and hashes the key of every hook on every render',
+  },
+  swrCacheKeyLength: {
+    label: 'SWR cache keys',
+    format: formatSize,
+    description: 'SWR never removes them from its cache',
+  },
+};
+
+function median(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+// Median absolute deviation, a measure of the run-to-run spread that ignores outliers
+function deviation(values) {
+  const center = median(values);
+  return median(values.map((value) => Math.abs(value - center)));
+}
 
 function findProfiles(target) {
   if (!fs.existsSync(target)) {
@@ -59,56 +84,75 @@ function findProfiles(target) {
   return fs
     .readdirSync(target, { recursive: true })
     .filter((file) => path.basename(file) === 'render-profile.json')
-    .sort()
     .map((file) => path.join(target, file));
-}
-
-function median(values) {
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-}
-
-// Range of the runs relative to their median
-function spread(values) {
-  const middle = median(values);
-  return middle === 0 ? 0 : (Math.max(...values) - Math.min(...values)) / middle;
 }
 
 function withoutTimes(profile) {
   return JSON.stringify(
-    profile.interactions.map(({ duration, avoidableDuration, components, ...interaction }) => ({
+    profile.interactions.map(({ duration, components, ...interaction }) => ({
       ...interaction,
-      components: components.map(({ selfDuration, avoidableDuration, ...component }) => component),
+      components: components.map(({ selfDuration, ...component }) => component),
     })),
   );
 }
 
-// Counts come from the first run, times are the median of all runs
-function readRuns(target) {
-  const runs = findProfiles(target).map((file) => JSON.parse(fs.readFileSync(file, 'utf8')));
+function loadRuns(target) {
+  return findProfiles(target).map((file) => JSON.parse(fs.readFileSync(file, 'utf8')));
+}
+
+// Shorter components are too noisy to tell how fast a run was
+const minReferenceTime = 2;
+
+// A whole run is often faster or slower than the others, e.g. depending on garbage collection, and
+// every component in it by about the same factor. The factor of a run is the median ratio between
+// the time of its components and their median time across all runs of master and the PR.
+function getSpeedFactors(runs) {
+  const times = new Map();
+  runs.forEach((run) =>
+    run.interactions.forEach(({ name, components }) =>
+      components.forEach(({ component, selfDuration }) => {
+        const key = `${name} › ${component}`;
+        times.set(key, [...(times.get(key) ?? []), selfDuration]);
+      }),
+    ),
+  );
+  const reference = new Map([...times].map(([key, values]) => [key, median(values)]));
+  return runs.map((run) =>
+    median(
+      run.interactions.flatMap(({ name, components }) =>
+        components
+          .filter(({ component }) => reference.get(`${name} › ${component}`) >= minReferenceTime)
+          .map(
+            ({ component, selfDuration }) => selfDuration / reference.get(`${name} › ${component}`),
+          ),
+      ),
+    ),
+  );
+}
+
+// Counts come from the first run. Times are divided by the speed factor of their run, then the
+// median of the runs is taken.
+function summarize(runs, factors) {
   const [first] = runs;
-  if (!first) {
-    return undefined;
-  }
   const interactions = first.interactions.map((interaction, index) => {
-    const samples = runs.map((run) => run.interactions[index]);
-    const componentTimes = (component, key) =>
-      median(
-        samples.map(
-          (sample) => sample.components.find((c) => c.component === component)?.[key] ?? 0,
-        ),
-      );
+    const samples = runs.map((run, runIndex) => ({
+      ...run.interactions[index],
+      factor: factors[runIndex],
+    }));
+    const durations = samples.map(({ duration, factor }) => duration / factor);
     return {
       ...interaction,
-      duration: median(samples.map((sample) => sample.duration)),
-      durationSpread: spread(samples.map((sample) => sample.duration)),
-      avoidableDuration: median(samples.map((sample) => sample.avoidableDuration)),
-      avoidableDurationSpread: spread(samples.map((sample) => sample.avoidableDuration)),
+      duration: median(durations),
+      durationSpread: deviation(durations),
       components: interaction.components.map((component) => ({
         ...component,
-        selfDuration: componentTimes(component.component, 'selfDuration'),
-        avoidableDuration: componentTimes(component.component, 'avoidableDuration'),
+        selfDuration: median(
+          samples.map(
+            ({ components, factor }) =>
+              (components.find((c) => c.component === component.component)?.selfDuration ?? 0) /
+              factor,
+          ),
+        ),
       })),
     };
   });
@@ -116,169 +160,124 @@ function readRuns(target) {
     ...first,
     interactions,
     runs: runs.length,
+    speed: median(factors),
+    speedSpread: deviation(factors),
     isRepeatable: runs.every((run) => withoutTimes(run) === withoutTimes(first)),
   };
 }
 
-function getStatus({ pr, base, threshold = 0 }) {
-  if (base === undefined || Math.abs(pr - base) <= threshold * base) {
-    return 'same';
+function readProfiles({ prTarget, baseTarget }) {
+  const prRuns = loadRuns(prTarget);
+  const baseRuns = baseTarget ? loadRuns(baseTarget) : [];
+  if (prRuns.length === 0) {
+    throw new Error(`Missing render profile for the PR in ${prTarget}.`);
   }
-  return pr < base ? 'better' : 'worse';
-}
-
-function compareMetric({ metric, interaction, base }) {
-  const pr = interaction[metric.key];
-  const baseValue = base?.[metric.key];
-  const threshold = metric.isTime
-    ? Math.max(
-        minTimeRatio,
-        interaction[`${metric.key}Spread`] ?? 0,
-        base?.[`${metric.key}Spread`] ?? 0,
-      )
-    : 0;
-  return { pr, base: baseValue, status: getStatus({ pr, base: baseValue, threshold }) };
-}
-
-function formatDelta(difference, format) {
-  return `${difference > 0 ? '+' : '−'}${format(Math.abs(difference))}`;
-}
-
-function formatPercent(pr, base) {
-  const percent = Math.round((pr / base - 1) * 100);
-  return `${percent > 0 ? '+' : ''}${percent}%`;
-}
-
-function formatCell({ pr, base, status }, metric) {
-  if (base === undefined) {
-    return metric.format(pr);
+  const factors = getSpeedFactors([...prRuns, ...baseRuns]);
+  const base = baseRuns.length > 0 ? summarize(baseRuns, factors.slice(prRuns.length)) : undefined;
+  const pr = summarize(prRuns, factors.slice(0, prRuns.length));
+  // Machine noise affects both the same way, so a different factor means most components changed
+  if (base) {
+    pr.speed /= base.speed;
+    pr.speedSpread /= base.speed;
+    base.speedSpread /= base.speed;
+    base.speed = 1;
   }
-  const delta = metric.isTime ? formatPercent(pr, base) : formatDelta(pr - base, metric.format);
-  return status === 'same' && !metric.isTime
-    ? `${metric.format(pr)}<br><sub>${icons.same}</sub>`
-    : `${metric.format(pr)}<br><sub>${icons[status]} ${delta}</sub>`;
+  return { pr, base };
 }
 
-function formatSummaryTable({ interactions, baseByName }) {
-  return [
-    `| Interaction | ${metrics.map(({ label }) => label).join(' | ')} |`,
-    `|:---|${metrics.map(() => '---:|').join('')}`,
-    ...interactions.map((interaction) => {
-      const base = baseByName.get(interaction.name);
-      const cells = metrics.map((metric) =>
-        formatCell(compareMetric({ metric, interaction, base }), metric),
-      );
-      return `| ${interaction.name} | ${cells.join(' | ')} |`;
-    }),
-  ];
-}
-
-function details(summary, lines) {
-  return lines.length === 0
-    ? []
-    : ['<details>', `<summary>${summary}</summary>`, '', ...lines, '', '</details>', ''];
-}
-
-// One collapsible section, with a table per interaction
-function formatSection({ title, interactions, formatTable }) {
-  const tables = interactions.flatMap((interaction) => {
-    const table = formatTable(interaction);
-    return table.length === 0 ? [] : [`**${interaction.name}**`, '', ...table, ''];
-  });
-  return details(`<b>${title}</b>`, tables);
-}
-
-// Components whose render count changed, the largest time difference first
-function formatChangedComponents(interaction, base) {
-  if (!base) {
-    return [];
+function compare({ id, pr, base }) {
+  const difference = pr[id] - base[id];
+  const { minRatio = 0 } = metrics[id];
+  // Some runs on a shared runner are much slower than others, so time changes also need to
+  // exceed three times the spread of the runs to count, like in the Lighthouse report
+  const threshold = Math.max(
+    minRatio * base[id],
+    3 * Math.max(pr[`${id}Spread`] ?? 0, base[`${id}Spread`] ?? 0),
+  );
+  if (difference === 0 || Math.abs(difference) <= threshold) {
+    return { difference, status: 'same' };
   }
+  return { difference, status: difference < 0 ? 'better' : 'worse' };
+}
+
+function formatDelta({ id, difference, base }) {
+  const { format } = metrics[id];
+  const delta = `${difference > 0 ? '+' : '−'}${format(Math.abs(difference))}`;
+  if (base === 0 || id === 'speed') {
+    return delta;
+  }
+  const percent = Math.round((difference / base) * 100);
+  return `${delta} (${percent > 0 ? '+' : ''}${percent}%)`;
+}
+
+// The components whose render time changed the most, to tell where a change comes from
+function formatComponents({ pr, base }) {
   const baseComponents = new Map(base.components.map((c) => [c.component, c]));
-  const prComponents = new Map(interaction.components.map((c) => [c.component, c]));
-  const changed = [...new Set([...baseComponents.keys(), ...prComponents.keys()])]
+  const prComponents = new Map(pr.components.map((c) => [c.component, c]));
+  const empty = { renders: 0, selfDuration: 0 };
+  const components = [...new Set([...baseComponents.keys(), ...prComponents.keys()])]
     .map((component) => ({
       component,
-      base: baseComponents.get(component) ?? { renders: 0, selfDuration: 0 },
-      pr: prComponents.get(component) ?? { renders: 0, selfDuration: 0 },
+      base: baseComponents.get(component) ?? empty,
+      pr: prComponents.get(component) ?? empty,
     }))
-    .filter(({ base, pr }) => base.renders !== pr.renders)
-    .sort(
-      (a, b) =>
-        Math.abs(b.pr.selfDuration - b.base.selfDuration) -
-        Math.abs(a.pr.selfDuration - a.base.selfDuration),
-    );
-  if (changed.length === 0) {
-    return [];
-  }
+    .map((row) => ({ ...row, difference: row.pr.selfDuration - row.base.selfDuration }))
+    .sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference))
+    .slice(0, componentsPerInteraction);
   return [
-    '| Component | Renders on master | Renders on PR | Time on master | Time on PR |',
+    '',
+    `Components whose render time changed the most, without their children:`,
+    '',
+    '| Component | Renders | Master | PR | Δ |',
     '|:---|---:|---:|---:|---:|',
-    ...changed
-      .slice(0, rowsPerTable)
-      .map(
-        ({ component, base, pr }) =>
-          `| \`${component}\` | ${formatCount(base.renders)} | ${formatCount(pr.renders)} ${icons[getStatus({ pr: pr.renders, base: base.renders })]} | ${formatTime(base.selfDuration)} | ${formatTime(pr.selfDuration)} |`,
-      ),
-    ...(changed.length > rowsPerTable
-      ? [`| … ${changed.length - rowsPerTable} more | | | | |`]
-      : []),
-  ];
-}
-
-// 10 avoidable renders of 100 ms cost more than 100 of 1 ms, so components are sorted by time
-function formatAvoidableComponents(interaction) {
-  const components = interaction.components
-    .map((component) => ({
-      ...component,
-      avoidable: component.unstableReference + component.parent,
-    }))
-    .filter(({ avoidable }) => avoidable > 0)
-    .sort((a, b) => b.avoidableDuration - a.avoidableDuration)
-    .slice(0, rowsPerTable);
-  if (components.length === 0) {
-    return [];
-  }
-  return [
-    '| Component | Avoidable time | Avoidable renders | Time per render | 🔁 | ⬆️ | Main avoidable causes |',
-    '|:---|---:|---:|---:|---:|---:|:---|',
     ...components.map(
-      (c) =>
-        `| \`${c.component}\` | ${formatTime(c.avoidableDuration)} | ${c.avoidable} of ${c.renders} | ${(c.avoidableDuration / c.avoidable).toFixed(1)} ms | ${c.unstableReference} | ${c.parent} | ${c.causes.join('<br>')} |`,
+      ({ component, base: b, pr: p, difference }) =>
+        `| \`${component}\` | ${b.renders === p.renders ? formatCount(p.renders) : `${formatCount(b.renders)} → ${formatCount(p.renders)}`} | ${formatTime(b.selfDuration)} | ${formatTime(p.selfDuration)} | ${difference > 0 ? '+' : '−'}${formatTime(Math.abs(difference))} |`,
     ),
   ];
 }
 
-// Compares two { name: value } objects, rows of both, the largest PR values first
-function formatBreakdown({ pr, base, label, format }) {
-  const names = [...new Set([...Object.keys(pr), ...Object.keys(base ?? {})])].sort(
-    (a, b) => (pr[b] ?? 0) - (pr[a] ?? 0),
-  );
-  if (names.length === 0) {
+// One collapsible section per status, with a nested one for each interaction that changed
+function formatChanges({ sections, status, title }) {
+  const groups = sections
+    .map((section) => ({ ...section, rows: section.rows.filter((row) => row.status === status) }))
+    .filter(({ rows }) => rows.length > 0);
+  const count = groups.reduce((total, { rows }) => total + rows.length, 0);
+  if (count === 0) {
     return [];
   }
-  if (!base) {
-    return [
-      `| ${label} | PR |`,
-      '|:---|---:|',
-      ...names.slice(0, rowsPerTable).map((name) => `| \`${name}\` | ${format(pr[name])} |`),
-    ];
-  }
-  const metric = { format };
+
   return [
-    `| ${label} | Master | PR |`,
-    '|:---|---:|---:|',
-    ...names.slice(0, rowsPerTable).map((name) => {
-      const comparison = { pr: pr[name] ?? 0, base: base[name] ?? 0 };
-      const cell = formatCell({ ...comparison, status: getStatus(comparison) }, metric);
-      return `| \`${name}\` | ${format(comparison.base)} | ${cell} |`;
-    }),
+    '<details>',
+    `<summary><b>${icons[status]} ${title} (${count})</b></summary>`,
+    '',
+    ...groups.flatMap(({ name, rows, pr, base }) => [
+      '<details>',
+      `<summary>${name} — ${rows.map(({ id }) => metrics[id].label).join(', ')}</summary>`,
+      '',
+      '| Metric | Master | PR | Δ |',
+      '|:---|---:|---:|---:|',
+      ...rows.map(({ id, ...row }) => {
+        const { label, format, description } = metrics[id];
+        const note = description ? `<br><sub>${description}</sub>` : '';
+        return status === 'new'
+          ? `| ${label}${note} | — | ${format(row.pr)} | — |`
+          : `| ${label}${note} | ${format(row.base)} | ${format(row.pr)} | **${formatDelta({ id, ...row })}** |`;
+      }),
+      ...(base && rows.some(({ id }) => id === 'duration' || id === 'renders')
+        ? formatComponents({ pr, base })
+        : []),
+      '',
+      '</details>',
+      '',
+    ]),
+    '</details>',
+    '',
   ];
 }
 
-const toObject = (entries) => Object.fromEntries(entries.map(({ key, length }) => [key, length]));
-
 function formatWarnings({ pr, base }) {
-  const warnings = [
+  return [
     ...[
       ['this PR', pr],
       ['master', base],
@@ -290,108 +289,81 @@ function formatWarnings({ pr, base }) {
       ),
     ...(pr.unhandledRequests.length > 0
       ? [
-          `⚠️ These requests have no generated response and failed like a network error. Add them to \`renderProfileNetwork.ts\`: ${pr.unhandledRequests.map((r) => `\`${r}\``).join(', ')}`,
+          `⚠️ These requests have no generated response and failed like a network error, add them to \`renderProfileNetwork.ts\`: ${pr.unhandledRequests.map((r) => `\`${r}\``).join(', ')}`,
         ]
       : []),
-  ];
-  return warnings.flatMap((warning) => [warning, '']);
+  ].flatMap((warning) => [warning, '']);
 }
 
 function formatReport({ pr, base, baseSha, runUrl }) {
-  const baseByName = new Map((base?.interactions ?? []).map((i) => [i.name, i]));
-  const statuses = pr.interactions.flatMap((interaction) =>
-    metrics.map(
-      (metric) =>
-        compareMetric({ metric, interaction, base: baseByName.get(interaction.name) }).status,
-    ),
-  );
-  const count = (status) => statuses.filter((s) => s === status).length;
+  // Interactions are matched by name, so interactions added by the PR are new
+  const sections = pr.interactions.map((interaction) => {
+    const baseInteraction = base?.interactions.find(({ name }) => name === interaction.name);
+    return {
+      name: interaction.name,
+      pr: interaction,
+      base: baseInteraction,
+      rows: Object.keys(metrics)
+        .filter((id) => id !== 'speed')
+        .map((id) =>
+          baseInteraction
+            ? {
+                id,
+                pr: interaction[id],
+                base: baseInteraction[id],
+                ...compare({ id, pr: interaction, base: baseInteraction }),
+              }
+            : { id, pr: interaction[id], status: 'new' },
+        ),
+    };
+  });
 
-  const sections = [
-    ...formatSection({
-      title: 'Components with the most avoidable render time',
-      interactions: pr.interactions,
-      formatTable: formatAvoidableComponents,
-    }),
-    ...formatSection({
-      title: 'Components whose renders changed',
-      interactions: pr.interactions,
-      formatTable: (interaction) =>
-        formatChangedComponents(interaction, baseByName.get(interaction.name)),
-    }),
-    ...formatSection({
-      title: 'SWR keys hashed on render, by hook',
-      interactions: pr.interactions,
-      formatTable: (interaction) =>
-        formatBreakdown({
-          pr: toObject(interaction.swrKeys),
-          base: baseByName.has(interaction.name)
-            ? toObject(baseByName.get(interaction.name).swrKeys)
-            : undefined,
-          label: 'Key',
-          format: formatSize,
-        }),
-    }),
-    ...formatSection({
-      title: 'Requests by endpoint',
-      interactions: pr.interactions,
-      formatTable: (interaction) =>
-        formatBreakdown({
-          pr: interaction.requestsByEndpoint,
-          base: baseByName.get(interaction.name)?.requestsByEndpoint,
-          label: 'Endpoint',
-          format: formatCount,
-        }),
-    }),
+  if (base) {
+    sections.unshift({
+      name: 'All interactions',
+      rows: [
+        { id: 'speed', pr: pr.speed, base: base.speed, ...compare({ id: 'speed', pr, base }) },
+      ],
+    });
+  }
+  const rows = sections.flatMap((section) => section.rows);
+  const count = (status) => rows.filter((row) => row.status === status).length;
+  const changes = [
+    ...formatChanges({ sections, status: 'worse', title: 'Regressions' }),
+    ...formatChanges({ sections, status: 'better', title: 'Improvements' }),
+    ...formatChanges({ sections, status: 'new', title: 'Not measured on master' }),
   ];
 
-  const report = [
+  return [
     marker,
     '## ⚛️ Render profile',
     '',
-    ...(base
-      ? [
-          `| ${icons.worse} Regressions | ${icons.better} Improvements | ${icons.same} Unchanged |`,
-          '|:---:|:---:|:---:|',
-          `| ${count('worse')} | ${count('better')} | ${count('same')} |`,
-          '',
-          `Renders of the bridge flow in the React development build, on master at \`${baseSha.slice(0, 7)}\` and on this PR, ${pr.runs} runs each, alternating. API responses are generated and timers follow a fake clock, so the counts are the same on every run and any change comes from the code. Times are the median of the runs, and a time change counts when it's over ${minTimeRatio * 100}% and over the spread of the runs.`,
-        ]
-      : [
-          `Renders of the bridge flow in the React development build, median of ${pr.runs} runs. The profile couldn't run on master, so there's nothing to compare with, see the workflow run.`,
-        ]),
+    `| ${icons.worse} Regressions | ${icons.better} Improvements | ${icons.same} Unchanged |`,
+    '|:---:|:---:|:---:|',
+    `| ${count('worse')} | ${count('better')} | ${count('same')} |`,
+    '',
+    `React renders of the bridge flow in Vitest, ${pr.runs} runs alternating master at \`${baseSha.slice(0, 7)}\` and this PR. API responses are generated and timers follow a fake clock, so counts are the same on every run. Render time is in the React development build: each run is scaled by how fast it was as a whole, then the median is taken.`,
     '',
     ...formatWarnings({ pr, base }),
-    ...formatSummaryTable({ interactions: pr.interactions, baseByName }),
-    '',
-    '- **Render time** is the time React spent rendering, from its profiling timers. The development build is slower than production, so compare it with master, not with Lighthouse.',
-    "- **Avoidable time** is the time components spent in avoidable renders, without their children's. A render is avoidable when only references changed (🔁, e.g. a missing `useMemo` or a selector returning a new object), or when nothing changed and the parent rendered (⬆️, `React.memo` would skip it).",
-    '- **SWR keys hashed** is the size of the SWR keys serialized on render. SWR hashes the key of every hook on every render, so a key holding a token list costs as much as the list each time.',
-    '- **SWR cache keys** is the size of the keys in the SWR cache at the end of the interaction. SWR never removes them, so a key that changes on every refresh keeps growing memory.',
-    '',
-    ...(sections.length > 0 ? ['---', '', ...sections] : []),
+    ...(changes.length > 0 ? ['---', '', ...changes] : []),
     '---',
     '',
-    `📄 The full profiles are attached to the [workflow run](${runUrl}).`,
+    `📄 Full profiles are attached to the [workflow run](${runUrl}).`,
   ].join('\n');
-
-  return report.length > maxLength
-    ? `${report.slice(0, maxLength)}\n\n…truncated, see the [workflow run](${runUrl}).`
-    : report;
 }
 
 module.exports = async ({ github, context, core }) => {
   const { owner, repo } = context.repo;
-  const pr = readRuns(resultsDirectory);
-  if (!pr) {
-    throw new Error('Missing render profile for the PR.');
-  }
+  const { pr, base } = readProfiles({
+    prTarget: resultsDirectory,
+    // Missing when the profile couldn't run on master, then every value is new
+    baseTarget: baselineDirectory,
+  });
 
   const pullRequest = context.payload.pull_request;
   const body = formatReport({
     pr,
-    // Missing when the profile couldn't run on master
-    base: readRuns(baselineDirectory),
+    base,
     baseSha: pullRequest.base.sha,
     runUrl: `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
   });
@@ -421,17 +393,8 @@ module.exports = async ({ github, context, core }) => {
 };
 
 if (require.main === module) {
-  const [prPath, basePath] = process.argv.slice(2);
-  const pr = readRuns(prPath ?? 'packages/arb-token-bridge-ui/render-profile');
-  if (!pr) {
-    throw new Error(`No render-profile.json in ${prPath}.`);
-  }
-  console.log(
-    formatReport({
-      pr,
-      base: basePath ? readRuns(basePath) : undefined,
-      baseSha: 'master',
-      runUrl: 'https://github.com',
-    }),
-  );
+  const [prTarget = 'packages/arb-token-bridge-ui/render-profile', baseTarget] =
+    process.argv.slice(2);
+  const { pr, base } = readProfiles({ prTarget, baseTarget });
+  console.log(formatReport({ pr, base, baseSha: 'master', runUrl: 'https://github.com' }));
 }
