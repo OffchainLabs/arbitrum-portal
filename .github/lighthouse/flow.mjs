@@ -4,7 +4,7 @@ import { desktopConfig, startFlow } from 'lighthouse';
 import puppeteer from 'puppeteer-core';
 
 const runs = 5;
-const outputDirectory = 'lighthouse-reports';
+const outputDirectory = process.env.OUTPUT_DIRECTORY ?? 'lighthouse-reports';
 const bridgePath =
   '/bridge?sourceChain=ethereum&destinationChain=arbitrum-one&tab=bridge&txHistory=0';
 

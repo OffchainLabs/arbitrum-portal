@@ -1,5 +1,5 @@
-// Compares the Lighthouse user flow runs of the PR against the latest runs on master and
-// posts the result as a PR comment. Each value is the median of all runs.
+// Compares the Lighthouse user flow runs of the PR against the runs on master and posts the
+// result as a PR comment. Each value is the median of all runs.
 const fs = require('fs');
 const path = require('path');
 
@@ -259,7 +259,7 @@ function formatReport({ pr, base, runs, baseline, runUrl }) {
     '|:---:|:---:|:---:|',
     `| ${count('worse')} | ${count('better')} | ${count('same')} |`,
     '',
-    `Median of ${runs} desktop and mobile runs of the bridge user flow, compared with the [latest master runs](${baseline.url}) (\`${baseline.sha.slice(0, 7)}\`).`,
+    `Median of ${runs} desktop and mobile runs of the bridge user flow, compared with the [master runs](${baseline.url}) at \`${baseline.sha.slice(0, 7)}\`.`,
     '',
     ...(changes.length > 0 ? ['---', '', ...changes] : []),
     '---',
@@ -284,10 +284,9 @@ module.exports = async ({ github, context, core }) => {
   if (Object.values(flows.pr).some((runs) => runs.length === 0)) {
     throw new Error('Missing Lighthouse results for the PR.');
   }
-  // The baseline comes from the Lighthouse workflow on master, which runs after each merge
+  // The baseline comes from the latest Lighthouse run on master, or is measured in this run
   if (Object.values(flows.base).some((runs) => runs.length === 0)) {
-    core.warning('No Lighthouse baseline from master yet, skipping the comparison.');
-    return;
+    throw new Error('Missing Lighthouse results for master.');
   }
 
   const pullRequest = context.payload.pull_request;
