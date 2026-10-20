@@ -39,15 +39,16 @@ describe('hasBridgeHistory', { concurrent: false }, () => {
     return import('./sources');
   }
 
-  it('has history for configured chains and none for the rest', async () => {
+  it('adds configured chains without removing required core chains', async () => {
     const { hasBridgeHistory, isChildChainIndexed } = await importSourcesWith('46630,33139');
 
     expect(isChildChainIndexed(46630)).toBe(true);
     expect(hasBridgeHistory(46630)).toBe(true);
     expect(hasBridgeHistory(33139)).toBe(true);
 
-    expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(false);
-    expect(hasBridgeHistory(ChainId.ArbitrumOne)).toBe(false);
+    expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(true);
+    expect(hasBridgeHistory(ChainId.ArbitrumOne)).toBe(true);
+    expect(isChildChainIndexed(ChainId.ArbitrumSepolia)).toBe(true);
   });
 
   it('falls back to the core chains when the list is unset', async () => {

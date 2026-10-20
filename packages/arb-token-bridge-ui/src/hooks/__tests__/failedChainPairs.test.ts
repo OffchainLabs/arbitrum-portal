@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { getFailedChainPairs, recordChainPairFetch } from '../useTransactionHistory';
+import {
+  getFailedChainPairs,
+  getFailedChainPairsForFilter,
+  recordChainPairFetch,
+} from '../useTransactionHistory';
 
 const ONE = { parentChainId: 1, childChainId: 42161 };
 const NOVA = { parentChainId: 1, childChainId: 42170 };
@@ -59,5 +63,23 @@ describe('getFailedChainPairs', () => {
     });
 
     expect(getFailedChainPairs(bothFailed)).toEqual([ONE]);
+  });
+
+  it('only exposes failures that match the active chain filter', () => {
+    const oneFailed = recordChainPairFetch({ type: 'deposits', chainPair: ONE, failed: true });
+    const novaFailed = recordChainPairFetch({
+      failures: oneFailed,
+      type: 'deposits',
+      chainPair: NOVA,
+      failed: true,
+    });
+
+    expect(
+      getFailedChainPairsForFilter(novaFailed, {
+        type: 'core-chains',
+        chainIds: [42170],
+        coreChainIds: [1, 42161, 42170],
+      }),
+    ).toEqual([NOVA]);
   });
 });
