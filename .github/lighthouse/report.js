@@ -66,9 +66,15 @@ const metrics = {
         (item) => item.resourceType === 'script',
       )?.transferSize ?? 0) / 1024,
   },
+  'network-requests': {
+    label: 'Network Requests',
+    short: 'Requests',
+    minDelta: 3,
+    read: (lhr) => lhr.audits['network-requests']?.details?.items?.length ?? 0,
+  },
 };
 
-const icons = { better: '🟢', same: '⚪', worse: '🔴' };
+const icons = { better: '🟢', same: '⚪', worse: '🔴', new: '🆕' };
 
 // Script sizes by module come from source maps and are the same on every run, so smaller changes
 // are real but too small to list
@@ -105,10 +111,15 @@ const steps = [
       'script-size',
     ],
   },
-  ...['Enter amount', 'Switch networks', 'Select token', 'Switch to Xai'].map((name) => ({
+  ...['Enter amount', 'Switch networks', 'Select token'].map((name) => ({
     name,
     metrics: interactionMetrics,
   })),
+  {
+    name: 'Idle',
+    metrics: ['total-blocking-time', 'bootup-time', 'network-requests'],
+  },
+  { name: 'Switch to Xai', metrics: interactionMetrics },
   {
     name: 'Configured transfer',
     metrics: ['accessibility', 'best-practices', 'seo'],
@@ -156,9 +167,15 @@ function readFlows(directory, formFactor) {
     .map((file) => JSON.parse(fs.readFileSync(path.join(directory, file), 'utf8')));
 }
 
+// Steps are matched by name, so steps added by the PR are missing from the master runs
 function summarize(flows) {
-  return steps.map((step, index) => {
-    const lhrs = flows.map((flow) => flow.steps[index].lhr);
+  return steps.map((step) => {
+    const lhrs = flows
+      .map((flow) => flow.steps.find(({ name }) => name === step.name)?.lhr)
+      .filter(Boolean);
+    if (lhrs.length === 0) {
+      return undefined;
+    }
     return Object.fromEntries(
       step.metrics.map((id) => {
         const values = lhrs.map((lhr) => readMetric(lhr, id));
@@ -227,7 +244,7 @@ function formatChanges({ sections, status, title }) {
       '|:---|---:|---:|---:|',
       ...rows.map(
         (row) =>
-          `| ${metrics[row.id].label}<br><sub>${formatDirection(row.id)}</sub> | ${withUnit(row.base, row.id)} | ${withUnit(row.pr, row.id)} | **${formatDelta(row)}** |`,
+          `| ${metrics[row.id].label}<br><sub>${formatDirection(row.id)}</sub> | ${row.status === 'new' ? '—' : withUnit(row.base, row.id)} | ${withUnit(row.pr, row.id)} | ${row.status === 'new' ? '—' : `**${formatDelta(row)}**`} |`,
       ),
       '',
       '</details>',
@@ -291,7 +308,10 @@ function formatReport({ pr, base, modules, runs, baseline, runUrl }) {
         .filter((id) => !formFactor.exclude?.includes(id))
         .map((id) => {
           const prResult = pr[formFactor.key][index][id];
-          const baseResult = base[formFactor.key][index][id];
+          const baseResult = base[formFactor.key][index]?.[id];
+          if (!baseResult) {
+            return { id, pr: prResult.value, status: 'new' };
+          }
           return {
             id,
             pr: prResult.value,
@@ -307,6 +327,7 @@ function formatReport({ pr, base, modules, runs, baseline, runUrl }) {
   const changes = [
     ...formatChanges({ sections, status: 'worse', title: 'Regressions' }),
     ...formatChanges({ sections, status: 'better', title: 'Improvements' }),
+    ...formatChanges({ sections, status: 'new', title: 'Not measured on master' }),
     ...formatModules(modules),
   ];
 

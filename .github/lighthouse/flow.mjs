@@ -6,6 +6,8 @@ import puppeteer from 'puppeteer-core';
 import { measureModules } from './modules.mjs';
 
 const runs = 5;
+// Long enough for every poller of the bridge to run at least once
+const idleDuration = 32_000;
 const outputDirectory = process.env.OUTPUT_DIRECTORY ?? 'lighthouse-reports';
 const bridgePath =
   '/bridge?sourceChain=ethereum&destinationChain=arbitrum-one&tab=bridge&txHistory=0';
@@ -47,6 +49,12 @@ const interactions = [
         visible: true,
       });
     },
+  },
+  // Nothing happens on screen, but the selected token refreshes every 10s, the gas price and
+  // TPS every 30s and the LiFi prices every 31s
+  {
+    name: 'Idle',
+    run: () => new Promise((resolve) => setTimeout(resolve, idleDuration)),
   },
   {
     name: 'Switch to Xai',
