@@ -93,7 +93,47 @@ jobs:
             gh run download "$run_id" --name lighthouse-reports --dir lighthouse-baseline
             echo "BASELINE_RUN_ID=$run_id" >> "$GITHUB_ENV"
             echo "BASELINE_SHA=$(jq -r .headSha <<< "$baseline")" >> "$GITHUB_ENV"
+          else
+            # No run on master yet, e.g. before this workflow is merged, so measure the base here
+            echo "MEASURE_BASELINE=true" >> "$GITHUB_ENV"
+            echo "BASELINE_RUN_ID=${{ github.run_id }}" >> "$GITHUB_ENV"
+            echo "BASELINE_SHA=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_ENV"
           fi
+
+      - name: Checkout base
+        if: env.MEASURE_BASELINE == 'true'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: Build base
+        if: env.MEASURE_BASELINE == 'true'
+        working-directory: base
+        run: pnpm install --frozen-lockfile && pnpm build
+
+      - name: Start base server
+        if: env.MEASURE_BASELINE == 'true'
+        working-directory: base
+        run: |
+          PORT=3001 pnpm start &
+          curl --silent --fail --output /dev/null --retry 30 --retry-connrefused --retry-delay 2 "http://localhost:3001/bridge"
+          curl --silent --fail --output /dev/null "http://localhost:3001/bridge"
+
+      - name: Run Lighthouse on base
+        if: env.MEASURE_BASELINE == 'true'
+        run: node .github/lighthouse/flow.mjs
+        env:
+          APP_URL: http://localhost:3001
+          OUTPUT_DIRECTORY: lighthouse-baseline
+
+      - name: Upload base Lighthouse reports
+        if: always() && env.MEASURE_BASELINE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-baseline
+          path: lighthouse-baseline
+          if-no-files-found: warn
 
       - name: Report results
         if: github.event_name == 'pull_request'
