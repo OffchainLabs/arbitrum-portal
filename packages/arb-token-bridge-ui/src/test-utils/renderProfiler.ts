@@ -1,9 +1,8 @@
 // Records every React render during an interaction, with its duration and the reason it happened.
 // It registers as React DevTools, so it must be installed before react-dom is imported, see
-// vitest.profile.setup.ts. Durations come from the profiling timers of the React development build.
-// Only import modules that don't load react-dom here.
+// vitest.profile.setup.ts. Durations come from React's profiling timers, which the development and
+// profiling builds have. Only import modules that don't load React here, the setup picks its build.
 import { isEqualWith } from 'lodash-es';
-import { act, isValidElement } from 'react';
 import { vi } from 'vitest';
 
 export type RenderKind =
@@ -32,9 +31,27 @@ export type Commit = {
   renders: Render[];
 };
 
+type FiberRoot = {
+  current: Fiber;
+  // Set while React has work scheduled for the root
+  callbackNode: unknown;
+};
+
+// Same check as React's isValidElement, without importing React
+type Element = { $$typeof: symbol; type: unknown; key: string | null; props: unknown };
+
+function isValidElement(value: unknown): value is Element {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    (value as { $$typeof?: symbol }).$$typeof === Symbol.for('react.transitional.element')
+  );
+}
+
 type Fiber = {
   tag: number;
   type: unknown;
+  elementType: unknown;
   flags: number;
   child: Fiber | null;
   sibling: Fiber | null;
@@ -81,6 +98,7 @@ const hookEntries: Record<string, number> = {
 
 let commits: Commit[] | undefined;
 let commitCount = 0;
+const roots = new Set<FiberRoot>();
 
 function isComponent(fiber: Fiber) {
   return [FunctionComponent, ClassComponent, ForwardRef, SimpleMemoComponent].includes(fiber.tag);
@@ -102,9 +120,11 @@ function getName(type: unknown): string | undefined {
   return undefined;
 }
 
+// A displayName set on a memo() component is on its elementType, the production build doesn't copy
+// it to the inner function
 function getComponentName(fiber: Fiber) {
   const memoName = fiber.return?.tag === MemoComponent ? getName(fiber.return.type) : undefined;
-  return memoName ?? getName(fiber.type) ?? 'Anonymous';
+  return memoName ?? getName(fiber.elementType) ?? getName(fiber.type) ?? 'Anonymous';
 }
 
 // Functions and elements are compared by what they are, not by reference, so a new callback or
@@ -287,7 +307,8 @@ export function installRenderProfiler() {
         this.renderers.set(rendererId, renderer);
         return rendererId;
       },
-      onCommitFiberRoot(_rendererId: number, root: { current: Fiber }) {
+      onCommitFiberRoot(_rendererId: number, root: FiberRoot) {
+        roots.add(root);
         commitCount += 1;
         if (!commits) {
           return;
@@ -321,10 +342,32 @@ type ClockOptions = {
   step?: number;
 };
 
+// React has no act() in production builds, so the profile drives it like a browser would and waits
+// until no root has work scheduled
+export function watchRoot(root: { _internalRoot: FiberRoot }) {
+  roots.add(root._internalRoot);
+}
+
+async function waitUntilIdle(waitForIdle: () => Promise<void>) {
+  for (;;) {
+    // eslint-disable-next-line no-await-in-loop
+    await waitForIdle();
+    if ([...roots].every(({ callbackNode }) => callbackNode === null)) {
+      return;
+    }
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+}
+
 async function tick({ waitForIdle, step = 100 }: ClockOptions) {
-  await waitForIdle();
-  await act(() => vi.advanceTimersByTimeAsync(step));
-  await waitForIdle();
+  await waitUntilIdle(waitForIdle);
+  await vi.advanceTimersByTimeAsync(step);
+  await waitUntilIdle(waitForIdle);
+}
+
+export async function waitForReact(waitForIdle: () => Promise<void>) {
+  await waitUntilIdle(waitForIdle);
 }
 
 export async function advanceClock({ duration, ...options }: ClockOptions & { duration: number }) {
