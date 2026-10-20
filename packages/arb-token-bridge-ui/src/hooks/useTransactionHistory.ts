@@ -47,7 +47,11 @@ import {
   resolveLifiRouteBatchId,
 } from '../util/LifiTransactionStatus';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
-import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
+import {
+  fetchLatestIndexedBlockNumber,
+  shouldIncludeReceivedTxs,
+  shouldIncludeSentTxs,
+} from '../util/SubgraphUtils';
 import { BATCH_FETCH_BLOCKS } from '../util/chainBlockRanges';
 import { TxHistoryChainFilter, getChainFilterKey, matchesChainFilter } from '../util/chainFilter';
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
@@ -142,6 +146,19 @@ export function getFailedChainPairs(failures: FailedChainPairFetch[] = []): Chai
     (pairs, { chainPair }) =>
       pairs.some((pair) => isSameChainPair(pair, chainPair)) ? pairs : [...pairs, chainPair],
     [],
+  );
+}
+
+export function getFailedChainPairsForFilter(
+  failures: FailedChainPairFetch[] | undefined,
+  filter: TxHistoryChainFilter,
+): ChainPair[] {
+  return getFailedChainPairs(failures).filter((pair) =>
+    matchesChainFilter({
+      filter,
+      sourceChainId: pair.parentChainId,
+      destinationChainId: pair.childChainId,
+    }),
   );
 }
 export type Transfer = DepositOrWithdrawal | MergedTransaction;
@@ -572,7 +589,7 @@ export async function fetchWithdrawalsInBatches(
     batchSizeBlocks?: number;
   },
 ): Promise<Withdrawal[]> {
-  const latestBlockNumber = await params.l2Provider.getBlockNumber();
+  const latestBlockNumber = params.toBlock ?? (await params.l2Provider.getBlockNumber());
 
   let fromBlock = params.fromBlock ?? 1;
   const toBlock = params.toBlock ?? latestBlockNumber;
@@ -630,6 +647,7 @@ export async function fetchWithdrawalsInBatches(
 
   const batchSizeBlocks = params.batchSizeBlocks ?? 5_000_000;
   const batchCount = Math.ceil((toBlock - fromBlock) / batchSizeBlocks);
+  const lastIndexedBlock = await fetchLatestIndexedBlockNumber(childChainId);
 
   // Max parallel fetches to avoid 429 errors
   const limit = pLimit(10);
@@ -645,6 +663,7 @@ export async function fetchWithdrawalsInBatches(
         ...params,
         fromBlock: fromBlockForBatch,
         toBlock: toBlockForBatch,
+        lastIndexedBlock,
       });
       performance.mark(`withdrawal batch end chainId:${childChainId} ${i}/${batchCount}`);
       return result;
@@ -964,7 +983,7 @@ const useTransactionHistoryWithoutStatuses = (
       oftLoading ||
       lifiHistoryLoading,
     error: depositsError ?? withdrawalsError ?? cctpError,
-    failedChainPairs: getFailedChainPairs(failedChainPairFetches),
+    failedChainPairs: getFailedChainPairsForFilter(failedChainPairFetches, chainFilter),
   };
 };
 

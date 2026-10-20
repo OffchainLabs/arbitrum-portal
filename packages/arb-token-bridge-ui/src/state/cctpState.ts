@@ -20,7 +20,7 @@ import { useNetworks } from '../hooks/useNetworks';
 import { useTransactionHistory } from '../hooks/useTransactionHistory';
 import { ChainId } from '../types/ChainId';
 import { Address } from '../util/AddressUtils';
-import { trackEvent } from '../util/AnalyticsUtils';
+import { getAnalyticsAccountType, trackEvent } from '../util/AnalyticsUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { fetchCCTPDeposits, fetchCCTPWithdrawals } from '../util/cctp/fetchCCTP';
@@ -584,7 +584,7 @@ export function useClaimCctp(tx: MergedTransaction) {
       const { isEthereumMainnetOrTestnet } = isNetwork(targetChainId);
 
       trackEvent(isEthereumMainnetOrTestnet ? 'CCTP Withdrawal' : 'CCTP Deposit', {
-        accountType: accountType === 'smart-contract-wallet' ? 'Smart Contract' : 'EOA',
+        accountType: getAnalyticsAccountType(accountType),
         network: currentNetworkName,
         amount: Number(tx.value),
         complete: true,

@@ -49,6 +49,8 @@ export type FetchWithdrawalsParams = {
   pageSize?: number;
   searchString?: string;
   forceFetchReceived?: boolean;
+  /** Reused by batched callers so the status endpoint is queried only once. */
+  lastIndexedBlock?: number;
 };
 
 type FetchWithdrawalsUsingEventLogsParams = {
@@ -192,6 +194,7 @@ export async function fetchWithdrawals({
   fromBlock,
   toBlock,
   forceFetchReceived = false,
+  lastIndexedBlock: suppliedLastIndexedBlock,
 }: FetchWithdrawalsParams): Promise<Withdrawal[]> {
   if (typeof sender === 'undefined' && typeof receiver === 'undefined') {
     return [];
@@ -205,7 +208,8 @@ export async function fetchWithdrawals({
 
   const head = typeof toBlock === 'number' ? toBlock : await l2Provider.getBlockNumber();
 
-  const lastIndexedBlock = await fetchLatestIndexedBlockNumber(l2ChainID);
+  const lastIndexedBlock =
+    suppliedLastIndexedBlock ?? (await fetchLatestIndexedBlockNumber(l2ChainID));
 
   const indexedBoundary =
     lastIndexedBlock > 0 ? Math.max(fromBlock, Math.min(lastIndexedBlock, head)) : fromBlock;

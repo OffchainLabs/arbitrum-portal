@@ -20,11 +20,15 @@ function isIndexerBackedChain(chainId: number): boolean {
 // Throws rather than answering 0: for an indexed chain, 0 would send callers to a
 // full event-log scan. Each failure names its cause so a missing config entry
 // isn't mistaken for an indexer outage.
-async function fetchIndexerBlockNumber(chainId: number): Promise<number> {
-  const indexerUrl = getIndexerApiUrl(chainId);
+async function fetchIndexerBlockNumber(
+  chainId: number,
+  configuredChildChainId = chainId,
+): Promise<number> {
+  const indexerUrl = getIndexerApiUrl(configuredChildChainId);
   if (!indexerUrl) {
-    logger.error(`[block-number] no "INDEXER_API_URL_BY_CHAIN" entry for chain ${chainId}`);
-    throw new Error(`No indexer configured for chain ${chainId}`);
+    throw new Error(
+      `No indexer configured for chain ${chainId} via child chain ${configuredChildChainId}`,
+    );
   }
 
   const response = await fetch(`${indexerUrl}/status`, {
@@ -48,6 +52,12 @@ async function fetchIndexerBlockNumber(chainId: number): Promise<number> {
   return blockNumber;
 }
 
+function getIndexerConfigChainId(chainId: number): number | undefined {
+  if (chainId === ChainId.Ethereum) return ChainId.ArbitrumOne;
+  if (chainId === ChainId.Sepolia) return ChainId.ArbitrumSepolia;
+  return isChildChainIndexed(chainId) ? chainId : undefined;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ chainId: string }> },
@@ -62,7 +72,11 @@ export async function GET(
   }
 
   try {
-    const indexerBlockNumber = await fetchIndexerBlockNumber(numericChainId);
+    const indexerConfigChainId = getIndexerConfigChainId(numericChainId);
+    if (typeof indexerConfigChainId === 'undefined') {
+      throw new Error(`No indexer source mapped for chain ${numericChainId}`);
+    }
+    const indexerBlockNumber = await fetchIndexerBlockNumber(numericChainId, indexerConfigChainId);
 
     return NextResponse.json(
       {
@@ -72,9 +86,10 @@ export async function GET(
       { status: 200 },
     );
   } catch (error) {
-    return NextResponse.json(
-      { message: (error as Error)?.message ?? 'Something went wrong' },
-      { status: 502 },
-    );
+    logger.error('[block-number] failed to fetch latest indexed block', {
+      chainId: numericChainId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return NextResponse.json({ message: 'Unable to fetch latest indexed block' }, { status: 502 });
   }
 }

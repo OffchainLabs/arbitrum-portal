@@ -23,7 +23,6 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
     vi.stubEnv(
       'INDEXER_API_URL_BY_CHAIN',
       JSON.stringify({
-        [ChainId.Ethereum]: 'https://indexer.test',
         [ChainId.ArbitrumOne]: 'https://indexer.test',
         [ChainId.ArbitrumNova]: 'https://indexer.test',
       }),
@@ -75,7 +74,7 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
 
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({
-      message: `Indexer status failed with 503 for chain ${ChainId.ArbitrumOne}`,
+      message: 'Unable to fetch latest indexed block',
     });
   });
 
@@ -84,7 +83,7 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
 
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({
-      message: `No indexer configured for chain ${ChainId.ArbitrumSepolia}`,
+      message: 'Unable to fetch latest indexed block',
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -99,7 +98,7 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
 
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({
-      message: `Indexer status does not report chain ${ChainId.ArbitrumOne}`,
+      message: 'Unable to fetch latest indexed block',
     });
   });
 

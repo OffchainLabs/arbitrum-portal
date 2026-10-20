@@ -20,9 +20,8 @@ export function parseChainIds(raw: string | undefined): number[] {
   return Array.from(new Set(ids));
 }
 
-// The core chains have no other history source, so a build missing the var
-// must not leave them silently empty. A configured list still wins, which keeps
-// moving a chain off the indexer an env change.
+// The core chains have no other history source, so configuration may add
+// indexed chains but must never remove these required defaults.
 const DEFAULT_INDEXER_CHILD_CHAIN_IDS: readonly number[] = [
   ChainId.ArbitrumOne,
   ChainId.ArbitrumNova,
@@ -33,10 +32,9 @@ const configuredIndexerChildChainIds = parseChainIds(
   process.env.NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS,
 );
 
-export const INDEXER_CHILD_CHAIN_IDS =
-  configuredIndexerChildChainIds.length > 0
-    ? configuredIndexerChildChainIds
-    : DEFAULT_INDEXER_CHILD_CHAIN_IDS;
+export const INDEXER_CHILD_CHAIN_IDS = Array.from(
+  new Set([...DEFAULT_INDEXER_CHILD_CHAIN_IDS, ...configuredIndexerChildChainIds]),
+);
 
 export function isChildChainIndexed(childChainId: number): boolean {
   return INDEXER_CHILD_CHAIN_IDS.includes(childChainId);
