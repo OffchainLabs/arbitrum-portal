@@ -93,7 +93,6 @@ export function prepareLifiTransactionForStorage(tx: LifiMergedTransaction): Lif
       return {
         ...transactionWithoutRoute,
         ...snapshot,
-        ...(tx.toAmount ? { toAmount: tx.toAmount } : {}),
         lifiRouteSteps: getLifiRouteHistorySteps(routeForHistory),
       };
     }

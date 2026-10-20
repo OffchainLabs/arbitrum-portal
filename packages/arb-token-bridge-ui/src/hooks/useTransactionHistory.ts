@@ -301,15 +301,16 @@ function mergeLifiTransaction({
     incomingSnapshot.fromAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL
       ? undefined
       : incomingSnapshot.fromAmount.token;
-  const incomingToToken =
-    incomingSnapshot.toAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL
+  const incomingToAmount =
+    incomingTx.toAmount?.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL
       ? undefined
-      : incomingSnapshot.toAmount.token;
-  const incomingToAmount = incomingToToken ? incomingSnapshot.toAmount : undefined;
+      : incomingTx.toAmount;
   const routeStepCount =
     existingTx.lifiRoute?.steps.length ?? existingTx.lifiRouteSteps?.length ?? 0;
   const hasRouteHistory = routeStepCount > 0;
   const preserveRouteAmounts = routeStepCount > 1;
+  const preserveToAmount = hasRouteHistory && (!!existingTx.lifiRoute || preserveRouteAmounts);
+  const existingToAmount = hasRouteHistory ? existingSnapshot.toAmount : existingTx.toAmount;
   const incomingTool = incomingSnapshot.toolsDetails[0];
   const existingTool = existingSnapshot.toolsDetails[0];
 
@@ -343,21 +344,7 @@ function mergeLifiTransaction({
               UNKNOWN_LIFI_TOKEN_SYMBOL,
           },
         },
-    toAmount: preserveRouteAmounts
-      ? existingSnapshot.toAmount
-      : {
-          amount: incomingToAmount?.amount || existingSnapshot.toAmount.amount,
-          amountUSD: incomingToAmount?.amountUSD || existingSnapshot.toAmount.amountUSD || '0',
-          token: {
-            address: incomingToToken?.address || existingSnapshot.toAmount.token.address || '',
-            decimals: incomingToToken?.decimals || existingSnapshot.toAmount.token.decimals || 0,
-            logoURI: incomingToToken?.logoURI || existingSnapshot.toAmount.token.logoURI || '',
-            symbol:
-              incomingToToken?.symbol ||
-              existingSnapshot.toAmount.token.symbol ||
-              UNKNOWN_LIFI_TOKEN_SYMBOL,
-          },
-        },
+    toAmount: preserveToAmount ? existingSnapshot.toAmount : (incomingToAmount ?? existingToAmount),
     toolsDetails: hasRouteHistory
       ? existingSnapshot.toolsDetails
       : [
