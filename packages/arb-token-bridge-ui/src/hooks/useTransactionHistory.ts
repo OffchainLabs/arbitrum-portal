@@ -309,6 +309,8 @@ function mergeLifiTransaction({
     existingTx.lifiRoute?.steps.length ?? existingTx.lifiRouteSteps?.length ?? 0;
   const hasRouteHistory = routeStepCount > 0;
   const preserveRouteAmounts = routeStepCount > 1;
+  const preserveToAmount = hasRouteHistory && (!!existingTx.lifiRoute || preserveRouteAmounts);
+  const existingToAmount = hasRouteHistory ? existingSnapshot.toAmount : existingTx.toAmount;
   const incomingTool = incomingSnapshot.toolsDetails[0];
   const existingTool = existingSnapshot.toolsDetails[0];
 
@@ -342,10 +344,7 @@ function mergeLifiTransaction({
               UNKNOWN_LIFI_TOKEN_SYMBOL,
           },
         },
-    toAmount: hasRouteHistory
-      ? ((!existingTx.lifiRoute && routeStepCount === 1 ? incomingToAmount : undefined) ??
-        existingSnapshot.toAmount)
-      : (incomingToAmount ?? existingTx.toAmount),
+    toAmount: preserveToAmount ? existingSnapshot.toAmount : (incomingToAmount ?? existingToAmount),
     toolsDetails: hasRouteHistory
       ? existingSnapshot.toolsDetails
       : [
