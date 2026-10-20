@@ -65,20 +65,24 @@ jobs:
             packages/arb-token-bridge-ui/src/test-utils/renderProfiler.ts \
             base/
 
-      # Fails if master lacks something the profile needs, then the report has nothing to compare.
-      # Dependencies master doesn't have, like msw, resolve from the PR's node_modules.
-      - name: Profile base
-        continue-on-error: true
-        working-directory: base/packages/arb-token-bridge-ui
-        run: pnpm exec vitest --config vitest.profile.config.ts --run
-        env:
-          RENDER_PROFILE_DIRECTORY: ${{ github.workspace }}/render-profile/master
-
-      - name: Profile PR
-        working-directory: packages/arb-token-bridge-ui
-        run: pnpm exec vitest --config vitest.profile.config.ts --run
-        env:
-          RENDER_PROFILE_DIRECTORY: ${{ github.workspace }}/render-profile/pr
+      # Counts are the same on every run, times change with the load of the runner. Alternating
+      # master and the PR spreads that load over both, and the report takes the median of the runs.
+      # Master's runs fail if it lacks something the profile needs, then the report has nothing to
+      # compare. Dependencies master doesn't have, like msw, resolve from the PR's node_modules.
+      - name: Profile master and the PR
+        run: |
+          profile() {
+            (cd "$1/packages/arb-token-bridge-ui" &&
+              RENDER_PROFILE_DIRECTORY="$GITHUB_WORKSPACE/render-profile/$2/$3" \
+              pnpm exec vitest --config vitest.profile.config.ts --run)
+          }
+          profile_master=true
+          for run in 1 2 3 4 5; do
+            if [ "$profile_master" = true ]; then
+              profile base master "$run" || profile_master=false
+            fi
+            profile . pr "$run"
+          done
 
       - name: Upload the render profiles
         if: always()
