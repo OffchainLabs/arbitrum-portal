@@ -9,7 +9,6 @@ export type ProfiledInteraction = {
   name: string;
   commits: Commit[];
   swr: SwrKeyStats;
-  requests: number;
 };
 
 const avoidableKinds: RenderKind[] = ['unstable-reference', 'parent'];
@@ -48,7 +47,7 @@ function summarizeComponents(renders: Render[]) {
   });
 }
 
-function summarizeInteraction({ name, commits, swr, requests }: ProfiledInteraction) {
+function summarizeInteraction({ name, commits, swr }: ProfiledInteraction) {
   const renders = commits.flatMap((commit) => commit.renders);
   const avoidable = renders.filter(isAvoidable);
   return {
@@ -57,7 +56,6 @@ function summarizeInteraction({ name, commits, swr, requests }: ProfiledInteract
     renders: renders.length,
     avoidableRenders: avoidable.length,
     duration: sum(commits.map(({ duration }) => duration)),
-    requests,
     swrKeyLength: sum(Object.values(swr.serializedByKey)),
     swrKeys: Object.entries(swr.serializedByKey)
       .map(([key, length]) => ({ key, length }))

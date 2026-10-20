@@ -49,7 +49,6 @@ const metrics = {
     description: 'only references changed, or nothing changed and the parent rendered',
   },
   commits: { label: 'Commits', format: formatCount },
-  requests: { label: 'Requests', format: formatCount },
   swrKeyLength: {
     label: 'SWR keys hashed',
     format: formatSize,
