@@ -65,23 +65,34 @@ jobs:
             packages/arb-token-bridge-ui/src/test-utils/renderProfiler.ts \
             base/
 
-      # Counts are the same on every run, times change with the load of the runner. Alternating
-      # master and the PR spreads that load over both, and the report takes the median of the runs.
-      # Master's runs fail if it lacks something the profile needs, then the report has nothing to
-      # compare. Dependencies master doesn't have, like msw, resolve from the PR's node_modules.
+      # Counts and their causes come from one run of React's development build on each side. Times
+      # come from 10 rounds of the profiling build, each running master and the PR in random order,
+      # so a slow moment of the runner affects both. Master's runs fail if it lacks something the
+      # profile needs, then the report has nothing to compare. Dependencies master doesn't have,
+      # like msw, resolve from the PR's node_modules.
       - name: Profile master and the PR
         run: |
           profile() {
-            (cd "$1/packages/arb-token-bridge-ui" &&
-              RENDER_PROFILE_DIRECTORY="$GITHUB_WORKSPACE/render-profile/$2/$3" \
+            local directory=base
+            if [ "$1" = pr ]; then directory=.; fi
+            (cd "$directory/packages/arb-token-bridge-ui" &&
+              RENDER_PROFILE_BUILD="$2" \
+              RENDER_PROFILE_DIRECTORY="$GITHUB_WORKSPACE/render-profile/$1/$3" \
               pnpm exec vitest --config vitest.profile.config.ts --run)
           }
           profile_master=true
-          for run in 1 2 3 4 5; do
-            if [ "$profile_master" = true ]; then
-              profile base master "$run" || profile_master=false
-            fi
-            profile . pr "$run"
+          profile master development counts || profile_master=false
+          profile pr development counts
+          for round in $(seq -w 1 10); do
+            sides="master pr"
+            if [ $((RANDOM % 2)) = 1 ]; then sides="pr master"; fi
+            for side in $sides; do
+              if [ "$side" = pr ]; then
+                profile pr profiling "round-$round"
+              elif [ "$profile_master" = true ]; then
+                profile master profiling "round-$round" || profile_master=false
+              fi
+            done
           done
 
       - name: Upload the render profiles
