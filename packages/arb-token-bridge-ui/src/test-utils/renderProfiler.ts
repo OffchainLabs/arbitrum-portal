@@ -4,6 +4,7 @@
 // Only import modules that don't load react-dom here.
 import { isEqualWith } from 'lodash-es';
 import { act, isValidElement } from 'react';
+import { vi } from 'vitest';
 
 export type RenderKind =
   // First render of the component
@@ -79,7 +80,7 @@ const hookEntries: Record<string, number> = {
 };
 
 let commits: Commit[] | undefined;
-let lastCommitTime = 0;
+let commitCount = 0;
 
 function isComponent(fiber: Fiber) {
   return [FunctionComponent, ClassComponent, ForwardRef, SimpleMemoComponent].includes(fiber.tag);
@@ -287,7 +288,7 @@ export function installRenderProfiler() {
         return rendererId;
       },
       onCommitFiberRoot(_rendererId: number, root: { current: Fiber }) {
-        lastCommitTime = performance.now();
+        commitCount += 1;
         if (!commits) {
           return;
         }
@@ -305,17 +306,51 @@ export function installRenderProfiler() {
   });
 }
 
-// Resolves once nothing was committed for quietPeriod, so an interaction includes the renders of
-// the updates and requests it triggers. Polling can keep committing, hence the timeout.
-export async function waitForCommitsToSettle({
-  quietPeriod = 1_000,
-  timeout = 15_000,
-}: { quietPeriod?: number; timeout?: number } = {}) {
-  const start = performance.now();
-  const isSettled = () => performance.now() - Math.max(lastCommitTime, start) >= quietPeriod;
-  while (!isSettled() && performance.now() - start < timeout) {
+// Timers and dates follow a fake clock, so polling, debounces and SWR deduping happen at the same
+// point of the flow on every run. The clock only moves through advanceClock and settle.
+export function startFakeClock() {
+  vi.useFakeTimers({
+    toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'],
+    now: new Date('2026-01-01T00:00:00Z'),
+  });
+}
+
+type ClockOptions = {
+  // Resolves once the work that doesn't depend on the clock is done, e.g. pending requests
+  waitForIdle: () => Promise<void>;
+  step?: number;
+};
+
+async function tick({ waitForIdle, step = 100 }: ClockOptions) {
+  await waitForIdle();
+  await act(() => vi.advanceTimersByTimeAsync(step));
+  await waitForIdle();
+}
+
+export async function advanceClock({ duration, ...options }: ClockOptions & { duration: number }) {
+  for (let elapsed = 0; elapsed < duration; elapsed += options.step ?? 100) {
     // eslint-disable-next-line no-await-in-loop
-    await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
+    await tick(options);
+  }
+}
+
+// Advances the clock until nothing was committed for quietPeriod, so an interaction includes the
+// renders of the updates, requests and timers it triggers
+export async function settle({
+  quietPeriod = 2_000,
+  timeout = 60_000,
+  ...options
+}: ClockOptions & { quietPeriod?: number; timeout?: number }) {
+  const step = options.step ?? 100;
+  let quietFor = 0;
+  for (let elapsed = 0; quietFor < quietPeriod; elapsed += step) {
+    if (elapsed >= timeout) {
+      throw new Error(`Renders did not settle within ${timeout} ms.`);
+    }
+    const commitsBefore = commitCount;
+    // eslint-disable-next-line no-await-in-loop
+    await tick(options);
+    quietFor = commitCount === commitsBefore ? quietFor + step : 0;
   }
 }
 

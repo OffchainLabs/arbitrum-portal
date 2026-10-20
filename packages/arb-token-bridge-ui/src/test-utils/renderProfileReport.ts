@@ -1,11 +1,19 @@
+// Summarizes the render profile, .github/render-profile/report.js compares the summary of a PR
+// with master's
 import { groupBy } from 'lodash-es';
 
+import type { SwrKeyStats } from './renderProfileSwr';
 import type { Commit, Render, RenderKind } from './renderProfiler';
 
-export type ProfiledInteraction = { name: string; commits: Commit[] };
+export type ProfiledInteraction = {
+  name: string;
+  commits: Commit[];
+  swr: SwrKeyStats;
+  // Number of requests by endpoint
+  requests: { [endpoint: string]: number };
+};
 
 const avoidableKinds: RenderKind[] = ['unstable-reference', 'parent'];
-const componentsPerInteraction = 20;
 
 function isAvoidable(render: Render) {
   return avoidableKinds.includes(render.kind);
@@ -13,14 +21,6 @@ function isAvoidable(render: Render) {
 
 function sum(values: number[]) {
   return values.reduce((total, value) => total + value, 0);
-}
-
-function formatDuration(milliseconds: number) {
-  return `${milliseconds.toFixed(1)} ms`;
-}
-
-function formatShare(part: number, total: number) {
-  return total === 0 ? '0%' : `${Math.round((part / total) * 100)}%`;
 }
 
 function countBy<T>(values: T[]) {
@@ -50,7 +50,7 @@ function summarizeComponents(renders: Render[]) {
   });
 }
 
-function summarizeInteraction({ name, commits }: ProfiledInteraction) {
+function summarizeInteraction({ name, commits, swr, requests }: ProfiledInteraction) {
   const renders = commits.flatMap((commit) => commit.renders);
   const avoidable = renders.filter(isAvoidable);
   return {
@@ -60,58 +60,18 @@ function summarizeInteraction({ name, commits }: ProfiledInteraction) {
     avoidableRenders: avoidable.length,
     duration: sum(commits.map(({ duration }) => duration)),
     avoidableDuration: sum(avoidable.map(({ selfDuration }) => selfDuration)),
+    requests: sum(Object.values(requests)),
+    requestsByEndpoint: requests,
+    swrKeyLength: sum(Object.values(swr.serializedByKey)),
+    swrKeys: Object.entries(swr.serializedByKey)
+      .map(([key, length]) => ({ key, length }))
+      .sort((a, b) => b.length - a.length),
+    swrCacheEntries: swr.cacheEntries,
+    swrCacheKeyLength: swr.cacheKeyLength,
     components: summarizeComponents(renders),
   };
 }
 
 export function summarizeRenderProfile(interactions: ProfiledInteraction[]) {
   return interactions.map(summarizeInteraction);
-}
-
-export function formatRenderProfile(interactions: ProfiledInteraction[]) {
-  const summaries = summarizeRenderProfile(interactions);
-
-  return [
-    '## ⚛️ Render profile',
-    '',
-    '| Interaction | Commits | Renders | Render time | Avoidable renders | Avoidable time |',
-    '|:---|---:|---:|---:|---:|---:|',
-    ...summaries.map(
-      (summary) =>
-        `| ${summary.name} | ${summary.commits} | ${summary.renders} | ${formatDuration(summary.duration)} | ${summary.avoidableRenders} (${formatShare(summary.avoidableRenders, summary.renders)}) | ${formatDuration(summary.avoidableDuration)} (${formatShare(summary.avoidableDuration, summary.duration)}) |`,
-    ),
-    '',
-    'Renders of the bridge integration scenario in the React development build, which is slower than production: compare the durations with each other, not with Lighthouse. Each render is one of:',
-    '',
-    '- 🆕 **Mount**: the first render of the component.',
-    '- ✅ **Needed**: a prop, state or context value changed.',
-    '- 🔁 **Unstable reference**: only references changed and the values are equal, e.g. a missing `useMemo` or `useCallback`, or a store selector returning a new object.',
-    '- ⬆️ **Parent**: nothing changed and the parent rendered, `React.memo` would skip it.',
-    '',
-    'Avoidable renders are the unstable reference and parent ones, and the time is the time spent in the component itself, without its children.',
-    '',
-    ...summaries.flatMap((summary) => {
-      const components = summary.components
-        .filter(({ avoidableDuration }) => avoidableDuration > 0)
-        .sort((a, b) => b.avoidableDuration - a.avoidableDuration)
-        .slice(0, componentsPerInteraction);
-      if (components.length === 0) {
-        return [];
-      }
-      return [
-        '<details>',
-        `<summary><b>${summary.name}</b>: components with the most avoidable render time</summary>`,
-        '',
-        '| Component | Renders | 🆕 | ✅ | 🔁 | ⬆️ | Self time | Avoidable time | Main avoidable causes |',
-        '|:---|---:|---:|---:|---:|---:|---:|---:|:---|',
-        ...components.map(
-          (component) =>
-            `| \`${component.component}\` | ${component.renders} | ${component.mount} | ${component.needed} | ${component.unstableReference} | ${component.parent} | ${formatDuration(component.selfDuration)} | ${formatDuration(component.avoidableDuration)} | ${component.causes.join('<br>')} |`,
-        ),
-        '',
-        '</details>',
-        '',
-      ];
-    }),
-  ].join('\n');
 }
