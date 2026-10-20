@@ -1,0 +1,85 @@
+name: Benchmarks
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    branches: ['master']
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bench:
+    name: Run benchmarks
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install node_modules
+        uses: OffchainLabs/actions/node-modules/install@main
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      # Master is measured in the same job, on the same runner, so runner noise affects both runs
+      - name: Checkout base
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: Install base node_modules
+        working-directory: base
+        run: pnpm install --frozen-lockfile
+
+      # Runs the PR's benchmarks against master's code, including benchmarks that master doesn't have yet
+      - name: Copy benchmarks to base
+        run: |
+          find base/packages -name '*.bench.ts' -not -path '*/node_modules/*' -delete
+          find packages -name '*.bench.ts' -not -path '*/node_modules/*' -exec cp --parents {} base/ \;
+          cp packages/arb-token-bridge-ui/vitest.bench.config.ts base/packages/arb-token-bridge-ui/
+
+      # Benchmarks that fail on master, e.g. for a function added by the PR, are reported as new
+      - name: Run benchmarks on base
+        continue-on-error: true
+        working-directory: base/packages/arb-token-bridge-ui
+        run: pnpm exec vitest bench --config vitest.bench.config.ts --run --outputJson "$GITHUB_WORKSPACE/bench-results/master.json"
+
+      - name: Run benchmarks
+        working-directory: packages/arb-token-bridge-ui
+        run: pnpm exec vitest bench --config vitest.bench.config.ts --run --outputJson "$GITHUB_WORKSPACE/bench-results/pr.json"
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-results
+          path: bench-results
+          if-no-files-found: warn
+
+      - name: Report results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const report = require('./.github/bench/report.js')
+            await report({ github, context, core })

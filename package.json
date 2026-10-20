@@ -13,6 +13,7 @@
     "test:unit": "pnpm --filter arb-token-bridge-ui test:unit && pnpm --filter app test:ci",
     "test:integration": "pnpm --filter arb-token-bridge-ui test:integration",
     "test:ci": "pnpm test:unit && pnpm test:integration",
+    "bench": "pnpm --filter arb-token-bridge-ui bench",
     "prettier:check": "prettier --check .",
     "prettier:format": "prettier --write .",
     "lint": "tsc && eslint",

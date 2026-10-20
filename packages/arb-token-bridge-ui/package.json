@@ -60,6 +60,7 @@
     "test:unit:watch": "vitest --config vitest.config.ts --watch",
     "test:integration": "vitest --config vitest.integration.config.ts --run",
     "test:integration:watch": "vitest --config vitest.integration.config.ts --watch",
+    "bench": "vitest bench --config vitest.bench.config.ts --run",
     "generateDenylist": "ts-node --project ./scripts/tsconfig.json ./scripts/generateDenylist.ts",
     "generateOpenGraphImages": "ts-node --project ./scripts/tsconfig.json ./src/generateOpenGraphImages.tsx generate",
     "generateOpenGraphImages:core": "pnpm run generateOpenGraphImages --core",
