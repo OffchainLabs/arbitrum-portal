@@ -19,7 +19,6 @@ type JsonRpcRequest = { jsonrpc: '2.0'; id: number; method: string; params?: unk
 
 let pendingRequests = 0;
 let networkActivity = 0;
-let requestCount = 0;
 const unhandledRequests = new Set<string>();
 
 function getChainId(url: URL) {
@@ -84,7 +83,6 @@ function track(
   return async (info: { request: Request; params: PathParams }) => {
     pendingRequests += 1;
     networkActivity += 1;
-    requestCount += 1;
     try {
       return await resolver(info);
     } finally {
@@ -166,10 +164,6 @@ export async function waitForNetworkIdle() {
     await new Promise((resolve) => setImmediate(resolve));
     idleTurns = pendingRequests === 0 && networkActivity === activityBefore ? idleTurns + 1 : 0;
   }
-}
-
-export function getRequestCount() {
-  return requestCount;
 }
 
 export function getUnhandledRequests() {
