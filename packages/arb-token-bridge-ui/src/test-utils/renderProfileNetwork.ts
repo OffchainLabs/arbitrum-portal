@@ -19,7 +19,7 @@ type JsonRpcRequest = { jsonrpc: '2.0'; id: number; method: string; params?: unk
 
 let pendingRequests = 0;
 let networkActivity = 0;
-const requestsByEndpoint = new Map<string, number>();
+let requestCount = 0;
 const unhandledRequests = new Set<string>();
 
 function getChainId(url: URL) {
@@ -77,22 +77,6 @@ function answerJsonRpc(chainId: number, { id, method }: JsonRpcRequest) {
   return { jsonrpc: '2.0', id, result: result() };
 }
 
-// RPC requests are told apart by method, other requests by URL without the query
-async function getEndpoint(request: Request) {
-  const url = new URL(request.url);
-  const path = `${url.host}${url.pathname}`;
-  if (request.method !== 'POST') {
-    return `${request.method} ${path}`;
-  }
-  try {
-    const body = (await request.clone().json()) as JsonRpcRequest | JsonRpcRequest[];
-    const methods = [body].flat().map(({ method }) => method);
-    return `RPC ${path} ${methods.join(', ')}`;
-  } catch {
-    return `POST ${path}`;
-  }
-}
-
 // Counts the requests in flight, so the fake clock only moves once they're answered
 function track(
   resolver: (info: { request: Request; params: PathParams }) => Response | Promise<Response>,
@@ -100,9 +84,8 @@ function track(
   return async (info: { request: Request; params: PathParams }) => {
     pendingRequests += 1;
     networkActivity += 1;
+    requestCount += 1;
     try {
-      const endpoint = await getEndpoint(info.request);
-      requestsByEndpoint.set(endpoint, (requestsByEndpoint.get(endpoint) ?? 0) + 1);
       return await resolver(info);
     } finally {
       pendingRequests -= 1;
@@ -185,8 +168,8 @@ export async function waitForNetworkIdle() {
   }
 }
 
-export function getRequestsByEndpoint() {
-  return Object.fromEntries(requestsByEndpoint);
+export function getRequestCount() {
+  return requestCount;
 }
 
 export function getUnhandledRequests() {

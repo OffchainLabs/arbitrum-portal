@@ -11,7 +11,7 @@ import {
   getSearchParams,
 } from '../../test-utils/integration-test-wrapper';
 import {
-  getRequestsByEndpoint,
+  getRequestCount,
   getUnhandledRequests,
   waitForNetworkIdle,
 } from '../../test-utils/renderProfileNetwork';
@@ -120,16 +120,13 @@ describe.sequential('Bridge render profile', () => {
   it('profiles the bridge user flow', async () => {
     const profiled: ProfiledInteraction[] = [];
     for (const { name, run } of interactions) {
-      const requestsBefore = getRequestsByEndpoint();
+      const requestsBefore = getRequestCount();
       let commits: ProfiledInteraction['commits'] = [];
       // eslint-disable-next-line no-await-in-loop
       const swr = await recordSwrKeys(async () => {
         commits = await recordCommits(run);
       });
-      const requests = Object.entries(getRequestsByEndpoint())
-        .map(([endpoint, count]) => [endpoint, count - (requestsBefore[endpoint] ?? 0)] as const)
-        .filter(([, count]) => count > 0);
-      profiled.push({ name, commits, swr, requests: Object.fromEntries(requests) });
+      profiled.push({ name, commits, swr, requests: getRequestCount() - requestsBefore });
     }
 
     // The flow went through, so the profile measured what it should
