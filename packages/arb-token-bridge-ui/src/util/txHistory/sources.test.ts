@@ -66,9 +66,9 @@ describe('isChildChainIndexed', { concurrent: false }, () => {
     expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
   });
 
-  it('has no history for Nova when a set list leaves it out', async () => {
+  it('cannot remove Nova with a configured list', async () => {
     const { isChildChainIndexed } = await importSourcesWith('42161');
 
-    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(false);
+    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
   });
 });

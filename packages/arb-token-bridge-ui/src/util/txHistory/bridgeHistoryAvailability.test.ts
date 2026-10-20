@@ -47,7 +47,7 @@ describe.sequential('bridge history availability', () => {
 
     await Promise.all(
       fetchers.map(([name, fetchHistory]) =>
-        expect(fetchHistory(query(ChainId.ArbitrumNova)), name).resolves.toEqual([]),
+        expect(fetchHistory(query(ChainId.ApeChain)), name).resolves.toEqual([]),
       ),
     );
 
