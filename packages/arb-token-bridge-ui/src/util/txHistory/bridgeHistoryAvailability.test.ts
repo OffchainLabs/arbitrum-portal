@@ -47,7 +47,7 @@ describe.sequential('bridge history availability', () => {
 
     await Promise.all(
       fetchers.map(([name, fetchHistory]) =>
-        expect(fetchHistory(query(ChainId.ArbitrumOne)), name).resolves.toEqual([]),
+        expect(fetchHistory(query(ChainId.ApeChain)), name).resolves.toEqual([]),
       ),
     );
 
@@ -56,7 +56,7 @@ describe.sequential('bridge history availability', () => {
 
   it.each([
     ['a chain the indexer serves', 46630],
-    ['Nova when unlisted, through its subgraph fallback', ChainId.ArbitrumNova],
+    ['Nova when unlisted, through its required indexer default', ChainId.ArbitrumNova],
   ])('requests history for %s', async (_label, l2ChainId) => {
     const fetchMock = vi
       .fn()
