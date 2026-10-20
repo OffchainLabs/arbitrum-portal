@@ -27,3 +27,8 @@ declare module '*.json' {
 declare module 'msw/node' {
   export * from 'msw/lib/node/index';
 }
+
+// React's profiling build of react-dom/client, see vitest.profile.setup.ts
+declare module 'react-dom/profiling' {
+  export * from 'react-dom/client';
+}
