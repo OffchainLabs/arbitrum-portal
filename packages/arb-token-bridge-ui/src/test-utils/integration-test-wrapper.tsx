@@ -10,6 +10,8 @@ import {
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 
+import { TooltipProvider } from '@/app/components/common/Tooltip';
+
 import { useArbTokenBridgeBootstrap } from '../components/App/useArbTokenBridgeBootstrap';
 import { ArbTokenBridgeStoreSync } from '../components/syncers/ArbTokenBridgeStoreSync';
 import { TokenListSyncer } from '../components/syncers/TokenListSyncer';
@@ -76,14 +78,16 @@ export function createIntegrationWrapper({ search = '' }: CreateIntegrationWrapp
       <QueryParamProvider adapter={adapter} options={queryParamProviderOptions}>
         <WagmiProvider config={wagmiConfig}>
           <QueryClientProvider client={queryClient}>
-            <SWRConfig
-              value={{
-                provider: () => new Map(),
-              }}
-            >
-              <IntegrationBootstrap />
-              {children}
-            </SWRConfig>
+            <TooltipProvider>
+              <SWRConfig
+                value={{
+                  provider: () => new Map(),
+                }}
+              >
+                <IntegrationBootstrap />
+                {children}
+              </SWRConfig>
+            </TooltipProvider>
           </QueryClientProvider>
         </WagmiProvider>
       </QueryParamProvider>
