@@ -9,8 +9,7 @@ import { useAccountType } from '../../hooks/useAccountType';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
-import { AccountType } from '../../util/AccountUtils';
-import { addressIsSmartContract } from '../../util/AddressUtils';
+import { AccountType, getAccountType } from '../../util/AccountUtils';
 import { getExplorerUrl } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
@@ -25,7 +24,7 @@ enum DestinationAddressWarnings {
   CONTRACT_ADDRESS = 'The destination address is a contract address. Please make sure it is the right address.',
 }
 
-async function getDestinationAddressWarning({
+export async function getDestinationAddressWarning({
   destinationAddress,
   accountType,
   destinationChainId,
@@ -42,10 +41,10 @@ async function getDestinationAddressWarning({
     return null;
   }
 
-  const destinationIsSmartContract = await addressIsSmartContract(
-    destinationAddress,
-    destinationChainId,
-  );
+  // EIP-7702 delegated addresses have code but are still EOAs
+  const destinationIsSmartContract =
+    (await getAccountType({ address: destinationAddress, chainId: destinationChainId })) ===
+    'smart-contract-wallet';
 
   // checks if trying to send to a contract address, only checks EOA
   if (

@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server';
 import { getIndexerApiUrl } from '../../../../api-utils/ServerIndexerUtils';
 import {
   type SubgraphSource,
-  getL1SubgraphClient,
   getL2SubgraphClient,
 } from '../../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../../types/ChainId';
@@ -19,11 +18,15 @@ const NO_INDEXED_BLOCK = 0;
 // Throws rather than answering 0: for an indexed chain, 0 would send callers to a
 // full event-log scan. Each failure names its cause so a missing config entry
 // isn't mistaken for an indexer outage.
-async function fetchIndexerBlockNumber(chainId: number): Promise<number> {
-  const indexerUrl = getIndexerApiUrl(chainId);
+async function fetchIndexerBlockNumber(
+  chainId: number,
+  configuredChildChainId = chainId,
+): Promise<number> {
+  const indexerUrl = getIndexerApiUrl(configuredChildChainId);
   if (!indexerUrl) {
-    logger.error(`[block-number] no "INDEXER_API_URL_BY_CHAIN" entry for chain ${chainId}`);
-    throw new Error(`No indexer configured for chain ${chainId}`);
+    throw new Error(
+      `No indexer configured for chain ${chainId} via child chain ${configuredChildChainId}`,
+    );
   }
 
   const response = await fetch(`${indexerUrl}/status`, {
@@ -49,13 +52,6 @@ async function fetchIndexerBlockNumber(chainId: number): Promise<number> {
 
 function getSubgraphClient(chainId: number) {
   switch (chainId) {
-    case ChainId.Ethereum:
-      // it's the same whether we do arb1 or nova
-      return getL1SubgraphClient(ChainId.ArbitrumOne);
-
-    case ChainId.Sepolia:
-      return getL1SubgraphClient(ChainId.ArbitrumSepolia);
-
     case ChainId.ArbitrumOne:
       return getL2SubgraphClient(ChainId.ArbitrumOne);
 
@@ -70,6 +66,12 @@ function getSubgraphClient(chainId: number) {
   }
 }
 
+function getIndexerConfigChainId(chainId: number): number | undefined {
+  if (chainId === ChainId.Ethereum) return ChainId.ArbitrumOne;
+  if (chainId === ChainId.Sepolia) return ChainId.ArbitrumSepolia;
+  return isChildChainIndexed(chainId) ? chainId : undefined;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ chainId: string }> },
@@ -80,8 +82,12 @@ export async function GET(
   const numericChainId = Number(chainId);
 
   try {
-    if (isChildChainIndexed(numericChainId)) {
-      const indexerBlockNumber = await fetchIndexerBlockNumber(numericChainId);
+    const indexerConfigChainId = getIndexerConfigChainId(numericChainId);
+    if (typeof indexerConfigChainId !== 'undefined') {
+      const indexerBlockNumber = await fetchIndexerBlockNumber(
+        numericChainId,
+        indexerConfigChainId,
+      );
 
       return NextResponse.json(
         {
@@ -126,9 +132,10 @@ export async function GET(
       { status: 200 },
     );
   } catch (error) {
-    return NextResponse.json(
-      { message: (error as Error)?.message ?? 'Something went wrong' },
-      { status: 502 },
-    );
+    logger.error('[block-number] failed to fetch latest indexed block', {
+      chainId: numericChainId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return NextResponse.json({ message: 'Unable to fetch latest indexed block' }, { status: 502 });
   }
 }
