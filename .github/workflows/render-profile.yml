@@ -65,7 +65,8 @@ jobs:
             packages/arb-token-bridge-ui/src/test-utils/renderProfiler.ts \
             base/
 
-      # Fails until master has everything the profile needs, then the report has nothing to compare
+      # Fails if master lacks something the profile needs, then the report has nothing to compare.
+      # Dependencies master doesn't have, like msw, resolve from the PR's node_modules.
       - name: Profile base
         continue-on-error: true
         working-directory: base/packages/arb-token-bridge-ui
