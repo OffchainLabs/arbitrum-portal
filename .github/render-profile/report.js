@@ -5,6 +5,7 @@
 // Each directory holds one subdirectory per run with a render-profile.json. Counts come from the
 // run of the development build, times from the runs of the profiling build. Profiling runs with
 // the same subdirectory name on both sides are compared with each other.
+// The check fails when an interaction renders more than on master. Times only show the impact.
 const fs = require('fs');
 const path = require('path');
 
@@ -12,6 +13,7 @@ const marker = '<!-- render-profile-report -->';
 const resultsDirectory = 'render-profile/pr';
 const baselineDirectory = 'render-profile/master';
 const componentsPerInteraction = 5;
+const maxComponentsWithNewRenders = 10;
 // A time change counts when its whole 99% confidence interval is past 5%
 const minTimeChange = 0.05;
 // Two-sided 99% quantiles of Student's t distribution, by degrees of freedom
@@ -232,16 +234,23 @@ function compareRow({ id, pr, base, name }) {
   return compareTime({ ratios: getRoundRatios({ pr, base, read }) });
 }
 
-function formatDelta({ id, difference, interval, base }) {
+function formatDelta({ id, difference, interval, base, pr }) {
   if (interval) {
-    return `${formatPercent(interval.mean)}<br><sub>99% CI ${formatPercent(interval.low)} to ${formatPercent(interval.high)}</sub>`;
+    // The time in ms tells the impact, the confidence interval whether it's more than noise
+    const percent = formatPercent(interval.mean);
+    const change =
+      id === 'duration'
+        ? `${pr > base ? '+' : '−'}${formatTime(Math.abs(pr - base))} (${percent})`
+        : percent;
+    return `${change}<br><sub>99% CI ${formatPercent(interval.low)} to ${formatPercent(interval.high)}</sub>`;
   }
   const { format } = metrics[id];
   const delta = `${difference > 0 ? '+' : '−'}${format(Math.abs(difference))}`;
   return base === 0 ? delta : `${delta} (${formatPercent(difference / base)})`;
 }
 
-// The components whose render time changed the most, to tell where a change comes from
+// The components whose renders changed, then those whose render time changed the most, to tell
+// where a change comes from and what it costs
 function formatComponents({ pr, base }) {
   const baseComponents = new Map(base.components.map((c) => [c.component, c]));
   const prComponents = new Map(pr.components.map((c) => [c.component, c]));
@@ -253,27 +262,45 @@ function formatComponents({ pr, base }) {
       pr: prComponents.get(component) ?? empty,
     }))
     .map((row) => ({ ...row, difference: row.pr.selfDuration - row.base.selfDuration }))
-    .sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference))
-    .slice(0, componentsPerInteraction);
+    .sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference));
+  const withNewRenders = components.filter(({ base: b, pr: p }) => b.renders !== p.renders);
+  const shown =
+    withNewRenders.length > 0
+      ? withNewRenders.slice(0, maxComponentsWithNewRenders)
+      : components.slice(0, componentsPerInteraction);
+  const hidden = withNewRenders.length - shown.length;
   return [
     '',
-    'Components whose render time changed the most, without their children:',
+    withNewRenders.length > 0
+      ? 'Components whose renders changed, by change of render time without their children:'
+      : 'Components whose render time changed the most, without their children:',
     '',
     '| Component | Renders | Master | PR | Δ |',
     '|:---|---:|---:|---:|---:|',
-    ...components.map(
+    ...shown.map(
       ({ component, base: b, pr: p, difference }) =>
         `| \`${component}\` | ${b.renders === p.renders ? formatCount(p.renders) : `${formatCount(b.renders)} → ${formatCount(p.renders)}`} | ${formatTime(b.selfDuration)} | ${formatTime(p.selfDuration)} | ${difference > 0 ? '+' : '−'}${formatTime(Math.abs(difference))} |`,
     ),
+    ...(hidden > 0 ? ['', `${hidden} more components changed renders.`] : []),
   ];
 }
 
 // One collapsible section per status, with a nested one for each interaction that changed
+// A change of renders comes with the render time of the interaction, to show its impact
 function formatChanges({ sections, status, title }) {
   const groups = sections
     .map((section) => ({ ...section, rows: section.rows.filter((row) => row.status === status) }))
     .filter(({ rows }) => rows.length > 0);
   const count = groups.reduce((total, { rows }) => total + rows.length, 0);
+  const withRenderTime = (group) => {
+    const ids = group.rows.map(({ id }) => id);
+    const duration = sections
+      .find(({ name }) => name === group.name)
+      .rows.find(({ id }) => id === 'duration');
+    return ids.includes('renders') && !ids.includes('duration') && duration
+      ? [...group.rows, duration]
+      : group.rows;
+  };
   if (count === 0) {
     return [];
   }
@@ -282,21 +309,24 @@ function formatChanges({ sections, status, title }) {
     '<details>',
     `<summary><b>${icons[status]} ${title} (${count})</b></summary>`,
     '',
-    ...groups.flatMap(({ name, rows, pr, base }) => [
+    ...groups.flatMap((group) => [
       '<details>',
-      `<summary>${name} — ${rows.map(({ id }) => metrics[id].label).join(', ')}</summary>`,
+      `<summary>${group.name} — ${group.rows.map(({ id }) => metrics[id].label).join(', ')}</summary>`,
       '',
       '| Metric | Master | PR | Δ |',
       '|:---|---:|---:|---:|',
-      ...rows.map(({ id, ...row }) => {
+      ...withRenderTime(group).map(({ id, ...row }) => {
         const { label, format, description } = metrics[id];
         const note = description ? `<br><sub>${description}</sub>` : '';
+        const delta = formatDelta({ id, ...row });
         return status === 'new'
           ? `| ${label}${note} | — | ${format(row.pr)} | — |`
-          : `| ${label}${note} | ${format(row.base)} | ${format(row.pr)} | **${formatDelta({ id, ...row })}** |`;
+          : `| ${label}${note} | ${format(row.base)} | ${format(row.pr)} | ${row.status === status ? `**${delta}**` : delta} |`;
       }),
-      ...(pr && base && rows.some(({ id }) => id === 'duration' || id === 'renders')
-        ? formatComponents({ pr, base })
+      ...(group.pr &&
+      group.base &&
+      group.rows.some(({ id }) => id === 'duration' || id === 'renders')
+        ? formatComponents({ pr: group.pr, base: group.base })
         : []),
       '',
       '</details>',
@@ -324,6 +354,15 @@ function formatWarnings({ pr, base }) {
         ]
       : []),
   ].flatMap((warning) => [warning, '']);
+}
+
+// Interactions that render more than on master, which fails the check
+function getMoreRenders(sections) {
+  return sections.flatMap(({ name, rows }) =>
+    rows
+      .filter(({ id, status }) => id === 'renders' && status === 'worse')
+      .map(({ difference }) => ({ name, difference })),
+  );
 }
 
 function formatReport({ pr, base, baseSha, runUrl }) {
@@ -364,13 +403,14 @@ function formatReport({ pr, base, baseSha, runUrl }) {
 
   const rows = sections.flatMap((section) => section.rows);
   const count = (status) => rows.filter((row) => row.status === status).length;
+  const moreRenders = getMoreRenders(sections);
   const changes = [
     ...formatChanges({ sections, status: 'worse', title: 'Regressions' }),
     ...formatChanges({ sections, status: 'better', title: 'Improvements' }),
     ...formatChanges({ sections, status: 'new', title: 'Not measured on master' }),
   ];
 
-  return [
+  const body = [
     marker,
     '## ⚛️ Render profile',
     '',
@@ -378,7 +418,11 @@ function formatReport({ pr, base, baseSha, runUrl }) {
     '|:---:|:---:|:---:|',
     `| ${count('worse')} | ${count('better')} | ${count('same')} |`,
     '',
-    `React renders of the bridge flow in Vitest, on master at \`${baseSha.slice(0, 7)}\` and on this PR. API responses are generated and timers follow a fake clock, so counts are the same on every run. Render times come from React's profiling build, in ${pr.runs} rounds that run master and this PR in random order. A time change counts when its 99% confidence interval is entirely past ${minTimeChange * 100}%.`,
+    moreRenders.length > 0
+      ? `❌ More renders in ${moreRenders.map(({ name, difference }) => `${name} (+${formatCount(difference)})`).join(', ')}. The check fails when an interaction renders more than on master.`
+      : '✅ No interaction renders more than on master.',
+    '',
+    `React renders of the bridge flow in Vitest, on master at \`${baseSha.slice(0, 7)}\` and on this PR. API responses are generated and timers follow a fake clock, so counts are the same on every run. Render times come from React's profiling build, in ${pr.runs} rounds that run master and this PR in random order. A time change counts when its 99% confidence interval is entirely past ${minTimeChange * 100}%. Times show the impact of a change and never fail the check.`,
     '',
     ...formatWarnings({ pr, base }),
     ...(changes.length > 0 ? ['---', '', ...changes] : []),
@@ -386,6 +430,11 @@ function formatReport({ pr, base, baseSha, runUrl }) {
     '',
     `📄 Full profiles are attached to the [workflow run](${runUrl}).`,
   ].join('\n');
+  return { body, moreRenders };
+}
+
+function formatFailure(moreRenders) {
+  return `More renders than on master in ${moreRenders.map(({ name, difference }) => `${name} (+${formatCount(difference)})`).join(', ')}.`;
 }
 
 module.exports = async ({ github, context, core }) => {
@@ -397,7 +446,7 @@ module.exports = async ({ github, context, core }) => {
   });
 
   const pullRequest = context.payload.pull_request;
-  const body = formatReport({
+  const { body, moreRenders } = formatReport({
     pr,
     base,
     baseSha: pullRequest.base.sha,
@@ -405,6 +454,9 @@ module.exports = async ({ github, context, core }) => {
   });
 
   await core.summary.addRaw(body).write();
+  if (moreRenders.length > 0) {
+    core.setFailed(formatFailure(moreRenders));
+  }
 
   // The token is read-only on forks, so only comment on PRs from this repository
   if (pullRequest.head.repo.full_name !== `${owner}/${repo}`) {
@@ -431,5 +483,15 @@ module.exports = async ({ github, context, core }) => {
 if (require.main === module) {
   const [prDirectory = 'render-profile/pr', baseDirectory] = process.argv.slice(2);
   const { pr, base } = readProfiles({ prDirectory, baseDirectory });
-  console.log(formatReport({ pr, base, baseSha: 'master', runUrl: 'https://github.com' }));
+  const { body, moreRenders } = formatReport({
+    pr,
+    base,
+    baseSha: 'master',
+    runUrl: 'https://github.com',
+  });
+  console.log(body);
+  if (moreRenders.length > 0) {
+    console.error(formatFailure(moreRenders));
+    process.exitCode = 1;
+  }
 }
