@@ -1,11 +1,13 @@
-// Compares the Lighthouse user flow runs of the PR against the runs on master and posts the
-// result as a PR comment. Each value is the median of all runs.
+// Compares the Lighthouse user flow runs of the PR against the runs of master and posts the result
+// as a PR comment. Each runner measures both, so a run of the PR is compared with the run of master
+// on the same runner. Values are medians of all runs, changes are medians of the differences
+// between the PR and master on each runner.
 const fs = require('fs');
 const path = require('path');
 
 const marker = '<!-- lighthouse-report -->';
-const resultsDirectory = 'lighthouse-reports';
-const baselineDirectory = 'lighthouse-baseline';
+const resultsDirectory = 'lighthouse-reports/pr';
+const baselineDirectory = 'lighthouse-reports/master';
 
 // Changes smaller than max(minDelta, minRatio × base) are within run-to-run noise.
 // Noisier metrics need larger changes, see compare().
@@ -131,8 +133,7 @@ function readMetric(lhr, id) {
   return lhr.audits[id]?.numericValue ?? 0;
 }
 
-// Uncompressed size of the scripts the bridge loaded, by module, written by flow.mjs. Runs on master
-// from before it measured them have none.
+// Uncompressed size of the scripts the bridge loaded, by module, written by flow.mjs
 function readModules(directory) {
   const file = path.join(directory, 'modules.json');
   return fs.existsSync(file)
@@ -147,32 +148,37 @@ function readFlows(directory) {
   return fs
     .readdirSync(directory)
     .filter((file) => file.startsWith('run-') && file.endsWith('.json'))
-    .map((file) => JSON.parse(fs.readFileSync(path.join(directory, file), 'utf8')));
+    .map((file) => ({
+      run: file,
+      flow: JSON.parse(fs.readFileSync(path.join(directory, file), 'utf8')),
+    }));
 }
 
+// Median of each metric, and its value in each run
 function summarize(flows) {
-  return steps.map((step, index) => {
-    const lhrs = flows.map((flow) => flow.steps[index].lhr);
-    return Object.fromEntries(
+  return steps.map((step, index) =>
+    Object.fromEntries(
       step.metrics.map((id) => {
-        const values = lhrs.map((lhr) => readMetric(lhr, id));
-        const value = Number(median(values).toFixed(metrics[id].decimals ?? 0));
-        return [id, { value, spread: deviation(values) }];
+        const values = new Map(
+          flows.map(({ run, flow }) => [run, readMetric(flow.steps[index].lhr, id)]),
+        );
+        const value = Number(median([...values.values()]).toFixed(metrics[id].decimals ?? 0));
+        return [id, { value, values }];
       }),
-    );
-  });
+    ),
+  );
 }
 
 function compare(pr, base, id) {
   const { higherIsBetter = false, minDelta, minRatio = 0, decimals = 0 } = metrics[id];
-  const difference = Number((pr.value - base.value).toFixed(decimals));
-  // Some runs on a shared runner are much slower than others, so changes also need to exceed
-  // three times the spread of the runs to count
-  const threshold = Math.max(
-    minDelta,
-    minRatio * Math.abs(base.value),
-    3 * Math.max(pr.spread, base.spread),
-  );
+  // Runners differ in speed by up to 2 times, so each run of the PR is compared with the run of
+  // master on the same runner
+  const differences = [...pr.values.keys()]
+    .filter((run) => base.values.has(run))
+    .map((run) => pr.values.get(run) - base.values.get(run));
+  const difference = Number(median(differences).toFixed(decimals));
+  // Changes also need to exceed three times the spread of the differences to count
+  const threshold = Math.max(minDelta, minRatio * Math.abs(base.value), 3 * deviation(differences));
   if (Math.abs(difference) < threshold) {
     return { difference, status: 'same' };
   }
@@ -276,7 +282,7 @@ function formatModules({ pr, base }) {
   ];
 }
 
-function formatReport({ pr, base, modules, runs, baseline, runUrl }) {
+function formatReport({ pr, base, modules, runs, baseSha, runUrl }) {
   const sections = steps.map((step, index) => ({
     step,
     rows: step.metrics.map((id) => {
@@ -307,7 +313,7 @@ function formatReport({ pr, base, modules, runs, baseline, runUrl }) {
     '|:---:|:---:|:---:|',
     `| ${count('worse')} | ${count('better')} | ${count('same')} |`,
     '',
-    `Median of ${runs} desktop runs of the bridge user flow, each on its own runner, compared with the [master runs](${baseline.url}) at \`${baseline.sha.slice(0, 7)}\`.`,
+    `Median of ${runs} desktop runs of the bridge user flow, compared with master at \`${baseSha.slice(0, 7)}\` on the same runners.`,
     '',
     ...(changes.length > 0 ? ['---', '', ...changes] : []),
     '---',
@@ -318,13 +324,11 @@ function formatReport({ pr, base, modules, runs, baseline, runUrl }) {
 
 module.exports = async ({ github, context, core }) => {
   const { owner, repo } = context.repo;
-  const runUrl = (runId) => `${context.serverUrl}/${owner}/${repo}/actions/runs/${runId}`;
   const flows = { pr: readFlows(resultsDirectory), base: readFlows(baselineDirectory) };
 
   if (flows.pr.length === 0) {
     throw new Error('Missing Lighthouse results for the PR.');
   }
-  // The baseline comes from the latest Lighthouse run on master, or is measured in this run
   if (flows.base.length === 0) {
     throw new Error('Missing Lighthouse results for master.');
   }
@@ -335,8 +339,8 @@ module.exports = async ({ github, context, core }) => {
     base: summarize(flows.base),
     modules: { pr: readModules(resultsDirectory), base: readModules(baselineDirectory) },
     runs: flows.pr.length,
-    baseline: { sha: process.env.BASELINE_SHA, url: runUrl(process.env.BASELINE_RUN_ID) },
-    runUrl: runUrl(context.runId),
+    baseSha: pullRequest.base.sha,
+    runUrl: `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
   });
 
   await core.summary.addRaw(body).write();
