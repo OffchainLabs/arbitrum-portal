@@ -1,3 +1,5 @@
+browser-bench-results
+.bench-*-port
 node_modules
 yarn-error.log
 .idea
