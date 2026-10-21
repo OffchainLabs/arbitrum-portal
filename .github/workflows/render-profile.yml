@@ -103,6 +103,7 @@ jobs:
           path: render-profile
           if-no-files-found: warn
 
+      # Fails when an interaction renders more than on master
       - name: Report results
         uses: actions/github-script@v7
         with:
