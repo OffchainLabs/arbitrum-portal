@@ -1,11 +1,12 @@
-// Runs the Lighthouse bridge user flow against the app at APP_URL, on desktop and mobile.
+// Runs the Lighthouse bridge user flow once against the app at APP_URL, on desktop. The workflow
+// runs it on several runners at once, numbered by RUN.
 import { mkdir, writeFile } from 'fs/promises';
 import { desktopConfig, startFlow } from 'lighthouse';
 import puppeteer from 'puppeteer-core';
 
 import { measureModules } from './modules.mjs';
 
-const runs = 5;
+const run = process.env.RUN ?? '1';
 const outputDirectory = process.env.OUTPUT_DIRECTORY ?? 'lighthouse-reports';
 const bridgePath =
   '/bridge?sourceChain=ethereum&destinationChain=arbitrum-one&tab=bridge&txHistory=0';
@@ -59,10 +60,7 @@ const interactions = [
   },
 ];
 
-// Lighthouse emulates the screen and throttles the network and CPU of each form factor
-const formFactors = { desktop: desktopConfig, mobile: undefined };
-
-async function runFlow(origin, config) {
+async function runFlow(origin) {
   const browser = await puppeteer.launch({
     executablePath: process.env.CHROME_PATH,
     headless: true,
@@ -73,7 +71,7 @@ async function runFlow(origin, config) {
     const page = await browser.newPage();
     page.setDefaultTimeout(60_000);
 
-    const flow = await startFlow(page, { name: 'Bridge user flow', config });
+    const flow = await startFlow(page, { name: 'Bridge user flow', config: desktopConfig });
     await flow.navigate(new URL(bridgePath, origin).href, { name: 'Load bridge' });
     for (const interaction of interactions) {
       await flow.startTimespan({ name: interaction.name });
@@ -95,16 +93,11 @@ async function runFlow(origin, config) {
 
 await mkdir(outputDirectory, { recursive: true });
 
-for (let run = 1; run <= runs; run += 1) {
-  for (const [formFactor, config] of Object.entries(formFactors)) {
-    console.log(`Run ${run}/${runs}: ${formFactor}`);
-    const { result, html, modules } = await runFlow(process.env.APP_URL, config);
-    const file = `${outputDirectory}/${formFactor}-${run}`;
-    await writeFile(`${file}.json`, JSON.stringify(result));
-    await writeFile(`${file}.html`, html);
-    // Every run loads the same scripts, so the first one is enough
-    if (run === 1 && formFactor === 'desktop') {
-      await writeFile(`${outputDirectory}/modules.json`, JSON.stringify(modules));
-    }
-  }
+const { result, html, modules } = await runFlow(process.env.APP_URL);
+const file = `${outputDirectory}/run-${run}`;
+await writeFile(`${file}.json`, JSON.stringify(result));
+await writeFile(`${file}.html`, html);
+// Every run loads the same scripts, so the first one is enough
+if (run === '1') {
+  await writeFile(`${outputDirectory}/modules.json`, JSON.stringify(modules));
 }
