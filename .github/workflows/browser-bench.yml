@@ -59,9 +59,8 @@ jobs:
       BENCH_FIRST_ROUND: ${{ matrix.first-round }}
       BENCH_SAMPLES: 5
       BENCH_TRACE: ${{ matrix.trace }}
-      # Master has no <Profiler> wrappers until this workflow is merged, so only the PR must
-      # collect profiler samples
-      BENCH_REQUIRE_PROFILER: pr
+      # Both have the <Profiler> wrappers, so both profiling builds must collect samples
+      BENCH_REQUIRE_PROFILER: pr,master
       BENCH_OUTPUT: ${{ github.workspace }}/browser-bench-results
       # The PR's checkout is GitHub's merge of the PR into master, github.sha
       BENCH_REVISIONS: pr=${{ github.sha }},master=${{ github.event.pull_request.base.sha }}
