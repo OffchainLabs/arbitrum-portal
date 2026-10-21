@@ -61,6 +61,7 @@
     "test:integration": "vitest --config vitest.integration.config.ts --run",
     "test:integration:watch": "vitest --config vitest.integration.config.ts --watch",
     "test:profile": "vitest --config vitest.profile.config.ts --run",
+    "bench:browser": "vitest --config vitest.browser-bench.config.ts --run",
     "generateDenylist": "ts-node --project ./scripts/tsconfig.json ./scripts/generateDenylist.ts",
     "generateOpenGraphImages": "ts-node --project ./scripts/tsconfig.json ./src/generateOpenGraphImages.tsx generate",
     "generateOpenGraphImages:core": "pnpm run generateOpenGraphImages --core",

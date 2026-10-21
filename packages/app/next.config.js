@@ -7,6 +7,12 @@ const path = require('path');
  **/
 module.exports = {
   distDir: 'build',
+  env: {
+    // Turns on the <Profiler> wrappers of the browser benchmark's profiling build, see
+    // packages/arb-token-bridge-ui/src/components/common/benchProfiler.tsx. Always defined, so the
+    // normal build drops them.
+    BENCH_PROFILER: process.env.BENCH_PROFILER === 'true' ? 'true' : 'false',
+  },
   productionBrowserSourceMaps: true,
   reactStrictMode: true,
   experimental: {

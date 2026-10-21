@@ -1,0 +1,170 @@
+name: Browser Benchmark
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    branches: ['master']
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    # The app and the benchmark live in packages
+    paths:
+      - 'packages/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Built into the app: the RPC URLs point to an origin the benchmark answers with generated data,
+  # like the render profile does
+  NEXT_PUBLIC_INFURA_KEY: profile
+  NEXT_PUBLIC_RPC_PROVIDER: infura
+  NEXT_PUBLIC_RPC_URL_ETHEREUM: https://rpc.profile.test/1
+  NEXT_PUBLIC_RPC_URL_SEPOLIA: https://rpc.profile.test/11155111
+  NEXT_PUBLIC_RPC_URL_ARBITRUM_ONE: https://rpc.profile.test/42161
+  NEXT_PUBLIC_RPC_URL_ARBITRUM_NOVA: https://rpc.profile.test/42170
+  NEXT_PUBLIC_RPC_URL_BASE: https://rpc.profile.test/8453
+  NEXT_PUBLIC_RPC_URL_ARBITRUM_SEPOLIA: https://rpc.profile.test/421614
+  NEXT_PUBLIC_RPC_URL_BASE_SEPOLIA: https://rpc.profile.test/84532
+  # Read while collecting page data, never called during the benchmark
+  VAULTS_FYI_API_KEY: unused
+
+jobs:
+  # Measures the interactions of packages/arb-token-bridge-ui/tests/browser-bench on master and on
+  # the PR, see its README.md. Each runner builds both and measures them alternately, so they're
+  # compared on the same machine. Three runners share the work: the production rounds 1 to 5 and
+  # 6 to 10, and the profiling build. Slower timings are warnings. Broken scenarios, missing
+  # measurements, invalid builds and collection errors fail the job.
+  browser-bench:
+    name: Benchmark ${{ matrix.build }} build (${{ matrix.shard }})
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-4
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { build: production, shard: 1, first-round: 1, trace: true }
+          - { build: production, shard: 2, first-round: 6, trace: false }
+          - { build: profiling, shard: 1, first-round: 1, trace: false }
+    env:
+      BENCH_BUILD: ${{ matrix.build }}
+      BENCH_SHARD: ${{ matrix.shard }}
+      BENCH_FIRST_ROUND: ${{ matrix.first-round }}
+      BENCH_SAMPLES: 5
+      BENCH_TRACE: ${{ matrix.trace }}
+      # Master has no <Profiler> wrappers until this workflow is merged, so only the PR must
+      # collect profiler samples
+      BENCH_REQUIRE_PROFILER: pr
+      BENCH_OUTPUT: ${{ github.workspace }}/browser-bench-results
+      BENCH_REVISIONS: pr=${{ github.event.pull_request.head.sha }},master=${{ github.event.pull_request.base.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install node_modules
+        uses: OffchainLabs/actions/node-modules/install@main
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      # Master is built in its own directory and measured with the PR's scenarios
+      - name: Checkout base
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: Install base node_modules
+        working-directory: base
+        run: pnpm install --frozen-lockfile
+
+      # The Chrome for Testing version pinned in package.json
+      - name: Install Chrome
+        run: |
+          pnpm --filter arb-token-bridge-ui exec playwright install-deps chromium
+          pnpm run install:chromium
+
+      # The profiling build is React's profiling build, with the <Profiler> wrappers of
+      # benchProfiler.tsx
+      - name: Build master and the PR
+        run: |
+          args=()
+          if [ "$BENCH_BUILD" = profiling ]; then
+            export BENCH_PROFILER=true
+            args=(--profile)
+          fi
+          pnpm --filter app run build "${args[@]}"
+          (cd base && pnpm --filter app run build "${args[@]}")
+
+      - name: Check the builds
+        run: |
+          if [ "$BENCH_BUILD" = production ]; then
+            if grep -rl --include='*.js' __BENCH_PROFILER__ packages/app/build/static base/packages/app/build/static; then
+              echo "A production build contains the <Profiler> wrappers of the benchmark" >&2
+              exit 1
+            fi
+          else
+            grep -rlq --include='*.js' __BENCH_PROFILER__ packages/app/build/static
+          fi
+
+      - name: Benchmark
+        run: |
+          .github/browser-bench/serve.sh start
+          BENCH_TARGETS="pr=http://localhost:$(cat .bench-pr-port),master=http://localhost:$(cat .bench-master-port)" \
+            pnpm --filter arb-token-bridge-ui bench:browser
+          .github/browser-bench/serve.sh stop
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-bench-${{ matrix.build }}-${{ matrix.shard }}
+          path: browser-bench-results
+          if-no-files-found: warn
+
+  report:
+    name: Report results
+    needs: browser-bench
+    if: always() && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: browser-bench-*
+          path: browser-bench-results
+          merge-multiple: true
+
+      - name: Report results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const report = require('./.github/browser-bench/report.js')
+            await report({ github, context, core })
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-bench-report
+          path: browser-bench-results/report.md
+          if-no-files-found: warn
