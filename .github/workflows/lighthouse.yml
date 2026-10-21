@@ -32,10 +32,48 @@ env:
   APP_URL: http://localhost:3000
 
 jobs:
-  lighthouse:
-    name: Run Lighthouse
+  # Pull requests compare with the latest run on master. Before this workflow has run on master, the
+  # PR's base is measured in the same run.
+  baseline:
+    name: Find the master baseline
     if: github.event_name == 'push' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    outputs:
+      run-id: ${{ steps.find.outputs.run-id }}
+      sha: ${{ steps.find.outputs.sha }}
+      sides: ${{ steps.find.outputs.sides }}
+    steps:
+      - name: Find the latest run on master
+        id: find
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          baseline=''
+          if [ "${{ github.event_name }}" = pull_request ]; then
+            baseline=$(gh run list -R "$GITHUB_REPOSITORY" --workflow lighthouse.yml --branch master --event push --status success --limit 1 --json databaseId,headSha --jq '.[0] // empty')
+          fi
+          if [ -n "$baseline" ]; then
+            echo "run-id=$(jq -r .databaseId <<< "$baseline")" >> "$GITHUB_OUTPUT"
+            echo "sha=$(jq -r .headSha <<< "$baseline")" >> "$GITHUB_OUTPUT"
+            echo 'sides=["head"]' >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = pull_request ]; then
+            echo "run-id=${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+            echo "sha=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_OUTPUT"
+            echo 'sides=["head", "base"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'sides=["head"]' >> "$GITHUB_OUTPUT"
+          fi
+
+  # Each run has its own runner, so runs don't compete for the CPU. The build is the same on every
+  # runner.
+  lighthouse:
+    name: Run Lighthouse (${{ matrix.side }} ${{ matrix.run }})
+    needs: baseline
     runs-on: ubuntu-4
+    strategy:
+      matrix:
+        side: ${{ fromJSON(needs.baseline.outputs.sides) }}
+        run: [1, 2, 3, 4, 5]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -55,8 +93,21 @@ jobs:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
+      # The base is built in its own directory, and measured with the PR's flow
+      - name: Checkout base
+        if: matrix.side == 'base'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
       - name: Build
-        run: pnpm build
+        run: |
+          directory=.
+          if [ "${{ matrix.side }}" = base ]; then directory=base; fi
+          cd "$directory"
+          if [ "$directory" = base ]; then pnpm install --frozen-lockfile; fi
+          pnpm build
 
       # Use the pinned Chrome for Testing, so results don't shift with runner image updates
       - name: Locate Chrome for Testing
@@ -66,78 +117,63 @@ jobs:
 
       - name: Start server
         run: |
-          pnpm start &
+          directory=.
+          if [ "${{ matrix.side }}" = base ]; then directory=base; fi
+          (cd "$directory" && pnpm start &)
           # Wait for the server, then warm it up so no measured run hits a cold server
           curl --silent --fail --output /dev/null --retry 30 --retry-connrefused --retry-delay 2 "$APP_URL/bridge"
           curl --silent --fail --output /dev/null "$APP_URL/bridge"
 
       - name: Run Lighthouse
         run: node .github/lighthouse/flow.mjs
+        env:
+          RUN: ${{ matrix.run }}
 
       - name: Upload Lighthouse reports
-        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: lighthouse-reports
+          name: lighthouse-${{ matrix.side }}-${{ matrix.run }}
           path: lighthouse-reports
-          if-no-files-found: warn
+          if-no-files-found: error
+
+  report:
+    name: Report results
+    needs: [baseline, lighthouse]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download Lighthouse reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: lighthouse-head-*
+          path: lighthouse-reports
+          merge-multiple: true
+
+      - name: Download the base reports of this run
+        if: contains(needs.baseline.outputs.sides, 'base')
+        uses: actions/download-artifact@v4
+        with:
+          pattern: lighthouse-base-*
+          path: lighthouse-baseline
+          merge-multiple: true
 
       - name: Download master baseline
-        if: github.event_name == 'pull_request'
+        if: ${{ !contains(needs.baseline.outputs.sides, 'base') }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          baseline=$(gh run list --workflow lighthouse.yml --branch master --event push --status success --limit 1 --json databaseId,headSha --jq '.[0] // empty')
-          if [ -n "$baseline" ]; then
-            run_id=$(jq -r .databaseId <<< "$baseline")
-            gh run download "$run_id" --name lighthouse-reports --dir lighthouse-baseline
-            echo "BASELINE_RUN_ID=$run_id" >> "$GITHUB_ENV"
-            echo "BASELINE_SHA=$(jq -r .headSha <<< "$baseline")" >> "$GITHUB_ENV"
-          else
-            # No run on master yet, e.g. before this workflow is merged, so measure the base here
-            echo "MEASURE_BASELINE=true" >> "$GITHUB_ENV"
-            echo "BASELINE_RUN_ID=${{ github.run_id }}" >> "$GITHUB_ENV"
-            echo "BASELINE_SHA=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_ENV"
-          fi
-
-      - name: Checkout base
-        if: env.MEASURE_BASELINE == 'true'
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.pull_request.base.sha }}
-          path: base
-
-      - name: Build base
-        if: env.MEASURE_BASELINE == 'true'
-        working-directory: base
-        run: pnpm install --frozen-lockfile && pnpm build
-
-      - name: Start base server
-        if: env.MEASURE_BASELINE == 'true'
-        working-directory: base
-        run: |
-          PORT=3001 pnpm start &
-          curl --silent --fail --output /dev/null --retry 30 --retry-connrefused --retry-delay 2 "http://localhost:3001/bridge"
-          curl --silent --fail --output /dev/null "http://localhost:3001/bridge"
-
-      - name: Run Lighthouse on base
-        if: env.MEASURE_BASELINE == 'true'
-        run: node .github/lighthouse/flow.mjs
-        env:
-          APP_URL: http://localhost:3001
-          OUTPUT_DIRECTORY: lighthouse-baseline
-
-      - name: Upload base Lighthouse reports
-        if: always() && env.MEASURE_BASELINE == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: lighthouse-baseline
-          path: lighthouse-baseline
-          if-no-files-found: warn
+          gh run download "${{ needs.baseline.outputs.run-id }}" -R "$GITHUB_REPOSITORY" --pattern 'lighthouse-head-*' --dir lighthouse-artifacts
+          mkdir lighthouse-baseline
+          cp lighthouse-artifacts/*/* lighthouse-baseline/
 
       - name: Report results
-        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
+        env:
+          BASELINE_RUN_ID: ${{ needs.baseline.outputs.run-id }}
+          BASELINE_SHA: ${{ needs.baseline.outputs.sha }}
         with:
           script: |
             const report = require('./.github/lighthouse/report.js')
