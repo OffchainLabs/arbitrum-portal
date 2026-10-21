@@ -158,7 +158,6 @@ function summarize(runs) {
   const time = (run, value) => value / run.speed;
   return {
     ...countsRun,
-    runs: samples.length,
     // The builds differ a little, e.g. in the names of the hooks, so runs are compared by build
     isRepeatable: runs.every(
       (run) => withoutTimes(run) === withoutTimes(runs.find(({ build }) => build === run.build)),
@@ -422,7 +421,7 @@ function formatReport({ pr, base, baseSha, runUrl }) {
       ? `❌ More renders in ${moreRenders.map(({ name, difference }) => `${name} (+${formatCount(difference)})`).join(', ')}. The check fails when an interaction renders more than on master.`
       : '✅ No interaction renders more than on master.',
     '',
-    `React renders of the bridge flow in Vitest, on master at \`${baseSha.slice(0, 7)}\` and on this PR. API responses are generated and timers follow a fake clock, so counts are the same on every run. Render times come from React's profiling build, in ${pr.runs} rounds that run master and this PR in random order. A time change counts when its 99% confidence interval is entirely past ${minTimeChange * 100}%. Times show the impact of a change and never fail the check.`,
+    `Compared with master at \`${baseSha.slice(0, 7)}\`.`,
     '',
     ...formatWarnings({ pr, base }),
     ...(changes.length > 0 ? ['---', '', ...changes] : []),
