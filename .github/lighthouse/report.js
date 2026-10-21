@@ -75,12 +75,6 @@ const icons = { better: '🟢', same: '⚪', worse: '🔴' };
 const minModuleChange = 1024;
 const modulesShown = 10;
 
-const formFactors = [
-  { key: 'desktop', label: 'Desktop', icon: '🖥️' },
-  // The JavaScript transfer size doesn't depend on the form factor, so it's only reported once
-  { key: 'mobile', label: 'Mobile', icon: '📱', exclude: ['script-size'] },
-];
-
 const interactionMetrics = [
   'total-blocking-time',
   'cumulative-layout-shift',
@@ -146,13 +140,13 @@ function readModules(directory) {
     : undefined;
 }
 
-function readFlows(directory, formFactor) {
+function readFlows(directory) {
   if (!fs.existsSync(directory)) {
     return [];
   }
   return fs
     .readdirSync(directory)
-    .filter((file) => file.startsWith(`${formFactor}-`) && file.endsWith('.json'))
+    .filter((file) => file.startsWith('run-') && file.endsWith('.json'))
     .map((file) => JSON.parse(fs.readFileSync(path.join(directory, file), 'utf8')));
 }
 
@@ -217,9 +211,9 @@ function formatChanges({ sections, status, title }) {
     '<details>',
     `<summary><b>${icons[status]} ${title} (${count})</b></summary>`,
     '',
-    ...groups.flatMap(({ formFactor, step, rows }) => [
+    ...groups.flatMap(({ step, rows }) => [
       '<details>',
-      `<summary>${formFactor.icon} ${formFactor.label} · ${step.name} — ${rows
+      `<summary>${step.name} — ${rows
         .map(({ id }) => metrics[id].short ?? metrics[id].label)
         .join(', ')}</summary>`,
       '',
@@ -283,24 +277,19 @@ function formatModules({ pr, base }) {
 }
 
 function formatReport({ pr, base, modules, runs, baseline, runUrl }) {
-  const sections = formFactors.flatMap((formFactor) =>
-    steps.map((step, index) => ({
-      formFactor,
-      step,
-      rows: step.metrics
-        .filter((id) => !formFactor.exclude?.includes(id))
-        .map((id) => {
-          const prResult = pr[formFactor.key][index][id];
-          const baseResult = base[formFactor.key][index][id];
-          return {
-            id,
-            pr: prResult.value,
-            base: baseResult.value,
-            ...compare(prResult, baseResult, id),
-          };
-        }),
-    })),
-  );
+  const sections = steps.map((step, index) => ({
+    step,
+    rows: step.metrics.map((id) => {
+      const prResult = pr[index][id];
+      const baseResult = base[index][id];
+      return {
+        id,
+        pr: prResult.value,
+        base: baseResult.value,
+        ...compare(prResult, baseResult, id),
+      };
+    }),
+  }));
 
   const rows = sections.flatMap((section) => section.rows);
   const count = (status) => rows.filter((row) => row.status === status).length;
@@ -318,7 +307,7 @@ function formatReport({ pr, base, modules, runs, baseline, runUrl }) {
     '|:---:|:---:|:---:|',
     `| ${count('worse')} | ${count('better')} | ${count('same')} |`,
     '',
-    `Median of ${runs} desktop and mobile runs of the bridge user flow, compared with the [master runs](${baseline.url}) at \`${baseline.sha.slice(0, 7)}\`.`,
+    `Median of ${runs} desktop runs of the bridge user flow, each on its own runner, compared with the [master runs](${baseline.url}) at \`${baseline.sha.slice(0, 7)}\`.`,
     '',
     ...(changes.length > 0 ? ['---', '', ...changes] : []),
     '---',
@@ -330,32 +319,22 @@ function formatReport({ pr, base, modules, runs, baseline, runUrl }) {
 module.exports = async ({ github, context, core }) => {
   const { owner, repo } = context.repo;
   const runUrl = (runId) => `${context.serverUrl}/${owner}/${repo}/actions/runs/${runId}`;
-  const flows = Object.fromEntries(
-    [
-      ['pr', resultsDirectory],
-      ['base', baselineDirectory],
-    ].map(([build, directory]) => [
-      build,
-      Object.fromEntries(formFactors.map(({ key }) => [key, readFlows(directory, key)])),
-    ]),
-  );
+  const flows = { pr: readFlows(resultsDirectory), base: readFlows(baselineDirectory) };
 
-  if (Object.values(flows.pr).some((runs) => runs.length === 0)) {
+  if (flows.pr.length === 0) {
     throw new Error('Missing Lighthouse results for the PR.');
   }
   // The baseline comes from the latest Lighthouse run on master, or is measured in this run
-  if (Object.values(flows.base).some((runs) => runs.length === 0)) {
+  if (flows.base.length === 0) {
     throw new Error('Missing Lighthouse results for master.');
   }
 
   const pullRequest = context.payload.pull_request;
-  const summarizeBuild = (build) =>
-    Object.fromEntries(Object.entries(build).map(([key, runs]) => [key, summarize(runs)]));
   const body = formatReport({
-    pr: summarizeBuild(flows.pr),
-    base: summarizeBuild(flows.base),
+    pr: summarize(flows.pr),
+    base: summarize(flows.base),
     modules: { pr: readModules(resultsDirectory), base: readModules(baselineDirectory) },
-    runs: flows.pr.desktop.length,
+    runs: flows.pr.length,
     baseline: { sha: process.env.BASELINE_SHA, url: runUrl(process.env.BASELINE_RUN_ID) },
     runUrl: runUrl(context.runId),
   });
