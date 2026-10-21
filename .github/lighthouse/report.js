@@ -1,7 +1,7 @@
 // Compares the Lighthouse user flow runs of the PR against the runs of master and posts the result
 // as a PR comment. Each runner measures both, so a run of the PR is compared with the run of master
-// on the same runner. Values are medians of all runs, changes are medians of the differences
-// between the PR and master on each runner.
+// on the same runner. Values are medians of all runs, changes are means of the differences between
+// the PR and master on each runner, with their 99% confidence interval.
 const fs = require('fs');
 const path = require('path');
 
@@ -9,8 +9,7 @@ const marker = '<!-- lighthouse-report -->';
 const resultsDirectory = 'lighthouse-reports/pr';
 const baselineDirectory = 'lighthouse-reports/master';
 
-// Changes smaller than max(minDelta, minRatio × base) are within run-to-run noise.
-// Noisier metrics need larger changes, see compare().
+// Changes smaller than max(minDelta, minRatio × base) are too small to matter, see compare()
 const metrics = {
   'performance': { label: 'Performance', higherIsBetter: true, minDelta: 2 },
   'accessibility': { label: 'Accessibility', higherIsBetter: true, minDelta: 2 },
@@ -117,10 +116,25 @@ function median(values) {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
-// Median absolute deviation, a measure of the run-to-run spread that ignores outliers
-function deviation(values) {
-  const center = median(values);
-  return median(values.map((value) => Math.abs(value - center)));
+// Two-sided 99% quantiles of Student's t distribution, by degrees of freedom
+const tQuantiles = [
+  63.657, 9.925, 5.841, 4.604, 4.032, 3.707, 3.499, 3.355, 3.25, 3.169, 3.106, 3.055, 3.012, 2.977,
+  2.947, 2.921, 2.898, 2.878, 2.861, 2.845,
+];
+
+// Mean and 99% confidence interval of the differences between the PR and master on each runner
+function confidenceInterval(differences) {
+  const mean =
+    differences.reduce((total, difference) => total + difference, 0) / differences.length;
+  if (differences.length < 2) {
+    return { mean, low: -Infinity, high: Infinity };
+  }
+  const variance =
+    differences.reduce((total, difference) => total + (difference - mean) ** 2, 0) /
+    (differences.length - 1);
+  const t = tQuantiles[differences.length - 2] ?? 2.576;
+  const margin = t * Math.sqrt(variance / differences.length);
+  return { mean, low: mean - margin, high: mean + margin };
 }
 
 function readMetric(lhr, id) {
@@ -176,27 +190,35 @@ function compare(pr, base, id) {
   const differences = [...pr.values.keys()]
     .filter((run) => base.values.has(run))
     .map((run) => pr.values.get(run) - base.values.get(run));
-  const difference = Number(median(differences).toFixed(decimals));
-  // Changes also need to exceed three times the spread of the differences to count
-  const threshold = Math.max(minDelta, minRatio * Math.abs(base.value), 3 * deviation(differences));
-  if (Math.abs(difference) < threshold) {
-    return { difference, status: 'same' };
+  const interval = confidenceInterval(differences);
+  const difference = Number(interval.mean.toFixed(decimals));
+  // A change counts when its 99% confidence interval excludes zero, so it's unlikely to be noise,
+  // and it's large enough to matter
+  const isReal = interval.low > 0 || interval.high < 0;
+  if (!isReal || Math.abs(difference) < Math.max(minDelta, minRatio * Math.abs(base.value))) {
+    return { difference, interval, status: 'same' };
   }
-  return { difference, status: difference > 0 === higherIsBetter ? 'better' : 'worse' };
+  return { difference, interval, status: difference > 0 === higherIsBetter ? 'better' : 'worse' };
 }
 
 function withUnit(value, id) {
   return metrics[id].unit ? `${value} ${metrics[id].unit}` : `${value}`;
 }
 
+function formatSigned(value, id) {
+  const rounded = Number(value.toFixed(metrics[id].decimals ?? 0));
+  return withUnit(rounded > 0 ? `+${rounded}` : `${rounded}`, id);
+}
+
 // Relative changes are only shown for measurements, scores are already percentages
-function formatDelta({ id, difference, base }) {
-  const delta = withUnit(difference > 0 ? `+${difference}` : `${difference}`, id);
+function formatDelta({ id, difference, interval, base }) {
+  const delta = formatSigned(difference, id);
+  const range = `<br><sub>99% CI ${formatSigned(interval.low, id)} to ${formatSigned(interval.high, id)}</sub>`;
   if (!metrics[id].unit || base === 0) {
-    return delta;
+    return `${delta}${range}`;
   }
   const percent = Math.round((difference / base) * 100);
-  return `${delta} (${percent > 0 ? '+' : ''}${percent}%)`;
+  return `${delta} (${percent > 0 ? '+' : ''}${percent}%)${range}`;
 }
 
 function formatDirection(id) {
@@ -313,7 +335,7 @@ function formatReport({ pr, base, modules, runs, baseSha, runUrl }) {
     '|:---:|:---:|:---:|',
     `| ${count('worse')} | ${count('better')} | ${count('same')} |`,
     '',
-    `Median of ${runs} desktop runs of the bridge user flow, compared with master at \`${baseSha.slice(0, 7)}\` on the same runners.`,
+    `Median of ${runs} desktop runs of the bridge user flow, compared with master at \`${baseSha.slice(0, 7)}\` on the same runners. A change counts when its 99% confidence interval excludes zero and it's large enough to matter.`,
     '',
     ...(changes.length > 0 ? ['---', '', ...changes] : []),
     '---',
