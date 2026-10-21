@@ -75,17 +75,31 @@ jobs:
           chrome_version=$(node -p "require('./package.json').config.chromeVersion")
           echo "CHROME_PATH=$PWD/node_modules/.cache/synpress/chrome/linux-$chrome_version/chrome-linux64/chrome" >> "$GITHUB_ENV"
 
+      # Ports, the order the servers start in and the order the sides run in are random, so no
+      # difference between the two setups always favors the same side
       - name: Start servers
         run: |
-          pnpm start &
-          (cd base && PORT=3001 pnpm start &)
+          ports="3000 3001"
+          if [ $((RANDOM % 2)) = 1 ]; then ports="3001 3000"; fi
+          read -r pr_port master_port <<< "$ports"
+          echo "PR_PORT=$pr_port" >> "$GITHUB_ENV"
+          echo "MASTER_PORT=$master_port" >> "$GITHUB_ENV"
+          sides="pr master"
+          if [ $((RANDOM % 2)) = 1 ]; then sides="master pr"; fi
+          for side in $sides; do
+            if [ "$side" = pr ]; then
+              PORT=$pr_port pnpm start &
+            else
+              (cd base && PORT=$master_port pnpm start &)
+            fi
+          done
           # Wait for the servers, then warm them up so no measured run hits a cold server
-          for url in http://localhost:3000/bridge http://localhost:3001/bridge; do
+          for port in 3000 3001; do
+            url="http://localhost:$port/bridge"
             curl --silent --fail --output /dev/null --retry 30 --retry-connrefused --retry-delay 2 "$url"
             curl --silent --fail --output /dev/null "$url"
           done
 
-      # In random order, so neither side always runs first on a runner
       - name: Run Lighthouse
         env:
           RUN: ${{ matrix.run }}
@@ -93,8 +107,8 @@ jobs:
           sides="pr master"
           if [ $((RANDOM % 2)) = 1 ]; then sides="master pr"; fi
           for side in $sides; do
-            port=3000
-            if [ "$side" = master ]; then port=3001; fi
+            port=$PR_PORT
+            if [ "$side" = master ]; then port=$MASTER_PORT; fi
             APP_URL="http://localhost:$port" OUTPUT_DIRECTORY="lighthouse-reports/$side" \
               node .github/lighthouse/flow.mjs
           done
