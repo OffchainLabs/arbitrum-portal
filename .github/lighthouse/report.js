@@ -192,13 +192,14 @@ function compare(pr, base, id) {
     .map((run) => pr.values.get(run) - base.values.get(run));
   const interval = confidenceInterval(differences);
   const difference = Number(interval.mean.toFixed(decimals));
-  // A change counts when its 99% confidence interval excludes zero, so it's unlikely to be noise,
-  // and it's large enough to matter
-  const isReal = interval.low > 0 || interval.high < 0;
-  if (!isReal || Math.abs(difference) < Math.max(minDelta, minRatio * Math.abs(base.value))) {
-    return { difference, interval, status: 'same' };
+  // A change counts when its whole 99% confidence interval is past the smallest change that
+  // matters. An interval that only excludes zero is too easy to reach by chance with this many
+  // metrics, or with a small difference between the two sides of a runner.
+  const threshold = Math.max(minDelta, minRatio * Math.abs(base.value));
+  if (interval.low >= threshold || interval.high <= -threshold) {
+    return { difference, interval, status: difference > 0 === higherIsBetter ? 'better' : 'worse' };
   }
-  return { difference, interval, status: difference > 0 === higherIsBetter ? 'better' : 'worse' };
+  return { difference, interval, status: 'same' };
 }
 
 function withUnit(value, id) {
@@ -335,7 +336,7 @@ function formatReport({ pr, base, modules, runs, baseSha, runUrl }) {
     '|:---:|:---:|:---:|',
     `| ${count('worse')} | ${count('better')} | ${count('same')} |`,
     '',
-    `Median of ${runs} desktop runs of the bridge user flow, compared with master at \`${baseSha.slice(0, 7)}\` on the same runners. A change counts when its 99% confidence interval excludes zero and it's large enough to matter.`,
+    `Median of ${runs} desktop runs of the bridge user flow, compared with master at \`${baseSha.slice(0, 7)}\` on the same runners. A change counts when its whole 99% confidence interval is past the metric's smallest change that matters.`,
     '',
     ...(changes.length > 0 ? ['---', '', ...changes] : []),
     '---',
