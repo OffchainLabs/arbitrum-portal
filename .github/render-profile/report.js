@@ -2,10 +2,13 @@
 // as a PR comment. The profile is packages/arb-token-bridge-ui/src/components/MainContent/
 // MainContent.profile.tsx. To compare profiles locally, run:
 // node .github/render-profile/report.js <PR runs directory> <master runs directory>
-// Each directory holds one subdirectory per run with a render-profile.json. Counts come from the
+// Each directory holds one subdirectory per run with a render-profile.json, and a costs.json from
+// hooks measured on their own like TokenSearchUtils.profile.tsx. Counts come from the
 // run of the development build, times from the runs of the profiling build. Profiling runs with
 // the same subdirectory name on both sides are compared with each other.
-// The check fails when an interaction renders more than on master. Times only show the impact.
+// The check fails when an interaction renders more than on master, or a hook measured on its own
+// builds more SWR key text or keeps more memory, values that are the same on every run. Times
+// only show the impact.
 const fs = require('fs');
 const path = require('path');
 
@@ -39,6 +42,10 @@ function formatCount(value) {
   return Math.round(value).toLocaleString('en-US');
 }
 
+function formatPreciseTime(milliseconds) {
+  return `${milliseconds.toFixed(2)} ms`;
+}
+
 function formatTime(milliseconds) {
   return `${formatCount(milliseconds)} ms`;
 }
@@ -58,7 +65,8 @@ const metrics = {
     description: "median across components, compared with master's",
   },
   duration: { label: 'Render time', format: formatTime, isTime: true },
-  renders: { label: 'Renders', format: formatCount },
+  // Counts and sizes that are the same on every run fail the check when they go up
+  renders: { label: 'Renders', format: formatCount, failsCheck: true },
   avoidableRenders: {
     label: 'Avoidable renders',
     format: formatCount,
@@ -75,7 +83,33 @@ const metrics = {
     format: formatSize,
     description: 'SWR never removes them from its cache',
   },
+  // Cost of a render of a hook, from the *.profile.tsx files that write costs.json
+  costTime: { label: 'Time per render', format: formatPreciseTime, isTime: true },
+  costKeyLength: {
+    label: 'SWR key text per render',
+    format: formatSize,
+    failsCheck: true,
+    description: 'built and hashed on every render',
+  },
+  costRetained: {
+    label: 'Heap retained',
+    format: formatSize,
+    description: 'after the renders, with the data the hook keeps',
+    // Garbage collection moves it by a few KB between runs
+    minChange: 0.05,
+    failsCheck: true,
+  },
 };
+
+const interactionMetrics = [
+  'duration',
+  'renders',
+  'avoidableRenders',
+  'commits',
+  'swrKeyLength',
+  'swrCacheKeyLength',
+];
+const costMetrics = ['costTime', 'costKeyLength', 'costRetained'];
 
 function median(values) {
   const sorted = [...values].sort((a, b) => a - b);
@@ -104,10 +138,16 @@ function loadRuns(directory) {
     .readdirSync(directory)
     .filter((run) => fs.existsSync(path.join(directory, run, 'render-profile.json')))
     .sort()
-    .map((run) => ({
-      run,
-      ...JSON.parse(fs.readFileSync(path.join(directory, run, 'render-profile.json'), 'utf8')),
-    }));
+    .map((run) => {
+      const costsFile = path.join(directory, run, 'costs.json');
+      return {
+        run,
+        ...JSON.parse(fs.readFileSync(path.join(directory, run, 'render-profile.json'), 'utf8')),
+        costs: fs.existsSync(costsFile)
+          ? JSON.parse(fs.readFileSync(costsFile, 'utf8')).filter(({ reference }) => !reference)
+          : [],
+      };
+    });
 }
 
 // Shorter components are too noisy to tell how fast a run was
@@ -181,6 +221,13 @@ function summarize(runs) {
         ),
       })),
     })),
+    // Sizes come from the development run, times from the profiling runs
+    costs: countsRun.costs.map((cost) => ({
+      name: cost.name,
+      costTime: median(samples.map((run) => time(run, findCost(run, cost.name)?.renderMs ?? 0))),
+      costKeyLength: cost.keyLength,
+      costRetained: cost.retainedBytes,
+    })),
   };
 }
 
@@ -223,14 +270,28 @@ function findInteraction(profile, name) {
   return profile.interactions.find((interaction) => interaction.name === name);
 }
 
-function compareRow({ id, pr, base, name }) {
+function findCost(profile, name) {
+  return profile.costs.find((cost) => cost.name === name);
+}
+
+const timeReaders = {
+  speed: () => (run) => run.speed,
+  duration: (name) => (run) => findInteraction(run, name).duration / run.speed,
+  costTime: (name) => (run) => findCost(run, name).renderMs / run.speed,
+};
+
+// Counts and sizes are compared exactly, unless the metric allows a small relative change
+function compareRow({ id, pr, base, name, find = findInteraction }) {
   if (!metrics[id].isTime) {
-    const difference = findInteraction(pr, name)[id] - findInteraction(base, name)[id];
-    return { difference, status: difference === 0 ? 'same' : difference < 0 ? 'better' : 'worse' };
+    const prValue = find(pr, name)[id];
+    const baseValue = find(base, name)[id];
+    const difference = prValue - baseValue;
+    const isSame =
+      Math.abs(difference) <= Math.abs(baseValue) * (metrics[id].minChange ?? 0) ||
+      difference === 0;
+    return { difference, status: isSame ? 'same' : difference < 0 ? 'better' : 'worse' };
   }
-  const read =
-    id === 'speed' ? (run) => run.speed : (run) => findInteraction(run, name).duration / run.speed;
-  return compareTime({ ratios: getRoundRatios({ pr, base, read }) });
+  return compareTime({ ratios: getRoundRatios({ pr, base, read: timeReaders[id](name) }) });
 }
 
 function formatDelta({ id, difference, interval, base, pr }) {
@@ -238,9 +299,9 @@ function formatDelta({ id, difference, interval, base, pr }) {
     // The time in ms tells the impact, the confidence interval whether it's more than noise
     const percent = formatPercent(interval.mean);
     const change =
-      id === 'duration'
-        ? `${pr > base ? '+' : '−'}${formatTime(Math.abs(pr - base))} (${percent})`
-        : percent;
+      id === 'speed'
+        ? percent
+        : `${pr > base ? '+' : '−'}${metrics[id].format(Math.abs(pr - base))} (${percent})`;
     return `${change}<br><sub>99% CI ${formatPercent(interval.low)} to ${formatPercent(interval.high)}</sub>`;
   }
   const { format } = metrics[id];
@@ -355,13 +416,23 @@ function formatWarnings({ pr, base }) {
   ].flatMap((warning) => [warning, '']);
 }
 
-// Interactions that render more than on master, which fails the check
-function getMoreRenders(sections) {
+// Values that went up and fail the check: renders of an interaction, and the SWR key text and
+// memory of a measured hook. Times vary between runs, so they never fail it.
+function getFailures(sections) {
   return sections.flatMap(({ name, rows }) =>
     rows
-      .filter(({ id, status }) => id === 'renders' && status === 'worse')
-      .map(({ difference }) => ({ name, difference })),
+      .filter(({ id, status }) => metrics[id].failsCheck && status === 'worse')
+      .map(({ id, difference }) => ({ name, id, difference })),
   );
+}
+
+function formatFailures(failures) {
+  return failures
+    .map(
+      ({ name, id, difference }) =>
+        `${name} · ${metrics[id].label} +${metrics[id].format(difference)}`,
+    )
+    .join(', ');
 }
 
 function formatReport({ pr, base, baseSha, runUrl }) {
@@ -372,20 +443,37 @@ function formatReport({ pr, base, baseSha, runUrl }) {
       name: interaction.name,
       pr: interaction,
       base: baseInteraction,
-      rows: Object.keys(metrics)
-        .filter((id) => id !== 'speed')
-        .map((id) =>
-          baseInteraction
-            ? {
-                id,
-                pr: interaction[id],
-                base: baseInteraction[id],
-                ...compareRow({ id, pr, base, name: interaction.name }),
-              }
-            : { id, pr: interaction[id], status: 'new' },
-        ),
+      rows: interactionMetrics.map((id) =>
+        baseInteraction
+          ? {
+              id,
+              pr: interaction[id],
+              base: baseInteraction[id],
+              ...compareRow({ id, pr, base, name: interaction.name }),
+            }
+          : { id, pr: interaction[id], status: 'new' },
+      ),
     };
   });
+  // Hooks measured on their own, matched by name like the interactions
+  sections.push(
+    ...pr.costs.map((cost) => {
+      const baseCost = base && findCost(base, cost.name);
+      return {
+        name: cost.name,
+        rows: costMetrics.map((id) =>
+          baseCost
+            ? {
+                id,
+                pr: cost[id],
+                base: baseCost[id],
+                ...compareRow({ id, pr, base, name: cost.name, find: findCost }),
+              }
+            : { id, pr: cost[id], status: 'new' },
+        ),
+      };
+    }),
+  );
   if (base) {
     sections.unshift({
       name: 'All interactions',
@@ -402,7 +490,7 @@ function formatReport({ pr, base, baseSha, runUrl }) {
 
   const rows = sections.flatMap((section) => section.rows);
   const count = (status) => rows.filter((row) => row.status === status).length;
-  const moreRenders = getMoreRenders(sections);
+  const failures = getFailures(sections);
   const changes = [
     ...formatChanges({ sections, status: 'worse', title: 'Regressions' }),
     ...formatChanges({ sections, status: 'better', title: 'Improvements' }),
@@ -417,9 +505,9 @@ function formatReport({ pr, base, baseSha, runUrl }) {
     '|:---:|:---:|:---:|',
     `| ${count('worse')} | ${count('better')} | ${count('same')} |`,
     '',
-    moreRenders.length > 0
-      ? `❌ More renders in ${moreRenders.map(({ name, difference }) => `${name} (+${formatCount(difference)})`).join(', ')}. The check fails when an interaction renders more than on master.`
-      : '✅ No interaction renders more than on master.',
+    failures.length > 0
+      ? `❌ ${formatFailures(failures)}. The check fails when an interaction renders more than on master, or a measured hook builds more SWR key text or keeps more memory.`
+      : '✅ No interaction renders more than on master, and no measured hook builds more SWR key text or keeps more memory.',
     '',
     `Compared with master at \`${baseSha.slice(0, 7)}\`.`,
     '',
@@ -429,11 +517,11 @@ function formatReport({ pr, base, baseSha, runUrl }) {
     '',
     `📄 Full profiles are attached to the [workflow run](${runUrl}).`,
   ].join('\n');
-  return { body, moreRenders };
+  return { body, failures };
 }
 
-function formatFailure(moreRenders) {
-  return `More renders than on master in ${moreRenders.map(({ name, difference }) => `${name} (+${formatCount(difference)})`).join(', ')}.`;
+function formatFailure(failures) {
+  return `Higher than on master: ${formatFailures(failures)}.`;
 }
 
 module.exports = async ({ github, context, core }) => {
@@ -445,7 +533,7 @@ module.exports = async ({ github, context, core }) => {
   });
 
   const pullRequest = context.payload.pull_request;
-  const { body, moreRenders } = formatReport({
+  const { body, failures } = formatReport({
     pr,
     base,
     baseSha: pullRequest.base.sha,
@@ -453,8 +541,8 @@ module.exports = async ({ github, context, core }) => {
   });
 
   await core.summary.addRaw(body).write();
-  if (moreRenders.length > 0) {
-    core.setFailed(formatFailure(moreRenders));
+  if (failures.length > 0) {
+    core.setFailed(formatFailure(failures));
   }
 
   // The token is read-only on forks, so only comment on PRs from this repository
@@ -482,15 +570,15 @@ module.exports = async ({ github, context, core }) => {
 if (require.main === module) {
   const [prDirectory = 'render-profile/pr', baseDirectory] = process.argv.slice(2);
   const { pr, base } = readProfiles({ prDirectory, baseDirectory });
-  const { body, moreRenders } = formatReport({
+  const { body, failures } = formatReport({
     pr,
     base,
     baseSha: 'master',
     runUrl: 'https://github.com',
   });
   console.log(body);
-  if (moreRenders.length > 0) {
-    console.error(formatFailure(moreRenders));
+  if (failures.length > 0) {
+    console.error(formatFailure(failures));
     process.exitCode = 1;
   }
 }

@@ -20,6 +20,8 @@ export default defineConfig({
   test: {
     ...integrationConfig.test,
     include: ['./src/**/*.profile.tsx'],
+    // One file at a time, so measurements never compete for the CPU
+    fileParallelism: false,
     // The profiler registers as React DevTools, which react-dom only looks for when it's loaded
     setupFiles: ['./vitest.profile.setup.ts', ...(integrationConfig.test?.setupFiles ?? [])],
     env: {
