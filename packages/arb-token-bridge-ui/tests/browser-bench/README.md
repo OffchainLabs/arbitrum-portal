@@ -183,8 +183,6 @@ the unchanged builds over 5 rounds:
 
 ## Limitations
 
-- Master has no `<Profiler>` wrappers until this is merged, so the profiling section only shows
-  the PR until then.
 - The thresholds are starting points. They should be set from the normal variation on CI before
   a timing can fail the job.
 - Completion ends when the main thread rendered the frame, not when the display showed it.
