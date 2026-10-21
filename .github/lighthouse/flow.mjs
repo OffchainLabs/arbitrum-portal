@@ -3,6 +3,8 @@ import { mkdir, writeFile } from 'fs/promises';
 import { desktopConfig, startFlow } from 'lighthouse';
 import puppeteer from 'puppeteer-core';
 
+import { measureModules } from './modules.mjs';
+
 const runs = 5;
 const outputDirectory = process.env.OUTPUT_DIRECTORY ?? 'lighthouse-reports';
 const bridgePath =
@@ -80,7 +82,12 @@ async function runFlow(origin, config) {
     }
     await flow.snapshot({ name: 'Configured transfer' });
 
-    return { result: await flow.createFlowResult(), html: await flow.generateReport() };
+    const [loadBridge] = flow.createArtifactsJson().gatherSteps;
+    return {
+      result: await flow.createFlowResult(),
+      html: await flow.generateReport(),
+      modules: measureModules(loadBridge.artifacts),
+    };
   } finally {
     await browser.close();
   }
@@ -91,9 +98,13 @@ await mkdir(outputDirectory, { recursive: true });
 for (let run = 1; run <= runs; run += 1) {
   for (const [formFactor, config] of Object.entries(formFactors)) {
     console.log(`Run ${run}/${runs}: ${formFactor}`);
-    const { result, html } = await runFlow(process.env.APP_URL, config);
+    const { result, html, modules } = await runFlow(process.env.APP_URL, config);
     const file = `${outputDirectory}/${formFactor}-${run}`;
     await writeFile(`${file}.json`, JSON.stringify(result));
     await writeFile(`${file}.html`, html);
+    // Every run loads the same scripts, so the first one is enough
+    if (run === 1 && formFactor === 'desktop') {
+      await writeFile(`${outputDirectory}/modules.json`, JSON.stringify(modules));
+    }
   }
 }

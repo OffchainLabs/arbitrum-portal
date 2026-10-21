@@ -70,6 +70,11 @@ const metrics = {
 
 const icons = { better: '🟢', same: '⚪', worse: '🔴' };
 
+// Script sizes by module come from source maps and are the same on every run, so smaller changes
+// are real but too small to list
+const minModuleChange = 1024;
+const modulesShown = 10;
+
 const formFactors = [
   { key: 'desktop', label: 'Desktop', icon: '🖥️' },
   // The JavaScript transfer size doesn't depend on the form factor, so it's only reported once
@@ -130,6 +135,15 @@ function readMetric(lhr, id) {
     return (lhr.categories[id].score ?? 0) * 100;
   }
   return lhr.audits[id]?.numericValue ?? 0;
+}
+
+// Uncompressed size of the scripts the bridge loaded, by module, written by flow.mjs. Runs on master
+// from before it measured them have none.
+function readModules(directory) {
+  const file = path.join(directory, 'modules.json');
+  return fs.existsSync(file)
+    ? new Map(Object.entries(JSON.parse(fs.readFileSync(file, 'utf8'))))
+    : undefined;
 }
 
 function readFlows(directory, formFactor) {
@@ -224,7 +238,51 @@ function formatChanges({ sections, status, title }) {
   ];
 }
 
-function formatReport({ pr, base, runs, baseline, runUrl }) {
+function formatSize(bytes) {
+  return `${(bytes / 1024).toFixed(1)} KiB`;
+}
+
+// The modules whose size changed the most, to tell what changed the JavaScript transfer size
+function formatModules({ pr, base }) {
+  if (!pr || !base) {
+    return [];
+  }
+  const changes = [...new Set([...pr.keys(), ...base.keys()])]
+    .map((module) => ({ module, pr: pr.get(module) ?? 0, base: base.get(module) ?? 0 }))
+    .map((change) => ({ ...change, difference: change.pr - change.base }))
+    .filter(({ difference }) => Math.abs(difference) >= minModuleChange)
+    .sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference));
+  if (changes.length === 0) {
+    return [];
+  }
+  const total = (modules) => [...modules.values()].reduce((sum, bytes) => sum + bytes, 0);
+  const difference = total(pr) - total(base);
+  const hidden = changes.length - modulesShown;
+
+  return [
+    '<details>',
+    `<summary><b>📦 JavaScript by module (${difference >= 0 ? '+' : '−'}${formatSize(Math.abs(difference))})</b></summary>`,
+    '',
+    `Uncompressed size of the scripts the bridge loads, by package or source file, from source maps. Turbopack's runtime and imported JSON files have no source map. Changes under ${formatSize(minModuleChange)} aren't listed.`,
+    '',
+    '| Module | Master | PR | Δ |',
+    '|:---|---:|---:|---:|',
+    ...changes
+      .slice(0, modulesShown)
+      .map(
+        ({ module, pr: p, base: b, difference: d }) =>
+          `| \`${module}\` | ${b ? formatSize(b) : '—'} | ${p ? formatSize(p) : '—'} | **${d > 0 ? '+' : '−'}${formatSize(Math.abs(d))}** |`,
+      ),
+    ...(hidden > 0
+      ? ['', `${hidden} more modules changed by over ${formatSize(minModuleChange)}.`]
+      : []),
+    '',
+    '</details>',
+    '',
+  ];
+}
+
+function formatReport({ pr, base, modules, runs, baseline, runUrl }) {
   const sections = formFactors.flatMap((formFactor) =>
     steps.map((step, index) => ({
       formFactor,
@@ -249,6 +307,7 @@ function formatReport({ pr, base, runs, baseline, runUrl }) {
   const changes = [
     ...formatChanges({ sections, status: 'worse', title: 'Regressions' }),
     ...formatChanges({ sections, status: 'better', title: 'Improvements' }),
+    ...formatModules(modules),
   ];
 
   return [
@@ -295,6 +354,7 @@ module.exports = async ({ github, context, core }) => {
   const body = formatReport({
     pr: summarizeBuild(flows.pr),
     base: summarizeBuild(flows.base),
+    modules: { pr: readModules(resultsDirectory), base: readModules(baselineDirectory) },
     runs: flows.pr.desktop.length,
     baseline: { sha: process.env.BASELINE_SHA, url: runUrl(process.env.BASELINE_RUN_ID) },
     runUrl: runUrl(context.runId),
