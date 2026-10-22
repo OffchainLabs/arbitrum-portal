@@ -1,7 +1,11 @@
 import { gql } from '@apollo/client';
 import { NextResponse } from 'next/server';
 
-import { type SubgraphSource, getCctpSubgraphClient } from '../../../api-utils/ServerSubgraphUtils';
+import {
+  type SubgraphSource,
+  getCctpSubgraphClient,
+  getQueryData,
+} from '../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../types/ChainId';
 import { Address } from '../../../util/AddressUtils';
 
@@ -154,12 +158,13 @@ export async function GET(
     }`);
 
     const sourceSubgraph = type === 'deposits' ? l1Subgraph : l2Subgraph;
-    const { data } = await sourceSubgraph.query<{
-      messageSents: MessageSent[];
-    }>({
-      query: messagesSentQuery,
-    });
-    const { messageSents } = data;
+    const { messageSents } = getQueryData(
+      await sourceSubgraph.query<{
+        messageSents: MessageSent[];
+      }>({
+        query: messagesSentQuery,
+      }),
+    );
     const formattedIds = messageSents.map((messageSent) => `"${messageSent.id}"`);
 
     /**
@@ -197,7 +202,7 @@ export async function GET(
           .query<{ messageReceiveds: MessageReceived[] }>({
             query: messagesReceivedQuery,
           })
-          .then((response) => response.data.messageReceiveds),
+          .then((response) => getQueryData(response).messageReceiveds),
       );
     }
 

@@ -1,7 +1,11 @@
 import { gql } from '@apollo/client';
 import { NextRequest, NextResponse } from 'next/server';
 
-import { type SubgraphSource, getL1SubgraphClient } from '../../api-utils/ServerSubgraphUtils';
+import {
+  type SubgraphSource,
+  getL1SubgraphClient,
+  getQueryData,
+} from '../../api-utils/ServerSubgraphUtils';
 import { FetchDepositsFromSubgraphResult } from '../../util/deposits/fetchDepositsFromSubgraph';
 import { isIndexerEnabledForRequest, proxyToIndexer } from './indexer';
 
@@ -67,7 +71,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<DepositsRe
       );
     }
 
-    const subgraphResult = await subgraph.client.query({
+    const subgraphResult = await subgraph.client.query<{
+      deposits: FetchDepositsFromSubgraphResult[];
+    }>({
       query: gql(`{
         deposits(
           where: {            
@@ -104,7 +110,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<DepositsRe
     `),
     });
 
-    const transactions: FetchDepositsFromSubgraphResult[] = subgraphResult.data.deposits;
+    const transactions = getQueryData(subgraphResult).deposits;
 
     return NextResponse.json(
       {
