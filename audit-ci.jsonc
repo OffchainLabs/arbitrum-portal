@@ -2,18 +2,6 @@
   "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
   "low": true,
   "allowlist": [
-    // https://github.com/advisories/GHSA-vqpr-j7v3-hqw9
-    // Valibot has a ReDoS vulnerability in `EMOJI_REGEX`
-    // Reason to ignore: Not used directly. Patched version is a major bump (v1.2.0).
-    // from: arb-token-bridge-ui>@lifi/sdk>bitcoinjs-lib>valibot
-    "GHSA-vqpr-j7v3-hqw9",
-    //
-    // https://github.com/advisories/GHSA-5qjj-4xww-7phc
-    // Valibot record() issue paths can make flatten() throw for inherited Object property names
-    // Reason to ignore: Not used directly and we never call valibot's flatten(). Patched version (1.4.2) is a major bump the parents don't support (they pin ^0.36/^0.38).
-    // from: arb-token-bridge-ui>@lifi/sdk>bitcoinjs-lib>valibot
-    "GHSA-5qjj-4xww-7phc",
-    //
     // https://github.com/advisories/GHSA-848j-6mx2-7j84
     // Elliptic Uses a Cryptographic Primitive with a Risky Implementation
     // CVE-2025-14505: ECDSA implementation generates incorrect signatures if interim value 'k' has leading zeros
