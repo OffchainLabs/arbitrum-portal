@@ -80,10 +80,10 @@ function RowLabel({ label }: { label: string }) {
 
 function ChainRadioRow({ value, label }: { value: ChainRadioOption; label: string }) {
   return (
-    <Radio value={value} className={twMerge(ROW_CLASSNAME, 'data-[checked]:bg-[#0B2046]')}>
+    <Radio value={value} className={twMerge(ROW_CLASSNAME, 'data-checked:bg-[#0B2046]')}>
       <div className="flex min-w-0 items-center gap-3">
-        <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-white/20 group-data-[checked]:border-[#3A96FF]">
-          <span className="hidden h-2 w-2 rounded-full bg-[#3A96FF] group-data-[checked]:block" />
+        <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-white/20 group-data-checked:border-[#3A96FF]">
+          <span className="hidden h-2 w-2 rounded-full bg-[#3A96FF] group-data-checked:block" />
         </span>
         <RowLabel label={label} />
       </div>
@@ -111,8 +111,8 @@ function CoreChainCheckboxRow({
       className={twMerge(ROW_CLASSNAME, nested && 'pl-7')}
     >
       <div className="flex min-w-0 items-center gap-3">
-        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border-2 border-white/20 group-data-[checked]:border-0 group-data-[checked]:bg-arb-blue">
-          <CheckIcon className="hidden h-3 w-3 stroke-[3] text-white group-data-[checked]:block" />
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border-2 border-white/20 group-data-checked:border-0 group-data-checked:bg-arb-blue">
+          <CheckIcon className="hidden h-3 w-3 stroke-3 text-white group-data-checked:block" />
         </span>
         <RowLabel label={label} />
       </div>
@@ -247,7 +247,7 @@ export function TransactionHistoryChainFilter() {
               // panel's overflow (which clipped it on mobile); padding keeps it off the edges.
               anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
               transition
-              className="z-20 flex w-[360px] max-h-[min(var(--anchor-max-height,420px),420px)] origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-[closed]:scale-95 data-[closed]:opacity-0"
+              className="z-20 flex w-[360px] max-h-[min(var(--anchor-max-height,420px),420px)] origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-closed:scale-95 data-closed:opacity-0"
             >
               <div className="flex min-h-0 flex-1 flex-col">
                 <div className="p-2">

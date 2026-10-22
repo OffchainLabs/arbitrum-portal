@@ -15,13 +15,13 @@ export function Checkbox({ labelClassName, label, ...props }: CheckboxProps) {
       <Switch
         {...props}
         className={twMerge(
-          'h-4 w-4 flex-shrink-0 rounded-sm transition duration-200 ease-in-out',
+          'h-4 w-4 shrink-0 rounded-sm transition duration-200 ease-in-out',
           props.checked
             ? 'border-[1px] border-dark bg-white'
             : 'border-[1px] border-gray-6 bg-dark',
         )}
       >
-        <CheckIcon className="ml-[2px] mt-[2px] h-[10px] w-[10px] stroke-[5] text-dark" />
+        <CheckIcon className="ml-[2px] mt-[2px] h-[10px] w-[10px] stroke-5 text-dark" />
       </Switch>
       <Switch.Label
         className={twMerge(
