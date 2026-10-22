@@ -70,6 +70,9 @@ shamefullyHoist: true
 dedupePeerDependents: true
 # Key peer variants by version only. Without it, debug's optional supports-color peer splits
 # next into two instances (app vs bridge), which breaks vi.mock('next/navigation') in app tests.
+# app and bridge also declare supports-color@^8 as a devDependency: pnpm fills that optional
+# peer from versions already in each importer's graph, and without it the bridge picks 5.5.0
+# (chalk@2) while the app picks 8.1.1, which gives two wagmi instances and breaks WagmiProvider.
 dedupePeers: true
 resolvePeersFromWorkspaceRoot: true
 
