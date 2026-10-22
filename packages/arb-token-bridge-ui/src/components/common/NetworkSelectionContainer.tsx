@@ -100,8 +100,8 @@ function ChainTypeInfoRow({
       className={twMerge(
         'px-5 pt-4 pb-1',
         !isOrbitGroup &&
-          'before:-mt-4 before:mb-4 before:block before:h-[1px] before:w-full before:bg-white/30',
-        isCoreGroup && 'before:h-[0px]',
+          'before:-mt-4 before:mb-4 before:block before:h-px before:w-full before:bg-white/30',
+        isCoreGroup && 'before:h-0',
       )}
     >
       <div className="flex flex-row flex-nowrap items-center justify-between">
@@ -547,7 +547,7 @@ export const NetworkSelectionContainer = React.memo(
           actionButtonProps={{ hidden: true }}
           isFooterHidden={true}
           className={twMerge(
-            'h-[100dvh] overflow-hidden md:h-[calc(100vh_-_220px)] md:max-h-[900px] md:max-w-[500px]',
+            'h-dvh overflow-hidden md:h-[calc(100vh-220px)] md:max-h-[900px] md:max-w-[500px]',
             embedMode && 'md:h-full',
           )}
         >

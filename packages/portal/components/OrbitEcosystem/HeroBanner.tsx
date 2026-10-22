@@ -11,7 +11,7 @@ export const HeroBanner = () => {
         </div>
       </div>
 
-      <div className="absolute left-0 top-0 z-10 h-full w-full bg-gradient-to-t from-blue from-[65%] to-transparent md:from-[35%] lg:bg-gradient-to-r lg:to-[90%]" />
+      <div className="absolute left-0 top-0 z-10 h-full w-full bg-linear-to-t from-blue from-65% to-transparent md:from-35% lg:bg-linear-to-r lg:to-90%" />
     </Card>
   );
 };

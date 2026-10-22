@@ -1,8 +1,50 @@
 /* @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700'); */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@config '../tailwind.config.js';
+
+/* Earn category backgrounds are looked up by key (types/earn/vaults.ts). Tailwind v4 dropped the config `safelist`. */
+@source inline('bg-earn-lend bg-earn-liquid-staking bg-earn-fixed-yield');
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: --theme(--color-gray-200, currentcolor);
+  }
+
+  /* v3 defaults that Tailwind v4 changed: pointer cursor on buttons, gray-400 placeholders. */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: --theme(--color-gray-400);
+  }
+}
+
+/* Navbar sizes, used in arbitrary values such as `top-(--navbar-desktop)`. */
+:root {
+  --navbar-desktop: 66px;
+  --navbar-mobile: 66px;
+  --navbar-mobileBottom: 90px;
+  --navbar-bannerDesktop: 32px;
+  --navbar-bannerMobile: 56px;
+  --navbar-spacing: 15px;
+}
 
 @layer base {
   html {
@@ -123,7 +165,7 @@ input:focus-visible {
   Custom
 */
 .arb-hover {
-  @apply focus-visible:ring-gray-4 transition duration-200 hover:opacity-80 focus-visible:ring-2 active:opacity-90 disabled:border-0 disabled:opacity-100;
+  @apply transition duration-200 hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gray-4 active:opacity-90 disabled:border-0 disabled:opacity-100;
 }
 
 .hover\:animate-rotate-180:hover {

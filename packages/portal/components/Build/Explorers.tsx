@@ -24,7 +24,7 @@ const blockExplorerCards = [
 export const Explorers = () => {
   return (
     <Card
-      className="flex flex-col gap-4 bg-default-black bg-left-top bg-no-repeat lg:flex-row"
+      className="flex flex-col gap-4 bg-default-black bg-top-left bg-no-repeat lg:flex-row"
       style={{
         backgroundImage: `url('/images/banner-explorers.webp')`,
       }}

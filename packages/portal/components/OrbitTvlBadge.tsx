@@ -13,7 +13,7 @@ export const OrbitTvlBadge = ({ slug }: { slug: string }) => {
   return (
     <span
       className={twMerge(
-        'inline-flex items-start justify-start gap-2 break-words rounded bg-white/25 px-1.5 py-0.5 text-xs font-normal capitalize text-white',
+        'inline-flex items-start justify-start gap-2 wrap-break-word rounded bg-white/25 px-1.5 py-0.5 text-xs font-normal capitalize text-white',
       )}
     >
       ${formatter.format(tvl)} TVL

@@ -229,7 +229,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
       </div>
 
       {showActionPanel && (
-        <div className="fixed inset-0 bg-overlay z-[70] lg:hidden flex flex-col !mt-0">
+        <div className="fixed inset-0 bg-overlay z-70 lg:hidden flex flex-col mt-0!">
           <div className="flex items-center p-4">
             <button
               type="button"
@@ -252,7 +252,7 @@ export function LendOpportunityDetailsPage({ opportunity }: LendOpportunityDetai
       )}
 
       {!showActionPanel && (
-        <div className="fixed bottom-0 left-0 right-0 bg-gray-1 border-t border-white/10 p-4 lg:hidden z-[60]">
+        <div className="fixed bottom-0 left-0 right-0 bg-gray-1 border-t border-white/10 p-4 lg:hidden z-60">
           <div className="flex gap-2">
             <button
               onClick={() => {

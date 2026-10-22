@@ -21,16 +21,16 @@ export function SubNav() {
   const items = activeRoute ? subNavItems[activeRoute] || [] : [];
 
   const subNavTopClasses = twMerge(
-    'top-[theme(navbar.desktop)]',
-    isBannerVisible && 'top-[calc(theme(navbar.mobile)+theme(navbar.bannerMobile))]',
-    isBannerVisible && 'md:top-[calc(theme(navbar.desktop)+theme(navbar.bannerDesktop))]',
+    'top-(--navbar-desktop)',
+    isBannerVisible && 'top-[calc(var(--navbar-mobile)+(var(--navbar-bannerMobile)))]',
+    isBannerVisible && 'md:top-[calc(var(--navbar-desktop)+(var(--navbar-bannerDesktop)))]',
   );
 
   if (items.length === 0) {
     return (
       <aside
         className={twMerge(
-          'left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-sm bottom-0 hidden',
+          'left-0 z-40 w-[72px] border-0 bg-black/80 backdrop-blur-xs bottom-0 hidden',
           subNavTopClasses,
         )}
       />
@@ -40,7 +40,7 @@ export function SubNav() {
   return (
     <aside
       className={twMerge(
-        'sticky left-0 z-40 border-0 bg-black/80 backdrop-blur-sm overflow-y-auto bottom-0 px-4 mb-4 h-full',
+        'sticky left-0 z-40 border-0 bg-black/80 backdrop-blur-xs overflow-y-auto bottom-0 px-4 mb-4 h-full',
         'md:sticky md:w-[72px] md:px-0 md:mb-0',
         subNavTopClasses,
       )}
