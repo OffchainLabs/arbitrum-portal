@@ -190,7 +190,8 @@ function withoutTimes(run) {
 }
 
 // Counts come from the development build, times from the profiling build divided by the speed
-// factor of their run
+// factor of their run. Hooks measured on their own aren't part of the components the factor
+// comes from, so their times aren't divided.
 function summarize(runs) {
   const countsRun = runs.find(({ build }) => build === 'development') ?? runs[0];
   const timedRuns = runs.filter(({ build }) => build === 'profiling');
@@ -224,7 +225,7 @@ function summarize(runs) {
     // Sizes come from the development run, times from the profiling runs
     costs: countsRun.costs.map((cost) => ({
       name: cost.name,
-      costTime: median(samples.map((run) => time(run, findCost(run, cost.name)?.renderMs ?? 0))),
+      costTime: median(samples.map((run) => findCost(run, cost.name)?.renderMs ?? 0)),
       costKeyLength: cost.keyLength,
       costRetained: cost.retainedBytes,
     })),
@@ -277,7 +278,8 @@ function findCost(profile, name) {
 const timeReaders = {
   speed: () => (run) => run.speed,
   duration: (name) => (run) => findInteraction(run, name).duration / run.speed,
-  costTime: (name) => (run) => findCost(run, name).renderMs / run.speed,
+  // Each round runs the PR and master one after the other, so the raw times are already paired
+  costTime: (name) => (run) => findCost(run, name).renderMs,
 };
 
 // Counts and sizes are compared exactly, unless the metric allows a small relative change
