@@ -116,8 +116,3 @@ trustPolicyExclude:
   - 'semver@6.3.1'
   - 'slow-redact@0.3.2'
   - 'undici-types@6.21.0'
-
-# use-store-selectors crashes on useShallow(...) selectors (zustand v5). Drop once fixed in
-# OffchainLabs/eslint-plugin-zustand-rules.
-patchedDependencies:
-  eslint-plugin-zustand-rules@1.0.2: patches/eslint-plugin-zustand-rules@1.0.2.patch

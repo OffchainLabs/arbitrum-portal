@@ -60,9 +60,6 @@ overrides:
   '@synthetixio/synpress>cypress-wait-until': '-'
   '@synthetixio/synpress>etherscan-api': '-'
 
-patchedDependencies:
-  eslint-plugin-zustand-rules@1.0.2: bdbd1ae317c583a3bd1c32889381e774d2e289905be184a02006019eb1ffcee6
-
 importers:
 
   .:
@@ -110,8 +107,8 @@ importers:
         specifier: ^5.5.7
         version: 5.5.7(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8)(eslint@9.39.5)(prettier@3.9.10)
       eslint-plugin-zustand-rules:
-        specifier: https://github.com/OffchainLabs/eslint-plugin-zustand-rules
-        version: https://codeload.github.com/OffchainLabs/eslint-plugin-zustand-rules/tar.gz/cae011989384e6b9a022d536f3219fc7ea340444(patch_hash=bdbd1ae317c583a3bd1c32889381e774d2e289905be184a02006019eb1ffcee6)(eslint@9.39.5)
+        specifier: ^1.2.1
+        version: 1.2.1(eslint@9.39.5)
       prettier:
         specifier: ^3.9.10
         version: 3.9.10
@@ -4384,11 +4381,11 @@ packages:
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7
 
-  eslint-plugin-zustand-rules@https://codeload.github.com/OffchainLabs/eslint-plugin-zustand-rules/tar.gz/cae011989384e6b9a022d536f3219fc7ea340444:
-    resolution: {gitHosted: true, integrity: sha512-/k+IruBinGs6QH3L055xYeHdhgVvw79hJv4eB8xr2DkqrXYX29xp8OzdYdbyXqdh/pkqG2CdagSy6as13mhU4A==, tarball: https://codeload.github.com/OffchainLabs/eslint-plugin-zustand-rules/tar.gz/cae011989384e6b9a022d536f3219fc7ea340444}
-    version: 1.0.2
+  eslint-plugin-zustand-rules@1.2.1:
+    resolution: {integrity: sha512-RdXRIP8994XFl8LmGXCQGxMazpkiy+5hvguzpX7YgnlNHazGVnoxzg/HoEocYUkTby9fSHpIqeu3DmMc9B3/bA==}
+    engines: {node: '>=18'}
     peerDependencies:
-      eslint: ^8.0.0
+      eslint: ^8.0.0 || ^9.0.0
 
   eslint-scope@8.4.0:
     resolution: {integrity: sha512-sNXOfKCn74rt8RICKMvJS7XKV/Xk9kA7DyJr8mJik3S7Cwgy3qlkkmyS2uQB3jiJg6VNdZd/pDBJu0nvG2NlTg==}
@@ -7584,24 +7581,6 @@ packages:
 
   zustand@5.0.3:
     resolution: {integrity: sha512-14fwWQtU3pH4dE0dOpdMiWjddcH+QzKIgk1cl8epwSE7yag43k/AD/m4L6+K7DytAOr9gGBe3/EXj9g7cdostg==}
-    engines: {node: '>=12.20.0'}
-    peerDependencies:
-      '@types/react': 19.3.0
-      immer: '>=9.0.6'
-      react: '>=18.0.0'
-      use-sync-external-store: '>=1.2.0'
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-      immer:
-        optional: true
-      react:
-        optional: true
-      use-sync-external-store:
-        optional: true
-
-  zustand@5.0.8:
-    resolution: {integrity: sha512-gyPKpIaxY9XcO2vSMrLbiER7QMAMGOQZVRdJ6Zi782jkbzZygq5GI9nG8g+sMgitRtndwaBSl7uiqC49o1SSiw==}
     engines: {node: '>=12.20.0'}
     peerDependencies:
       '@types/react': 19.3.0
@@ -13301,7 +13280,7 @@ snapshots:
       string.prototype.matchall: 4.0.12
       string.prototype.repeat: 1.0.0
 
-  eslint-plugin-zustand-rules@https://codeload.github.com/OffchainLabs/eslint-plugin-zustand-rules/tar.gz/cae011989384e6b9a022d536f3219fc7ea340444(patch_hash=bdbd1ae317c583a3bd1c32889381e774d2e289905be184a02006019eb1ffcee6)(eslint@9.39.5):
+  eslint-plugin-zustand-rules@1.2.1(eslint@9.39.5):
     dependencies:
       eslint: 9.39.5(jiti@1.21.7)(supports-color@8.1.1)
 
@@ -15024,7 +15003,7 @@ snapshots:
       ox: 0.9.14(typescript@5.9.3)(zod@4.6.7)
       viem: 2.57.7(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.6.7)
       zod: 4.6.7
-      zustand: 5.0.8(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.4.0)
+      zustand: 5.0.15(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.4.0)
     optionalDependencies:
       '@tanstack/react-query': 5.104.5(@types/react@19.3.0)(react@19.3.1)
       react: 19.3.1
@@ -15044,7 +15023,7 @@ snapshots:
       ox: 0.9.14(typescript@5.9.3)(zod@4.6.7)
       viem: 2.57.7(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.6.7)
       zod: 4.6.7
-      zustand: 5.0.8(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.6.0)
+      zustand: 5.0.15(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.6.0)
     optionalDependencies:
       '@tanstack/react-query': 5.104.5(@types/react@19.3.0)(react@19.3.1)
       react: 19.3.1
@@ -16793,21 +16772,6 @@ snapshots:
       use-sync-external-store: 1.4.0(react@19.3.1)
 
   zustand@5.0.3(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.6.0):
-    optionalDependencies:
-      '@types/react': 19.3.0
-      immer: 11.2.7
-      react: 19.3.1
-      use-sync-external-store: 1.6.0(react@19.3.1)
-    optional: true
-
-  zustand@5.0.8(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.4.0):
-    optionalDependencies:
-      '@types/react': 19.3.0
-      immer: 11.2.7
-      react: 19.3.1
-      use-sync-external-store: 1.4.0(react@19.3.1)
-
-  zustand@5.0.8(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.6.0):
     optionalDependencies:
       '@types/react': 19.3.0
       immer: 11.2.7
