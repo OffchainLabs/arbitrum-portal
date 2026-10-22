@@ -55,7 +55,7 @@ export const GovernanceSection = () => {
 
             <div
               className={twMerge(
-                'absolute bottom-0 left-0 h-[10px] w-full bg-gradient-to-r',
+                'absolute bottom-0 left-0 h-[10px] w-full bg-linear-to-r',
                 content.borderClassName,
               )}
             />

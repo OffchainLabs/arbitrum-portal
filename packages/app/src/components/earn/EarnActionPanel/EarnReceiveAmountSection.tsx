@@ -37,7 +37,7 @@ export function EarnReceiveAmountSection({
               type="text"
               value={amount || '0.00'}
               readOnly
-              className="flex-1 bg-transparent w-full text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px] placeholder-gray-400 focus:outline-none h-[34px]"
+              className="flex-1 bg-transparent w-full text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px] placeholder-gray-400 focus:outline-hidden h-[34px]"
             />
           )}
           {tokenSelector ?? <EarnTokenBadge symbol={token.symbol} logoUrl={token.logoUrl} />}

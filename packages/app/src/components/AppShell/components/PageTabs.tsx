@@ -31,7 +31,7 @@ export function PageTabs({ title, tabs, className }: PageTabsProps) {
               key={tab.href}
               href={tab.href}
               className={twMerge(
-                'flex-1 flex-shrink-0 text-sm transition-colors pb-2 border-b-2 touch-manipulation',
+                'flex-1 shrink-0 text-sm transition-colors pb-2 border-b-2 touch-manipulation',
                 active
                   ? 'text-white border-white font-semibold'
                   : 'text-white/70 border-b border-white/30',
@@ -54,7 +54,7 @@ export function PageTabs({ title, tabs, className }: PageTabsProps) {
               className={twMerge(
                 'rounded px-4 py-2 text-sm transition-colors',
                 active
-                  ? 'bg-gradient-to-b from-white/20 to-white/30 text-white'
+                  ? 'bg-linear-to-b from-white/20 to-white/30 text-white'
                   : 'text-white/70 hover:bg-default-black bg-default-black/70 hover:text-white',
               )}
             >

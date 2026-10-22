@@ -76,20 +76,10 @@
     // https://github.com/advisories/GHSA-vfj7-8cjw-p6xm
     // braces stack-exhaustion denial of service through deeply nested brace patterns (CVE-2026-93687)
     // Reason to ignore: No patched version available (3.0.3 is the latest published version).
-    // braces only expands glob patterns we write ourselves: tailwindcss content globs and eslint and
-    // fast-glob file matching at build/lint time. No untrusted input reaches it.
-    // from: @headlessui/tailwindcss>tailwindcss>micromatch>braces
+    // braces only expands glob patterns we write ourselves: the Tailwind CLI's file watcher and
+    // eslint's fast-glob file matching at build/lint time. No untrusted input reaches it.
+    // from: app>@tailwindcss/cli>@parcel/watcher>micromatch>braces
     // from: eslint-config-next>@next/eslint-plugin-next>fast-glob>micromatch>braces
     "GHSA-vfj7-8cjw-p6xm",
-    //
-    // https://github.com/advisories/GHSA-rj75-hqrm-r3gf
-    // postcss-selector-parser quadratic-time parsing of flat selectors with repeated class or id tokens allows CPU exhaustion (CVE-2026-104844)
-    // Reason to ignore: Only 7.1.6 is patched and tailwindcss@3 / postcss-nested@6 pin ^6.1.x, so the fix is a major
-    // bump the parents do not declare support for. The parser only runs at build time over selectors we author
-    // ourselves (tailwind utilities, our own CSS); the advisory scopes the impact to services parsing untrusted
-    // selectors, not build-time use.
-    // from: @headlessui/tailwindcss>tailwindcss>postcss-selector-parser
-    // from: tailwindcss>postcss-nested>postcss-selector-parser
-    "GHSA-rj75-hqrm-r3gf",
   ],
 }

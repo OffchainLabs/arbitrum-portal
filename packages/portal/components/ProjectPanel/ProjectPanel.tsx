@@ -68,7 +68,7 @@ export const ProjectPanel = () => {
           />
           <button
             onClick={closeProjectPanel}
-            className="flex cursor-pointer flex-row flex-nowrap items-center gap-1 rounded-md bg-default-black bg-white/10 p-2 outline-none outline-0 hover:bg-[#333] lg:px-3"
+            className="flex cursor-pointer flex-row flex-nowrap items-center gap-1 rounded-md bg-default-black bg-white/10 p-2 outline-hidden outline-0 hover:bg-[#333] lg:px-3"
           >
             <XMarkIcon className="h-5 w-5 stroke-white" />
             <span className="hidden text-sm lg:flex"> Close</span>
@@ -160,7 +160,7 @@ export const ProjectPanel = () => {
             {/* Tags */}
             <p className="flex flex-wrap justify-start gap-3 text-center leading-6 text-white">
               {!project.meta.isLive && (
-                <span className="inline-flex items-start justify-start gap-2 break-words rounded bg-orange px-1.5 py-0.5 text-xs font-normal text-dark-lime">
+                <span className="inline-flex items-start justify-start gap-2 wrap-break-word rounded bg-orange px-1.5 py-0.5 text-xs font-normal text-dark-lime">
                   Coming Soon
                 </span>
               )}
@@ -168,14 +168,14 @@ export const ProjectPanel = () => {
               {project.subcategories.slice(0, 2).map((subcategory) => (
                 <span
                   key={`${project.id}-${subcategory.id}`}
-                  className="inline-flex items-start justify-start gap-2 truncate break-words rounded-sm bg-white/25 px-1.5 py-0.5 text-xs font-normal text-white"
+                  className="inline-flex items-start justify-start gap-2 truncate wrap-break-word rounded-sm bg-white/25 px-1.5 py-0.5 text-xs font-normal text-white"
                 >
                   {subcategory.title}
                 </span>
               ))}
 
               {project.meta.isArbitrumNative && (
-                <span className="inline-flex cursor-help items-start justify-start gap-2 break-words rounded bg-ocl-blue px-1.5 py-0.5 text-xs font-normal text-white">
+                <span className="inline-flex cursor-help items-start justify-start gap-2 wrap-break-word rounded bg-ocl-blue px-1.5 py-0.5 text-xs font-normal text-white">
                   <Tooltip
                     content={
                       <p className="text-xs">
@@ -197,7 +197,7 @@ export const ProjectPanel = () => {
         {hasLiveIncentives && (
           <div
             className={
-              'relative flex flex-col md:items-center gap-3 md:flex-row bg-gradient-to-b from-[rgba(153,242,78,0.10)] to-[rgba(8,214,243,0.10)] rounded-lg p-4'
+              'relative flex flex-col md:items-center gap-3 md:flex-row bg-linear-to-b from-[rgba(153,242,78,0.10)] to-[rgba(8,214,243,0.10)] rounded-lg p-4'
             }
           >
             <div className="flex items-center gap-2 font-normal shrink-0">
@@ -211,7 +211,7 @@ export const ProjectPanel = () => {
               )}
             >
               <div
-                className="absolute h-full top-0 left-0 rounded bg-gradient-to-r from-[#99F24E] to-[#08D6F3] animate-progress-bar"
+                className="absolute h-full top-0 left-0 rounded bg-linear-to-r from-[#99F24E] to-[#08D6F3] animate-progress-bar"
                 style={{
                   width:
                     ((new Date().getTime() - new Date(LIVE_INCENTIVES_START_DATE).getTime()) /

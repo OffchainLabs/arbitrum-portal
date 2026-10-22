@@ -52,7 +52,7 @@ function ChartTooltipContent(props: ChartTooltipContentProps) {
   }));
 
   return (
-    <div className="rounded-md border border-white/10 bg-gray-1 p-2 text-xs text-white shadow">
+    <div className="rounded-md border border-white/10 bg-gray-1 p-2 text-xs text-white shadow-sm">
       {label && <div className="mb-1 text-white/70">{label}</div>}
       {tooltipRows.map((item) => (
         <div key={item.key} className="flex items-center justify-between gap-4">

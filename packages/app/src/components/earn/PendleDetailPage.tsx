@@ -275,7 +275,7 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
       </div>
 
       {showActionPanel && (
-        <div className="fixed inset-0 bg-overlay z-[70] lg:hidden flex flex-col !mt-0">
+        <div className="fixed inset-0 bg-overlay z-70 lg:hidden flex flex-col mt-0!">
           <div className="flex items-center p-4">
             <button
               type="button"
@@ -298,7 +298,7 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
       )}
 
       {!showActionPanel && (
-        <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-white/10 p-4 lg:hidden z-[60]">
+        <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-white/10 p-4 lg:hidden z-60">
           <div className="flex gap-2">
             {!mobileHasPosition && isMarketExpired ? (
               <div className="flex-1 text-center py-3 text-sm text-white/50">

@@ -44,7 +44,7 @@ export function MoonPaySkeleton({ children }: PropsWithChildren) {
       <div
         className={twMerge(
           'relative h-full min-h-[600px] w-full',
-          '[&>div]:!m-0 [&>div]:!w-full [&>div]:!border-x-0 [&>div]:!border-none [&>div]:!p-0 sm:[&>div]:!rounded sm:[&>div]:!border-x',
+          '[&>div]:m-0! [&>div]:w-full! [&>div]:border-x-0! [&>div]:border-none! [&>div]:p-0! sm:[&>div]:rounded! sm:[&>div]:border-x!',
           '[&_iframe]:rounded-xl',
         )}
       >

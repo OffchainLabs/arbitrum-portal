@@ -21,7 +21,7 @@ export const ChainStats = () => {
       <div className="grid grid-cols-2 gap-4 text-sm lg:grid-cols-3">
         <div className="col-span-1 flex flex-col gap-4">
           <Card
-            className="relative flex h-[100px] flex-col gap-1 bg-contain bg-right-bottom bg-no-repeat"
+            className="relative flex h-[100px] flex-col gap-1 bg-contain bg-bottom-right bg-no-repeat"
             style={{
               backgroundImage: `url('/images/illustration-stats-1.webp')`,
             }}
@@ -44,7 +44,7 @@ export const ChainStats = () => {
             Median Fee Per Transaction
           </Card>
           <Card
-            className="relative flex h-[100px] flex-col gap-1 bg-cover bg-right-bottom bg-no-repeat"
+            className="relative flex h-[100px] flex-col gap-1 bg-cover bg-bottom-right bg-no-repeat"
             style={{
               backgroundImage: `url('/images/illustration-stats-2.webp')`,
             }}
@@ -54,7 +54,7 @@ export const ChainStats = () => {
           </Card>
         </div>
         <Card
-          className="relative col-span-2 flex min-h-[100px] flex-col gap-1 bg-contain bg-right-bottom bg-no-repeat lg:col-span-1 lg:bg-[length:200px_200px]"
+          className="relative col-span-2 flex min-h-[100px] flex-col gap-1 bg-contain bg-bottom-right bg-no-repeat lg:col-span-1 lg:bg-size-[200px_200px]"
           style={{
             backgroundImage: `url('/images/illustration-stats-3.webp')`,
           }}
