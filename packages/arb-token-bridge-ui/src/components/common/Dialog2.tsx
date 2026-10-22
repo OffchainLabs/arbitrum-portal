@@ -29,6 +29,7 @@ import { CctpUsdcWithdrawalConfirmationDialog } from '../TransferPanel/USDCWithd
 import { WithdrawalConfirmationDialog } from '../TransferPanel/WithdrawalConfirmationDialog';
 import { WidgetTransactionHistory } from '../Widget/WidgetTransactionHistory';
 import { NetworkSelectionContainer } from './NetworkSelectionContainer';
+import { benchProfiler } from './benchProfiler';
 
 /**
  * Returns a promise which resolves to an array [boolean, unknown] value,
@@ -180,7 +181,7 @@ export function DialogWrapper(props: DialogProps) {
     case 'widget_transaction_history':
       return <WidgetTransactionHistory {...commonProps} />;
     case 'token_selection':
-      return <TokenSearch {...commonProps} />;
+      return benchProfiler('TokenSearch', <TokenSearch {...commonProps} />);
     case 'destination_token_selection':
       return <DestinationTokenSearch {...commonProps} />;
     case 'settings':
