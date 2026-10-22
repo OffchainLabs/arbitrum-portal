@@ -1,7 +1,7 @@
 /*
   Server-side friendly fuzzy search function
 */
-import Fuse from 'fuse.js';
+import Fuse, { type FuseResult } from 'fuse.js';
 
 import { CATEGORIES } from './categories';
 import { ORBIT_CHAINS } from './orbitChains';
@@ -15,7 +15,7 @@ export type SearchResult =
   | SearchableData<Subcategory>
   | SearchableData<OrbitChain>;
 
-export type FuzzySearchResult = Fuse.FuseResult<SearchResult>;
+export type FuzzySearchResult = FuseResult<SearchResult>;
 
 export const getSearchResults = (searchString: string): FuzzySearchResult[] => {
   if (searchString.length >= 2) {
