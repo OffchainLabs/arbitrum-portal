@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import dayjs from 'dayjs';
 import { BigNumber, constants } from 'ethers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { DepositStatus, LifiMergedTransaction, WithdrawalStatus } from '../state/app/state';
 import { createMockLifiPartialTransaction } from '../test-utils/lifi';
@@ -279,11 +279,10 @@ describe.sequential('useLifiMergedTransactionCacheStore', () => {
     const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
     const { result } = renderHook(() =>
       useLifiMergedTransactionCacheStore(
-        (state) => ({
+        useShallow((state) => ({
           addTransaction: state.addTransaction,
           transactions: state.transactions,
-        }),
-        shallow,
+        })),
       ),
     );
 
@@ -321,11 +320,10 @@ describe.sequential('useLifiMergedTransactionCacheStore', () => {
 
     const { result: resultAfterChanges } = renderHook(() =>
       useLifiMergedTransactionCacheStore(
-        (state) => ({
+        useShallow((state) => ({
           addTransaction: state.addTransaction,
           transactions: state.transactions,
-        }),
-        shallow,
+        })),
       ),
     );
     await waitFor(() => {
@@ -347,12 +345,11 @@ describe.sequential('useLifiMergedTransactionCacheStore', () => {
     const customDestinationAddress = '0x7503Aad60fd0d205702b0Dcd945a1b36c42101b3';
     const { result } = renderHook(() =>
       useLifiMergedTransactionCacheStore(
-        (state) => ({
+        useShallow((state) => ({
           addTransaction: state.addTransaction,
           updateTransaction: state.updateTransaction,
           transactions: state.transactions,
-        }),
-        shallow,
+        })),
       ),
     );
 
@@ -407,12 +404,11 @@ describe.sequential('useLifiMergedTransactionCacheStore', () => {
     const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
     const { result } = renderHook(() =>
       useLifiMergedTransactionCacheStore(
-        (state) => ({
+        useShallow((state) => ({
           addTransaction: state.addTransaction,
           updateTransaction: state.updateTransaction,
           transactions: state.transactions,
-        }),
-        shallow,
+        })),
       ),
     );
 
@@ -450,12 +446,11 @@ describe.sequential('useLifiMergedTransactionCacheStore', () => {
     const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
     const { result } = renderHook(() =>
       useLifiMergedTransactionCacheStore(
-        (state) => ({
+        useShallow((state) => ({
           addTransaction: state.addTransaction,
           updateTransaction: state.updateTransaction,
           transactions: state.transactions,
-        }),
-        shallow,
+        })),
       ),
     );
 

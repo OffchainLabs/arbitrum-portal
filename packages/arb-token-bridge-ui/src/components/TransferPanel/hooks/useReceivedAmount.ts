@@ -1,5 +1,5 @@
 import { utils } from 'ethers';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { formatAmount } from '../../../util/NumberUtils';
@@ -12,12 +12,11 @@ import { isLifiRouteData, useRouteStore } from './useRouteStore';
  */
 export function useReceivedAmount() {
   const { selectedRoute, routes, isLoading } = useRouteStore(
-    (state) => ({
+    useShallow((state) => ({
       selectedRoute: state.selectedRoute,
       routes: state.routes,
       isLoading: state.isLoading,
-    }),
-    shallow,
+    })),
   );
 
   const [{ amount }] = useArbQueryParams();
