@@ -57,9 +57,6 @@
     // https://github.com/advisories/GHSA-m28w-2pqf-7qgj
     // webpack-dev-server denial of service via a malformed Host header
     //
-    // https://github.com/advisories/GHSA-v6wh-96g9-6wx3
-    // launch-editor leaks NTLMv2 hashes via unvalidated Windows UNC paths on the dev-server __open-in-editor endpoint (CVE-2026-53632)
-    //
     // https://github.com/advisories/GHSA-mx8g-39q3-5c79
     // webpack-dev-server HMR WebSocket interception via permissive user proxies leaks credentials (CVE-2026-9595)
     //
@@ -106,7 +103,6 @@
     "GHSA-79cf-xcqc-c78w",
     "GHSA-f5vj-f2hx-8m93",
     "GHSA-m28w-2pqf-7qgj",
-    "GHSA-v6wh-96g9-6wx3",
     "GHSA-mx8g-39q3-5c79",
     "GHSA-64mm-vxmg-q3vj",
     "GHSA-g84c-rxfj-3j2c",
