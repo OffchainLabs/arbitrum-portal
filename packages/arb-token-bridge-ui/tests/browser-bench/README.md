@@ -115,7 +115,10 @@ The profiling build adds, for each `<Profiler>` id, the `onRender` calls whose `
 the measurement:
 
 - **Commits**: the number of `onRender` calls, one per commit that rendered something in the
-  subtree. It isn't a number of component renders.
+  subtree. It isn't a number of component renders. A subtree without commits during the
+  interaction counts as 0 ms when it rendered at another time on that build, so going from no
+  render on master to slow renders in the PR is a regression. A subtree that never rendered on
+  master's pages is reported as not measured on master.
 - **actualDuration**: total and longest, the time React spent rendering the subtree in those
   commits.
 - **baseDuration**: the longest, React's estimate of rendering the whole subtree without memoized
