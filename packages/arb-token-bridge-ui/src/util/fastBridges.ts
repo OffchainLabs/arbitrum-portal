@@ -91,10 +91,12 @@ export function getFastBridges({
   }
 
   const bridgeInfo: {
-    [bridge in Exclude<
-      FastBridgeNames,
-      FastBridgeNames.LIFI | FastBridgeNames.Router | FastBridgeNames.Wormhole
-    >]: {
+    [
+      bridge in Exclude<
+        FastBridgeNames,
+        FastBridgeNames.LIFI | FastBridgeNames.Router | FastBridgeNames.Wormhole
+      >
+    ]: {
       imageSrc: StaticImageData;
       href: string;
     };
