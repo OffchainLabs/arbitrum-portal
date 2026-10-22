@@ -8,7 +8,7 @@ import { twMerge } from 'tailwind-merge';
 import { Chain } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
 import { create } from 'zustand';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
@@ -77,11 +77,10 @@ export const BuyPanelNetworkSelectionContainer = React.memo(
   (props: DialogProps & { isOpen: boolean }) => {
     const { embedMode } = useMode();
     const { selectedChainId, setSelectedChainId } = useBuyPanelStore(
-      (state) => ({
+      useShallow((state) => ({
         selectedChainId: state.selectedChainId,
         setSelectedChainId: state.setSelectedChainId,
-      }),
-      shallow,
+      })),
     );
 
     return (

@@ -50,7 +50,7 @@
     "viem": "^2.57.7",
     "wagmi": "^2.19.5",
     "zod": "^4.6.7",
-    "zustand": "^4.5.7"
+    "zustand": "^5.0.15"
   },
   "scripts": {
     "predev": "pnpm run generateDenylist",

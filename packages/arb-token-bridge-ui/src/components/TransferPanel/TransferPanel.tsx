@@ -9,7 +9,7 @@ import { useLatest } from 'react-use';
 import { twMerge } from 'tailwind-merge';
 import { BaseError } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { useShowUsdgDripCardAfterSubmit } from '@/app-components/UsdgDripCard/useUsdgDripCard';
 import { Tooltip } from '@/app/components/common/Tooltip';
@@ -172,24 +172,22 @@ export function TransferPanel() {
   const { addPendingTransaction, updatePendingTransaction } =
     useAddPendingTransactions(walletAddress);
   const { selectedRoute, clearRoute, context } = useRouteStore(
-    (state) => ({
+    useShallow((state) => ({
       selectedRoute: state.selectedRoute,
       clearRoute: state.clearRoute,
       context: getSelectedRouteContext(state),
-    }),
-    shallow,
+    })),
   );
   const {
     addLifiTransactionToCache,
     updateLifiTransactionInCache,
     removeLifiTransactionFromCache,
   } = useLifiMergedTransactionCacheStore(
-    (state) => ({
+    useShallow((state) => ({
       addLifiTransactionToCache: state.addTransaction,
       updateLifiTransactionInCache: state.updateTransaction,
       removeLifiTransactionFromCache: state.removeTransaction,
-    }),
-    shallow,
+    })),
   );
 
   const isTransferAllowed = useLatest(useIsTransferAllowed());

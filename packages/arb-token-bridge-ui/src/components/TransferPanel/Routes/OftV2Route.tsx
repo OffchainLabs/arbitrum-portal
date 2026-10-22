@@ -1,6 +1,6 @@
 import { constants, utils } from 'ethers';
 import { useMemo } from 'react';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { ether } from '../../../constants';
 import { useGasSummary } from '../../../hooks/TransferPanel/useGasSummary';
@@ -20,11 +20,10 @@ export function OftV2Route({ amountReceived }: { amountReceived: string }) {
   const [networks] = useNetworks();
   const { isDepositMode } = useNetworksRelationship(networks);
   const { selectedRoute, setSelectedRoute } = useRouteStore(
-    (state) => ({
+    useShallow((state) => ({
       selectedRoute: state.selectedRoute,
       setSelectedRoute: state.setSelectedRoute,
-    }),
-    shallow,
+    })),
   );
   const [selectedToken] = useSelectedToken();
 
