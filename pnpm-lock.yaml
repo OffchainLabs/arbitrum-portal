@@ -42,7 +42,6 @@ overrides:
   vite@>=7.0.0 <7.3.7: 7.3.7
   vite@>=6.0.0 <6.4.4: 6.4.4
   esbuild: 0.28.1
-  sucrase>glob: 10.5.0
   test-exclude>glob: 10.5.0
   ws@>=8.0.0 <8.21.0: 8.21.0
   ws@>=7.0.0 <7.5.11: 7.5.11
@@ -53,7 +52,6 @@ overrides:
   '@babel/core': 7.29.6
   socket.io-parser: 4.2.7
   browserslist: 4.28.8
-  postcss-selector-parser: 6.1.4
   query-string@9>decode-uri-component: 0.5.0
   '@synthetixio/synpress>cypress': '-'
   '@synthetixio/synpress>@cypress/webpack-dev-server': '-'
