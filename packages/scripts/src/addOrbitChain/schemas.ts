@@ -298,7 +298,7 @@ export const validateIncomingChainData = async (rawData: unknown): Promise<Incom
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('Validation errors:');
-      error.errors.forEach((err) => {
+      error.issues.forEach((err) => {
         console.error(`${err.path.join('.')}: ${err.message}`);
       });
     }

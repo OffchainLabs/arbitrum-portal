@@ -138,9 +138,7 @@ export interface StandardOpportunityFixedYield extends StandardOpportunityBase {
 }
 
 export type StandardOpportunity =
-  | StandardOpportunityLend
-  | StandardOpportunityLiquidStaking
-  | StandardOpportunityFixedYield;
+  StandardOpportunityLend | StandardOpportunityLiquidStaking | StandardOpportunityFixedYield;
 
 export type VaultsOpportunity = StandardOpportunityLend & { vendor: Vendor.Vaults };
 export type LiFiOpportunity = StandardOpportunityLiquidStaking & { vendor: Vendor.LiFi };

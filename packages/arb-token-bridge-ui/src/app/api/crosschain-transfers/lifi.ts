@@ -124,21 +124,19 @@ function getRouteCosts(steps: LiFiStep[], kind: 'gas' | 'fee'): RouteCost[] {
         ? (step.estimate.gasCosts ?? []).map((cost) => ({ cost, estimate: cost.estimate }))
         : (step.estimate.feeCosts ?? []).filter((cost) => !cost.included).map((cost) => ({ cost }));
 
-    return costs.map(
-      ({ cost, estimate }, costIndex): RouteCost => ({
-        amount: cost.amount,
-        amountUSD: cost.amountUSD,
-        token: applyOverrides(cost.token, cost.token.chainId),
-        chainId: cost.token.chainId,
-        estimate,
-        details: {
-          id: `${step.id}-${kind}-${costIndex}`,
-          label: getLifiRouteStepLabel(step, kind),
-          via: toolDetails.name,
-          iconURI: toolDetails.logoURI,
-        },
-      }),
-    );
+    return costs.map(({ cost, estimate }, costIndex): RouteCost => ({
+      amount: cost.amount,
+      amountUSD: cost.amountUSD,
+      token: applyOverrides(cost.token, cost.token.chainId),
+      chainId: cost.token.chainId,
+      estimate,
+      details: {
+        id: `${step.id}-${kind}-${costIndex}`,
+        label: getLifiRouteStepLabel(step, kind),
+        via: toolDetails.name,
+        iconURI: toolDetails.logoURI,
+      },
+    }));
   });
 }
 
