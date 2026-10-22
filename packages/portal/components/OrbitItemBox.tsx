@@ -71,8 +71,8 @@ const ItemContent = ({
       {/* Show cover-pic with the tile if it's a spotlight mode */}
       {displayMode === 'spotlight' && images.bannerUrl && (
         <>
-          <div className="absolute left-0 top-0 z-10 h-full w-full bg-gradient-to-t from-black/70 from-[25%] to-transparent" />
-          <div className="absolute left-0 top-0 z-10 h-full w-full bg-gradient-to-r from-black/70 from-[25%] to-transparent" />
+          <div className="absolute left-0 top-0 z-10 h-full w-full bg-linear-to-t from-black/70 from-25% to-transparent" />
+          <div className="absolute left-0 top-0 z-10 h-full w-full bg-linear-to-r from-black/70 from-25% to-transparent" />
           <Image
             alt={`${title} banner`}
             src={images.bannerUrl}

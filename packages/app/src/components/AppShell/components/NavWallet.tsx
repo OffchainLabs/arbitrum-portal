@@ -92,7 +92,7 @@ function WalletConnectedDropdown({ account, chain }: WalletConnectedDropdownProp
             />
           </Popover.Button>
 
-          <Popover.Panel className="absolute right-0 top-[0px] z-50 w-56 rounded-md border-0 bg-gray-1 p-3 shadow-lg">
+          <Popover.Panel className="absolute right-0 top-0 z-50 w-56 rounded-md border-0 bg-gray-1 p-3 shadow-lg">
             <button
               onClick={() => copy(displayAddress)}
               className={twMerge(MENU_ITEM_BUTTON_CLASSES, 'px-2 py-2.5 mb-0.5')}

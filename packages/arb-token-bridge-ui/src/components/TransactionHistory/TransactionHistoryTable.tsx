@@ -197,7 +197,7 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
   return (
     <ContentWrapper
       ref={contentWrapperRef}
-      className="relative block h-full min-h-[1px] w-full overflow-y-auto rounded p-0 text-left md:overflow-x-hidden md:border md:border-white"
+      className="relative block h-full min-h-px w-full overflow-y-auto rounded p-0 text-left md:overflow-x-hidden md:border md:border-white"
     >
       <div
         className={twMerge(

@@ -249,13 +249,13 @@ export function TransactionHistorySearchBar() {
             // menu; width 0 is ignored for the browser's auto style
             // spans border to divider: button width plus the 10px field padding on the
             // left and the 10px gap on the right, shifted to the field's left edge
-            className="z-20 w-[calc(var(--button-width)+20px)] overflow-hidden rounded-[10px] border border-gray-dark bg-gray-1 py-1 text-sm font-light text-white [--anchor-offset:-10px] [outline-style:none]"
+            className="z-20 w-[calc(var(--button-width)+20px)] overflow-hidden rounded-[10px] border border-gray-dark bg-gray-1 py-1 text-sm font-light text-white [--anchor-offset:-10px] outline-none"
           >
             {(Object.keys(searchModeConfig) as TransactionHistorySearchMode[]).map((mode) => (
               <ListboxOption
                 key={mode}
                 value={mode}
-                className="cursor-pointer whitespace-nowrap px-[10px] py-2 data-[focus]:bg-white/10 data-[selected]:bg-white/20"
+                className="cursor-pointer whitespace-nowrap px-[10px] py-2 data-focus:bg-white/10 data-selected:bg-white/20"
               >
                 {searchModeConfig[mode].label}
               </ListboxOption>
@@ -268,7 +268,7 @@ export function TransactionHistorySearchBar() {
           content={searchModeConfig[searchMode].tooltip}
           wrapperClassName="block h-full w-full"
           contentProps={{
-            className: 'w-auto whitespace-normal break-words',
+            className: 'w-auto whitespace-normal wrap-break-word',
             style: {
               // Limit the tooltip width to 80% of the input width
               maxWidth: 'calc(var(--radix-popper-anchor-width) * 0.8)',
@@ -291,7 +291,7 @@ export function TransactionHistorySearchBar() {
                 : 'Transaction history wallet address input'
             }
             // focus-visible:outline-0 beats the global white input outline; the form shows focus
-            className="h-full w-full bg-transparent text-sm font-light tracking-[-0.28px] outline-none focus-visible:outline-0 placeholder:text-white/50"
+            className="h-full w-full bg-transparent text-sm font-light tracking-[-0.28px] outline-hidden focus-visible:outline-0 placeholder:text-white/50"
             // stop password managers from autofilling
             data-1p-ignore
             data-lpignore="true"

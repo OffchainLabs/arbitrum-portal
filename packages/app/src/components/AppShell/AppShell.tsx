@@ -35,13 +35,13 @@ function AppShellPaddingWrapper({ children, isEmbedMode }: AppShellPaddingWrappe
 
   const contentPaddingClasses = twMerge(
     'flex flex-1 flex-col md:flex-row',
-    'pb-[theme(navbar.mobileBottom)] md:pb-0',
-    !isBannerVisible && 'pt-[calc(theme(navbar.mobile)+theme(navbar.spacing))]',
-    !isBannerVisible && 'md:pt-[calc(theme(navbar.desktop)+theme(navbar.spacing))]',
+    'pb-(--navbar-mobileBottom) md:pb-0',
+    !isBannerVisible && 'pt-[calc(var(--navbar-mobile)+(var(--navbar-spacing)))]',
+    !isBannerVisible && 'md:pt-[calc(var(--navbar-desktop)+(var(--navbar-spacing)))]',
     isBannerVisible &&
-      'pt-[calc(theme(navbar.mobile)+theme(navbar.bannerMobile)+theme(navbar.spacing))]',
+      'pt-[calc(var(--navbar-mobile)+(var(--navbar-bannerMobile))+(var(--navbar-spacing)))]',
     isBannerVisible &&
-      'md:pt-[calc(theme(navbar.desktop)+theme(navbar.bannerDesktop)+theme(navbar.spacing))]',
+      'md:pt-[calc(var(--navbar-desktop)+(var(--navbar-bannerDesktop))+(var(--navbar-spacing)))]',
   );
 
   return <div className={contentPaddingClasses}>{children}</div>;
