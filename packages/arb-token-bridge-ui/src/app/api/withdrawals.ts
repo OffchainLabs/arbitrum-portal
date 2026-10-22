@@ -1,7 +1,11 @@
 import { gql } from '@apollo/client';
 import { NextRequest, NextResponse } from 'next/server';
 
-import { type SubgraphSource, getL2SubgraphClient } from '../../api-utils/ServerSubgraphUtils';
+import {
+  type SubgraphSource,
+  getL2SubgraphClient,
+  getQueryData,
+} from '../../api-utils/ServerSubgraphUtils';
 import { WithdrawalFromSubgraph } from '../../util/withdrawals/fetchWithdrawalsFromSubgraph';
 import { isIndexerEnabledForRequest, proxyToIndexer } from './indexer';
 
@@ -67,7 +71,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Withdrawal
       );
     }
 
-    const subgraphResult = await subgraph.client.query({
+    const subgraphResult = await subgraph.client.query<{ withdrawals: any }>({
       query: gql`{
         withdrawals(
           where: {            
@@ -98,7 +102,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Withdrawal
     }`,
     });
 
-    const transactions: WithdrawalFromSubgraph[] = subgraphResult.data.withdrawals.map(
+    const transactions: WithdrawalFromSubgraph[] = getQueryData(subgraphResult).withdrawals.map(
       (eventData: any) => {
         const {
           id,

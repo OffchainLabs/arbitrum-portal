@@ -1,5 +1,4 @@
-import { ApolloClient, HttpLink, InMemoryCache, NormalizedCacheObject } from '@apollo/client';
-import ApolloLinkTimeout from 'apollo-link-timeout';
+import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client';
 
 import { ChainId } from '../types/ChainId';
 import { logger } from '../util/logger';
@@ -12,6 +11,12 @@ const theGraphNetworkApiKey = process.env.THE_GRAPH_NETWORK_API_KEY;
 
 const selfHostedSubgraphApiKey = process.env.SELF_HOSTED_SUBGRAPH_API_KEY;
 
+/**
+ * Subgraph requests are aborted after this long. Same default as the
+ * apollo-link-timeout link used before Apollo Client 4.
+ */
+const SUBGRAPH_REQUEST_TIMEOUT_MS = 15_000;
+
 type SubgraphKey = keyof typeof subgraphs;
 
 // Labels, never URLs — our endpoints stay behind the API. Routes report one of
@@ -20,7 +25,7 @@ export type SubgraphSource = SubgraphKey | 'arbitrum-indexer';
 
 /** An Apollo client paired with the label to report it as. */
 type SourcedClient = {
-  client: ApolloClient<NormalizedCacheObject>;
+  client: ApolloClient;
   source: SubgraphSource;
 };
 
@@ -59,15 +64,30 @@ const subgraphs = {
   },
 } satisfies Record<string, Subgraph>;
 
+/**
+ * Apollo Client 4 types query `data` as possibly undefined. With the default
+ * errorPolicy ('none') a failed query throws, so missing data is unexpected.
+ */
+export function getQueryData<TData>(result: { data?: TData }): TData {
+  if (typeof result.data === 'undefined') {
+    throw new Error('Subgraph query returned no data');
+  }
+  return result.data;
+}
+
 function createApolloClient(uri: string, headers?: Record<string, string>) {
-  const timeoutLink = new ApolloLinkTimeout();
-  const httpLink = timeoutLink.concat(
-    new HttpLink({
-      uri,
-      headers,
-      fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }),
-    }),
-  );
+  const httpLink = new HttpLink({
+    uri,
+    headers,
+    fetch: (url, options) => {
+      const timeoutSignal = AbortSignal.timeout(SUBGRAPH_REQUEST_TIMEOUT_MS);
+      return fetch(url, {
+        ...options,
+        cache: 'no-store',
+        signal: options?.signal ? AbortSignal.any([options.signal, timeoutSignal]) : timeoutSignal,
+      });
+    },
+  });
 
   return new ApolloClient({
     link: httpLink,
@@ -105,7 +125,7 @@ function createSubgraphClient(key: SubgraphKey): SourcedClient {
   return { client: createClientFor(subgraph), source: key };
 }
 
-function createClientFor(subgraph: Subgraph): ApolloClient<NormalizedCacheObject> {
+function createClientFor(subgraph: Subgraph): ApolloClient {
   switch (subgraph.kind) {
     case 'self-hosted':
       return createSelfHostedSubgraphClient(subgraph.name);
@@ -127,7 +147,7 @@ const cctpChainIds: readonly ChainId[] = [
  * CCTP history. A chain missing from `INDEXER_API_URL_BY_CHAIN` throws rather
  * than degrading, which the route turns into a 500.
  */
-export function getCctpSubgraphClient(chainId: number): ApolloClient<NormalizedCacheObject> {
+export function getCctpSubgraphClient(chainId: number): ApolloClient {
   if (!cctpChainIds.includes(chainId)) {
     throw new Error(`[getCctpSubgraphClient] unsupported chain: ${chainId}`);
   }

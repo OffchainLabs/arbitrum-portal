@@ -1,7 +1,11 @@
 import { gql } from '@apollo/client';
 import { NextRequest, NextResponse } from 'next/server';
 
-import { type SubgraphSource, getL1SubgraphClient } from '../../api-utils/ServerSubgraphUtils';
+import {
+  type SubgraphSource,
+  getL1SubgraphClient,
+  getQueryData,
+} from '../../api-utils/ServerSubgraphUtils';
 import { FetchEthDepositsToCustomDestinationFromSubgraphResult } from '../../util/deposits/fetchEthDepositsToCustomDestinationFromSubgraph';
 import { isIndexerEnabledForRequest, proxyToIndexer } from './indexer';
 
@@ -68,7 +72,9 @@ export async function GET(
 
     const subgraph = getL1SubgraphClient(Number(l2ChainId));
 
-    const subgraphResult = await subgraph.client.query({
+    const subgraphResult = await subgraph.client.query<{
+      retryables: RetryableFromSubgraph[];
+    }>({
       query: gql(`{
         retryables(
           where: {            
@@ -93,7 +99,7 @@ export async function GET(
       }`),
     });
 
-    const retryablesFromSubgraph: RetryableFromSubgraph[] = subgraphResult.data.retryables;
+    const retryablesFromSubgraph = getQueryData(subgraphResult).retryables;
 
     const transactions: FetchEthDepositsToCustomDestinationFromSubgraphResult[] =
       retryablesFromSubgraph.map((retryable) => {
