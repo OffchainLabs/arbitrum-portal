@@ -5,7 +5,7 @@ import { twMerge } from 'tailwind-merge';
 import { Address, isAddress, isHash } from 'viem';
 import { useAccount } from 'wagmi';
 import { create } from 'zustand';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 
@@ -87,11 +87,10 @@ export const useTransactionHistoryAddressStore = create<TransactionHistoryAddres
  */
 export function useTxHashSearchState() {
   const { searchMode, sanitizedTxHash } = useTransactionHistoryAddressStore(
-    (state) => ({
+    useShallow((state) => ({
       searchMode: state.searchMode,
       sanitizedTxHash: state.sanitizedTxHash,
-    }),
-    shallow,
+    })),
   );
 
   const isTxHashSearch = searchMode === 'txHash' && typeof sanitizedTxHash !== 'undefined';
@@ -119,7 +118,7 @@ export function TransactionHistorySearchBar() {
     setSearchMode,
     setSearchError,
   } = useTransactionHistoryAddressStore(
-    (state) => ({
+    useShallow((state) => ({
       address: state.address,
       searchMode: state.searchMode,
       searchError: state.searchError,
@@ -130,8 +129,7 @@ export function TransactionHistorySearchBar() {
       setSanitizedTxHash: state.setSanitizedTxHash,
       setSearchMode: state.setSearchMode,
       setSearchError: state.setSearchError,
-    }),
-    shallow,
+    })),
   );
   const { address: connectedAddress } = useAccount();
   const [isTestnetMode] = useIsTestnetMode();

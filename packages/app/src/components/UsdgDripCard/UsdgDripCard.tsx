@@ -3,7 +3,7 @@
 import { ArrowTopRightOnSquareIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { twMerge } from 'tailwind-merge';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { ExternalLink } from '@/bridge/components/common/ExternalLink';
 import { useSiteBannerVisible } from '@/bridge/components/common/SiteBanner';
@@ -16,8 +16,7 @@ import { useUsdgDripCardStore } from './useUsdgDripCard';
 
 export function UsdgDripCard() {
   const { isOpen, dismiss } = useUsdgDripCardStore(
-    (state) => ({ isOpen: state.isOpen, dismiss: state.dismiss }),
-    shallow,
+    useShallow((state) => ({ isOpen: state.isOpen, dismiss: state.dismiss })),
   );
   const isBannerVisible = useSiteBannerVisible();
   const { embedMode } = useMode();
