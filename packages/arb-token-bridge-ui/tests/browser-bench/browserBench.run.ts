@@ -407,6 +407,7 @@ declare global {
         longAnimationFrameCount: number;
         longAnimationFrameBlocking: number;
         profilerSamples: { id: string; actualDuration: number; baseDuration: number }[];
+        profilerIds: string[];
       }>;
     };
   }
