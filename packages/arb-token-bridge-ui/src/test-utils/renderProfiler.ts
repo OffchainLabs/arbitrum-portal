@@ -128,7 +128,8 @@ function getComponentName(fiber: Fiber) {
 }
 
 // Functions and elements are compared by what they are, not by reference, so a new callback or
-// element with the same props counts as an unstable reference
+// element with the same props counts as an unstable reference. A callback can't be told apart from
+// one that captured new values, so avoidable renders are an upper bound.
 function isEquivalent(previous: unknown, next: unknown): boolean {
   return isEqualWith(previous, next, (a: unknown, b: unknown) => {
     if (typeof a === 'function' && typeof b === 'function') {
@@ -197,10 +198,11 @@ function getStateChanges(fiber: Fiber, previous: Fiber) {
   const changes: Change[] = [];
   let hook = fiber.memoizedState as Hook | null;
   let previousHook = previous.memoizedState as Hook | null;
-  // Hooks with a queue hold state: useState, useReducer, useSyncExternalStore and the like
+  // Hooks with a queue hold state: useState, useReducer, useSyncExternalStore and the like.
+  // useDeferredValue holds state without a queue, its deferred render changes only its value.
   for (let index = 0; hook && previousHook; index += 1) {
-    if (hook.queue) {
-      const name = hookNames[index] ?? 'hook';
+    const name = hookNames[index] ?? 'hook';
+    if (hook.queue || name.startsWith('useDeferredValue')) {
       const change = compare(name, previousHook.memoizedState, hook.memoizedState);
       if (change) {
         changes.push(change);

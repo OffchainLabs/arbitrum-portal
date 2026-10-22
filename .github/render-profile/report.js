@@ -70,7 +70,8 @@ const metrics = {
   avoidableRenders: {
     label: 'Avoidable renders',
     format: formatCount,
-    description: 'only references changed, or nothing changed and the parent rendered',
+    description:
+      'only references changed, or nothing changed and the parent rendered. A new callback counts even if it captured new values.',
   },
   commits: { label: 'Commits', format: formatCount },
   swrKeyLength: {
