@@ -9,7 +9,7 @@
     "@ethersproject/providers": "^5.8.0",
     "@headlessui/react": "^2.2.10",
     "@heroicons/react": "^2.2.0",
-    "@lifi/sdk": "^3.7.0",
+    "@lifi/sdk": "^3.16.3",
     "@moonpay/moonpay-node": "^0.2.13",
     "@moonpay/moonpay-react": "^1.10.8",
     "@offchainlabs/cobalt": "^0.5.1",
