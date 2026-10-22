@@ -177,7 +177,8 @@ module.exports = {
         50: '12.5rem',
       },
       fontSize: {
-        xl: '1.375rem',
+        // v3 emitted no line-height for a bare size; keep inheriting it
+        xl: ['1.375rem', { lineHeight: 'inherit' }],
       },
       lineHeight: {
         'extra-tight': '1.15',
