@@ -187,5 +187,14 @@
     // from: @headlessui/tailwindcss>tailwindcss>postcss-selector-parser
     // from: tailwindcss>postcss-nested>postcss-selector-parser
     "GHSA-rj75-hqrm-r3gf",
+    //
+    // https://github.com/advisories/GHSA-c475-qrg2-pj4r
+    // basic-ftp quadratic-time CPU denial of service in Client.list() Unix directory-listing parser
+    // Reason to ignore: Only 6.2.1 is patched and get-uri (latest 8.0.1) pins ^5.3.1, so the fix is a
+    // major bump the parent does not declare support for. Dev-only: puppeteer-core reaches it through
+    // the proxy agent of its browser downloader, which the Lighthouse CI flow never uses (it launches
+    // the pinned local Chrome and only browses localhost over HTTP). Not in production builds.
+    // from: puppeteer-core>@puppeteer/browsers>proxy-agent>pac-proxy-agent>get-uri>basic-ftp
+    "GHSA-c475-qrg2-pj4r",
   ],
 }

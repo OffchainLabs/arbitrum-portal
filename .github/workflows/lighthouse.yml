@@ -1,0 +1,143 @@
+name: Lighthouse
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    branches: ['master']
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_PUBLIC_RPC_PROVIDER: alchemy
+  NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
+  NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
+  NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }}
+  VAULTS_FYI_API_KEY: ${{ secrets.VAULTS_FYI_API_KEY }}
+  THE_GRAPH_NETWORK_API_KEY: ${{ secrets.THE_GRAPH_NETWORK_API_KEY }}
+  INDEXER_API_URL_BY_CHAIN: ${{ secrets.INDEXER_API_URL_BY_CHAIN }}
+
+jobs:
+  # Runners differ in speed by up to 2 times, so each runner measures both master and the PR, and
+  # the report compares the two runs of each runner
+  lighthouse:
+    name: Run Lighthouse (${{ matrix.run }})
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-4
+    strategy:
+      matrix:
+        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install node_modules
+        uses: OffchainLabs/actions/node-modules/install@main
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Build
+        run: pnpm build
+
+      # Master is built in its own directory, and measured with the PR's flow
+      - name: Checkout base
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: Build base
+        working-directory: base
+        run: pnpm install --frozen-lockfile && pnpm build
+
+      # Use the pinned Chrome for Testing, so results don't shift with runner image updates
+      - name: Locate Chrome for Testing
+        run: |
+          chrome_version=$(node -p "require('./package.json').config.chromeVersion")
+          echo "CHROME_PATH=$PWD/node_modules/.cache/synpress/chrome/linux-$chrome_version/chrome-linux64/chrome" >> "$GITHUB_ENV"
+
+      # Ports, the order the servers start in and the order the sides run in are random, so no
+      # difference between the two setups always favors the same side
+      - name: Start servers
+        run: |
+          ports="3000 3001"
+          if [ $((RANDOM % 2)) = 1 ]; then ports="3001 3000"; fi
+          read -r pr_port master_port <<< "$ports"
+          echo "PR_PORT=$pr_port" >> "$GITHUB_ENV"
+          echo "MASTER_PORT=$master_port" >> "$GITHUB_ENV"
+          sides="pr master"
+          if [ $((RANDOM % 2)) = 1 ]; then sides="master pr"; fi
+          for side in $sides; do
+            if [ "$side" = pr ]; then
+              PORT=$pr_port pnpm start &
+            else
+              (cd base && PORT=$master_port pnpm start &)
+            fi
+          done
+          # Wait for the servers, then warm them up so no measured run hits a cold server
+          for port in 3000 3001; do
+            url="http://localhost:$port/bridge"
+            curl --silent --fail --output /dev/null --retry 30 --retry-connrefused --retry-delay 2 "$url"
+            curl --silent --fail --output /dev/null "$url"
+          done
+
+      - name: Run Lighthouse
+        env:
+          RUN: ${{ matrix.run }}
+        run: |
+          sides="pr master"
+          if [ $((RANDOM % 2)) = 1 ]; then sides="master pr"; fi
+          for side in $sides; do
+            port=$PR_PORT
+            if [ "$side" = master ]; then port=$MASTER_PORT; fi
+            APP_URL="http://localhost:$port" OUTPUT_DIRECTORY="lighthouse-reports/$side" \
+              node .github/lighthouse/flow.mjs
+          done
+
+      - name: Upload Lighthouse reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-${{ matrix.run }}
+          path: lighthouse-reports
+          if-no-files-found: error
+
+  report:
+    name: Report results
+    needs: lighthouse
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download Lighthouse reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: lighthouse-*
+          path: lighthouse-reports
+          merge-multiple: true
+
+      - name: Report results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const report = require('./.github/lighthouse/report.js')
+            await report({ github, context, core })
