@@ -7,8 +7,7 @@ import { addressesEqual } from './AddressUtils';
 import { getNetworkName } from './networks';
 
 type LifiRouteDisplayStep =
-  | RouteExtended['steps'][number]
-  | RouteExtended['steps'][number]['includedSteps'][number];
+  RouteExtended['steps'][number] | RouteExtended['steps'][number]['includedSteps'][number];
 
 type LifiRouteSteps = Pick<Route, 'steps'> | Pick<RouteExtended, 'steps'>;
 
