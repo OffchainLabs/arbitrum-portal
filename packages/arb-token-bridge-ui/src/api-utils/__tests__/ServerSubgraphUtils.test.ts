@@ -140,11 +140,46 @@ describe.sequential('getCctpSubgraphClient', () => {
     expect(fetchStub.urls).toEqual([]);
   });
 
+  // Replaces apollo-link-timeout, which only supports Apollo Client 3.
+  it('aborts a request after the 15s timeout', async () => {
+    stubIndexerApiUrlByChain({ [ChainId.Ethereum]: indexerOrigin });
+    const timeoutSpy = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(AbortSignal.abort());
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        init?.signal?.throwIfAborted();
+        return emptyResult();
+      }),
+    );
+
+    const getCctpSubgraphClient = await loadGetCctpSubgraphClient();
+
+    await expect(
+      getCctpSubgraphClient(ChainId.Ethereum).query<{ messageSents: { id: string }[] }>({ query }),
+    ).rejects.toThrow();
+    expect(timeoutSpy).toHaveBeenCalledWith(15_000);
+    timeoutSpy.mockRestore();
+  });
+
   it('throws for a chain CCTP does not support', async () => {
     const getCctpSubgraphClient = await loadGetCctpSubgraphClient();
 
     expect(() => getCctpSubgraphClient(ChainId.ArbitrumNova)).toThrow(
       `[getCctpSubgraphClient] unsupported chain: ${ChainId.ArbitrumNova}`,
     );
+  });
+});
+
+describe('getQueryData', () => {
+  it('returns the query data', async () => {
+    const { getQueryData } = await import('../ServerSubgraphUtils');
+
+    expect(getQueryData({ data: { messageSents: [] } })).toEqual({ messageSents: [] });
+  });
+
+  it('throws when the query returned no data', async () => {
+    const { getQueryData } = await import('../ServerSubgraphUtils');
+
+    expect(() => getQueryData({ data: undefined })).toThrow('Subgraph query returned no data');
   });
 });
