@@ -3,83 +3,75 @@
 exports[`Validation Functions > tokenBridgeSchema > should throw for invalid tokenBridge objects 1`] = `
 [ZodError: [
   {
-    "code": "invalid_type",
     "expected": "string",
-    "received": "undefined",
+    "code": "invalid_type",
     "path": [
       "parentCustomGateway"
     ],
-    "message": "Required"
+    "message": "Invalid input: expected string, received undefined"
   },
   {
-    "code": "invalid_type",
     "expected": "string",
-    "received": "undefined",
+    "code": "invalid_type",
     "path": [
       "parentErc20Gateway"
     ],
-    "message": "Required"
+    "message": "Invalid input: expected string, received undefined"
   },
   {
-    "code": "invalid_type",
     "expected": "string",
-    "received": "undefined",
+    "code": "invalid_type",
     "path": [
       "parentWeth"
     ],
-    "message": "Required"
+    "message": "Invalid input: expected string, received undefined"
   },
   {
-    "code": "invalid_type",
     "expected": "string",
-    "received": "undefined",
+    "code": "invalid_type",
     "path": [
       "parentWethGateway"
     ],
-    "message": "Required"
+    "message": "Invalid input: expected string, received undefined"
   },
   {
-    "code": "invalid_type",
     "expected": "string",
-    "received": "undefined",
+    "code": "invalid_type",
     "path": [
       "childCustomGateway"
     ],
-    "message": "Required"
+    "message": "Invalid input: expected string, received undefined"
   },
   {
-    "code": "invalid_type",
     "expected": "string",
-    "received": "undefined",
+    "code": "invalid_type",
     "path": [
       "childErc20Gateway"
     ],
-    "message": "Required"
-  },
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "childWeth"
-    ],
-    "message": "Required"
-  },
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "childWethGateway"
-    ],
-    "message": "Required"
+    "message": "Invalid input: expected string, received undefined"
   },
   {
     "code": "custom",
-    "message": "Invalid Ethereum address",
     "path": [
       "childGatewayRouter"
-    ]
+    ],
+    "message": "Invalid Ethereum address"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "childWeth"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      "childWethGateway"
+    ],
+    "message": "Invalid input: expected string, received undefined"
   }
 ]]
 `;
