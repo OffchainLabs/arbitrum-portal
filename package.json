@@ -32,12 +32,13 @@
     "@headlessui/tailwindcss": "^0.2.2",
     "@heroicons/react": "^2.2.0",
     "@types/node": "^22.19.19",
+    "@typescript/native": "npm:typescript@^7.0.2",
     "audit-ci": "^7.1.0",
     "eslint-plugin-zustand-rules": "^1.2.1",
     "oxfmt": "^0.74.0",
     "oxlint": "^1.89.0",
     "oxlint-tsgolint": "^7.0.2004",
-    "typescript": "^5.9.3"
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
   },
   "config": {
     "chromeVersion": "128.0.6613.137",
