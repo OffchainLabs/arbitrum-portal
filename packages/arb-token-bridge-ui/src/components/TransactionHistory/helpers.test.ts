@@ -748,7 +748,7 @@ describe('transaction urls', () => {
                 txLink: sourceTxLink,
               },
               {
-                type: 'TRANSACTION',
+                type: 'SWAP',
                 status: 'DONE',
                 txHash: destinationTxHash,
                 txLink: destinationTxLink,
