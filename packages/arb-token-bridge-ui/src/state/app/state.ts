@@ -105,8 +105,7 @@ export interface BaseMergedTransaction {
 }
 
 export interface LifiMergedTransaction
-  extends Omit<BaseMergedTransaction, 'isLifi'>,
-    MergedTransactionLifiData {
+  extends Omit<BaseMergedTransaction, 'isLifi'>, MergedTransactionLifiData {
   isLifi: true;
   showInHistory?: boolean;
   destinationStatus: WithdrawalStatus;
@@ -122,9 +121,7 @@ export interface LayerZeroTransaction extends Omit<BaseMergedTransaction, 'isOft
 }
 
 export type MergedTransaction =
-  | BaseMergedTransaction
-  | LifiMergedTransaction
-  | LayerZeroTransaction;
+  BaseMergedTransaction | LifiMergedTransaction | LayerZeroTransaction;
 
 export interface WarningTokens {
   [address: string]: {
