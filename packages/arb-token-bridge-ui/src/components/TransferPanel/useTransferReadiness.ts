@@ -1,7 +1,7 @@
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { BigNumber, constants, utils } from 'ethers';
 import { useMemo } from 'react';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import type { AmountWithToken, Token } from '../../app/api/crosschain-transfers/types';
 import { TOS_LOCALSTORAGE_KEY } from '../../constants';
@@ -240,11 +240,10 @@ export function useTransferReadiness(): UseTransferReadinessResult {
   const { sourceWallet } = useWallets();
   const { childChain, isDepositMode } = useNetworksRelationship(networks);
   const { selectedRoute, selectedRouteContext } = useRouteStore(
-    (state) => ({
+    useShallow((state) => ({
       selectedRoute: state.selectedRoute,
       selectedRouteContext: getSelectedRouteContext(state),
-    }),
-    shallow,
+    })),
   );
   const { eligibleRouteTypes } = useRouteEligibility();
 
