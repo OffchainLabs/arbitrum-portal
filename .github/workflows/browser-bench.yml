@@ -63,7 +63,8 @@ jobs:
       # collect profiler samples
       BENCH_REQUIRE_PROFILER: pr
       BENCH_OUTPUT: ${{ github.workspace }}/browser-bench-results
-      BENCH_REVISIONS: pr=${{ github.event.pull_request.head.sha }},master=${{ github.event.pull_request.base.sha }}
+      # The PR's checkout is GitHub's merge of the PR into master, github.sha
+      BENCH_REVISIONS: pr=${{ github.sha }},master=${{ github.event.pull_request.base.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5

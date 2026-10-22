@@ -17,7 +17,7 @@ const thresholds = {
   relative: Number(process.env.BENCH_WARN_RELATIVE ?? 0.1),
 };
 
-const icons = { better: '🟢', same: '⚪', worse: '🔴', new: '🆕' };
+const icons = { better: '🟢', same: '⚪', worse: '🔴', new: '🆕', unavailable: '⚠️' };
 
 const timingMetrics = [
   {
@@ -78,13 +78,17 @@ function collect(results, scenario, read) {
 
 function compare({ pr, master }) {
   const prMedian = median([...pr.values()]);
-  if (master.size === 0) {
+  if (master.size === 0 && pr.size > 0) {
     return { pr: prMedian, status: 'new' };
   }
   const masterMedian = median([...master.values()]);
   const differences = [...pr.keys()]
     .filter((round) => master.has(round))
     .map((round) => pr.get(round) - master.get(round));
+  // A collection that failed can leave rounds measured on one side only
+  if (differences.length === 0) {
+    return { status: 'unavailable', prRounds: pr.size, masterRounds: master.size };
+  }
   const difference = median(differences);
   const relative = masterMedian === 0 ? Infinity : difference / masterMedian;
   const isChange =
@@ -179,6 +183,32 @@ function formatChanges({ sections, status, title }) {
   ];
 }
 
+// The metrics without a round measured on both sides
+function formatUnavailable(sections) {
+  const rows = sections.flatMap(({ scenario, rows: scenarioRows }) =>
+    scenarioRows.filter((row) => row.status === 'unavailable').map((row) => ({ scenario, ...row })),
+  );
+  if (rows.length === 0) {
+    return [];
+  }
+  return [
+    '<details>',
+    `<summary><b>${icons.unavailable} Not compared (${rows.length})</b></summary>`,
+    '',
+    'No round measured both master and the PR, see the errors above.',
+    '',
+    '| Scenario | Metric | Rounds on master | Rounds in the PR |',
+    '|:---|:---|---:|---:|',
+    ...rows.map(
+      ({ scenario, label, masterRounds, prRounds }) =>
+        `| ${scenario} | ${label} | ${masterRounds} | ${prRounds} |`,
+    ),
+    '',
+    '</details>',
+    '',
+  ];
+}
+
 function formatReport({ production, profiling, runUrl }) {
   if (!production) {
     throw new Error('Missing the results of the production build.');
@@ -190,6 +220,15 @@ function formatReport({ production, profiling, runUrl }) {
     ...formatChanges({ sections, status: 'worse', title: 'Regressions' }),
     ...formatChanges({ sections, status: 'better', title: 'Improvements' }),
     ...formatChanges({ sections, status: 'new', title: 'Not measured on master' }),
+    ...formatUnavailable(sections),
+  ];
+  const columns = [
+    [`${icons.worse} Regressions`, count('worse')],
+    [`${icons.better} Improvements`, count('better')],
+    [`${icons.same} Unchanged`, count('same')],
+    ...(count('unavailable') > 0
+      ? [[`${icons.unavailable} Not compared`, count('unavailable')]]
+      : []),
   ];
   const master = production.meta.targets.find(({ name }) => name === 'master');
   const regressions = sections.flatMap(({ scenario, rows: scenarioRows }) =>
@@ -211,9 +250,9 @@ function formatReport({ production, profiling, runUrl }) {
       marker,
       '## ⏱️ Browser benchmark',
       '',
-      `| ${icons.worse} Regressions | ${icons.better} Improvements | ${icons.same} Unchanged |`,
-      '|:---:|:---:|:---:|',
-      `| ${count('worse')} | ${count('better')} | ${count('same')} |`,
+      `| ${columns.map(([title]) => title).join(' | ')} |`,
+      `|${columns.map(() => ':---:').join('|')}|`,
+      `| ${columns.map(([, value]) => value).join(' | ')} |`,
       '',
       `${production.meta.samples} rounds in ${production.meta.browser}, compared with master${master ? ` at \`${master.revision.slice(0, 7)}\`` : ''}, each runner measuring both. A change counts when the median of the differences between rounds is over ${thresholds.absoluteMs} ms and ${formatShare(thresholds.relative)}. Timing changes don't fail the job until the normal variation on CI is known.`,
       '',
