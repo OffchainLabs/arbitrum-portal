@@ -57,7 +57,7 @@ export const CommunityResources = () => {
               style={{ backgroundImage: `url(${card.image})` }}
             />
 
-            <div className="flex flex-grow flex-col gap-3 p-4">
+            <div className="flex grow flex-col gap-3 p-4">
               <div className="line-clamp-2 text-sm font-semibold">{card.title}</div>
               <div className="flex flex-row gap-2 text-xs opacity-75">{card.description}</div>
             </div>

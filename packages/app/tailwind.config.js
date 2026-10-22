@@ -28,7 +28,6 @@ module.exports = {
     // Common components
     '../arb-token-bridge-ui/src/components/common/SiteBanner.tsx',
   ],
-  safelist: ['bg-earn-lend', 'bg-earn-liquid-staking', 'bg-earn-fixed-yield'],
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   plugins: [require('@headlessui/tailwindcss')],
   theme: {
@@ -39,14 +38,6 @@ module.exports = {
       xl: '1280px',
     },
     extend: {
-      navbar: {
-        desktop: '66px',
-        mobile: '66px',
-        mobileBottom: '90px',
-        bannerDesktop: '32px',
-        bannerMobile: '56px',
-        spacing: '15px',
-      },
       aspectRatio: {
         '3/1': '3 / 1',
       },
@@ -69,9 +60,6 @@ module.exports = {
         'earn-featured-badge':
           'linear-gradient(170.5deg, rgb(24, 192, 218) 16.333%, rgb(12, 74, 237) 95.811%)',
         'arb-blue-navy': 'linear-gradient(180deg, #016BE5 0%, #05163D 100%)',
-      },
-      backgroundSize: {
-        '1/2': '50%',
       },
       colors: {
         // ACTION

@@ -78,6 +78,7 @@ resolvePeersFromWorkspaceRoot: true
 
 # Only allow build scripts for explicitly trusted packages.
 allowBuilds:
+  '@parcel/watcher': false
   '@reown/appkit': true
   bufferutil: true
   core-js: true

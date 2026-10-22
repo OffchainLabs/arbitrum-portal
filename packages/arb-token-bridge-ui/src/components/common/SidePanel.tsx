@@ -45,8 +45,8 @@ export const SidePanel = ({
         transition
         className={twMerge(
           'fixed inset-0 bg-dark opacity-80 transition-opacity',
-          'data-[closed]:opacity-0 data-[enter]:duration-200 data-[enter]:ease-out',
-          'data-[leave]:duration-200 data-[leave]:ease-in',
+          'data-closed:opacity-0 data-enter:duration-200 data-enter:ease-out',
+          'data-leave:duration-200 data-leave:ease-in',
         )}
         aria-hidden="true"
       />
@@ -56,8 +56,8 @@ export const SidePanel = ({
           transition
           className={twMerge(
             'side-panel flex h-full w-screen max-w-[1000px] translate-x-0 flex-col border-l border-gray-dark bg-black opacity-100 transition-[transform_opacity]',
-            'data-[closed]:translate-x-full data-[closed]:opacity-0 data-[enter]:duration-200 data-[enter]:ease-out',
-            'data-[leave]:duration-200 data-[leave]:ease-in',
+            'data-closed:translate-x-full data-closed:opacity-0 data-enter:duration-200 data-enter:ease-out',
+            'data-leave:duration-200 data-leave:ease-in',
             panelClassNameOverrides,
             scrollable && 'overflow-y-auto',
           )}

@@ -98,7 +98,7 @@ function Tools({
               </div>
             </div>
           }
-          labelClassName="w-[calc(100%_-_20px)] sm:w-full"
+          labelClassName="w-[calc(100%-20px)] sm:w-full"
           checked={!disabledTools.includes(tool.key)}
           onChange={(checked) => toggle(tool.key, checked)}
         />

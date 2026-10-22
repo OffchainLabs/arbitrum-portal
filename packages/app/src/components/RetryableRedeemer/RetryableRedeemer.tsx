@@ -452,7 +452,7 @@ export function RetryableRedeemer({
             placeholder={`Paste tx hash from ${parentChainName}`}
             aria-label={`${parentChainName} transaction hash`}
             className={twMerge(
-              'h-12 w-full rounded-md border border-white/10 bg-default-black px-4 text-sm text-white outline-none placeholder:italic placeholder:text-white/50',
+              'h-12 w-full rounded-md border border-white/10 bg-default-black px-4 text-sm text-white outline-hidden placeholder:italic placeholder:text-white/50',
               inputError && 'border-destructive',
             )}
             data-1p-ignore

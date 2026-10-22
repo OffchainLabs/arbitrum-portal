@@ -38,7 +38,7 @@ export default function ChainsMetricsPage() {
       {/* Header banner */}
       <Card className="relative flex h-[120px] items-center bg-[#1B4ADD] p-4 lg:p-8">
         <h1 className="z-20 text-2xl">Arbitrum Chain Stats</h1>
-        <div className="from-blue absolute left-0 top-0 z-10 h-full w-full bg-gradient-to-t from-70% to-transparent lg:bg-gradient-to-r lg:to-[90%]" />
+        <div className="from-blue absolute left-0 top-0 z-10 h-full w-full bg-linear-to-t from-70% to-transparent lg:bg-linear-to-r lg:to-90%" />
       </Card>
 
       <ChainStats />

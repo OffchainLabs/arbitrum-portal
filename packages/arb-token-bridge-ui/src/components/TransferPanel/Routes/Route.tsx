@@ -194,7 +194,7 @@ type RouteDurationProps = {
 
 const RouteDuration = ({ durationMs, fastWithdrawalActive }: RouteDurationProps) => (
   <div className="flex items-center">
-    <ClockIcon width={18} height={18} className="-ml-[1px]" />
+    <ClockIcon width={18} height={18} className="-ml-px" />
     <span className="ml-1 whitespace-nowrap">
       {minutesToHumanReadableTime(durationMs / 60_000)}
     </span>
@@ -232,7 +232,7 @@ function BreakdownTooltipContent({
   footer?: React.ReactNode;
 }>) {
   return (
-    <div className="w-[310px] max-w-[calc(100vw_-_48px)] text-left">
+    <div className="w-[310px] max-w-[calc(100vw-48px)] text-left">
       <div className="text-[11px] uppercase leading-4 text-white/50">{title}</div>
       <div className="mt-2 border-t border-white/10 pt-2">
         <div className="space-y-3">{children}</div>
@@ -657,8 +657,8 @@ export const Route = React.memo(
     return (
       <button
         className={twMerge(
-          'relative flex max-w-[calc(100vw_-_40px)] flex-col gap-3 rounded border border-[#ffffff33] bg-[#ffffff1a] p-3 text-left text-sm text-white transition-colors',
-          'focus-visible:!outline-none',
+          'relative flex max-w-[calc(100vw-40px)] flex-col gap-3 rounded border border-[#ffffff33] bg-[#ffffff1a] p-3 text-left text-sm text-white transition-colors',
+          'focus-visible:outline-hidden!',
           'focus-within:bg-[#ffffff36] hover:bg-[#ffffff36]',
           isDisabled ? 'opacity-50' : 'opacity-100',
           !isDisabled && selected && 'border-primary-cta',
