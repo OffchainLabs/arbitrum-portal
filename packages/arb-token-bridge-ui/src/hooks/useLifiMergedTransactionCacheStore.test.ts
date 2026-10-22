@@ -12,7 +12,9 @@ import {
   migrateLifiCacheStateFromVersion1ToVersion2,
   migrateLifiCacheStateFromVersion2ToVersion3,
   migrateLifiCacheStateToVersion3,
+  migrateLifiProcessesToVersion4,
   migrateLifiTransactionFromVersion2ToVersion3,
+  migrateLifiTransactionFromVersion3ToVersion4,
   prepareLifiTransactionForStorage,
   sanitizeLifiRouteForStorage,
   useLifiMergedTransactionCacheStore,
@@ -183,6 +185,28 @@ describe.sequential('useLifiMergedTransactionCacheStore', () => {
     expect(loaded?.toAmount).toEqual(tx.toAmount);
     expect(loaded?.lifiRouteSteps).toEqual(tx.lifiRouteSteps);
     expect(loaded?.receivedAmount).toBeUndefined();
+  });
+
+  it('migrates legacy LiFi process types when loading a version 3 cache', async () => {
+    const tx = prepareLifiTransactionForStorage(createMockLifiPartialTransaction());
+    const historyStep = tx.lifiRouteSteps?.[0];
+    if (!historyStep?.execution) throw new Error('Missing fixture step execution');
+    const originalProcesses = historyStep.execution.process;
+    historyStep.execution.process = [
+      { type: 'SWITCH_CHAIN', status: 'DONE' } as never,
+      ...historyStep.execution.process,
+    ];
+    const wallet = '0x1111111111111111111111111111111111111111';
+    localStorageMock.setItem(
+      'lifi-merged-transaction-cache',
+      JSON.stringify({ state: { transactions: { [wallet]: [tx] } }, version: 3 }),
+    );
+
+    await useLifiMergedTransactionCacheStore.persist.rehydrate();
+
+    const loaded = useLifiMergedTransactionCacheStore.getState().transactions[wallet]?.[0];
+    const loadedProcesses = loaded?.lifiRouteSteps?.[0]?.execution?.process ?? [];
+    expect(loadedProcesses).toEqual(originalProcesses);
   });
 
   it('should return undefined by default', async () => {
@@ -594,6 +618,86 @@ describe('version 3 transaction migration', () => {
     expect(migrated).not.toHaveProperty('durationMs');
     expect(migrated).not.toHaveProperty('fromAmount');
     expect(migrated).not.toHaveProperty('toAmount');
+  });
+});
+
+describe('version 4 process type migration', () => {
+  const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
+
+  it('drops SWITCH_CHAIN and renames TRANSACTION to the transfer type', () => {
+    expect(
+      migrateLifiProcessesToVersion4(
+        [
+          { type: 'SWITCH_CHAIN', status: 'DONE' },
+          { type: 'TOKEN_ALLOWANCE', status: 'DONE' },
+          { type: 'TRANSACTION', status: 'FAILED' },
+        ],
+        'CROSS_CHAIN',
+      ),
+    ).toEqual([
+      { type: 'TOKEN_ALLOWANCE', status: 'DONE' },
+      { type: 'CROSS_CHAIN', status: 'FAILED' },
+    ]);
+  });
+
+  it('drops TRANSACTION when the step already has its transfer process', () => {
+    expect(
+      migrateLifiProcessesToVersion4(
+        [
+          { type: 'TRANSACTION', status: 'FAILED' },
+          { type: 'SWAP', status: 'DONE', txHash: '0x1' },
+        ],
+        'SWAP',
+      ),
+    ).toEqual([{ type: 'SWAP', status: 'DONE', txHash: '0x1' }]);
+  });
+
+  it('uses the step chains for routes and the transaction chains for history steps', () => {
+    const legacyProcesses = [
+      { type: 'SWITCH_CHAIN', status: 'DONE' },
+      { type: 'TRANSACTION', status: 'FAILED' },
+    ];
+    const transaction = {
+      ...createMockedLifiTransaction({
+        hash: '0x240c2c89b5f153b0cc1fce5ea709473b858359887d0aa1d4157fe130c95d2134',
+        sender: walletAddress,
+        destinationAddress: walletAddress,
+      }),
+      sourceChainId: 42161,
+      destinationChainId: 1,
+    };
+    const routeBacked = {
+      ...transaction,
+      lifiRoute: {
+        id: 'route-id',
+        steps: [
+          {
+            action: { fromChainId: 42161, toChainId: 42161 },
+            execution: { status: 'FAILED', process: legacyProcesses },
+          },
+        ],
+      },
+    } as unknown as LifiMergedTransaction;
+    const historyBacked = {
+      ...transaction,
+      lifiRouteSteps: [
+        {
+          id: 'step-id',
+          fromChainId: 42161,
+          displaySteps: [],
+          execution: { status: 'FAILED', process: legacyProcesses },
+        },
+      ],
+    } as unknown as LifiMergedTransaction;
+
+    expect(
+      migrateLifiTransactionFromVersion3ToVersion4(routeBacked).lifiRoute?.steps[0]?.execution
+        ?.process,
+    ).toEqual([{ type: 'SWAP', status: 'FAILED' }]);
+    expect(
+      migrateLifiTransactionFromVersion3ToVersion4(historyBacked).lifiRouteSteps?.[0]?.execution
+        ?.process,
+    ).toEqual([{ type: 'CROSS_CHAIN', status: 'FAILED' }]);
   });
 });
 
