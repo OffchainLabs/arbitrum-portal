@@ -18,10 +18,12 @@ export type BenchProfilerSample = {
 
 declare global {
   interface Window {
-    // Created and read by the benchmark. Samples are only kept while `active` is set.
+    // Created and read by the benchmark. Samples are only kept while `active` is set, ids of
+    // every subtree that rendered on the page are kept at all times.
     __BENCH_PROFILER__?: {
       active: { scenario: string; sample: number } | null;
       samples: BenchProfilerSample[];
+      ids: string[];
     };
   }
 }
@@ -36,7 +38,13 @@ const onRender: ProfilerOnRenderCallback = (
   commitTime,
 ) => {
   const store = window.__BENCH_PROFILER__;
-  if (!store?.active) {
+  if (!store) {
+    return;
+  }
+  if (!store.ids.includes(id)) {
+    store.ids.push(id);
+  }
+  if (!store.active) {
     return;
   }
   store.samples.push({

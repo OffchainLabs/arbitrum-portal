@@ -60,7 +60,7 @@
   };
 
   // Filled by the app's <Profiler> callbacks in the profiling build, see benchProfiler.tsx
-  window.__BENCH_PROFILER__ = { active: null, samples: [] };
+  window.__BENCH_PROFILER__ = { active: null, samples: [], ids: [] };
 
   const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
   const sleep = (ms) => new Promise((resolve) => realSetTimeout(resolve, ms));
@@ -167,6 +167,8 @@
         0,
       ),
       profilerSamples,
+      // The subtrees that rendered on the page so far, during the interaction or not
+      profilerIds: [...window.__BENCH_PROFILER__.ids],
     };
   }
 

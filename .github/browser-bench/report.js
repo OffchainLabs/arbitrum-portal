@@ -109,6 +109,14 @@ function compareScenarios({ production, profiling }) {
       ...compare(collect(production, scenario, (sample) => sample[key] ?? 0)),
     }));
     if (profiling) {
+      // The ids each target's build has, from the subtrees that rendered on any of its pages
+      const knownIds = {};
+      for (const sample of profiling.samples) {
+        knownIds[sample.target] ??= new Set();
+        (sample.profilerIds ?? Object.keys(sample.profiler)).forEach((id) =>
+          knownIds[sample.target].add(id),
+        );
+      }
       const ids = [
         ...new Set(
           profiling.samples
@@ -117,11 +125,14 @@ function compareScenarios({ production, profiling }) {
         ),
       ].sort();
       for (const id of ids) {
-        const commits = collect(profiling, scenario, (s) => s.profiler[id]?.commits);
+        // A subtree that didn't commit during the interaction took 0 ms, when the build has it
+        const read = (key) => (s) =>
+          s.profiler[id]?.[key] ?? (knownIds[s.target]?.has(id) ? 0 : undefined);
+        const commits = collect(profiling, scenario, read('commits'));
         rows.push({
           label: `\`${id}\` render time`,
           description: `React profiling build, ${median([...commits.pr.values()])} commits in the PR`,
-          ...compare(collect(profiling, scenario, (s) => s.profiler[id]?.actualTotal)),
+          ...compare(collect(profiling, scenario, read('actualTotal'))),
         });
       }
     }
