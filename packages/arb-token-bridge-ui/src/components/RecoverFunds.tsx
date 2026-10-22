@@ -20,7 +20,7 @@ import { twMerge } from 'tailwind-merge';
 import { useAccount } from 'wagmi';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
@@ -367,12 +367,11 @@ const ActionColumn: TableCellRenderer = ({ rowData }) => {
   const [{ sourceChain }] = useNetworks();
   const { isTestnet } = isNetwork(sourceChain.id);
   const { transactions, addTransaction, removeTransaction } = useRecoverFundsTransactionsStore(
-    (state) => ({
+    useShallow((state) => ({
       transactions: state.transactions,
       addTransaction: state.addTransaction,
       removeTransaction: state.removeTransaction,
-    }),
-    shallow,
+    })),
   );
   const { mutate } = useFundsOnAliasedAddress({
     address,

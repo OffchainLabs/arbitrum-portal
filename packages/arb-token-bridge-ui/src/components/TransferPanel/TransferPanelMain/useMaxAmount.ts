@@ -1,6 +1,6 @@
 import { BigNumber, constants, utils } from 'ethers';
 import { useMemo } from 'react';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { defaultErc20Decimals } from '../../../defaults';
 import { useGasSummary } from '../../../hooks/TransferPanel/useGasSummary';
@@ -51,7 +51,7 @@ export function useMaxAmount() {
   const { childChainProvider, isDepositMode } = useNetworksRelationship(networks);
   const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
   const nativeCurrencyDecimalsOnSourceChain = useSourceChainNativeCurrencyDecimals();
-  const selectedRouteContext = useRouteStore((state) => getSelectedRouteContext(state), shallow);
+  const selectedRouteContext = useRouteStore(useShallow((state) => getSelectedRouteContext(state)));
 
   const { estimatedParentChainGasFees, estimatedChildChainGasFees } = useGasSummary();
 

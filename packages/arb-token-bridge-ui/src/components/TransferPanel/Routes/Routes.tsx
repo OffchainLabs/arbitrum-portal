@@ -2,7 +2,7 @@ import { MinusCircleIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
 import { PropsWithChildren, useEffect, useState } from 'react';
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
@@ -53,15 +53,14 @@ export const Routes = React.memo(() => {
 
   const { eligibleRouteTypes, routes, hasLowLiquidity, hasModifiedSettings, isLoading, hasError } =
     useRouteStore(
-      (state) => ({
+      useShallow((state) => ({
         isLoading: state.isLoading,
         eligibleRouteTypes: state.eligibleRouteTypes,
         routes: state.routes,
         hasLowLiquidity: state.hasLowLiquidity,
         hasModifiedSettings: state.hasModifiedSettings,
         hasError: state.error,
-      }),
-      shallow,
+      })),
     );
 
   const { embedMode } = useMode();

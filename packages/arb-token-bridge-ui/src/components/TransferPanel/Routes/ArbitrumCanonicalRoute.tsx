@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { useMemo } from 'react';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { useGasSummary } from '../../../hooks/TransferPanel/useGasSummary';
 import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
@@ -54,11 +54,10 @@ export function ArbitrumCanonicalRoute({ amountReceived }: { amountReceived: str
   const { isTestnet } = isNetwork(childChain.id);
 
   const { selectedRoute, setSelectedRoute } = useRouteStore(
-    (state) => ({
+    useShallow((state) => ({
       selectedRoute: state.selectedRoute,
       setSelectedRoute: state.setSelectedRoute,
-    }),
-    shallow,
+    })),
   );
   const [selectedToken] = useSelectedToken();
 
