@@ -38,7 +38,7 @@ export function AmountMismatchWarningDialog(props: UseDialogProps) {
           Token amount mismatch
         </div>
       }
-      className="!max-w-[420px]"
+      className="max-w-[420px]!"
     >
       <div className="my-4 text-sm">
         Hey! You are transferring {fromAmount} on {networks.sourceChain.name} to {toAmount} on{' '}

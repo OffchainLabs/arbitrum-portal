@@ -42,7 +42,7 @@ export const Blogs = ({ blogs }: { blogs: Blog[] }) => {
               style={{ backgroundImage: `url(${blog.feature_image})` }}
             />
 
-            <div className="flex flex-grow flex-col justify-between gap-3 p-4">
+            <div className="flex grow flex-col justify-between gap-3 p-4">
               <div className="line-clamp-2 text-sm font-semibold">{blog.title}</div>
               <div className="flex flex-row gap-2 text-xs opacity-75">
                 <div>{formatDate(blog.published_at, 'MMM DD, YYYY')}</div>

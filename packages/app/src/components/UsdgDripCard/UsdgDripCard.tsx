@@ -44,11 +44,11 @@ export function UsdgDripCard() {
             // width, with nothing to clear at the bottom edge
             'inset-x-4 bottom-4'
           : [
-              'inset-x-4 bottom-[calc(theme(navbar.mobileBottom)+16px)]',
+              'inset-x-4 bottom-[calc(var(--navbar-mobileBottom)+16px)]',
               'md:inset-x-auto md:bottom-auto md:right-0 md:w-[360px] md:rounded-r-none md:border-r-0',
-              'md:top-[calc(theme(navbar.desktop)+theme(navbar.spacing))]',
+              'md:top-[calc(var(--navbar-desktop)+(var(--navbar-spacing)))]',
               isBannerVisible &&
-                'md:top-[calc(theme(navbar.desktop)+theme(navbar.bannerDesktop)+theme(navbar.spacing))]',
+                'md:top-[calc(var(--navbar-desktop)+(var(--navbar-bannerDesktop))+(var(--navbar-spacing)))]',
             ],
       )}
     >
