@@ -138,7 +138,7 @@ const HeaderTooltip = ({ tooltip }: { tooltip: string }) => {
         <>
           <Popover.Button
             ref={buttonRef}
-            className="focus:outline-none"
+            className="focus:outline-hidden"
             onMouseEnter={() => setIsOpen(true)}
             onMouseLeave={() => setIsOpen(false)}
             onClick={(e) => e.preventDefault()}
@@ -160,7 +160,7 @@ const HeaderTooltip = ({ tooltip }: { tooltip: string }) => {
               >
                 <Popover.Panel
                   static
-                  className="fixed z-[99999] w-56 px-2 py-2"
+                  className="fixed z-99999 w-56 px-2 py-2"
                   style={{
                     left: buttonRef.current
                       ? buttonRef.current.getBoundingClientRect().left - 100
@@ -170,7 +170,7 @@ const HeaderTooltip = ({ tooltip }: { tooltip: string }) => {
                   onMouseEnter={() => setIsOpen(true)}
                   onMouseLeave={() => setIsOpen(false)}
                 >
-                  <div className="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
+                  <div className="rounded-lg shadow-lg ring-1 ring-black/5">
                     <div className="relative bg-gray-800 p-2 rounded-lg">
                       <div
                         className="absolute -bottom-2 left-1/2 -ml-2 w-4 h-4 bg-gray-800"
@@ -243,7 +243,7 @@ const Toast = ({
       <div className="fixed bottom-4 right-4 z-50">
         <div className="rounded-lg bg-[#181818] border border-gray-700 p-4 shadow-lg">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <svg className="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
                 <path
                   fillRule="evenodd"
@@ -255,7 +255,7 @@ const Toast = ({
             <div className="ml-3">
               <p className="text-sm font-medium text-white">{message}</p>
             </div>
-            <div className="ml-4 flex flex-shrink-0">
+            <div className="ml-4 flex shrink-0">
               <button
                 type="button"
                 className="inline-flex text-gray-400 hover:text-gray-300"
@@ -786,7 +786,7 @@ export const ChainsTable = () => {
           </div>
           <input
             type="text"
-            className="w-full rounded-md border border-gray-700 bg-[#181818] py-2 pl-10 pr-4 text-sm text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-md border border-gray-700 bg-[#181818] py-2 pl-10 pr-4 text-sm text-white placeholder-gray-400 focus:border-blue-500 focus:outline-hidden"
             placeholder="Search chains..."
             value={searchQuery}
             onChange={handleSearchChange}
@@ -890,7 +890,7 @@ export const ChainsTable = () => {
                 <tr className="bg-neutralu-900/90 border-b border-white/50">
                   <td className="px-6 py-3 text-sm text-blue-400/70">
                     <div className="flex items-center">
-                      <div className="mr-4 h-6 w-6 flex-shrink-0">
+                      <div className="mr-4 h-6 w-6 shrink-0">
                         <div className="h-6 w-6 rounded-full bg-blue-500/20 flex items-center justify-center">
                           <span className="text-xs text-blue-400/70">Σ</span>
                         </div>
@@ -954,7 +954,7 @@ export const ChainsTable = () => {
                       >
                         <td className="bg-[#181818] px-6 py-3 text-sm text-white transition-colors duration-150 group-hover:bg-[#222222]">
                           <div className="flex items-center">
-                            <div className="mr-4 h-6 w-6 flex-shrink-0">
+                            <div className="mr-4 h-6 w-6 shrink-0">
                               {chain.logoUrl ? (
                                 <Image
                                   src={chain.logoUrl}

@@ -21,11 +21,11 @@ function ChainRadioRow({ chainId }: { chainId: number }) {
       value={chainId}
       className={twMerge(
         'group flex h-11 w-full cursor-pointer items-center gap-3 rounded-[8px] px-3 transition-[background] duration-200 hover:bg-white/10',
-        'data-[checked]:bg-[#0B2046]',
+        'data-checked:bg-[#0B2046]',
       )}
     >
-      <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-white/20 group-data-[checked]:border-[#3A96FF]">
-        <span className="hidden h-2 w-2 rounded-full bg-[#3A96FF] group-data-[checked]:block" />
+      <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-white/20 group-data-checked:border-[#3A96FF]">
+        <span className="hidden h-2 w-2 rounded-full bg-[#3A96FF] group-data-checked:block" />
       </span>
       <NetworkImage chainId={chainId} className="h-5 w-5 shrink-0 p-[2px]" size={20} />
       <span className="truncate text-sm font-medium text-white">{getNetworkName(chainId)}</span>
@@ -61,7 +61,7 @@ export function ChainSelectDropdown({
         <>
           <PopoverButton
             aria-label="Select destination chain"
-            className="arb-hover flex h-12 w-full items-center gap-2.5 rounded-md border border-white/10 bg-default-black px-4 text-left outline-none hover:bg-white/5"
+            className="arb-hover flex h-12 w-full items-center gap-2.5 rounded-md border border-white/10 bg-default-black px-4 text-left outline-hidden hover:bg-white/5"
           >
             <NetworkImage chainId={selectedChainId} className="h-6 w-6 p-[2px]" size={24} />
             <span className="grow truncate font-medium">{getNetworkName(selectedChainId)}</span>
@@ -71,7 +71,7 @@ export function ChainSelectDropdown({
           <PopoverPanel
             anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
             transition
-            className="z-50 flex max-h-[min(var(--anchor-max-height,420px),420px)] w-[var(--button-width)] min-w-[320px] origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-[closed]:scale-95 data-[closed]:opacity-0"
+            className="z-50 flex max-h-[min(var(--anchor-max-height,420px),420px)] w-(--button-width) min-w-[320px] origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-closed:scale-95 data-closed:opacity-0"
           >
             {({ close }) => (
               <div className="flex min-h-0 flex-1 flex-col">

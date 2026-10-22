@@ -40,7 +40,7 @@ export const SearchPanelTable = ({
   }, [inputRef]);
 
   return (
-    <div className="flex w-[calc(100vw_-_60px)] flex-col gap-3 md:w-full">
+    <div className="flex w-[calc(100vw-60px)] flex-col gap-3 md:w-full">
       {showSearch && (
         <form onSubmit={onSubmit} className="flex flex-col">
           <div className="flex items-stretch gap-2">
@@ -62,9 +62,9 @@ export const SearchPanelTable = ({
       )}
       <div
         className={twMerge(
-          'sm:shadow-search-panel h-[calc(100dvh_-_200px)] rounded',
+          'sm:shadow-search-panel h-[calc(100dvh-200px)] rounded',
           isDialog ? 'md:max-h-[700px]' : 'md:max-h-[400px]',
-          embedMode ? 'h-[calc(100vh_-_150px)]' : 'md:h-[calc(100vh_-_390px)] min-h-[180px]',
+          embedMode ? 'h-[calc(100vh-150px)]' : 'md:h-[calc(100vh-390px)] min-h-[180px]',
         )}
         data-cy={dataCy}
       >

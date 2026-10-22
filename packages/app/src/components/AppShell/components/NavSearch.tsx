@@ -154,7 +154,7 @@ export function NavSearch() {
               ref={inputRef}
               type="text"
               name="portal-search"
-              className="h-6 w-full bg-transparent text-sm text-white placeholder-white/50 outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 shadow-none"
+              className="h-6 w-full bg-transparent text-sm text-white placeholder-white/50 outline-hidden focus:outline-hidden focus:ring-0 focus:ring-offset-0 shadow-none"
               placeholder="Search categories, projects, chains, and more"
               value={searchString}
               onChange={handleInputChange}
@@ -179,7 +179,7 @@ export function NavSearch() {
       {showSearchResultsPopup && isExpanded && (
         <div
           data-search-popup
-          className="absolute left-0 top-full z-[100000] mt-2 w-full md:w-full lg:w-[400px]"
+          className="absolute left-0 top-full z-100000 mt-2 w-full md:w-full lg:w-[400px]"
         >
           <SearchResultsPopup
             searchString={searchString}

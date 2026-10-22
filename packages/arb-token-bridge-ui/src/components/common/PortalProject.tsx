@@ -34,7 +34,7 @@ export const Project = ({
         {/* Logos */}
         <div className="flex shrink-0 grow-0 flex-col gap-2 overflow-hidden bg-cover bg-center">
           {/* Project logo */}
-          <div className="relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-md bg-white p-[1px]">
+          <div className="relative flex h-[50px] w-[50px] items-center justify-center overflow-hidden rounded-md bg-white p-px">
             <div className="[&:hover_span]:opacity-100">
               <Image
                 alt={`${project.title} logo`}
@@ -59,7 +59,7 @@ export const Project = ({
               {project.subcategories.slice(0, 2).map((subcategory) => (
                 <span
                   key={subcategory.id}
-                  className="inline-flex items-start justify-start gap-2 break-words rounded bg-black px-1.5 py-0.5 text-xs font-normal text-white/60"
+                  className="inline-flex items-start justify-start gap-2 wrap-break-word rounded bg-black px-1.5 py-0.5 text-xs font-normal text-white/60"
                 >
                   {subcategory.title.replaceAll('/', ' / ')}
                 </span>
