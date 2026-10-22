@@ -1,7 +1,7 @@
 import { Dialog, DialogBackdrop, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Fragment, useMemo } from 'react';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useTransactionHistory } from '../../hooks/useTransactionHistory';
@@ -16,13 +16,12 @@ import {
 export const TransactionsTableDetails = () => {
   const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
   const { txFromStore, isOpen, close, reset } = useTxDetailsStore(
-    (state) => ({
+    useShallow((state) => ({
       txFromStore: state.tx,
       isOpen: state.isOpen,
       close: state.close,
       reset: state.reset,
-    }),
-    shallow,
+    })),
   );
 
   const { isTxHashSearch } = useTxHashSearchState();

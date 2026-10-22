@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { ERC20BridgeToken, TokenType } from '../../../hooks/arbTokenBridge.types';
 import { useNetworks } from '../../../hooks/useNetworks';
@@ -13,11 +13,10 @@ export function CctpRoute({ amountReceived }: { amountReceived: string }) {
   const [{ sourceChain }] = useNetworks();
   const { isTestnet } = isNetwork(sourceChain.id);
   const { selectedRoute, setSelectedRoute } = useRouteStore(
-    (state) => ({
+    useShallow((state) => ({
       selectedRoute: state.selectedRoute,
       setSelectedRoute: state.setSelectedRoute,
-    }),
-    shallow,
+    })),
   );
 
   const nativeUsdcToken: ERC20BridgeToken = useMemo(

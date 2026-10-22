@@ -107,8 +107,8 @@ importers:
         specifier: ^5.5.7
         version: 5.5.7(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8)(eslint@9.39.5)(prettier@3.9.10)
       eslint-plugin-zustand-rules:
-        specifier: https://github.com/OffchainLabs/eslint-plugin-zustand-rules
-        version: https://codeload.github.com/OffchainLabs/eslint-plugin-zustand-rules/tar.gz/cae011989384e6b9a022d536f3219fc7ea340444(eslint@9.39.5)
+        specifier: ^1.2.1
+        version: 1.2.1(eslint@9.39.5)
       prettier:
         specifier: ^3.9.10
         version: 3.9.10
@@ -197,8 +197,8 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
       zustand:
-        specifier: ^4.5.7
-        version: 4.5.7(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)
+        specifier: ^5.0.15
+        version: 5.0.15(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.4.0)
     devDependencies:
       '@headlessui/tailwindcss':
         specifier: ^0.2.2
@@ -363,8 +363,8 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
       zustand:
-        specifier: ^4.5.7
-        version: 4.5.7(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)
+        specifier: ^5.0.15
+        version: 5.0.15(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.6.0)
     devDependencies:
       '@headlessui/tailwindcss':
         specifier: ^0.2.2
@@ -499,8 +499,8 @@ importers:
         specifier: ^2.2.2
         version: 2.2.2(react-dom@19.3.1)(react@19.3.1)
       zustand:
-        specifier: ^4.5.7
-        version: 4.5.7(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)
+        specifier: ^5.0.15
+        version: 5.0.15(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.6.0)
     devDependencies:
       '@headlessui/tailwindcss':
         specifier: ^0.2.2
@@ -4381,11 +4381,11 @@ packages:
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7
 
-  eslint-plugin-zustand-rules@https://codeload.github.com/OffchainLabs/eslint-plugin-zustand-rules/tar.gz/cae011989384e6b9a022d536f3219fc7ea340444:
-    resolution: {gitHosted: true, integrity: sha512-/k+IruBinGs6QH3L055xYeHdhgVvw79hJv4eB8xr2DkqrXYX29xp8OzdYdbyXqdh/pkqG2CdagSy6as13mhU4A==, tarball: https://codeload.github.com/OffchainLabs/eslint-plugin-zustand-rules/tar.gz/cae011989384e6b9a022d536f3219fc7ea340444}
-    version: 1.0.2
+  eslint-plugin-zustand-rules@1.2.1:
+    resolution: {integrity: sha512-RdXRIP8994XFl8LmGXCQGxMazpkiy+5hvguzpX7YgnlNHazGVnoxzg/HoEocYUkTby9fSHpIqeu3DmMc9B3/bA==}
+    engines: {node: '>=18'}
     peerDependencies:
-      eslint: ^8.0.0
+      eslint: ^8.0.0 || ^9.0.0
 
   eslint-scope@8.4.0:
     resolution: {integrity: sha512-sNXOfKCn74rt8RICKMvJS7XKV/Xk9kA7DyJr8mJik3S7Cwgy3qlkkmyS2uQB3jiJg6VNdZd/pDBJu0nvG2NlTg==}
@@ -7540,26 +7540,8 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zod@4.1.12:
-    resolution: {integrity: sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ==}
-
   zod@4.6.7:
     resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
-
-  zustand@4.5.7:
-    resolution: {integrity: sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==}
-    engines: {node: '>=12.7.0'}
-    peerDependencies:
-      '@types/react': 19.3.0
-      immer: '>=9.0.6'
-      react: '>=16.8'
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-      immer:
-        optional: true
-      react:
-        optional: true
 
   zustand@5.0.0:
     resolution: {integrity: sha512-LE+VcmbartOPM+auOjCCLQOsQ05zUTp8RkgwRzefUk+2jISdMMFnxvyTjA4YNWr5ZGXYbVsEMZosttuxUBkojQ==}
@@ -7579,8 +7561,8 @@ packages:
       use-sync-external-store:
         optional: true
 
-  zustand@5.0.3:
-    resolution: {integrity: sha512-14fwWQtU3pH4dE0dOpdMiWjddcH+QzKIgk1cl8epwSE7yag43k/AD/m4L6+K7DytAOr9gGBe3/EXj9g7cdostg==}
+  zustand@5.0.15:
+    resolution: {integrity: sha512-MpSEjRiBkA9crSYeOUH32rJC7SVqAbm0Fqcqge/bUi2PPoLcBWKOsG+C8mevmpr8TwXHBVkChbbJiyvkE+i/3A==}
     engines: {node: '>=12.20.0'}
     peerDependencies:
       '@types/react': 19.3.0
@@ -7597,8 +7579,8 @@ packages:
       use-sync-external-store:
         optional: true
 
-  zustand@5.0.8:
-    resolution: {integrity: sha512-gyPKpIaxY9XcO2vSMrLbiER7QMAMGOQZVRdJ6Zi782jkbzZygq5GI9nG8g+sMgitRtndwaBSl7uiqC49o1SSiw==}
+  zustand@5.0.3:
+    resolution: {integrity: sha512-14fwWQtU3pH4dE0dOpdMiWjddcH+QzKIgk1cl8epwSE7yag43k/AD/m4L6+K7DytAOr9gGBe3/EXj9g7cdostg==}
     engines: {node: '>=12.20.0'}
     peerDependencies:
       '@types/react': 19.3.0
@@ -7901,7 +7883,7 @@ snapshots:
       bitcoinjs-lib: 7.0.0-rc.0(typescript@5.9.3)
       bs58: 6.0.0
       eventemitter3: 5.0.4
-      zustand: 5.0.8(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.6.0)
+      zustand: 5.0.15(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.6.0)
     transitivePeerDependencies:
       - '@types/react'
       - immer
@@ -11951,11 +11933,6 @@ snapshots:
       typescript: 5.9.3
       zod: 3.25.76
 
-  abitype@1.2.3(typescript@5.9.3)(zod@4.1.12):
-    optionalDependencies:
-      typescript: 5.9.3
-      zod: 4.1.12
-
   abitype@1.2.3(typescript@5.9.3)(zod@4.6.7):
     optionalDependencies:
       typescript: 5.9.3
@@ -13276,8 +13253,8 @@ snapshots:
       '@babel/parser': 7.29.7
       eslint: 9.39.5(jiti@1.21.7)(supports-color@8.1.1)
       hermes-parser: 0.25.1
-      zod: 4.1.12
-      zod-validation-error: 4.0.2(zod@4.1.12)
+      zod: 4.6.7
+      zod-validation-error: 4.0.2(zod@4.6.7)
     transitivePeerDependencies:
       - supports-color
 
@@ -13303,7 +13280,7 @@ snapshots:
       string.prototype.matchall: 4.0.12
       string.prototype.repeat: 1.0.0
 
-  eslint-plugin-zustand-rules@https://codeload.github.com/OffchainLabs/eslint-plugin-zustand-rules/tar.gz/cae011989384e6b9a022d536f3219fc7ea340444(eslint@9.39.5):
+  eslint-plugin-zustand-rules@1.2.1(eslint@9.39.5):
     dependencies:
       eslint: 9.39.5(jiti@1.21.7)(supports-color@8.1.1)
 
@@ -14832,7 +14809,7 @@ snapshots:
     transitivePeerDependencies:
       - zod
 
-  ox@0.9.14(typescript@5.9.3)(zod@4.1.12):
+  ox@0.9.14(typescript@5.9.3)(zod@4.6.7):
     dependencies:
       '@adraffy/ens-normalize': 1.11.1
       '@noble/ciphers': 1.3.0
@@ -14840,7 +14817,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)(zod@4.1.12)
+      abitype: 1.2.3(typescript@5.9.3)(zod@4.6.7)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.9.3
@@ -15023,10 +15000,10 @@ snapshots:
       hono: 4.13.13
       idb-keyval: 6.2.1
       mipd: 0.0.7(typescript@5.9.3)
-      ox: 0.9.14(typescript@5.9.3)(zod@4.1.12)
+      ox: 0.9.14(typescript@5.9.3)(zod@4.6.7)
       viem: 2.57.7(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.6.7)
-      zod: 4.1.12
-      zustand: 5.0.8(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.4.0)
+      zod: 4.6.7
+      zustand: 5.0.15(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.4.0)
     optionalDependencies:
       '@tanstack/react-query': 5.104.5(@types/react@19.3.0)(react@19.3.1)
       react: 19.3.1
@@ -15043,10 +15020,10 @@ snapshots:
       hono: 4.13.13
       idb-keyval: 6.2.1
       mipd: 0.0.7(typescript@5.9.3)
-      ox: 0.9.14(typescript@5.9.3)(zod@4.1.12)
+      ox: 0.9.14(typescript@5.9.3)(zod@4.6.7)
       viem: 2.57.7(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.6.7)
-      zod: 4.1.12
-      zustand: 5.0.8(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.6.0)
+      zod: 4.6.7
+      zustand: 5.0.15(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.6.0)
     optionalDependencies:
       '@tanstack/react-query': 5.104.5(@types/react@19.3.0)(react@19.3.1)
       react: 19.3.1
@@ -16749,25 +16726,15 @@ snapshots:
 
   zen-observable@0.8.15: {}
 
-  zod-validation-error@4.0.2(zod@4.1.12):
+  zod-validation-error@4.0.2(zod@4.6.7):
     dependencies:
-      zod: 4.1.12
+      zod: 4.6.7
 
   zod@3.22.4: {}
 
   zod@3.25.76: {}
 
-  zod@4.1.12: {}
-
   zod@4.6.7: {}
-
-  zustand@4.5.7(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1):
-    dependencies:
-      use-sync-external-store: 1.6.0(react@19.3.1)
-    optionalDependencies:
-      '@types/react': 19.3.0
-      immer: 11.2.7
-      react: 19.3.1
 
   zustand@5.0.0(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.4.0):
     optionalDependencies:
@@ -16777,6 +16744,20 @@ snapshots:
       use-sync-external-store: 1.4.0(react@19.3.1)
 
   zustand@5.0.0(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.6.0):
+    optionalDependencies:
+      '@types/react': 19.3.0
+      immer: 11.2.7
+      react: 19.3.1
+      use-sync-external-store: 1.6.0(react@19.3.1)
+
+  zustand@5.0.15(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.4.0):
+    optionalDependencies:
+      '@types/react': 19.3.0
+      immer: 11.2.7
+      react: 19.3.1
+      use-sync-external-store: 1.4.0(react@19.3.1)
+
+  zustand@5.0.15(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.6.0):
     optionalDependencies:
       '@types/react': 19.3.0
       immer: 11.2.7
@@ -16797,17 +16778,3 @@ snapshots:
       react: 19.3.1
       use-sync-external-store: 1.6.0(react@19.3.1)
     optional: true
-
-  zustand@5.0.8(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.4.0):
-    optionalDependencies:
-      '@types/react': 19.3.0
-      immer: 11.2.7
-      react: 19.3.1
-      use-sync-external-store: 1.4.0(react@19.3.1)
-
-  zustand@5.0.8(@types/react@19.3.0)(immer@11.2.7)(react@19.3.1)(use-sync-external-store@1.6.0):
-    optionalDependencies:
-      '@types/react': 19.3.0
-      immer: 11.2.7
-      react: 19.3.1
-      use-sync-external-store: 1.6.0(react@19.3.1)

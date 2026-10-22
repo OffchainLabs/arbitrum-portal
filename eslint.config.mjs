@@ -64,8 +64,8 @@ const mainRules = {
   ],
   'react-hooks/purity': 'off',
   'react-hooks/set-state-in-effect': 'off',
-  'zustand-rules/enforce-use-setstate': 'error',
   'zustand-rules/no-state-mutation': 'error',
+  'zustand-rules/require-shallow-selector': 'error',
   'zustand-rules/use-store-selectors': 'error',
   '@next/next/no-html-link-for-pages': [
     'error',

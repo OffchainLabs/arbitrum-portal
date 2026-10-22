@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { ArbTokenBridge } from '../hooks/arbTokenBridge.types';
 import { AppState, WarningTokens, defaultState } from './app/state';
@@ -37,7 +37,7 @@ const selectAppState = (s: AppStore): AppState => ({
 });
 
 export const useAppState = (): { app: AppState } => ({
-  app: useAppStore(selectAppState, shallow),
+  app: useAppStore(useShallow(selectAppState)),
 });
 
 const initialStore = useAppStore.getState();
