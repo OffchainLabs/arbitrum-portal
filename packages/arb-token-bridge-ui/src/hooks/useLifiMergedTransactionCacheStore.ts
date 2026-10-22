@@ -46,7 +46,9 @@ type Version2State = LifiCachePersistedState<
 
 type Version3State = LifiCachePersistedState<LifiMergedTransaction>;
 
-const LIFI_CACHE_VERSION = 3 as const;
+type Version4State = LifiCachePersistedState<LifiMergedTransaction>;
+
+const LIFI_CACHE_VERSION = 4 as const;
 
 export function sanitizeLifiRouteForStorage(route: RouteExtended): RouteExtended {
   return {
@@ -194,14 +196,111 @@ export function migrateLifiCacheStateToVersion3(
   }
 }
 
-const persistOptions: PersistOptions<LifiMergedTransactionCacheState, Version3State> = {
+/**
+ * LiFi SDK versions before 3.10.2 wrote two process types that later versions dropped:
+ * `SWITCH_CHAIN` (a network switch, never with a tx hash) and `TRANSACTION` (only used to
+ * record a wallet mismatch failure, also without a hash). Drop the first, and rename the
+ * second to the step's transfer type, which is where newer SDKs record that failure. If the
+ * step already has a transfer process, the legacy one is dropped instead, so a resumed route
+ * never has two processes of the same type.
+ */
+export function migrateLifiProcessesToVersion4<Process extends { type: string }>(
+  processes: Process[],
+  transferType: 'CROSS_CHAIN' | 'SWAP',
+): Process[] {
+  const hasTransferProcess = processes.some((process) => process.type === transferType);
+
+  return processes.flatMap((process) => {
+    if (process.type === 'SWITCH_CHAIN') {
+      return [];
+    }
+    if (process.type === 'TRANSACTION') {
+      return hasTransferProcess ? [] : [{ ...process, type: transferType }];
+    }
+    return [process];
+  });
+}
+
+function getLifiTransferProcessType(fromChainId: number, toChainId: number) {
+  return fromChainId === toChainId ? 'SWAP' : 'CROSS_CHAIN';
+}
+
+export function migrateLifiTransactionFromVersion3ToVersion4(
+  transaction: LifiMergedTransaction,
+): LifiMergedTransaction {
+  const { lifiRoute, lifiRouteSteps } = transaction;
+
+  return {
+    ...transaction,
+    ...(lifiRoute && {
+      lifiRoute: {
+        ...lifiRoute,
+        steps: lifiRoute.steps.map((step) =>
+          step.execution
+            ? {
+                ...step,
+                execution: {
+                  ...step.execution,
+                  process: migrateLifiProcessesToVersion4(
+                    step.execution.process,
+                    getLifiTransferProcessType(step.action.fromChainId, step.action.toChainId),
+                  ),
+                },
+              }
+            : step,
+        ),
+      },
+    }),
+    // History steps only keep the source chain; the app treats SWAP and CROSS_CHAIN alike there.
+    ...(lifiRouteSteps && {
+      lifiRouteSteps: lifiRouteSteps.map((step) =>
+        step.execution
+          ? {
+              ...step,
+              execution: {
+                ...step.execution,
+                process: migrateLifiProcessesToVersion4(
+                  step.execution.process,
+                  getLifiTransferProcessType(
+                    transaction.sourceChainId,
+                    transaction.destinationChainId,
+                  ),
+                ),
+              },
+            }
+          : step,
+      ),
+    }),
+  };
+}
+
+export function migrateLifiCacheStateToVersion4(
+  persistedState: unknown,
+  sourceVersion: number,
+): Version4State {
+  const version3State =
+    sourceVersion === 3
+      ? (persistedState as Version3State)
+      : migrateLifiCacheStateToVersion3(persistedState, sourceVersion);
+
+  return {
+    transactions: Object.fromEntries(
+      Object.entries(version3State.transactions).map(([address, transactions]) => [
+        address,
+        transactions.map(migrateLifiTransactionFromVersion3ToVersion4),
+      ]),
+    ),
+  };
+}
+
+const persistOptions: PersistOptions<LifiMergedTransactionCacheState, Version4State> = {
   name: 'lifi-merged-transaction-cache',
   version: LIFI_CACHE_VERSION,
   partialize: (state) => ({ transactions: state.transactions }),
   // Zustand v4 types migrations as returning the full runtime state, although persisted
   // data is merged with the current state and intentionally excludes store actions.
   migrate: (persistedState, sourceVersion) =>
-    migrateLifiCacheStateToVersion3(
+    migrateLifiCacheStateToVersion4(
       persistedState,
       sourceVersion,
     ) as LifiMergedTransactionCacheState,
