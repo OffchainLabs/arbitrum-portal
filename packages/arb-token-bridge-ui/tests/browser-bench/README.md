@@ -144,7 +144,9 @@ builds.
 
 The PR comment follows the Lighthouse and render profile comments: counts of regressions,
 improvements and unchanged values, then collapsed sections with only the values that changed, and
-the subtrees master can't measure yet. Regressions are GitHub warnings and never fail the job.
+the subtrees master can't measure yet. A metric without a round measured on both sides, after a
+collection failed, is listed as not compared. Regressions are GitHub warnings and never fail the
+job.
 Every sample is in the uploaded `production.json` and `profiling.json`.
 
 The job fails when a scenario breaks, a measurement is missing, a build is invalid or the
