@@ -2,7 +2,7 @@ import { Tab } from '@headlessui/react';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { useForceFetchReceived, useTransactionHistory } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
@@ -77,11 +77,10 @@ export function TransactionHistorySearchResults() {
         !addressesEqual(tx.destination, connectedAddress),
     );
   const { forceFetchReceived, setForceFetchReceived } = useForceFetchReceived(
-    (state) => ({
+    useShallow((state) => ({
       forceFetchReceived: state.forceFetchReceived,
       setForceFetchReceived: state.setForceFetchReceived,
-    }),
-    shallow,
+    })),
   );
   const searchError = useTransactionHistoryAddressStore((state) => state.searchError);
   const txHistoryAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
