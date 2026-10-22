@@ -242,12 +242,14 @@ export function TransactionsTableRow({
           <TransactionsTableTokenImage tx={tx} />
         )}
         {isLifiTransfer(tx) ? (
-          <span className="inline-block max-w-[90px] break-words">{toTokenAmount}</span>
+          <span className="inline-block max-w-[90px] wrap-break-word">{toTokenAmount}</span>
         ) : (
           <div className="flex flex-col">
-            <span className="inline-block max-w-[90px] break-words">{nonLifiReceivedAmount}</span>
+            <span className="inline-block max-w-[90px] wrap-break-word">
+              {nonLifiReceivedAmount}
+            </span>
             {nonLifiReceivedAmount2 && (
-              <span className="inline-block max-w-[90px] break-words text-white/70">
+              <span className="inline-block max-w-[90px] wrap-break-word text-white/70">
                 {nonLifiReceivedAmount2}
               </span>
             )}

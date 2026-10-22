@@ -60,11 +60,11 @@ export const NetworkOption = ({ network }: { network: Network }) => {
       <label
         htmlFor={network.slug}
         className={twMerge(
-          'flex items-center whitespace-pre p-2 px-3 text-left hover:text-black peer-checked:text-white peer-checked:hover:text-black peer-disabled:text-gray-500/50 peer-disabled:hover:text-gray-500/50',
+          'flex items-center whitespace-pre p-2 px-3 text-left hover:text-black peer-checked:text-white hover:peer-checked:text-black peer-disabled:text-gray-500/50 hover:peer-disabled:text-gray-500/50',
           isOnlyOneChecked ? 'cursor-not-allowed' : 'cursor-pointer',
         )}
       >
-        <span className="flex items-center justify-center rounded-sm border border-gray-100/20 bg-default-black p-[3px] lg:p-[1px]">
+        <span className="flex items-center justify-center rounded-sm border border-gray-100/20 bg-default-black p-[3px] lg:p-px">
           <CheckIcon className="checkIcon invisible h-4 w-4 stroke-black stroke-[3px] lg:h-3 lg:w-3" />
         </span>
         <span className="ml-2 mr-1 shrink-0">

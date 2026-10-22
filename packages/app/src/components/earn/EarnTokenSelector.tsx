@@ -41,7 +41,7 @@ function SelectableTokenBadge({ symbol, logoUrl, onClick }: SelectableTokenBadge
     <button
       type="button"
       onClick={onClick}
-      className={twMerge(TOKEN_BADGE_CLASS, 'focus:outline-none')}
+      className={twMerge(TOKEN_BADGE_CLASS, 'focus:outline-hidden')}
     >
       <TokenBadgeContent symbol={symbol} logoUrl={logoUrl} />
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

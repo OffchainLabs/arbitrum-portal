@@ -27,7 +27,7 @@ export function PendleCapWarning({
     return (
       <Card className="bg-red-900/20 border border-red-400/50 rounded p-4">
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-5 h-5 mt-0.5">
+          <div className="shrink-0 w-5 h-5 mt-0.5">
             <ExclamationTriangleIcon className="w-full h-full text-red-400" />
           </div>
           <div className="flex-1">
@@ -45,7 +45,7 @@ export function PendleCapWarning({
     return (
       <Card className="bg-yellow-900/20 border border-yellow-400/50 rounded p-4">
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-5 h-5 mt-0.5">
+          <div className="shrink-0 w-5 h-5 mt-0.5">
             <ExclamationTriangleIcon className="w-full h-full text-yellow-400" />
           </div>
           <div className="flex-1">
@@ -64,7 +64,7 @@ export function PendleCapWarning({
   return (
     <Card className="bg-blue-900/20 border border-blue-400/50 rounded p-4">
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 w-5 h-5 mt-0.5">
+        <div className="shrink-0 w-5 h-5 mt-0.5">
           <InformationCircleIcon className="w-full h-full text-blue-400" />
         </div>
         <div className="flex-1">
