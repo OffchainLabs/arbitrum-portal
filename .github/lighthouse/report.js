@@ -62,14 +62,17 @@ const metrics = {
     short: 'JS',
     unit: 'KiB',
     minDelta: 5,
-    read: (lhr) =>
-      (lhr.audits['resource-summary']?.details?.items?.find(
+    audit: 'resource-summary',
+    read: (lhr) => {
+      const transferSize = lhr.audits['resource-summary']?.details?.items?.find(
         (item) => item.resourceType === 'script',
-      )?.transferSize ?? 0) / 1024,
+      )?.transferSize;
+      return transferSize === undefined ? undefined : transferSize / 1024;
+    },
   },
 };
 
-const icons = { better: '🟢', same: '⚪', worse: '🔴' };
+const icons = { better: '🟢', same: '⚪', worse: '🔴', unavailable: '⚠️' };
 
 // Script sizes by module come from source maps and are the same on every run, so smaller changes
 // are real but too small to list
@@ -137,14 +140,28 @@ function confidenceInterval(differences) {
   return { mean, low: mean - margin, high: mean + margin };
 }
 
+// Undefined when the audit failed or didn't apply, so a failure never reads as a value of 0
 function readMetric(lhr, id) {
   if (metrics[id].read) {
     return metrics[id].read(lhr);
   }
   if (lhr.categories[id]) {
-    return (lhr.categories[id].score ?? 0) * 100;
+    const { score } = lhr.categories[id];
+    return typeof score === 'number' ? score * 100 : undefined;
   }
-  return lhr.audits[id]?.numericValue ?? 0;
+  const audit = lhr.audits[id];
+  return audit?.scoreDisplayMode === 'error' ? undefined : audit?.numericValue;
+}
+
+function readFailure(lhr, id) {
+  if (lhr.categories[id]) {
+    return 'no score';
+  }
+  const audit = lhr.audits[metrics[id].audit ?? id];
+  if (!audit) {
+    return 'missing from the report';
+  }
+  return audit.errorMessage ?? audit.explanation ?? audit.scoreDisplayMode;
 }
 
 // Uncompressed size of the scripts the bridge loaded, by module, written by flow.mjs
@@ -168,16 +185,27 @@ function readFlows(directory) {
     }));
 }
 
-// Median of each metric, and its value in each run
+// Median of each metric, its value in each run, and why it failed in the other runs
 function summarize(flows) {
   return steps.map((step, index) =>
     Object.fromEntries(
       step.metrics.map((id) => {
-        const values = new Map(
-          flows.map(({ run, flow }) => [run, readMetric(flow.steps[index].lhr, id)]),
-        );
-        const value = Number(median([...values.values()]).toFixed(metrics[id].decimals ?? 0));
-        return [id, { value, values }];
+        const values = new Map();
+        const failures = new Map();
+        flows.forEach(({ run, flow }) => {
+          const { lhr } = flow.steps[index];
+          const value = readMetric(lhr, id);
+          if (value === undefined) {
+            failures.set(run, readFailure(lhr, id));
+          } else {
+            values.set(run, value);
+          }
+        });
+        const value =
+          values.size > 0
+            ? Number(median([...values.values()]).toFixed(metrics[id].decimals ?? 0))
+            : undefined;
+        return [id, { value, values, failures }];
       }),
     ),
   );
@@ -186,10 +214,13 @@ function summarize(flows) {
 function compare(pr, base, id) {
   const { higherIsBetter = false, minDelta, minRatio = 0, decimals = 0 } = metrics[id];
   // Runners differ in speed by up to 2 times, so each run of the PR is compared with the run of
-  // master on the same runner
+  // master on the same runner. Runners where the audit failed on either side are left out.
   const differences = [...pr.values.keys()]
     .filter((run) => base.values.has(run))
     .map((run) => pr.values.get(run) - base.values.get(run));
+  if (differences.length === 0) {
+    return { status: 'unavailable' };
+  }
   const interval = confidenceInterval(differences);
   const difference = Number(interval.mean.toFixed(decimals));
   // A change counts when its whole 99% confidence interval is past the smallest change that
@@ -305,6 +336,39 @@ function formatModules({ pr, base }) {
   ];
 }
 
+function formatReason(reason) {
+  return reason.replace(/\s+/g, ' ').replace(/\|/g, '\\|');
+}
+
+// The metrics whose audit failed in some runs, which are left out of the comparison
+function formatFailures({ sections, runs }) {
+  const failed = sections.flatMap(({ step, rows }) =>
+    rows
+      .filter(({ failures }) => failures.pr.size > 0 || failures.base.size > 0)
+      .map((row) => ({ step, ...row })),
+  );
+  if (failed.length === 0) {
+    return [];
+  }
+
+  return [
+    '<details>',
+    `<summary><b>${icons.unavailable} Failed audits (${failed.length})</b></summary>`,
+    '',
+    "Runs where an audit failed are left out of the comparison. A metric isn't compared when no runner has it on both sides.",
+    '',
+    '| Step | Metric | Failed on master | Failed on the PR | Error |',
+    '|:---|:---|---:|---:|:---|',
+    ...failed.map(({ step, id, failures }) => {
+      const reasons = [...new Set([...failures.base.values(), ...failures.pr.values()])];
+      return `| ${step.name} | ${metrics[id].label} | ${failures.base.size}/${runs} | ${failures.pr.size}/${runs} | ${reasons.map(formatReason).join('<br>')} |`;
+    }),
+    '',
+    '</details>',
+    '',
+  ];
+}
+
 function formatReport({ pr, base, modules, runs, baseSha, runUrl }) {
   const sections = steps.map((step, index) => ({
     step,
@@ -315,6 +379,7 @@ function formatReport({ pr, base, modules, runs, baseSha, runUrl }) {
         id,
         pr: prResult.value,
         base: baseResult.value,
+        failures: { pr: prResult.failures, base: baseResult.failures },
         ...compare(prResult, baseResult, id),
       };
     }),
@@ -325,16 +390,30 @@ function formatReport({ pr, base, modules, runs, baseSha, runUrl }) {
   const changes = [
     ...formatChanges({ sections, status: 'worse', title: 'Regressions' }),
     ...formatChanges({ sections, status: 'better', title: 'Improvements' }),
+    ...formatFailures({ sections, runs }),
     ...formatModules(modules),
   ];
+  const columns = [
+    [`${icons.worse} Regressions`, count('worse')],
+    [`${icons.better} Improvements`, count('better')],
+    [`${icons.same} Unchanged`, count('same')],
+    ...(count('unavailable') > 0
+      ? [[`${icons.unavailable} Not compared`, count('unavailable')]]
+      : []),
+  ];
+  const notCompared = sections.flatMap(({ step, rows: stepRows }) =>
+    stepRows
+      .filter((row) => row.status === 'unavailable')
+      .map(({ id }) => `${step.name} · ${metrics[id].label}`),
+  );
 
-  return [
+  const body = [
     marker,
     '## 🔦 Lighthouse report',
     '',
-    `| ${icons.worse} Regressions | ${icons.better} Improvements | ${icons.same} Unchanged |`,
-    '|:---:|:---:|:---:|',
-    `| ${count('worse')} | ${count('better')} | ${count('same')} |`,
+    `| ${columns.map(([title]) => title).join(' | ')} |`,
+    `|${columns.map(() => ':---:').join('|')}|`,
+    `| ${columns.map(([, value]) => value).join(' | ')} |`,
     '',
     `Median of ${runs} desktop runs of the bridge user flow, compared with master at \`${baseSha.slice(0, 7)}\` on the same runners. A change counts when its whole 99% confidence interval is past the metric's smallest change that matters.`,
     '',
@@ -343,6 +422,7 @@ function formatReport({ pr, base, modules, runs, baseSha, runUrl }) {
     '',
     `📄 Full reports are attached to the [workflow run](${runUrl}).`,
   ].join('\n');
+  return { body, notCompared };
 }
 
 module.exports = async ({ github, context, core }) => {
@@ -357,7 +437,7 @@ module.exports = async ({ github, context, core }) => {
   }
 
   const pullRequest = context.payload.pull_request;
-  const body = formatReport({
+  const { body, notCompared } = formatReport({
     pr: summarize(flows.pr),
     base: summarize(flows.base),
     modules: { pr: readModules(resultsDirectory), base: readModules(baselineDirectory) },
@@ -366,6 +446,11 @@ module.exports = async ({ github, context, core }) => {
     runUrl: `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
   });
 
+  for (const metric of notCompared) {
+    core.warning(
+      `${metric} wasn't compared, its audit failed on the PR or master on every runner.`,
+    );
+  }
   await core.summary.addRaw(body).write();
 
   // The token is read-only on forks, so only comment on PRs from this repository
