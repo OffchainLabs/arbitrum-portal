@@ -1,104 +1,64 @@
-import { BigNumber, constants } from 'ethers';
+import { constants } from 'ethers';
 
 import type { LifiCrosschainTransfersRoute } from '@/bridge/app/api/crosschain-transfers/lifi';
 
-import { isDepositMode } from '../util/isDepositMode';
-import {
-  BridgeTransferStarter,
-  BridgeTransferStarterProps,
-  TransferProps,
-  TransferType,
-} from './BridgeTransferStarter';
+import type { GasEstimates } from '../hooks/arbTokenBridge.types';
+import { getNetworksRelationship } from '../util/getNetworksRelationship';
+import type { TransferProps, TransferType } from './BridgeTransferStarter';
 import {
   LifiRouteExecutionProps,
   LifiTransferOverrides,
   executeLifiRoute,
 } from './LifiRouteExecutor';
 
-type LifiTransferStarterProps = BridgeTransferStarterProps & {
+type LifiTransferStarterProps = {
   lifiRoute: LifiCrosschainTransfersRoute;
 };
 
-export class LifiTransferStarter extends BridgeTransferStarter<Omit<TransferProps, 'signer'>> {
+/**
+ * Runs a LiFi route from any ecosystem. It needs no provider: chain ids come from the route,
+ * and LiFi signs through the wallet signers passed to `transfer`.
+ */
+export class LifiTransferStarter {
   public transferType: TransferType = 'lifi';
-  private lifiRoute: LifiCrosschainTransfersRoute;
+  private readonly lifiRoute: LifiCrosschainTransfersRoute;
 
-  constructor(props: LifiTransferStarterProps) {
-    super(props);
-    this.lifiRoute = props.lifiRoute;
+  constructor({ lifiRoute }: LifiTransferStarterProps) {
+    this.lifiRoute = lifiRoute;
   }
 
-  public requiresNativeCurrencyApproval = async () => {
-    return false;
-  };
-
-  public async approveNativeCurrencyEstimateGas() {
-    // no-op
-  }
-
-  public approveNativeCurrency = async () => {
-    // no-op
-  };
-
-  public async requiresTokenApproval(): Promise<boolean> {
-    return false;
-  }
-
-  public async approveToken() {
-    // LiFi SDK handles approval during route execution.
-  }
-
-  public async approveTokenEstimateGas() {
-    return constants.Zero;
-  }
-
-  public async transferEstimateGas() {
-    const sourceChainId = await this.getSourceChainId();
-    const destinationChainId = (await this.destinationChainProvider.getNetwork()).chainId;
-    const isDeposit = isDepositMode({ sourceChainId, destinationChainId });
-    const parentChainId = isDeposit ? sourceChainId : destinationChainId;
-    const childChainId = isDeposit ? destinationChainId : sourceChainId;
-
-    const getGasEstimateForChain = (chainId: number) =>
-      this.lifiRoute.gas.reduce((sum, gas) => {
-        if (gas.chainId !== chainId || !gas.estimate) {
-          return sum;
+  public async transferEstimateGas(): Promise<GasEstimates> {
+    const { parentChainId, childChainId } = getNetworksRelationship({
+      sourceChainId: this.lifiRoute.fromChainId,
+      destinationChainId: this.lifiRoute.toChainId,
+    });
+    return this.lifiRoute.gas.reduce<GasEstimates>(
+      (result, gas) => {
+        if (gas.chainId === parentChainId) {
+          result.estimatedParentChainGas = result.estimatedParentChainGas.add(gas.estimate ?? 0);
         }
-
-        return sum.add(BigNumber.from(gas.estimate));
-      }, constants.Zero);
-
-    return {
-      estimatedParentChainGas: getGasEstimateForChain(parentChainId),
-      estimatedChildChainGas: getGasEstimateForChain(childChainId),
-    };
+        if (gas.chainId === childChainId) {
+          result.estimatedChildChainGas = result.estimatedChildChainGas.add(gas.estimate ?? 0);
+        }
+        return result;
+      },
+      {
+        estimatedParentChainGas: constants.Zero,
+        estimatedChildChainGas: constants.Zero,
+      },
+    );
   }
 
   public async transfer(
-    {
-      signers,
-      switchChainAsync,
-      onApprovalRequest,
-      onRouteUpdate,
-      onRouteExecutionError,
-    }: Omit<TransferProps, 'signer'> & LifiRouteExecutionProps,
+    props: Omit<TransferProps, 'signer'> & LifiRouteExecutionProps,
     { executeRoute = executeLifiRoute }: LifiTransferOverrides = {},
   ) {
-    const { txHash, route } = await executeRoute(this.lifiRoute.protocolData.route, {
-      signers,
-      switchChainAsync,
-      onApprovalRequest,
-      onRouteUpdate,
-      onRouteExecutionError,
-    });
-    const fullTx = await this.sourceChainProvider.getTransaction(txHash).catch(() => null);
+    const { txHash, route } = await executeRoute(this.lifiRoute.protocolData.route, props);
 
     return {
       transferType: this.transferType,
-      status: 'pending',
-      sourceChainProvider: this.sourceChainProvider,
-      sourceChainTransaction: fullTx ?? { hash: txHash },
-      destinationChainProvider: this.destinationChainProvider,
+      status: 'pending' as const,
+      sourceChainTransaction: { hash: txHash },
       lifiRoute: route,
     };
   }
