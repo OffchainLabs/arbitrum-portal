@@ -39,6 +39,7 @@ export const evmEcosystem: EcosystemConfig = {
   nativeTokenAddress: zeroAddress,
   isLifiOnly: false,
   hasGasPrice: true,
+  isAppKitNetworkIdChainId: true,
   hasTokenApprovals: true,
   explorerAccountPath: 'address',
   chains: evmChains,
