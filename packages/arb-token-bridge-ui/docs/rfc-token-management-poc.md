@@ -3,7 +3,7 @@
 | **Authors**            | @name, @name                                             |
 | ---------------------- | -------------------------------------------------------- |
 | **Created**            | 2026-08-24                                               |
-| **Modified**           | 2026-10-19                                               |
+| **Modified**           | 2026-10-23                                               |
 | **Status**             | `draft` → **`draft-review`** → `in-progress` → `shipped` |
 | **Reference revision** |                                                          |
 
@@ -74,7 +74,8 @@ The token model must support these cases:
 - routes that work in one direction only
 - canonical, LayerZero, and LiFi routes for the same source token
 - swap-only tokens with no same-asset token on the destination chain
-- canonical imports for tokens absent from the generated registry
+- canonical imports for tokens without a canonical route in the generated registry
+- batched deposits that name the extra token on both chains
 - source and destination selections from URL query parameters
 - native tokens represented by the zero address
 - public caching without wallet-specific keys
@@ -99,7 +100,7 @@ The smaller initial response, about 1.2 KB to 1.5 KB instead of 1,573 KB, is a b
 
 The backend owns token normalization, route construction, destination validation, and default selection. The frontend owns display state, URL state, and search inside the lists that the backend returns.
 
-The backend builds the complete registry for a chain pair once. `unstable_cache` stores the registry for one hour, so every endpoint and every token change reuses one upstream result. A cold build makes eight upstream requests. A warm request for another token reads the cached registry.
+The backend caches token metadata once per chain and routes once per chain pair. `unstable_cache` stores each entry for one hour, so every endpoint and every token change reuses one upstream result. A warm request for another token reads the cached entries.
 
 ## Tokens and routes share one model across providers
 
@@ -129,6 +130,7 @@ type RouteOption =
       provider: 'canonical';
       sourceToken: Token;
       destinationToken: Token;
+      batchDeposit?: BatchDeposit;
     }
   | {
       provider: 'layerzero';
@@ -144,7 +146,7 @@ type RouteOption =
     };
 ```
 
-A `RouteOption` describes what a provider can transfer. It is not an executable route. `availableRoutes` holds at most one `RouteOption` for each provider that supports the selected source token. Canonical and LayerZero routes always name a destination token. A LiFi route names a destination token when a same-asset token exists on the destination chain. When no same-asset token exists, the LiFi route omits `destinationToken`, and the backend picks the destination native token as the default.
+A `RouteOption` describes what a provider can transfer. It is not an executable route. `availableRoutes` holds at most one `RouteOption` for each provider that supports the selected source token. Canonical and LayerZero routes always name a destination token. A canonical route can also carry a `batchDeposit`, described in [Canonical deposits declare batch support](#canonical-deposits-declare-batch-support). A LiFi route names a destination token when a same-asset token exists on the destination chain. When no same-asset token exists, the LiFi route omits `destinationToken`, and the backend picks the destination native token as the default.
 
 The LiFi route does not list every possible swap destination. The destination picker endpoint returns that list.
 
@@ -154,12 +156,94 @@ LiFi can offer several paths from one token to another, such as two different br
 
 Each token on each chain is its own `Token`, and each provider route names its own source and destination. The cases that need hardcoded branches today become entries in `packages/app/src/token-registry/constants.ts`.
 
-- Ethereum PYUSD keeps its canonical route and gains a LiFi route to `ArbitrumOne.PYUSD`. One entry in `defaultDestinationOverrides` makes the LiFi destination the default.
+- Ethereum PYUSD keeps its canonical route and gains a LiFi route to `ArbitrumOne.PYUSD`. One entry in `defaultDestinationOverrides` makes the LiFi destination the default. One entry in `transferDisabledExemptions` keeps the canonical route that the current bridge disables.
+- Ethereum USDC keeps its canonical route to USDC.e and has a LiFi route to native USDC. One entry in `defaultDestinationOverrides` makes native USDC the default, which is the token the bridge delivers today.
 - Arbitrum One USDC and USDC.e are two `Token` values, each with its own symbol and name. Each one can carry its own route to Ethereum USDC, so the many-to-one case needs no special handling.
 - Ethereum USDT reaches Arbitrum One USDT0 through an entry in `layerZeroConfig`. `curatedTokenMetadata` gives USDT0 its own symbol and name.
-- Robinhood USDC withdraws to Ethereum USDC through an entry in `hardcodedCanonicalRoutes`. `blockedSourceRoutes` blocks the reverse direction.
+- Robinhood USDC withdraws to Ethereum USDC through Robinhood's canonical token list. `blockedSourceRoutes` blocks the reverse direction.
 
 Callers no longer pick an address by direction. Balances, approvals, gas estimates, and transfer construction all read `sourceToken` and `destinationToken` from the selection response or from the chosen route.
+
+## Canonical routes come from the network registry
+
+The backend needs no new configuration for canonical bridges, because the bridge already has the data. `getCanonicalBridge` in `server/canonicalBridge.ts` reads it:
+
+- `getArbitrumNetwork` gives the parent chain and the parent gateway router. The SDK ships Arbitrum One, Nova, and Arbitrum Sepolia, and `initializeBridgeNetworks` registers the Orbit chains from `orbitChainsData.json`.
+- `BRIDGE_TOKEN_LISTS` gives the token list URLs for the child chain.
+
+A pair has a canonical bridge when one chain is the other chain's parent. The backend then builds canonical routes from the list entries on the child chain whose `bridgeInfo` names the parent chain. A canonical import calls that bridge's parent gateway router.
+
+```ts
+type CanonicalBridge = {
+  parentChainId: number;
+  childChainId: number;
+  parentGatewayRouter: Address;
+  tokenListUrls: string[];
+};
+```
+
+The PoC derives Ethereum to Arbitrum One and Ethereum to Robinhood this way, in both directions. Robinhood's list maps Robinhood USDC to Ethereum USDC, so the USDC withdrawal needs no hardcoded route. A new chain that pays gas in ETH needs its `orbitChainsData.json` entry and its token list, which the bridge needs today anyway.
+
+The PoC does not cover these cases yet:
+
+- **Custom gas token chains, such as ApeChain.** `getCanonicalBridge` returns `null` for them. Production maps the gas token's parent-chain ERC-20 to the zero address on the child chain. It reads the token's decimals onchain, because `orbitChainsData.json` has none.
+- **Supported pairs.** The PoC lists them in `supportedPairs`. Production takes them from `getDestinationChainIds`, because the network registry also holds local networks and pairs that the UI does not offer.
+- **Chains that a user adds in the browser.** The server does not know their network data.
+
+## The registry applies the bridge's policy lists
+
+Today `isDisabledCanonicalTransfer` blocks some canonical transfers on the client. If the registry ignored the same lists, it would return canonical routes that the bridge then refuses. The source picker would list those tokens, the default destination could point at a blocked route, and `batchDeposit` would promise a batch that cannot happen. So the registry removes the blocked canonical routes itself:
+
+- `isTransferDisabledToken` reads `transferDisabledTokens`. A listed token loses its canonical route in both directions. Examples are USDG on Arbitrum One, and USDe and USDG on Robinhood.
+- `isWithdrawOnlyToken` reads `withdrawOnlyTokens`, plus the rule that blocks USDC.e deposits to Orbit chains. A listed token loses its canonical deposit route and keeps its canonical withdrawal route.
+
+`transferDisabledExemptions` in `constants.ts` lists Ethereum PYUSD. The current bridge disables canonical PYUSD only because its token model cannot offer two destinations, and the registry can.
+
+Canonical imports follow the same lists, so a pasted address cannot bring back a blocked route. The lists stay in the bridge package, so they have one source of truth. The registry applies them after it reads the cache, so a list change takes effect on the next deploy without a new cache version.
+
+`useRoutesUpdater` keeps one live check, `isBlockedOftDeposit`. It reads LayerZero metadata and calls the token contract, so it does not fit a static list.
+
+## Canonical deposits declare batch support
+
+A batched deposit sends an ERC-20 token and an extra amount of the destination chain's native currency in one transaction. The bridge adds the extra amount to the retryable's `maxSubmissionCost`. The destination chain refunds the unused submission cost to the destination address, and that refund delivers the extra amount. Only the canonical bridge works this way.
+
+Today the client decides batch support in `useIsBatchTransferSupported`. That hook reads `useIsArbitrumCanonicalTransfer`, `useIsOftV2Transfer`, and `isTokenNativeUSDC`, and this RFC removes all three. Instead, the backend adds a `batchDeposit` field to the canonical route:
+
+```ts
+type BatchDeposit = {
+  sourceToken: Token;
+  destinationToken: Token;
+};
+```
+
+- `sourceToken` is the extra token that the user sends on the source chain.
+- `destinationToken` is the token that the user receives on the destination chain.
+
+If the canonical route has no `batchDeposit`, the source token cannot batch. LayerZero and LiFi routes never carry the field.
+
+The backend adds `batchDeposit` when all of these conditions hold:
+
+1. The pair has a canonical bridge, and the source chain is its parent chain.
+2. The source token is not the native token.
+3. `batchDepositExcludedSourceTokens` in `constants.ts` does not list the source token for the pair.
+
+Canonical imports follow the same rules. The current bridge also batches every canonical deposit, so the backend needs no list of batch pairs.
+
+The two tokens depend on the destination chain's gas token:
+
+| Pair                     | Source-chain token       | Destination-chain token   |
+| ------------------------ | ------------------------ | ------------------------- |
+| Ethereum to Arbitrum One | ETH, `1:0x0000…0000`     | ETH, `42161:0x0000…0000`  |
+| Ethereum to Robinhood    | ETH, `1:0x0000…0000`     | ETH, `4663:0x0000…0000`   |
+| Arbitrum One to Xai      | XAI, `42161:0x4cb9…9d66` | XAI, `660279:0x0000…0000` |
+
+On a chain with a custom gas token, the source-chain token is an ERC-20 with its own balance and approval. The frontend reads that token from `batchDeposit.sourceToken`, so it needs no list of custom-gas-token chains. The PoC batches Ethereum to Arbitrum One and Ethereum to Robinhood. Arbitrum One to Xai needs the custom gas token mapping from [Canonical routes come from the network registry](#canonical-routes-come-from-the-network-registry).
+
+The Ethereum to Arbitrum One entry in `batchDepositExcludedSourceTokens` lists Ethereum USDC, which the current bridge never batches.
+
+The user receives at least the extra amount. The destination chain also refunds the submission cost that the retryable does not use, so the bridge should show the extra amount as a minimum.
+
+The field adds 388 raw bytes and 52 gzipped bytes to a selection response. The default selection is native ETH, which never carries the field, so the initial response keeps its size.
 
 ## The backend picks the default destination
 
@@ -171,7 +255,7 @@ If the request has no `destinationToken` query parameter, the backend picks the 
 4. A same-asset LiFi destination.
 5. The destination native token, if LiFi supports the source token.
 
-An override changes the default and leaves the other routes in place. For example, Ethereum PYUSD has both a canonical route and a LiFi route, and its default destination is LiFi PYUSD on Arbitrum One.
+An override changes the default and leaves the other routes in place. For example, Ethereum PYUSD has both a canonical route and a LiFi route, and its default destination is LiFi PYUSD on Arbitrum One. Ethereum USDC defaults to native USDC, which LiFi delivers, and its canonical route still delivers USDC.e.
 
 If the request has a `destinationToken`, the backend checks that the selected source can reach it. If the source cannot reach it, the backend returns the default destination and no error.
 
@@ -181,9 +265,14 @@ If the request has a `destinationToken`, the backend checks that the selected so
 
 The page reads `sourceChain`, `destinationChain`, `sourceToken`, and `destinationToken` from the URL and calls the selection endpoint during the initial render. If the chain pair is unsupported, the page falls back to Ethereum and Arbitrum One. If the URL has no source token, the page uses native ETH.
 
-If the registry does not contain `sourceToken`, the selection endpoint tries a canonical import. The pasted address can belong to the source chain or to the destination chain. The backend resolves the matching source token and returns one canonical route.
+If `sourceToken` has no canonical route in the registry, the selection endpoint tries a canonical import. That covers two cases:
 
-Imported tokens never enter the cached registry, and they get no LiFi routes. The frontend keeps each successful import in a session overlay, so the source picker can show it. If the user picks another token and then picks the imported token again, the frontend calls the selection endpoint again. The backend then resolves the canonical route again.
+- The registry does not contain the token at all.
+- The registry only has LiFi routes for the token. LiFi lists about 7,400 Ethereum tokens that are missing from the Arbitrum token lists, and the 20 that we sampled had never been bridged. Without the import, the user only gets a LiFi swap and loses the deposit that deploys the child token, which the current bridge offers.
+
+The pasted address can belong to the source chain or to the destination chain. The backend resolves the matching source token and adds one canonical route next to any LiFi routes. Until the first deposit deploys the child token, the destination `Token` has the predicted child address and the parent token's symbol, name, and decimals. The current bridge shows the same values, and the deployed child token copies them from the parent. Canonical comes first in the default order, so the predicted child token becomes the default destination. The import skips source tokens that `blockedSourceRoutes` lists for the pair.
+
+An import makes up to five RPC calls, so `unstable_cache` keeps each result for one hour per pair and address. Imported tokens never enter the cached registry. The frontend keeps each successful import in a session overlay, so the source picker can show it. If the user picks another token and then picks the imported token again, the frontend calls the selection endpoint again, and the backend reads the cached import.
 
 Because the selection endpoint handles imports, the API needs no separate import endpoint.
 
@@ -212,7 +301,7 @@ type SelectedTokenAvailability = {
 };
 ```
 
-If the registry does not contain the source token, the endpoint tries a canonical import. If the destination is invalid, the endpoint returns the default destination. If the pair is unsupported or the source token is unavailable, the endpoint returns `404`.
+If the source token has no canonical route in the registry, the endpoint tries a canonical import. If the destination is invalid, the endpoint returns the default destination. If the pair is unsupported or the source token is unavailable, the endpoint returns `404`.
 
 The frontend calls this endpoint on initial load, on a source or destination selection, on a chain change, on a network flip, and on an import.
 
@@ -232,41 +321,50 @@ The frontend calls this endpoint when the source picker opens. The SWR key holds
 GET /api/token-registry/destination-tokens/[sourceChainId]/[destinationChainId]?sourceToken=0x...
 ```
 
-`sourceToken` names the current source token and defaults to the zero address. The endpoint returns a `Token[]` with every fixed-route destination and every destination token that the LiFi connection accepts. For a canonical import, the list holds only the imported canonical destination.
+`sourceToken` names the current source token and defaults to the zero address. The endpoint returns a `Token[]` with every fixed-route destination and every destination token that the LiFi connection accepts. For an imported token, the list also holds the imported canonical destination.
 
 The frontend calls this endpoint when the destination picker opens. The SWR key holds the chain pair and the source token, so a new destination selection does not reload the list.
 
-## One cached registry serves all three endpoints
+## Token metadata is cached per chain, and routes per pair
 
 All three endpoints read from the same server path:
 
 ```text
-Arbitrum token lists + LiFi APIs + configured routes
-                         |
-                         v
-                cached pair registry
-                         |
-                  unstable_cache
-                         |
-          +--------------+--------------+
-          |              |              |
-      selection     source tokens   destination tokens
+token lists + LiFi tokens         token lists + LiFi connection + configured routes
+          |                                         |
+  one entry per chain                       one entry per pair
+          |                                         |
+          +------------------+----------------------+
+                             |
+                       unstable_cache
+                             |
+            +----------------+----------------+
+            |                |                |
+        selection     source tokens   destination tokens
 ```
 
-The cached value has this shape:
+The cached values have these shapes:
 
 ```ts
-type CachedToken = Omit<Token, 'id'> & {
-  isLifiDestination?: true;
+// token-registry-chain-[chainId]-v[version]
+type CachedChainToken = Omit<Token, 'id' | 'chainId'> & {
+  coinKey?: string;
 };
 
-type CachedPairRegistry = {
+// token-registry-pair-[sourceChainId]->[destinationChainId]-v[version]
+type CachedPairRoutes = {
   providers: ProviderRoutes[];
-  tokens: CachedToken[];
+  lifiDestinationAddresses: Address[];
 };
 ```
 
-The cache key holds the source chain, the destination chain, and `PAIR_REGISTRY_CACHE_VERSION`. The cache revalidates after one hour. The API builds token indexes from the cached value in memory and does not cache the indexes a second time.
+A request reads the pair entry and the two chain entries in parallel. The LiFi route build matches tokens by `coinKey`, and it reads those keys from the chain entries. A cold build therefore fetches LiFi's token metadata once per chain, not once per pair. The API builds the token indexes from them in memory and does not cache the indexes a second time. Each key holds `REGISTRY_CACHE_VERSION`, and each entry revalidates after one hour.
+
+The split keeps every entry below the data-cache limit. Next refuses an entry over 2 MiB, logs a warning, and stores nothing. It measures `JSON.stringify` of the whole entry, where the value is a JSON string inside JSON, so every quote counts twice. Measured that way on October 23, 2026, the single Ethereum to Arbitrum One registry was 2,217,540 bytes. Next never cached it, and every request rebuilt it. Token metadata made up 92% of that size, because LiFi lists about 6,850 Ethereum tokens.
+
+With the split, the Ethereum tokens take 64% of the limit, and every pair that touches Ethereum shares that one entry. Each route entry takes about 26% or less. The [detailed measurements](#detailed-measurements) list every entry. The builder logs an error when an entry passes 1.5 MiB, so growth shows up before Next starts refusing the entry.
+
+Two smaller costs come with the split. A request reads three entries instead of one. The entries also expire at different times, so a route can name a token that its chain entry does not have yet. The backend skips such a route until both entries agree.
 
 ## The common path costs about 1 KB
 
@@ -293,7 +391,7 @@ The design has three costs that reviewers should weigh:
 
 - The first request for a cold pair waits for all upstream token and route data. In the measured run, that wait was about 4.8 seconds.
 - The source picker response is large, at about 1.33 MB raw and 301 KB gzipped.
-- A pair registry shares less data with other pairs than a cache keyed by chain would.
+- A request reads three cache entries, and the entries can expire at different times.
 
 The cold-pair wait is the cost we like least. A visitor who lands on a cold pair waits almost five seconds for the selection response.
 
@@ -311,7 +409,7 @@ We rejected this option. It keeps the first response small, but it needs a balan
 
 When the page opens, the bridge loads every token on the source chain and every token on the destination chain. The lists include tokens that have no route for the selected pair. One more API call returns every possible route for the pair. The pickers then filter the token lists against those routes on the client.
 
-We rejected this option. Token lists keyed by chain reuse well across pairs, but the page downloads about 1.57 MB before any picker opens. More than 80% of visitors never open the source picker, and more than 92% never open the destination picker. Most of the tokens in the lists also have no route for the selected pair. The option spends bandwidth on every visit to save a later request for a small group of users.
+We rejected this option. Token lists keyed by chain reuse well across pairs, but the page downloads about 1.57 MB before any picker opens. More than 80% of visitors never open the source picker, and more than 92% never open the destination picker. Most of the tokens in the lists also have no route for the selected pair. The option spends bandwidth on every visit to save a later request for a small group of users. The proposed design keeps the reuse on the server, where it keys token metadata by chain, and the browser still loads only what it renders.
 
 # 6. Implementation Plan
 
@@ -321,10 +419,10 @@ The work has three milestones. The bridge does not consume the new API until the
 
 1. Define shared schemas for `Token`, `RouteOption`, and each endpoint response. The route handlers and the bridge client both use them.
 2. Fetch canonical, LayerZero, and LiFi data independently. Validate every upstream response with Zod before normalization.
-3. Combine the provider data into one pair registry, and cache it with `unstable_cache`.
+3. Cache token metadata per chain and provider routes per pair with `unstable_cache`. Keep every entry below 1.5 MiB as Next measures it.
 4. If one provider fails, omit that provider and keep the data from the healthy providers.
-5. Read native-token metadata from `orbitChainsData.json`. Add and validate decimals, because the file does not contain them.
-6. Keep imported tokens outside the cached registry. Resolve each import during selection, and return its canonical route.
+5. Derive canonical bridges from the network registry. Map custom gas tokens to the child chain's zero address, and read native-token metadata from `orbitChainsData.json`. Read decimals onchain, because the file does not contain them.
+6. Keep imported tokens outside the cached registry. Resolve an import during selection for every source token without a canonical route, cache the result, and add its canonical route.
 7. Implement the three endpoints.
 8. Add the production pair and route configuration after representative pairs pass the API tests.
 
@@ -363,15 +461,24 @@ For canonical and LayerZero, compare the `destinationToken` of each route with t
 
 `useRoutesUpdater` and the existing runtime layer keep these checks:
 
-- amount and batch-transfer rules
+- amount rules
 - feature flags and testnet restrictions
 - LiFi slippage, disabled bridges, and disabled exchanges
 - live LiFi quotes and liquidity
 - fastest and cheapest route selection
 - the route that the user selected
-- transfer-disabled, withdraw-only, and live gateway checks
+- the live OFT check in `isBlockedOftDeposit`
 
 Before the bridge evaluates a new selection key, clear the old runtime route, even when the provider name stays the same.
+
+### Read batch support from the canonical route
+
+Replace `useIsBatchTransferSupported` with a read of `batchDeposit` on the canonical route:
+
+- Show the second amount field only when the canonical route has `batchDeposit`.
+- Read the balance and the approval for the extra amount from `batchDeposit.sourceToken`. On a custom-gas-token chain, add the extra amount to the fee-token approval, as the bridge does today.
+- Show the received extra amount in `batchDeposit.destinationToken`.
+- Keep the `batch-transfers` disabled-feature flag in the runtime layer.
 
 ### Replace paired-address consumers
 
@@ -410,6 +517,7 @@ Before the token state goes, move the unrelated outbox and transaction methods o
 - the old LiFi token-list endpoint and registry
 - the token-list settings, storage, and management UI
 - the client-side provider discovery helpers that `availableRoutes` replaces
+- `useIsBatchTransferSupported`, which `batchDeposit` replaces
 
 Keep the bridge execution, outbox, warning, account, and transaction-history code that still has production callers.
 
@@ -420,17 +528,25 @@ API tests cover these cases:
 - default selection without a destination query
 - explicit destination selection and the fallback for an invalid destination
 - URL selection and automatic canonical import
-- canonical-only routes for imported tokens
+- a canonical import for a token that only LiFi lists, next to its LiFi route
+- no import for a source token that `blockedSourceRoutes` lists
 - import by the source-chain address and by the destination-chain address
+- canonical routes for Ethereum to Robinhood from its token list
 - selection of an imported token again after the user picks another token
 - one-way canonical and LayerZero routes
 - LiFi source tokens without a same-asset destination
 - one-to-many and many-to-one token mappings
+- `batchDeposit` on canonical deposits, with the extra token on both chains
+- no canonical route for a token in the transfer-disabled list, in either direction
+- no canonical deposit route for a withdraw-only token, and its withdrawal route kept
+- no canonical route from an import that a policy list blocks
+- no `batchDeposit` for native, excluded, or withdrawal source tokens
 - tokens that exist on one chain only
 - independent provider failures and malformed upstream payloads
 - native-token metadata and zero-address identity
-- one cached value below 2 MiB for every production pair
-- warm requests for different tokens that reuse the same cached pair registry
+- every chain entry and pair entry below 1.5 MiB, measured the way Next measures it
+- one cached entry per chain, shared by every pair that touches the chain
+- warm requests for different tokens that reuse the same cached entries
 
 Bridge acceptance tests run before and after the bridge moves to the API. They use fixed token and provider fixtures, so live token-list contents cannot change the results. Each behavior below needs this proof:
 
@@ -446,9 +562,10 @@ Bridge acceptance tests run before and after the bridge moves to the API. They u
 | Rapid changes        | Late selection, import, and balance responses cannot replace the current selection key.                         |
 | Native tokens        | Zero-address tokens use the correct metadata, decimals, balance, approval, and execution path.                  |
 | Both directions      | Balances, gas, approvals, quotes, and execution receive the exact source-chain and destination-chain addresses. |
-| Runtime policy       | Batch rules, settings, live quotes, warnings, disabled transfers, and withdraw-only behavior stay unchanged.    |
+| Batch deposits       | The second amount field appears only with `batchDeposit`, and the extra amount reaches the destination address. |
+| Runtime policy       | Settings, live quotes, warnings, disabled transfers, and withdraw-only behavior stay unchanged.                 |
 | Records              | Analytics payloads and pending transaction records keep their current meaning.                                  |
-| Cache                | Every production pair stays below 2 MiB through the real `unstable_cache` path.                                 |
+| Cache                | Every chain entry and pair entry stays below 1.5 MiB through the real `unstable_cache` path.                    |
 | Deletion             | Repository searches find no production callers of the legacy token types, hooks, stores, or endpoints.          |
 
 The migration is complete when every token-selection path uses the new API and the old token-management system no longer exists.
@@ -459,7 +576,7 @@ The bridge moves to the new API in one step. The migration adds no compatibility
 
 Existing analytics event names and stored transaction shapes stay the same. Some existing fields require a canonical parent address. At each of those write boundaries, the bridge maps the chain-specific token to its canonical parent address. Token-list settings that users stored locally go away with the management UI.
 
-To invalidate every pair registry at once, bump `PAIR_REGISTRY_CACHE_VERSION`. No manual cache purge is needed.
+To invalidate every cache entry at once, bump `REGISTRY_CACHE_VERSION`. No manual cache purge is needed.
 
 To roll back, revert the migration.
 
@@ -469,16 +586,19 @@ To roll back, revert the migration.
 No. The source picker SWR key holds only the chain pair. The destination picker key holds the chain pair and the source token, so a new destination selection does not reload that list either.
 
 **Why is there no import endpoint?**
-The selection endpoint already handles imports. If the registry does not contain `sourceToken`, the endpoint tries a canonical import with the source-chain address or the destination-chain address.
+The selection endpoint already handles imports. If `sourceToken` has no canonical route in the registry, the endpoint tries a canonical import with the source-chain address or the destination-chain address.
+
+**Why is `batchDeposit` on the route and not on the selection?**
+One source token can have a canonical route and a LiFi route, and only the canonical route can carry the extra amount. A flag on the selection would say "batch supported" while the user has the LiFi route selected.
 
 **Does a configured destination override hide other routes?**
-No. An override changes the default destination only. Ethereum PYUSD has both a canonical route and a LiFi route, and its default is LiFi PYUSD on Arbitrum One.
+No. An override changes the default destination only. Ethereum PYUSD has both a canonical route and a LiFi route, and its default is LiFi PYUSD on Arbitrum One. Ethereum USDC defaults to native USDC through LiFi, and its canonical route still delivers USDC.e.
 
 # 10. Appendix
 
 ## Glossary
 
-- **Pair registry.** Every token and every provider route for one source chain and one destination chain, such as Ethereum to Arbitrum One. The backend builds it from the Arbitrum token lists, the LiFi APIs, and the configured routes. `unstable_cache` stores it for one hour, and all three endpoints read from it. The direction matters. Arbitrum One to Ethereum has its own registry, because a route can work in one direction only.
+- **Pair registry.** Every token and every provider route for one source chain and one destination chain, such as Ethereum to Arbitrum One. The backend assembles it on each request from three cached entries: the token entry for each chain and the route entry for the pair. All three endpoints read from it. The direction matters. Arbitrum One to Ethereum has its own route entry, because a route can work in one direction only.
 - **Route.** A way to move a source token on one chain to a destination token on another chain. The registry stores routes as `RouteOption` values, one for each provider that supports the source token. A `RouteOption` says what a provider can transfer. It is not executable. The bridge turns it into runtime routes with live data, such as a LiFi quote, and the user picks one runtime route to execute.
 
 ## Detailed measurements
@@ -492,9 +612,19 @@ The measurements ran on August 24, 2026 against live Ethereum and Arbitrum One d
 | Source picker, 5,623 tokens           | 1,329,848 |    301,111 |
 | USDC destination picker, 1,244 tokens |   325,857 |     75,586 |
 
-| Cached value                                  | Raw JSON bytes | 2 MiB headroom |
-| --------------------------------------------- | -------------: | -------------: |
-| Ethereum to Arbitrum One cached pair registry |      1,758,343 |        338,809 |
+The cache entries were measured on October 23, 2026, with the same `JSON.stringify` of the whole entry that Next uses for its 2 MiB check.
+
+| Cache entry                     | Size as Next measures it | Share of 2 MiB |
+| ------------------------------- | -----------------------: | -------------: |
+| Ethereum tokens                 |                1,332,088 |          63.5% |
+| Arbitrum One tokens             |                  380,033 |          18.1% |
+| Robinhood tokens                |                   92,222 |           4.4% |
+| Ethereum to Arbitrum One routes |                  535,464 |          25.5% |
+| Arbitrum One to Ethereum routes |                  510,498 |          24.3% |
+| Ethereum to Robinhood routes    |                  383,587 |          18.3% |
+| Robinhood to Ethereum routes    |                  351,283 |          16.8% |
+
+Before the split, the Ethereum to Arbitrum One registry measured 2,217,540 bytes, and Arbitrum One to Ethereum measured 2,086,193 bytes. An earlier version of this RFC reported 16% headroom for Ethereum to Arbitrum One. That figure measured the registry's JSON alone, without the second escaping that Next counts.
 
 `Cached registry lookup` is the time spent waiting for the cached pair registry. A cold lookup includes the registry build. A warm lookup reads the cached value. `Handler total` runs from route-handler entry to the point before response serialization.
 
