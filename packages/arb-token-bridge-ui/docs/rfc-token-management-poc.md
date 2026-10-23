@@ -156,7 +156,7 @@ LiFi can offer several paths from one token to another, such as two different br
 
 Each token on each chain is its own `Token`, and each provider route names its own source and destination. The cases that need hardcoded branches today become entries in `packages/app/src/token-registry/constants.ts`.
 
-- Ethereum PYUSD keeps its canonical route and gains a LiFi route to `ArbitrumOne.PYUSD`. One entry in `defaultDestinationOverrides` makes the LiFi destination the default. One entry in `transferDisabledExemptions` keeps the canonical route that the current bridge disables.
+- Ethereum PYUSD keeps its canonical route and gains a LiFi route to `ArbitrumOne.PYUSD`. One entry in `defaultDestinationOverrides` makes the LiFi destination the default.
 - Ethereum USDC keeps its canonical route to USDC.e and has a LiFi route to native USDC. One entry in `defaultDestinationOverrides` makes native USDC the default, which is the token the bridge delivers today.
 - Arbitrum One USDC and USDC.e are two `Token` values, each with its own symbol and name. Each one can carry its own route to Ethereum USDC, so the many-to-one case needs no special handling.
 - Ethereum USDT reaches Arbitrum One USDT0 through an entry in `layerZeroConfig`. `curatedTokenMetadata` gives USDT0 its own symbol and name.
@@ -184,28 +184,11 @@ type CanonicalBridge = {
 
 The PoC derives Ethereum to Arbitrum One and Ethereum to Robinhood this way, in both directions. Robinhood's list maps Robinhood USDC to Ethereum USDC, so the USDC withdrawal needs no hardcoded route. A new chain that pays gas in ETH needs its `orbitChainsData.json` entry and its token list, which the bridge needs today anyway.
 
-The PoC does not cover these cases yet:
-
-- **Custom gas token chains, such as ApeChain.** `getCanonicalBridge` returns `null` for them. Production maps the gas token's parent-chain ERC-20 to the zero address on the child chain. It reads the token's decimals onchain, because `orbitChainsData.json` has none.
-- **Supported pairs.** The PoC lists them in `supportedPairs`. Production takes them from `getDestinationChainIds`, because the network registry also holds local networks and pairs that the UI does not offer.
-- **Chains that a user adds in the browser.** The server does not know their network data.
-
-## The registry applies the bridge's policy lists
-
-Today `isDisabledCanonicalTransfer` blocks some canonical transfers on the client. If the registry ignored the same lists, it would return canonical routes that the bridge then refuses. The source picker would list those tokens, the default destination could point at a blocked route, and `batchDeposit` would promise a batch that cannot happen. So the registry removes the blocked canonical routes itself:
-
-- `isTransferDisabledToken` reads `transferDisabledTokens`. A listed token loses its canonical route in both directions. Examples are USDG on Arbitrum One, and USDe and USDG on Robinhood.
-- `isWithdrawOnlyToken` reads `withdrawOnlyTokens`, plus the rule that blocks USDC.e deposits to Orbit chains. A listed token loses its canonical deposit route and keeps its canonical withdrawal route.
-
-`transferDisabledExemptions` in `constants.ts` lists Ethereum PYUSD. The current bridge disables canonical PYUSD only because its token model cannot offer two destinations, and the registry can.
-
-Canonical imports follow the same lists, so a pasted address cannot bring back a blocked route. The lists stay in the bridge package, so they have one source of truth. The registry applies them after it reads the cache, so a list change takes effect on the next deploy without a new cache version.
-
-`useRoutesUpdater` keeps one live check, `isBlockedOftDeposit`. It reads LayerZero metadata and calls the token contract, so it does not fit a static list.
+A chain that a user adds in the browser only exists in its `localStorage`, so the server cannot build its registry. Such a chain has no token lists and no LayerZero or LiFi routes, so its pairs only need the native token and canonical imports. The frontend builds their selection itself and calls the chain's RPC, as the current bridge does.
 
 ## Canonical deposits declare batch support
 
-A batched deposit sends an ERC-20 token and an extra amount of the destination chain's native currency in one transaction. The bridge adds the extra amount to the retryable's `maxSubmissionCost`. The destination chain refunds the unused submission cost to the destination address, and that refund delivers the extra amount. Only the canonical bridge works this way.
+A batched deposit sends an ERC-20 token and an extra amount of the destination chain's native currency in one transaction.
 
 Today the client decides batch support in `useIsBatchTransferSupported`. That hook reads `useIsArbitrumCanonicalTransfer`, `useIsOftV2Transfer`, and `isTokenNativeUSDC`, and this RFC removes all three. Instead, the backend adds a `batchDeposit` field to the canonical route:
 
@@ -240,10 +223,6 @@ The two tokens depend on the destination chain's gas token:
 On a chain with a custom gas token, the source-chain token is an ERC-20 with its own balance and approval. The frontend reads that token from `batchDeposit.sourceToken`, so it needs no list of custom-gas-token chains. The PoC batches Ethereum to Arbitrum One and Ethereum to Robinhood. Arbitrum One to Xai needs the custom gas token mapping from [Canonical routes come from the network registry](#canonical-routes-come-from-the-network-registry).
 
 The Ethereum to Arbitrum One entry in `batchDepositExcludedSourceTokens` lists Ethereum USDC, which the current bridge never batches.
-
-The user receives at least the extra amount. The destination chain also refunds the submission cost that the retryable does not use, so the bridge should show the extra amount as a minimum.
-
-The field adds 388 raw bytes and 52 gzipped bytes to a selection response. The default selection is native ETH, which never carries the field, so the initial response keeps its size.
 
 ## The backend picks the default destination
 
@@ -467,7 +446,7 @@ For canonical and LayerZero, compare the `destinationToken` of each route with t
 - live LiFi quotes and liquidity
 - fastest and cheapest route selection
 - the route that the user selected
-- the live OFT check in `isBlockedOftDeposit`
+- transfer-disabled, withdraw-only, and live gateway checks
 
 Before the bridge evaluates a new selection key, clear the old runtime route, even when the provider name stays the same.
 
@@ -504,7 +483,7 @@ Token lists also own price updates and imported-token markers today. Replace eac
 - Keep warning-token checks in the transfer layer.
 - Keep stable picker ordering in registry metadata.
 
-For a configured Orbit chain, build the native `Token` from `orbitChainsData.json`. For a custom chain that a user adds in the browser, use its registered chain configuration, and keep that pair outside the public cache.
+For a configured Orbit chain, build the native `Token` from `orbitChainsData.json`. For a custom chain that a user adds in the browser, build the native `Token` from its registered chain configuration in the browser.
 
 ## Delete the old token management
 
@@ -537,9 +516,6 @@ API tests cover these cases:
 - LiFi source tokens without a same-asset destination
 - one-to-many and many-to-one token mappings
 - `batchDeposit` on canonical deposits, with the extra token on both chains
-- no canonical route for a token in the transfer-disabled list, in either direction
-- no canonical deposit route for a withdraw-only token, and its withdrawal route kept
-- no canonical route from an import that a policy list blocks
 - no `batchDeposit` for native, excluded, or withdrawal source tokens
 - tokens that exist on one chain only
 - independent provider failures and malformed upstream payloads
@@ -614,17 +590,17 @@ The measurements ran on August 24, 2026 against live Ethereum and Arbitrum One d
 
 The cache entries were measured on October 23, 2026, with the same `JSON.stringify` of the whole entry that Next uses for its 2 MiB check.
 
-| Cache entry                     | Size as Next measures it | Share of 2 MiB |
-| ------------------------------- | -----------------------: | -------------: |
-| Ethereum tokens                 |                1,332,088 |          63.5% |
-| Arbitrum One tokens             |                  380,033 |          18.1% |
-| Robinhood tokens                |                   92,222 |           4.4% |
-| Ethereum to Arbitrum One routes |                  535,464 |          25.5% |
-| Arbitrum One to Ethereum routes |                  510,498 |          24.3% |
-| Ethereum to Robinhood routes    |                  383,587 |          18.3% |
-| Robinhood to Ethereum routes    |                  351,283 |          16.8% |
+| Cache entry                     | Size as Next measures it | Share of 2 MiB | Tokens now | Tokens at 100% |
+| ------------------------------- | -----------------------: | -------------: | ---------: | -------------: |
+| Ethereum tokens                 |                1,332,088 |          63.5% |      6,877 |        ~10,800 |
+| Arbitrum One tokens             |                  380,033 |          18.1% |      1,713 |         ~9,500 |
+| Robinhood tokens                |                   92,222 |           4.4% |        460 |        ~10,500 |
+| Ethereum to Arbitrum One routes |                  535,464 |          25.5% |      8,553 |        ~33,500 |
+| Arbitrum One to Ethereum routes |                  510,498 |          24.3% |      8,553 |        ~35,100 |
+| Ethereum to Robinhood routes    |                  383,587 |          18.3% |      7,217 |        ~39,500 |
+| Robinhood to Ethereum routes    |                  351,283 |          16.8% |      7,300 |        ~43,600 |
 
-Before the split, the Ethereum to Arbitrum One registry measured 2,217,540 bytes, and Arbitrum One to Ethereum measured 2,086,193 bytes. An earlier version of this RFC reported 16% headroom for Ethereum to Arbitrum One. That figure measured the registry's JSON alone, without the second escaping that Next counts.
+For a route entry, the token count is the source tokens with a route plus the destination tokens that LiFi accepts. The 100% column assumes that the average size per token stays the same.
 
 `Cached registry lookup` is the time spent waiting for the cached pair registry. A cold lookup includes the registry build. A warm lookup reads the cached value. `Handler total` runs from route-handler entry to the point before response serialization.
 
