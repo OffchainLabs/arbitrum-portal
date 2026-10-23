@@ -39,6 +39,7 @@ export const evmEcosystem: EcosystemConfig = {
   hasParentChildTokenAddresses: true,
   hasGasPrice: true,
   usesEthersSigner: true,
+  isAppKitNetworkIdChainId: true,
   hasTokenApprovals: true,
   explorerAccountPath: 'address',
   chains: evmChains,
