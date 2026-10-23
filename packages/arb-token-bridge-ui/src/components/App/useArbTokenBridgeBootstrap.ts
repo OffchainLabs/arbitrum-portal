@@ -5,7 +5,7 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useActions } from '../../state';
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
-import { getWalletEcosystem } from '../../wallet/getWalletEcosystem';
+import { getEcosystemConfig } from '../../wallet/ecosystems/getEcosystemConfig';
 
 export function useArbTokenBridgeBootstrap(): TokenBridgeParams | null {
   const actions = useActions();
@@ -14,9 +14,10 @@ export function useArbTokenBridgeBootstrap(): TokenBridgeParams | null {
   const [tokenBridgeParams, setTokenBridgeParams] = useState<TokenBridgeParams | null>(null);
   const nextTokenBridgeParams = useMemo<TokenBridgeParams | null>(
     () => {
+      // The token bridge only connects chains that have Arbitrum's token bridge
       if (
-        getWalletEcosystem(parentChain.id) !== 'evm' ||
-        getWalletEcosystem(childChain.id) !== 'evm'
+        !getEcosystemConfig(parentChain.id).hasParentChildTokenAddresses ||
+        !getEcosystemConfig(childChain.id).hasParentChildTokenAddresses
       ) {
         return null;
       }
