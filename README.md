@@ -18,7 +18,7 @@
 
 ## Development
 
-For instructions on how to run the code locally, see [DEVELOPMENT.md](./DEVELOPMENT.md).
+To run the code locally, see [DEVELOPMENT.md](./DEVELOPMENT.md).
 
 ## License
 
