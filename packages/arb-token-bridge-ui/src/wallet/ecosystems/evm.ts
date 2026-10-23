@@ -16,5 +16,6 @@ export const evmEcosystem: EcosystemConfig = {
   },
   nativeTokenAddress: zeroAddress,
   isLifiOnly: false,
+  hasGasPrice: true,
   hasTokenApprovals: true,
 };
