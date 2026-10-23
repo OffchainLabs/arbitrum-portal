@@ -2,11 +2,9 @@ import { createPublicClient, http, isAddress } from 'viem';
 
 import { rpcURLs } from '@/bridge/util/networks';
 
-import { ChainIds } from '../constants';
 import { normalizeToken } from '../normalize';
 import { Address, ChainPair, RouteOption, SelectedTokenAvailability } from '../types';
-
-const L1_GATEWAY_ROUTER = '0x72ce9c846789fdb6fc1f34ac4ad25dd9ef7031ef' as Address;
+import { CanonicalBridge, isCanonicalDeposit } from './canonicalBridge';
 
 const erc20Abi = [
   {
@@ -109,10 +107,13 @@ async function readErc20Metadata(chainId: number, address: Address): Promise<Erc
   }
 }
 
-async function deriveChildAddress(parentAddress: Address): Promise<Address | null> {
+async function deriveChildAddress(
+  bridge: CanonicalBridge,
+  parentAddress: Address,
+): Promise<Address | null> {
   try {
-    const child = await getPublicClient(ChainIds.Ethereum).readContract({
-      address: L1_GATEWAY_ROUTER,
+    const child = await getPublicClient(bridge.parentChainId).readContract({
+      address: bridge.parentGatewayRouter,
       abi: gatewayRouterAbi,
       functionName: 'calculateL2TokenAddress',
       args: [parentAddress],
@@ -124,10 +125,10 @@ async function deriveChildAddress(parentAddress: Address): Promise<Address | nul
 }
 
 // calculateL2TokenAddress accepts any input, so require an enabled gateway.
-async function canDeposit(parentAddress: Address): Promise<boolean> {
+async function canDeposit(bridge: CanonicalBridge, parentAddress: Address): Promise<boolean> {
   try {
-    const gateway = await getPublicClient(ChainIds.Ethereum).readContract({
-      address: L1_GATEWAY_ROUTER,
+    const gateway = await getPublicClient(bridge.parentChainId).readContract({
+      address: bridge.parentGatewayRouter,
       abi: gatewayRouterAbi,
       functionName: 'l1TokenToGateway',
       args: [parentAddress],
@@ -138,32 +139,35 @@ async function canDeposit(parentAddress: Address): Promise<boolean> {
   }
 }
 
-async function resolveDeposit(parentAddress: Address): Promise<SelectedTokenAvailability | null> {
-  const parentMetadata = await readErc20Metadata(ChainIds.Ethereum, parentAddress);
+async function resolveDeposit(
+  bridge: CanonicalBridge,
+  parentAddress: Address,
+): Promise<SelectedTokenAvailability | null> {
+  const parentMetadata = await readErc20Metadata(bridge.parentChainId, parentAddress);
   if (!parentMetadata) {
     return null;
   }
 
-  if (!(await canDeposit(parentAddress))) {
+  if (!(await canDeposit(bridge, parentAddress))) {
     return null;
   }
 
-  const childAddress = await deriveChildAddress(parentAddress);
+  const childAddress = await deriveChildAddress(bridge, parentAddress);
   if (!childAddress) {
     return null;
   }
 
   // The child contract is deployed on first deposit, so its metadata may not exist yet.
   const childMetadata =
-    (await readErc20Metadata(ChainIds.ArbitrumOne, childAddress)) ?? parentMetadata;
+    (await readErc20Metadata(bridge.childChainId, childAddress)) ?? parentMetadata;
 
   const parentToken = normalizeToken({
-    chainId: ChainIds.Ethereum,
+    chainId: bridge.parentChainId,
     address: parentAddress,
     ...parentMetadata,
   });
   const childToken = normalizeToken({
-    chainId: ChainIds.ArbitrumOne,
+    chainId: bridge.childChainId,
     address: childAddress,
     ...childMetadata,
   });
@@ -174,15 +178,18 @@ async function resolveDeposit(parentAddress: Address): Promise<SelectedTokenAvai
   });
 }
 
-async function resolveWithdrawal(childAddress: Address): Promise<SelectedTokenAvailability | null> {
-  const childMetadata = await readErc20Metadata(ChainIds.ArbitrumOne, childAddress);
+async function resolveWithdrawal(
+  bridge: CanonicalBridge,
+  childAddress: Address,
+): Promise<SelectedTokenAvailability | null> {
+  const childMetadata = await readErc20Metadata(bridge.childChainId, childAddress);
   if (!childMetadata) {
     return null;
   }
 
   let parentAddress: Address;
   try {
-    const result = await getPublicClient(ChainIds.ArbitrumOne).readContract({
+    const result = await getPublicClient(bridge.childChainId).readContract({
       address: childAddress,
       abi: arbStandardTokenAbi,
       functionName: 'l1Address',
@@ -192,21 +199,21 @@ async function resolveWithdrawal(childAddress: Address): Promise<SelectedTokenAv
     return null;
   }
 
-  const derivedChild = await deriveChildAddress(parentAddress);
+  const derivedChild = await deriveChildAddress(bridge, parentAddress);
   if (derivedChild !== childAddress) {
     return null;
   }
 
   const parentMetadata =
-    (await readErc20Metadata(ChainIds.Ethereum, parentAddress)) ?? childMetadata;
+    (await readErc20Metadata(bridge.parentChainId, parentAddress)) ?? childMetadata;
 
   const childToken = normalizeToken({
-    chainId: ChainIds.ArbitrumOne,
+    chainId: bridge.childChainId,
     address: childAddress,
     ...childMetadata,
   });
   const parentToken = normalizeToken({
-    chainId: ChainIds.Ethereum,
+    chainId: bridge.parentChainId,
     address: parentAddress,
     ...parentMetadata,
   });
@@ -218,51 +225,49 @@ async function resolveWithdrawal(childAddress: Address): Promise<SelectedTokenAv
 }
 
 async function resolveDepositFromChild(
+  bridge: CanonicalBridge,
   childAddress: Address,
 ): Promise<SelectedTokenAvailability | null> {
-  const withdrawal = await resolveWithdrawal(childAddress);
+  const withdrawal = await resolveWithdrawal(bridge, childAddress);
   if (!withdrawal) {
     return null;
   }
 
-  return resolveDeposit(withdrawal.destinationToken.address);
+  return resolveDeposit(bridge, withdrawal.destinationToken.address);
 }
 
 async function resolveWithdrawalFromParent(
+  bridge: CanonicalBridge,
   parentAddress: Address,
 ): Promise<SelectedTokenAvailability | null> {
-  if (!(await readErc20Metadata(ChainIds.Ethereum, parentAddress))) {
+  if (!(await readErc20Metadata(bridge.parentChainId, parentAddress))) {
     return null;
   }
 
-  const childAddress = await deriveChildAddress(parentAddress);
+  const childAddress = await deriveChildAddress(bridge, parentAddress);
   if (!childAddress) {
     return null;
   }
 
-  return resolveWithdrawal(childAddress);
+  return resolveWithdrawal(bridge, childAddress);
 }
 
-export async function resolveImport(
-  pair: ChainPair,
-  rawAddress: string,
-): Promise<SelectedTokenAvailability | null> {
+export async function resolveImport({
+  bridge,
+  pair,
+  rawAddress,
+}: {
+  bridge: CanonicalBridge;
+  pair: ChainPair;
+  rawAddress: string;
+}): Promise<SelectedTokenAvailability | null> {
   if (!isAddress(rawAddress)) {
     return null;
   }
   const address = rawAddress.toLowerCase() as Address;
 
-  if (
-    pair.sourceChainId === ChainIds.Ethereum &&
-    pair.destinationChainId === ChainIds.ArbitrumOne
-  ) {
-    return (await resolveDeposit(address)) ?? resolveDepositFromChild(address);
+  if (isCanonicalDeposit(pair, bridge)) {
+    return (await resolveDeposit(bridge, address)) ?? resolveDepositFromChild(bridge, address);
   }
-  if (
-    pair.sourceChainId === ChainIds.ArbitrumOne &&
-    pair.destinationChainId === ChainIds.Ethereum
-  ) {
-    return (await resolveWithdrawal(address)) ?? resolveWithdrawalFromParent(address);
-  }
-  return null;
+  return (await resolveWithdrawal(bridge, address)) ?? resolveWithdrawalFromParent(bridge, address);
 }

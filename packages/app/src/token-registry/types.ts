@@ -18,11 +18,17 @@ export type Token = {
 
 export type ProviderId = 'canonical' | 'layerzero' | 'lifi';
 
+export type BatchDeposit = {
+  sourceToken: Token;
+  destinationToken: Token;
+};
+
 export type RouteOption =
   | {
       provider: 'canonical';
       sourceToken: Token;
       destinationToken: Token;
+      batchDeposit?: BatchDeposit;
     }
   | {
       provider: 'layerzero';
