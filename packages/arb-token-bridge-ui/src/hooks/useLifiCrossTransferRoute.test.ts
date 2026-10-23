@@ -2,6 +2,8 @@ import { renderHook } from '@testing-library/react';
 import useSWR from 'swr';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ChainId } from '../types/ChainId';
+import { ecosystems } from '../wallet/ecosystems';
 import { useLifiCrossTransfersRoute } from './useLifiCrossTransferRoute';
 
 vi.mock('swr', () => ({
@@ -61,5 +63,44 @@ describe('useLifiCrossTransfersRoute', () => {
 
     expect(result.current.data).toBeUndefined();
     expect(result.current.error).toBe(error);
+  });
+
+  it.each([
+    { fromAddress: 'not-an-address' },
+    { toAddress: 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5' },
+  ])('does not quote with an address that does not match its chain: %o', (addresses) => {
+    vi.mocked(useSWR).mockReturnValue({
+      data: [{ id: 'previous-route' }],
+      error: undefined,
+      isLoading: false,
+    } as ReturnType<typeof useSWR>);
+
+    const { result } = renderHook(() =>
+      useLifiCrossTransfersRoute({ ...parameters, ...addresses }),
+    );
+
+    expect(vi.mocked(useSWR).mock.lastCall?.[0]).toBeNull();
+    expect(result.current.data).toBeUndefined();
+  });
+
+  it('quotes a Solana sender', () => {
+    vi.mocked(useSWR).mockReturnValue({ data: undefined } as ReturnType<typeof useSWR>);
+    const isEnabled = vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+
+    try {
+      renderHook(() =>
+        useLifiCrossTransfersRoute({
+          ...parameters,
+          fromChainId: ChainId.Solana,
+          fromAddress: 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5',
+        }),
+      );
+    } finally {
+      isEnabled.mockRestore();
+    }
+
+    expect(vi.mocked(useSWR).mock.lastCall?.[0]).toContain(
+      'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5',
+    );
   });
 });

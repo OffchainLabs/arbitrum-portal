@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ChainId } from '../types/ChainId';
 import { CommonAddress } from '../util/CommonAddressUtils';
+import { SOLANA_NATIVE_TOKEN_ADDRESS } from './ecosystems/solana';
 import { resolveTokenAddress } from './resolveTokenAddress';
 
 const token = (address: string, l2Address?: string) => ({ address, l2Address });
@@ -51,5 +52,16 @@ describe('resolveTokenAddress', () => {
         destinationChainId: ChainId.ArbitrumOne,
       }),
     ).toBe(CommonAddress.ArbitrumOne.USDC);
+  });
+
+  it('uses Solana token identities without EVM mapping', () => {
+    expect(
+      resolveTokenAddress({
+        token: null,
+        side: 'source',
+        sourceChainId: ChainId.Solana,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    ).toBe(SOLANA_NATIVE_TOKEN_ADDRESS);
   });
 });
