@@ -1,21 +1,22 @@
 import { unstable_cache } from 'next/cache';
 
 import {
-  ChainIds,
+  batchDepositExcludedSourceTokens,
   blockedLifiSourceRoutes,
   blockedSourceRoutes,
   getCuratedCoinKey,
   getDefaultDestinationOverride,
-  hardcodedCanonicalRoutes,
   hardcodedLifiRoutes,
   hardcodedTokens,
   isExcludedToken,
   isSupportedPair,
   layerZeroConfig,
+  supportedPairs,
 } from '../constants';
 import { normalizeToken } from '../normalize';
 import {
   Address,
+  BatchDeposit,
   ChainPair,
   NATIVE_TOKEN_ADDRESS,
   ProviderId,
@@ -23,9 +24,16 @@ import {
   SelectedTokenAvailability,
   Token,
   TokenId,
+  isNativeToken,
   pairKey,
   toTokenId,
 } from '../types';
+import {
+  CanonicalBridge,
+  getCanonicalBridge,
+  isCanonicalDeposit,
+  isCanonicalTransferAllowed,
+} from './canonicalBridge';
 import { resolveImport } from './resolveImport';
 
 type ProviderRoutes =
@@ -33,26 +41,13 @@ type ProviderRoutes =
   | { provider: 'layerzero'; routes: (typeof layerZeroConfig)[string] }
   | { provider: 'lifi'; routes: Record<Address, Address | null> };
 
-const ARBED_TOKEN_LIST_URLS = [
-  'https://tokenlist.arbitrum.io/ArbTokenLists/arbitrum_token_token_list.json',
-  'https://tokenlist.arbitrum.io/ArbTokenLists/arbed_uniswap_labs_default.json',
-  'https://tokenlist.arbitrum.io/ArbTokenLists/arbed_coingecko.json',
-  'https://tokenlist.arbitrum.io/ArbTokenLists/arbed_coinmarketcap.json',
-  'https://tokenlist.arbitrum.io/ArbTokenLists/arbed_arb_whitelist_era.json',
-];
+const REGISTRY_CACHE_VERSION = 2;
 
-const PAIR_REGISTRY_CACHE_VERSION = 1;
+// Next skips data-cache entries over 2 MiB, so stay well below that.
+const CACHE_ENTRY_BUDGET = 1.5 * 1024 * 1024;
 
 const LIFI_CONNECTIONS_URL = 'https://li.quest/v1/connections';
 const LIFI_TOKENS_URL = 'https://li.quest/v1/tokens';
-
-function isEthereumArbitrumOnePair(pair: ChainPair): boolean {
-  return (
-    (pair.sourceChainId === ChainIds.Ethereum &&
-      pair.destinationChainId === ChainIds.ArbitrumOne) ||
-    (pair.sourceChainId === ChainIds.ArbitrumOne && pair.destinationChainId === ChainIds.Ethereum)
-  );
-}
 
 function removeSourceRoutes<T>(
   routes: Record<Address, T>,
@@ -109,9 +104,9 @@ async function fetchArbedTokenList(url: string): Promise<TokenListEntry[]> {
   return list.tokens;
 }
 
-async function fetchArbedTokenLists(): Promise<TokenListEntry[]> {
+async function fetchArbedTokenLists(urls: string[]): Promise<TokenListEntry[]> {
   const lists = await Promise.all(
-    ARBED_TOKEN_LIST_URLS.map(async (url) => {
+    urls.map(async (url) => {
       try {
         return await fetchArbedTokenList(url);
       } catch (error) {
@@ -125,15 +120,19 @@ async function fetchArbedTokenLists(): Promise<TokenListEntry[]> {
 
 export type CanonicalEntry = { parent: Token; child: Token };
 
-function getCanonicalEntries(listTokens: TokenListEntry[]): CanonicalEntry[] {
+function getCanonicalEntries(
+  listTokens: TokenListEntry[],
+  bridge: CanonicalBridge,
+): CanonicalEntry[] {
   const entries: CanonicalEntry[] = [];
   const seenChildAddresses = new Set<string>();
 
   for (const entry of listTokens) {
-    if (entry.chainId !== ChainIds.ArbitrumOne) {
+    if (entry.chainId !== bridge.childChainId) {
       continue;
     }
-    const parentAddress = entry.extensions?.bridgeInfo?.[String(ChainIds.Ethereum)]?.tokenAddress;
+    const parentAddress =
+      entry.extensions?.bridgeInfo?.[String(bridge.parentChainId)]?.tokenAddress;
     if (!parentAddress) {
       continue;
     }
@@ -143,8 +142,8 @@ function getCanonicalEntries(listTokens: TokenListEntry[]): CanonicalEntry[] {
     }
     seenChildAddresses.add(childAddress);
     if (
-      isExcludedToken(ChainIds.Ethereum, parentAddress) ||
-      isExcludedToken(ChainIds.ArbitrumOne, childAddress)
+      isExcludedToken(bridge.parentChainId, parentAddress) ||
+      isExcludedToken(bridge.childChainId, childAddress)
     ) {
       continue;
     }
@@ -157,12 +156,12 @@ function getCanonicalEntries(listTokens: TokenListEntry[]): CanonicalEntry[] {
     };
     entries.push({
       parent: normalizeToken({
-        chainId: ChainIds.Ethereum,
+        chainId: bridge.parentChainId,
         address: parentAddress,
         ...metadata,
       }),
       child: normalizeToken({
-        chainId: ChainIds.ArbitrumOne,
+        chainId: bridge.childChainId,
         address: entry.address,
         ...metadata,
       }),
@@ -182,7 +181,7 @@ export function generateCanonical(
 
   for (const { parent, child } of entries) {
     const [source, destination]: [Token, Token] =
-      pair.sourceChainId === ChainIds.Ethereum ? [parent, child] : [child, parent];
+      parent.chainId === pair.sourceChainId ? [parent, child] : [child, parent];
     routes[source.address] = destination.address;
   }
 
@@ -262,54 +261,47 @@ async function fetchLifiChainTokens(chainId: number): Promise<LifiTokenMetadata[
   return data.tokens[String(chainId)] ?? [];
 }
 
-async function fetchLifiTokenMetadata(chainIds: number[]): Promise<Map<string, LifiTokenMetadata>> {
-  const perChain = await Promise.all(chainIds.map(fetchLifiChainTokens));
+type ChainTokens = {
+  source: CachedChainToken[];
+  destination: CachedChainToken[];
+};
 
-  const byTokenId = new Map<string, LifiTokenMetadata>();
-  for (const chainTokens of perChain) {
-    for (const metadata of chainTokens) {
-      byTokenId.set(`${metadata.chainId}:${metadata.address.toLowerCase()}`, metadata);
-    }
-  }
-  return byTokenId;
+function getCoinKeyMap(tokens: CachedChainToken[]): Map<Address, string | undefined> {
+  return new Map(tokens.map((token) => [token.address, token.coinKey]));
 }
 
-async function generateLifi(pair: ChainPair): Promise<{
+// LiFi matches a source token to a destination token by coinKey. The chain entries already hold
+// the coinKeys, so the pair build does not fetch LiFi's token metadata a second time.
+async function generateLifi(
+  pair: ChainPair,
+  chainTokens: ChainTokens,
+): Promise<{
   providerRoutes: ProviderRoutes | null;
-  tokens: Token[];
-  destinationTokenIds: Set<TokenId>;
+  destinationAddresses: Address[];
 }> {
-  const [connection, metadataByTokenId] = await Promise.all([
-    fetchLifiConnection(pair),
-    fetchLifiTokenMetadata([pair.sourceChainId, pair.destinationChainId]),
-  ]);
+  const connection = await fetchLifiConnection(pair);
   if (!connection) {
-    return { providerRoutes: null, tokens: [], destinationTokenIds: new Set() };
+    return { providerRoutes: null, destinationAddresses: [] };
   }
 
-  const toLifiToken = (raw: LifiConnectionToken): { token: Token; coinKey?: string } | null => {
-    if (isExcludedToken(raw.chainId, raw.address)) {
-      return null;
-    }
-    const metadata = metadataByTokenId.get(`${raw.chainId}:${raw.address.toLowerCase()}`);
-    if (!metadata) {
+  const coinKeysByChainId = new Map([
+    [pair.sourceChainId, getCoinKeyMap(chainTokens.source)],
+    [pair.destinationChainId, getCoinKeyMap(chainTokens.destination)],
+  ]);
+
+  const toLifiToken = (raw: LifiConnectionToken): { address: Address; coinKey?: string } | null => {
+    const address = raw.address.toLowerCase() as Address;
+    const coinKeys = coinKeysByChainId.get(raw.chainId);
+    if (isExcludedToken(raw.chainId, address) || !coinKeys?.has(address)) {
       return null;
     }
     return {
-      token: normalizeToken({
-        chainId: raw.chainId,
-        address: raw.address,
-        symbol: metadata.symbol,
-        name: metadata.name,
-        decimals: metadata.decimals,
-        logoURI: metadata.logoURI,
-      }),
-      coinKey: getCuratedCoinKey(raw.chainId, raw.address) ?? metadata.coinKey,
+      address,
+      coinKey: getCuratedCoinKey(raw.chainId, address) ?? coinKeys.get(address),
     };
   };
 
-  const tokens: Token[] = [];
-  const destinationTokenIds = new Set<TokenId>();
+  const destinationAddresses: Address[] = [];
   const counterpartByCoinKey = new Map<string, Address>();
 
   for (const raw of connection.toTokens) {
@@ -317,10 +309,9 @@ async function generateLifi(pair: ChainPair): Promise<{
     if (!resolved) {
       continue;
     }
-    tokens.push(resolved.token);
-    destinationTokenIds.add(resolved.token.id);
+    destinationAddresses.push(resolved.address);
     if (resolved.coinKey && !counterpartByCoinKey.has(resolved.coinKey)) {
-      counterpartByCoinKey.set(resolved.coinKey, resolved.token.address);
+      counterpartByCoinKey.set(resolved.coinKey, resolved.address);
     }
   }
 
@@ -330,55 +321,128 @@ async function generateLifi(pair: ChainPair): Promise<{
     if (!resolved) {
       continue;
     }
-    tokens.push(resolved.token);
-    routes[resolved.token.address] = resolved.coinKey
+    routes[resolved.address] = resolved.coinKey
       ? (counterpartByCoinKey.get(resolved.coinKey) ?? null)
       : null;
   }
 
-  return { providerRoutes: { provider: 'lifi', routes }, tokens, destinationTokenIds };
+  return { providerRoutes: { provider: 'lifi', routes }, destinationAddresses };
 }
 
-type CachedToken = Omit<Token, 'id'> & {
-  isLifiDestination?: true;
+// Token metadata is cached once per chain and shared by every pair, so no single entry grows
+// with the number of pairs. The chain is implied by the cache key.
+type CachedChainToken = Omit<Token, 'id' | 'chainId'> & {
+  coinKey?: string;
 };
 
-type CachedPairRegistry = {
+type CachedPairRoutes = {
   providers: ProviderRoutes[];
-  tokens: CachedToken[];
+  lifiDestinationAddresses: Address[];
 };
 
-async function buildPairRegistry(pair: ChainPair): Promise<CachedPairRegistry> {
-  const providers: ProviderRoutes[] = [];
-  const tokens: Token[] = hardcodedTokens.filter(
-    (token) => token.chainId === pair.sourceChainId || token.chainId === pair.destinationChainId,
-  );
+type PairRegistry = {
+  providers: ProviderRoutes[];
+  sourceTokens: Map<TokenId, Token>;
+  destinationTokens: Map<TokenId, Token>;
+  lifiDestinationTokens: Map<TokenId, Token>;
+  destinationTokensByAddress: Partial<Record<Address, Token>>;
+};
 
-  const shouldGenerateCanonical = isEthereumArbitrumOnePair(pair);
-  const [listTokens, lifiResult] = await Promise.all([
-    shouldGenerateCanonical ? fetchArbedTokenLists() : Promise.resolve([]),
-    generateLifi(pair),
+function cached<T>(key: string, build: () => Promise<T>): Promise<T> {
+  return unstable_cache(
+    async () => {
+      const value = await build();
+      // Next stores the value as a JSON string inside JSON, so its quotes count twice.
+      const size = JSON.stringify(JSON.stringify(value)).length;
+      if (size > CACHE_ENTRY_BUDGET) {
+        console.error(`[token-registry] cache entry ${key} is ${size} bytes`);
+      }
+      return value;
+    },
+    [key],
+    { revalidate: 3_600, tags: [key] },
+  )();
+}
+
+function getCanonicalBridgesForChain(chainId: number): CanonicalBridge[] {
+  const byChildChainId = new Map<number, CanonicalBridge>();
+  for (const pair of supportedPairs) {
+    const bridge = getCanonicalBridge(pair);
+    if (bridge && (bridge.parentChainId === chainId || bridge.childChainId === chainId)) {
+      byChildChainId.set(bridge.childChainId, bridge);
+    }
+  }
+  return [...byChildChainId.values()];
+}
+
+async function buildChainTokens(chainId: number): Promise<CachedChainToken[]> {
+  const [canonicalEntries, lifiTokens] = await Promise.all([
+    Promise.all(
+      getCanonicalBridgesForChain(chainId).map(async (bridge) =>
+        getCanonicalEntries(await fetchArbedTokenLists(bridge.tokenListUrls), bridge),
+      ),
+    ),
+    fetchLifiChainTokens(chainId),
   ]);
 
-  if (shouldGenerateCanonical) {
-    const canonicalEntries = getCanonicalEntries(listTokens);
+  const tokens: CachedChainToken[] = [
+    ...hardcodedTokens.filter((token) => token.chainId === chainId),
+    ...canonicalEntries
+      .flat()
+      .flatMap(({ parent, child }) => [parent, child])
+      .filter((token) => token.chainId === chainId),
+  ].map(({ id: _id, chainId: _chainId, ...token }) => token);
+
+  for (const metadata of lifiTokens) {
+    if (isExcludedToken(chainId, metadata.address)) {
+      continue;
+    }
+    const {
+      id: _id,
+      chainId: _chainId,
+      ...token
+    } = normalizeToken({
+      chainId,
+      address: metadata.address,
+      symbol: metadata.symbol,
+      name: metadata.name,
+      decimals: metadata.decimals,
+      logoURI: metadata.logoURI,
+    });
+    tokens.push(metadata.coinKey ? { ...token, coinKey: metadata.coinKey } : token);
+  }
+
+  // The first source of a token wins its metadata. LiFi still adds its coinKey.
+  const byAddress = new Map<Address, CachedChainToken>();
+  for (const token of tokens) {
+    const existing = byAddress.get(token.address);
+    if (!existing) {
+      byAddress.set(token.address, token);
+    } else if (token.coinKey && !existing.coinKey) {
+      byAddress.set(token.address, { ...existing, coinKey: token.coinKey });
+    }
+  }
+  return [...byAddress.values()];
+}
+
+async function buildPairRoutes(
+  pair: ChainPair,
+  loadChainTokens: () => Promise<ChainTokens>,
+): Promise<CachedPairRoutes> {
+  const providers: ProviderRoutes[] = [];
+  const bridge = getCanonicalBridge(pair);
+  const [listTokens, lifiResult] = await Promise.all([
+    bridge ? fetchArbedTokenLists(bridge.tokenListUrls) : Promise.resolve([]),
+    loadChainTokens().then((chainTokens) => generateLifi(pair, chainTokens)),
+  ]);
+
+  if (bridge) {
     const canonicalRoutes = removeBlockedSourceRoutes(
       pair,
-      generateCanonical(canonicalEntries, pair).routes,
+      generateCanonical(getCanonicalEntries(listTokens, bridge), pair).routes,
     );
     if (Object.keys(canonicalRoutes).length > 0) {
       providers.push({ provider: 'canonical', routes: canonicalRoutes });
-    }
-    for (const { parent, child } of canonicalEntries) {
-      tokens.push(parent, child);
-    }
-  }
-
-  const hardcodedCanonical = hardcodedCanonicalRoutes[pairKey(pair)];
-  if (hardcodedCanonical) {
-    const routes = removeBlockedSourceRoutes(pair, hardcodedCanonical);
-    if (Object.keys(routes).length > 0) {
-      providers.push({ provider: 'canonical', routes });
     }
   }
 
@@ -398,44 +462,107 @@ async function buildPairRegistry(pair: ChainPair): Promise<CachedPairRegistry> {
   if (Object.keys(filteredLifiRoutes).length > 0) {
     providers.push({ provider: 'lifi', routes: filteredLifiRoutes });
   }
-  tokens.push(...lifiResult.tokens);
 
-  const tokensById = new Map<TokenId, CachedToken>();
-  for (const token of tokens) {
-    const cachedToken = tokensById.get(token.id);
-    if (!cachedToken) {
-      const { id: _id, ...tokenMetadata } = token;
-      tokensById.set(token.id, {
-        ...tokenMetadata,
-        ...(lifiResult.destinationTokenIds.has(token.id) ? { isLifiDestination: true } : {}),
-      });
-    } else if (lifiResult.destinationTokenIds.has(token.id)) {
-      cachedToken.isLifiDestination = true;
+  return { providers, lifiDestinationAddresses: lifiResult.destinationAddresses };
+}
+
+function getCachedChainTokens(chainId: number): Promise<CachedChainToken[]> {
+  return cached(`token-registry-chain-${chainId}-v${REGISTRY_CACHE_VERSION}`, () =>
+    buildChainTokens(chainId),
+  );
+}
+
+function getCachedPairRoutes(
+  pair: ChainPair,
+  loadChainTokens: () => Promise<ChainTokens>,
+): Promise<CachedPairRoutes> {
+  return cached(`token-registry-pair-${pairKey(pair)}-v${REGISTRY_CACHE_VERSION}`, () =>
+    buildPairRoutes(pair, loadChainTokens),
+  );
+}
+
+function getTokenMap(tokens: CachedChainToken[], chainId: number): Map<TokenId, Token> {
+  const byId = new Map<TokenId, Token>();
+  for (const { coinKey: _coinKey, ...token } of tokens) {
+    const id = toTokenId(chainId, token.address);
+    byId.set(id, { id, chainId, ...token });
+  }
+  return byId;
+}
+
+function isCanonicalRouteAllowed({
+  bridge,
+  pair,
+  sourceTokenAddress,
+  destinationTokenAddress,
+}: {
+  bridge: CanonicalBridge;
+  pair: ChainPair;
+  sourceTokenAddress: Address;
+  destinationTokenAddress: Address;
+}): boolean {
+  return isCanonicalTransferAllowed({
+    bridge,
+    pair,
+    parentTokenAddress: isCanonicalDeposit(pair, bridge)
+      ? sourceTokenAddress
+      : destinationTokenAddress,
+  });
+}
+
+function withCanonicalPolicy(pair: ChainPair, providers: ProviderRoutes[]): ProviderRoutes[] {
+  const bridge = getCanonicalBridge(pair);
+  if (!bridge) {
+    return providers;
+  }
+
+  return providers.map((section) => {
+    if (section.provider !== 'canonical') {
+      return section;
+    }
+    const routes: Record<Address, Address> = {};
+    for (const [sourceTokenAddress, destinationTokenAddress] of Object.entries(section.routes) as [
+      Address,
+      Address,
+    ][]) {
+      if (isCanonicalRouteAllowed({ bridge, pair, sourceTokenAddress, destinationTokenAddress })) {
+        routes[sourceTokenAddress] = destinationTokenAddress;
+      }
+    }
+    return { provider: 'canonical', routes };
+  });
+}
+
+// The entries expire separately, so a route can name a token that its chain entry does not
+// have yet. materializeRoutes skips those routes.
+async function getPairRegistry(pair: ChainPair): Promise<PairRegistry> {
+  const sourceChainTokens = getCachedChainTokens(pair.sourceChainId);
+  const destinationChainTokens = getCachedChainTokens(pair.destinationChainId);
+  const [routes, sourceTokenEntries, destinationTokenEntries] = await Promise.all([
+    getCachedPairRoutes(pair, async () => ({
+      source: await sourceChainTokens,
+      destination: await destinationChainTokens,
+    })),
+    sourceChainTokens,
+    destinationChainTokens,
+  ]);
+  const destinationTokens = getTokenMap(destinationTokenEntries, pair.destinationChainId);
+
+  const lifiDestinationTokens = new Map<TokenId, Token>();
+  for (const address of routes.lifiDestinationAddresses) {
+    const token = destinationTokens.get(toTokenId(pair.destinationChainId, address));
+    if (token) {
+      lifiDestinationTokens.set(token.id, token);
     }
   }
 
   return {
-    providers,
-    tokens: [...tokensById.values()],
+    providers: withCanonicalPolicy(pair, routes.providers),
+    sourceTokens: getTokenMap(sourceTokenEntries, pair.sourceChainId),
+    destinationTokens,
+    lifiDestinationTokens,
+    destinationTokensByAddress: getTokenAddressMap(destinationTokens.values()),
   };
-}
-
-function getTokenMap(
-  tokens: CachedToken[],
-  chainId: number,
-  predicate: (token: CachedToken) => boolean = () => true,
-): Map<TokenId, Token> {
-  const byId = new Map<TokenId, Token>();
-  for (const token of tokens) {
-    if (token.chainId !== chainId || !predicate(token)) {
-      continue;
-    }
-
-    const id = toTokenId(token.chainId, token.address);
-    const { isLifiDestination: _isLifiDestination, ...tokenMetadata } = token;
-    byId.set(id, { id, ...tokenMetadata });
-  }
-  return byId;
 }
 
 function sortTokens(tokens: Token[]): Token[] {
@@ -642,17 +769,8 @@ function getTokenAddressMap(tokens: Iterable<Token>): Partial<Record<Address, To
   return byAddress;
 }
 
-function getTransferableSourceTokens(registry: CachedPairRegistry, pair: ChainPair): Token[] {
-  const { providers, tokens } = registry;
-  const sourceTokens = getTokenMap(tokens, pair.sourceChainId);
-  const destinationTokens = getTokenMap(tokens, pair.destinationChainId);
-  const lifiDestinationTokens = getTokenMap(
-    tokens,
-    pair.destinationChainId,
-    (token) => token.isLifiDestination === true,
-  );
-  const destinationTokensByAddress = getTokenAddressMap(destinationTokens.values());
-
+function getTransferableSourceTokens(registry: PairRegistry, pair: ChainPair): Token[] {
+  const { providers, sourceTokens, destinationTokens, lifiDestinationTokens } = registry;
   const transferableSourceTokens: Token[] = [];
 
   for (const sourceAddress of getSourceRouteAddresses(providers)) {
@@ -664,7 +782,7 @@ function getTransferableSourceTokens(registry: CachedPairRegistry, pair: ChainPa
     const routes = materializeRoutes({
       providers,
       sourceToken,
-      destinationTokensByAddress,
+      destinationTokensByAddress: registry.destinationTokensByAddress,
     });
     if (routes.length === 0) {
       continue;
@@ -688,14 +806,6 @@ function getTransferableSourceTokens(registry: CachedPairRegistry, pair: ChainPa
   return sortTokens(transferableSourceTokens);
 }
 
-function getCachedPairRegistry(pair: ChainPair): Promise<CachedPairRegistry> {
-  const cacheKey = `token-registry-pair-${pairKey(pair)}-v${PAIR_REGISTRY_CACHE_VERSION}`;
-  return unstable_cache(() => buildPairRegistry(pair), [cacheKey], {
-    revalidate: 3_600,
-    tags: [cacheKey],
-  })();
-}
-
 function selectTokenAvailability({
   pair,
   registry,
@@ -703,19 +813,12 @@ function selectTokenAvailability({
   destinationTokenAddress,
 }: {
   pair: ChainPair;
-  registry: CachedPairRegistry;
+  registry: PairRegistry;
   sourceTokenAddress: Address;
   destinationTokenAddress?: Address;
 }): SelectedTokenAvailability | null {
-  const sourceTokens = getTokenMap(registry.tokens, pair.sourceChainId);
-  const destinationTokens = getTokenMap(registry.tokens, pair.destinationChainId);
-  const lifiDestinationTokens = getTokenMap(
-    registry.tokens,
-    pair.destinationChainId,
-    (token) => token.isLifiDestination === true,
-  );
-  const destinationTokensByAddress = getTokenAddressMap(destinationTokens.values());
-  const sourceToken = sourceTokens.get(toTokenId(pair.sourceChainId, sourceTokenAddress));
+  const { destinationTokens, lifiDestinationTokens, destinationTokensByAddress } = registry;
+  const sourceToken = registry.sourceTokens.get(toTokenId(pair.sourceChainId, sourceTokenAddress));
   if (!sourceToken) {
     return null;
   }
@@ -770,18 +873,10 @@ function getIndexedDestinationTokenOptions({
   sourceTokenAddress,
 }: {
   pair: ChainPair;
-  registry: CachedPairRegistry;
+  registry: PairRegistry;
   sourceTokenAddress: Address;
 }): Token[] | null {
-  const sourceTokens = getTokenMap(registry.tokens, pair.sourceChainId);
-  const destinationTokens = getTokenMap(registry.tokens, pair.destinationChainId);
-  const lifiDestinationTokens = getTokenMap(
-    registry.tokens,
-    pair.destinationChainId,
-    (token) => token.isLifiDestination === true,
-  );
-  const destinationTokensByAddress = getTokenAddressMap(destinationTokens.values());
-  const sourceToken = sourceTokens.get(toTokenId(pair.sourceChainId, sourceTokenAddress));
+  const sourceToken = registry.sourceTokens.get(toTokenId(pair.sourceChainId, sourceTokenAddress));
   if (!sourceToken) {
     return null;
   }
@@ -789,29 +884,183 @@ function getIndexedDestinationTokenOptions({
   const routes = materializeRoutes({
     providers: registry.providers,
     sourceToken,
-    destinationTokensByAddress,
+    destinationTokensByAddress: registry.destinationTokensByAddress,
   });
   if (routes.length === 0) {
     return null;
   }
 
   return getDestinationTokenOptions({
-    destinationTokensByAddress,
-    lifiDestinationTokens,
+    destinationTokensByAddress: registry.destinationTokensByAddress,
+    lifiDestinationTokens: registry.lifiDestinationTokens,
     routes,
   });
+}
+
+function isBlockedSourceToken(pair: ChainPair, sourceTokenAddress: Address): boolean {
+  return blockedSourceRoutes[pairKey(pair)]?.includes(sourceTokenAddress) ?? false;
+}
+
+function hasCanonicalRoute(registry: PairRegistry, sourceTokenAddress: Address): boolean {
+  return registry.providers.some(
+    (section) => section.provider === 'canonical' && sourceTokenAddress in section.routes,
+  );
+}
+
+function getCachedImport({
+  bridge,
+  pair,
+  sourceTokenAddress,
+}: {
+  bridge: CanonicalBridge;
+  pair: ChainPair;
+  sourceTokenAddress: Address;
+}): Promise<SelectedTokenAvailability | null> {
+  return cached(
+    `token-registry-import-${pairKey(pair)}-${sourceTokenAddress}-v${REGISTRY_CACHE_VERSION}`,
+    () => resolveImport({ bridge, pair, rawAddress: sourceTokenAddress }),
+  );
+}
+
+function withImportedRoute(
+  registry: PairRegistry,
+  { sourceToken, destinationToken }: SelectedTokenAvailability,
+): PairRegistry {
+  const sourceTokens = new Map(registry.sourceTokens);
+  if (!sourceTokens.has(sourceToken.id)) {
+    sourceTokens.set(sourceToken.id, sourceToken);
+  }
+  const destinationTokens = new Map(registry.destinationTokens);
+  if (!destinationTokens.has(destinationToken.id)) {
+    destinationTokens.set(destinationToken.id, destinationToken);
+  }
+
+  return {
+    ...registry,
+    providers: [
+      { provider: 'canonical', routes: { [sourceToken.address]: destinationToken.address } },
+      ...registry.providers,
+    ],
+    sourceTokens,
+    destinationTokens,
+    destinationTokensByAddress: getTokenAddressMap(destinationTokens.values()),
+  };
+}
+
+// A token can have LiFi routes and still no canonical route, for example when the token
+// lists do not know it yet. The import adds the canonical route, which deploys the child
+// token on the first deposit.
+async function withCanonicalImport({
+  pair,
+  registry,
+  sourceTokenAddress,
+}: {
+  pair: ChainPair;
+  registry: PairRegistry;
+  sourceTokenAddress: Address;
+}): Promise<{ registry: PairRegistry; sourceTokenAddress: Address }> {
+  const unchanged = { registry, sourceTokenAddress };
+  const bridge = getCanonicalBridge(pair);
+  if (
+    !bridge ||
+    hasCanonicalRoute(registry, sourceTokenAddress) ||
+    isBlockedSourceToken(pair, sourceTokenAddress) ||
+    // Skips the RPC calls for deposits that the policy lists already block.
+    (isCanonicalDeposit(pair, bridge) &&
+      !isCanonicalTransferAllowed({ bridge, pair, parentTokenAddress: sourceTokenAddress }))
+  ) {
+    return unchanged;
+  }
+
+  const imported = await getCachedImport({ bridge, pair, sourceTokenAddress });
+  // A destination-chain address resolves to a different source token, so check it again.
+  if (
+    !imported ||
+    isBlockedSourceToken(pair, imported.sourceToken.address) ||
+    !isCanonicalRouteAllowed({
+      bridge,
+      pair,
+      sourceTokenAddress: imported.sourceToken.address,
+      destinationTokenAddress: imported.destinationToken.address,
+    })
+  ) {
+    return unchanged;
+  }
+
+  return {
+    registry: withImportedRoute(registry, imported),
+    sourceTokenAddress: imported.sourceToken.address,
+  };
+}
+
+function getBatchDeposit({
+  pair,
+  registry,
+  sourceToken,
+}: {
+  pair: ChainPair;
+  registry: PairRegistry;
+  sourceToken: Token;
+}): BatchDeposit | undefined {
+  const bridge = getCanonicalBridge(pair);
+  if (
+    !bridge ||
+    !isCanonicalDeposit(pair, bridge) ||
+    isNativeToken(sourceToken) ||
+    batchDepositExcludedSourceTokens[pairKey(pair)]?.includes(sourceToken.address)
+  ) {
+    return undefined;
+  }
+
+  // Canonical bridges with a custom gas token are not supported yet, so the extra amount is
+  // always the native token on both chains.
+  const batchSourceToken = registry.sourceTokens.get(
+    toTokenId(pair.sourceChainId, NATIVE_TOKEN_ADDRESS),
+  );
+  const batchDestinationToken = registry.destinationTokens.get(
+    toTokenId(pair.destinationChainId, NATIVE_TOKEN_ADDRESS),
+  );
+  if (!batchSourceToken || !batchDestinationToken) {
+    return undefined;
+  }
+
+  return {
+    sourceToken: batchSourceToken,
+    destinationToken: batchDestinationToken,
+  };
+}
+
+// Only the canonical route can carry the extra amount, so other routes never get a batch.
+function withBatchDeposit({
+  pair,
+  registry,
+  selection,
+}: {
+  pair: ChainPair;
+  registry: PairRegistry;
+  selection: SelectedTokenAvailability;
+}): SelectedTokenAvailability {
+  const batchDeposit = getBatchDeposit({ pair, registry, sourceToken: selection.sourceToken });
+  if (!batchDeposit) {
+    return selection;
+  }
+
+  return {
+    ...selection,
+    availableRoutes: selection.availableRoutes.map((route) =>
+      route.provider === 'canonical' ? { ...route, batchDeposit } : route,
+    ),
+  };
 }
 
 export function getSourceTokens(pair: ChainPair): Promise<Token[] | null> {
   if (!isSupportedPair(pair)) {
     return Promise.resolve(null);
   }
-  return getCachedPairRegistry(pair).then((registry) =>
-    getTransferableSourceTokens(registry, pair),
-  );
+  return getPairRegistry(pair).then((registry) => getTransferableSourceTokens(registry, pair));
 }
 
-export function getDestinationTokensForSource({
+export async function getDestinationTokensForSource({
   pair,
   sourceTokenAddress,
 }: {
@@ -819,23 +1068,15 @@ export function getDestinationTokensForSource({
   sourceTokenAddress: string;
 }): Promise<Token[] | null> {
   if (!isSupportedPair(pair)) {
-    return Promise.resolve(null);
+    return null;
   }
 
-  const normalizedSourceAddress = normalizeAddress(sourceTokenAddress);
-  return getCachedPairRegistry(pair).then(async (registry) => {
-    const tokens = getIndexedDestinationTokenOptions({
-      pair,
-      registry,
-      sourceTokenAddress: normalizedSourceAddress,
-    });
-    if (tokens) {
-      return tokens;
-    }
-
-    const importedSelection = await resolveImport(pair, normalizedSourceAddress);
-    return importedSelection ? [importedSelection.destinationToken] : null;
+  const resolved = await withCanonicalImport({
+    pair,
+    registry: await getPairRegistry(pair),
+    sourceTokenAddress: normalizeAddress(sourceTokenAddress),
   });
+  return getIndexedDestinationTokenOptions({ pair, ...resolved });
 }
 
 export async function getSelectedTokenAvailability({
@@ -851,22 +1092,18 @@ export async function getSelectedTokenAvailability({
     return null;
   }
 
-  const normalizedSourceAddress = normalizeAddress(sourceTokenAddress);
-  const normalizedDestinationAddress = destinationTokenAddress
-    ? normalizeAddress(destinationTokenAddress)
-    : undefined;
-
-  const registry = await getCachedPairRegistry(pair);
+  const resolved = await withCanonicalImport({
+    pair,
+    registry: await getPairRegistry(pair),
+    sourceTokenAddress: normalizeAddress(sourceTokenAddress),
+  });
   const selection = selectTokenAvailability({
     pair,
-    registry,
-    sourceTokenAddress: normalizedSourceAddress,
-    destinationTokenAddress: normalizedDestinationAddress,
+    ...resolved,
+    destinationTokenAddress: destinationTokenAddress
+      ? normalizeAddress(destinationTokenAddress)
+      : undefined,
   });
 
-  if (selection) {
-    return selection;
-  }
-
-  return resolveImport(pair, normalizedSourceAddress);
+  return selection ? withBatchDeposit({ pair, registry: resolved.registry, selection }) : null;
 }

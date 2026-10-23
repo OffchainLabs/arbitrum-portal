@@ -78,12 +78,6 @@ export const layerZeroConfig: Record<string, Record<Address, LayerZeroRouteData>
   },
 };
 
-export const hardcodedCanonicalRoutes: Record<string, Record<Address, Address>> = {
-  [pairKey({ sourceChainId: ChainIds.Robinhood, destinationChainId: ChainIds.Ethereum })]: {
-    [USDC_ROBINHOOD]: USDC_ETHEREUM,
-  },
-};
-
 export const hardcodedLifiRoutes: Record<string, Record<Address, Address | null>> = {
   [pairKey({ sourceChainId: ChainIds.Ethereum, destinationChainId: ChainIds.Robinhood })]: {
     [NATIVE_TOKEN_ADDRESS]: NATIVE_TOKEN_ADDRESS,
@@ -105,9 +99,24 @@ export const blockedLifiSourceRoutes: Record<string, Address[]> = {
   ],
 };
 
+// Every canonical deposit can batch. This only lists the exceptions.
+export const batchDepositExcludedSourceTokens: Record<string, Address[]> = {
+  // The current bridge never batches Ethereum USDC.
+  [pairKey({ sourceChainId: ChainIds.Ethereum, destinationChainId: ChainIds.ArbitrumOne })]: [
+    USDC_ETHEREUM,
+  ],
+};
+
+// Master disables canonical PYUSD because its token model cannot offer two destinations.
+// The registry models both, so it keeps the canonical route and defaults to LiFi PYUSD.
+export const transferDisabledExemptions: Partial<Record<number, Address[]>> = {
+  [ChainIds.ArbitrumOne]: [PYUSD_ETHEREUM],
+};
+
 export const defaultDestinationOverrides: Record<string, Record<Address, Address>> = {
   [pairKey({ sourceChainId: ChainIds.Ethereum, destinationChainId: ChainIds.ArbitrumOne })]: {
     [PYUSD_ETHEREUM]: PYUSD_LIFI_ARBITRUM_ONE,
+    [USDC_ETHEREUM]: USDC_ARBITRUM_ONE,
   },
 };
 
