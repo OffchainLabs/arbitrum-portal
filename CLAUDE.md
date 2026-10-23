@@ -23,8 +23,8 @@ pnpm build            # Production build
 # Code Quality
 pnpm lint             # TypeScript check + Oxlint
 pnpm lint:fix         # TypeScript check + Oxlint with auto-fix
-pnpm prettier:check   # Check formatting
-pnpm prettier:format  # Format all files
+pnpm format:check     # Check formatting
+pnpm format           # Format all files
 
 # Testing
 pnpm test:ci          # Run unit tests (Vitest, bridge package)
@@ -62,7 +62,7 @@ See `tsconfig.base.json` for the full list.
 
 ## Code Style
 
-- Prettier with `@offchainlabs/prettier-config` + Tailwind CSS plugin + import sorting
+- oxfmt (`oxfmt.config.ts`) with the `@offchainlabs/prettier-config` options, Tailwind class sorting and import sorting
 - Oxlint (`oxlint.config.ts`) with the rules of `@offchainlabs/eslint-config-typescript` and `eslint-config-next`, plus type-aware rules
 - Zustand rules enforced: `no-state-mutation`, `require-shallow-selector`, `use-store-selectors`
 - **Prefer `twMerge`** over template literal className concatenation in new code. Do not refactor existing usages unprompted.
@@ -71,7 +71,7 @@ See `tsconfig.base.json` for the full list.
 
 ## Testing and Quality Checklist
 
-- Run `pnpm lint` and `pnpm prettier:check` before considering a task complete
+- Run `pnpm lint` and `pnpm format:check` before considering a task complete
 - Run `pnpm test:ci` to verify unit tests pass after changes
 - Update existing tests when modifying related code
 
