@@ -1,4 +1,3 @@
-import type { Provider } from '@ethersproject/providers';
 import { RouteExtended, executeRoute, resumeRoute } from '@lifi/sdk';
 import { BigNumber, constants } from 'ethers';
 import { UserRejectedRequestError } from 'viem';
@@ -64,16 +63,7 @@ const batchId = '0x3ed2270c44494ccfa9c60daf655e7879';
 const batchId32Bytes = '0x5f4e4b452a390f349b7fc1f7b9b1666da36199b342de010996606ac8cea5ace1';
 
 function createStarter() {
-  return new LifiTransferStarter({
-    sourceChainProvider: {
-      getNetwork: async () => ({ chainId: 1 }),
-      getTransaction: async (hash: string) => ({ hash }),
-    } as unknown as Provider,
-    destinationChainProvider: {
-      getNetwork: async () => ({ chainId: 42161 }),
-    } as unknown as Provider,
-    lifiRoute: createLifiTransferRoute(),
-  });
+  return new LifiTransferStarter({ lifiRoute: createLifiTransferRoute() });
 }
 
 function createTransferProps(
@@ -673,12 +663,6 @@ describe.sequential('LifiTransferStarter approvals', () => {
 describe('LifiTransferStarter estimates', () => {
   it('aggregates gas estimates by source and destination chain', async () => {
     const starter = new LifiTransferStarter({
-      sourceChainProvider: {
-        getNetwork: async () => ({ chainId: 1 }),
-      } as unknown as Provider,
-      destinationChainProvider: {
-        getNetwork: async () => ({ chainId: 42161 }),
-      } as unknown as Provider,
       lifiRoute: createLifiTransferRoute({
         gas: [
           {
