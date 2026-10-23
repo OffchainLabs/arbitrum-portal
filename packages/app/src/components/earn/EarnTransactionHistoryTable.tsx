@@ -177,7 +177,7 @@ function TransactionHashLink({
       <p className={textClassName} title={transactionHash}>
         {shortenTxHash(transactionHash)}
       </p>
-      <ArrowTopRightOnSquareIcon className="h-4 w-4 text-white shrink-0" />
+      <ArrowTopRightOnSquareIcon className="h-4 w-4 shrink-0 text-white" />
     </ExternalLink>
   );
 }
@@ -204,28 +204,28 @@ function DesktopHistoryRow({
     <button
       type="button"
       onClick={() => onRowClick(row)}
-      className="group w-full border-none text-left cursor-pointer bg-gray-1 rounded-lg h-[66px] px-4 py-3 flex gap-4 items-center hover:bg-neutral-100 transition-colors"
+      className="group flex h-[66px] w-full cursor-pointer items-center gap-4 rounded-lg border-none bg-gray-1 px-4 py-3 text-left transition-colors hover:bg-neutral-100"
     >
-      <div className="w-[140px] shrink-0 flex flex-col gap-0.5">
-        <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">{timeStr}</p>
-        <p className="text-xs text-white opacity-50 leading-none">{dateStr}</p>
+      <div className="flex w-[140px] shrink-0 flex-col gap-0.5">
+        <p className="text-sm leading-[1.15] tracking-[-0.28px] text-white">{timeStr}</p>
+        <p className="text-xs leading-none text-white opacity-50">{dateStr}</p>
       </div>
 
       <div className="w-[80px] shrink-0">
-        <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] capitalize">{action}</p>
+        <p className="text-sm leading-[1.15] tracking-[-0.28px] text-white capitalize">{action}</p>
       </div>
 
-      <div className="flex-1 flex items-center gap-2 min-w-0">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
         <SafeImage
           src={displayAsset.logo}
           alt={displayAsset.symbol}
           width={24}
           height={24}
-          className="rounded-full shrink-0"
-          fallback={<div className="size-6 rounded-full bg-white/10 shrink-0" />}
+          className="shrink-0 rounded-full"
+          fallback={<div className="size-6 shrink-0 rounded-full bg-white/10" />}
         />
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap truncate">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <p className="truncate text-sm leading-[1.15] tracking-[-0.28px] whitespace-nowrap text-white">
             {formatHistoryAmount(displayAsset)}
           </p>
           <div className="flex items-center gap-1.5">
@@ -236,23 +236,23 @@ function DesktopHistoryRow({
               height={12}
               className="shrink-0"
             />
-            <p className="text-xs text-white opacity-50 leading-none whitespace-nowrap">
+            <p className="text-xs leading-none whitespace-nowrap text-white opacity-50">
               {row.chainName}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 flex items-center gap-1 min-w-0 overflow-hidden">
+      <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
         <TransactionHashLink
           chainId={row.chainId}
           transactionHash={row.transactionHash}
-          className="flex items-center gap-1 opacity-50 hover:opacity-80 transition-opacity min-w-0"
+          className="flex min-w-0 items-center gap-1 opacity-50 transition-opacity hover:opacity-80"
           textClassName="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap font-mono truncate hover:text-white hover:underline"
         />
       </div>
 
-      <div className="bg-white/10 rounded p-2 flex items-center justify-center shrink-0 group-hover:bg-white/20">
+      <div className="flex shrink-0 items-center justify-center rounded bg-white/10 p-2 group-hover:bg-white/20">
         <ChevronRightIcon className="h-4 w-4 text-white" />
       </div>
     </button>
@@ -275,21 +275,21 @@ function MobileHistoryRow({
     <button
       type="button"
       onClick={() => onRowClick(row)}
-      className="w-full border-none text-left bg-gray-1 rounded-lg h-[78px] px-4 py-4 flex flex-col justify-center gap-0.5 cursor-pointer hover:bg-neutral-100 transition-colors"
+      className="flex h-[78px] w-full cursor-pointer flex-col justify-center gap-0.5 rounded-lg border-none bg-gray-1 px-4 py-4 text-left transition-colors hover:bg-neutral-100"
     >
-      <div className="flex items-center justify-between w-full">
-        <p className="text-base text-white leading-[1.15] tracking-[-0.32px] whitespace-nowrap">
+      <div className="flex w-full items-center justify-between">
+        <p className="text-base leading-[1.15] tracking-[-0.32px] whitespace-nowrap text-white">
           {getEventTypeDisplay(action, displayAsset)}
         </p>
         <TransactionHashLink
           chainId={row.chainId}
           transactionHash={row.transactionHash}
-          className="flex items-center gap-1 opacity-50 hover:opacity-80 transition-opacity shrink-0"
+          className="flex shrink-0 items-center gap-1 opacity-50 transition-opacity hover:opacity-80"
           textClassName="text-sm text-white leading-[1.35] tracking-[-0.28px] whitespace-nowrap font-mono hover:text-white hover:underline"
         />
       </div>
 
-      <div className="flex items-center justify-between w-full">
+      <div className="flex w-full items-center justify-between">
         <div className="flex items-center gap-[5px]">
           <SafeImage
             src={ARBITRUM_LOGO}
@@ -298,11 +298,11 @@ function MobileHistoryRow({
             height={12}
             className="shrink-0"
           />
-          <p className="text-xs text-white opacity-50 leading-normal whitespace-nowrap">
+          <p className="text-xs leading-normal whitespace-nowrap text-white opacity-50">
             {row.chainName}
           </p>
         </div>
-        <p className="text-sm text-white leading-[1.35] tracking-[-0.28px] whitespace-nowrap">
+        <p className="text-sm leading-[1.35] tracking-[-0.28px] whitespace-nowrap text-white">
           {formatHistoryAmount(displayAsset)}
         </p>
       </div>
@@ -390,23 +390,23 @@ export function EarnTransactionHistoryTable({
 
   return (
     <div className="flex flex-col">
-      <div className="hidden md:flex gap-4 items-center pt-2 px-4 pb-2">
+      <div className="hidden items-center gap-4 px-4 pt-2 pb-2 md:flex">
         <div className="w-[140px] shrink-0">
-          <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Date</p>
+          <p className="text-xs font-semibold whitespace-nowrap text-white opacity-50">Date</p>
         </div>
         <div className="w-[80px] shrink-0">
-          <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Type</p>
+          <p className="text-xs font-semibold whitespace-nowrap text-white opacity-50">Type</p>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Amount</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold whitespace-nowrap text-white opacity-50">Amount</p>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Txn hash</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold whitespace-nowrap text-white opacity-50">Txn hash</p>
         </div>
         <div className="w-[42px] shrink-0"></div>
       </div>
 
-      <div className="hidden md:flex flex-col gap-1">
+      <div className="hidden flex-col gap-1 md:flex">
         {sortedRows.map((row) => (
           <DesktopHistoryRow
             key={`${row.transactionHash}-${row.timestamp}`}
@@ -419,7 +419,7 @@ export function EarnTransactionHistoryTable({
         ))}
       </div>
 
-      <div className="flex md:hidden flex-col gap-2.5">
+      <div className="flex flex-col gap-2.5 md:hidden">
         {mobileDateGroups.map(([dateKey, dateRows], groupIndex) => {
           const firstRow = dateRows[0];
           if (!firstRow) return null;
@@ -434,7 +434,7 @@ export function EarnTransactionHistoryTable({
                   isFirstGroup ? 'pb-[5px] pt-4' : 'h-7 py-4',
                 )}
               >
-                <p className="text-xs text-white opacity-50 leading-none">{fullDateStr}</p>
+                <p className="text-xs leading-none text-white opacity-50">{fullDateStr}</p>
               </div>
 
               {dateRows.map((row) => (

@@ -116,7 +116,7 @@ export function PortfolioSummaryCards({
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <div className="md:col-span-2 bg-neutral-50 rounded px-4 py-6 flex flex-col gap-5">
+      <div className="flex flex-col gap-5 rounded bg-neutral-50 px-4 py-6 md:col-span-2">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
             <div className="flex flex-row items-center gap-1.5">
@@ -126,13 +126,13 @@ export function PortfolioSummaryCards({
                 <Tooltip
                   as="div"
                   content={
-                    <p className="text-xs text-white leading-relaxed">
+                    <p className="text-xs leading-relaxed text-white">
                       Total value of all your positions across all protocols
                     </p>
                   }
                   contentProps={{ side: 'top' }}
                 >
-                  <div className="flex items-center justify-center cursor-pointer">
+                  <div className="flex cursor-pointer items-center justify-center">
                     <InformationCircleIcon className="h-4 w-4 text-white opacity-50 hover:opacity-70" />
                   </div>
                 </Tooltip>
@@ -142,12 +142,12 @@ export function PortfolioSummaryCards({
               Total value of all your positions across all protocols
             </p>
           </div>
-          <p className="text-[28px] font-medium text-white tracking-[-0.56px]">
+          <p className="text-[28px] font-medium tracking-[-0.56px] text-white">
             {formatUSD(totalValue)}
           </p>
         </div>
         <div className="flex flex-col gap-3">
-          <div className="relative h-2 bg-default-black-hover rounded-[5px] overflow-hidden w-full">
+          <div className="relative h-2 w-full overflow-hidden rounded-[5px] bg-default-black-hover">
             <div className="flex h-full w-full">
               {categoryWidths.map(({ category, width }) => (
                 <div
@@ -168,7 +168,7 @@ export function PortfolioSummaryCards({
                       CATEGORY_INDICATOR_CLASS[category],
                     )}
                   />
-                  <p className="text-xs font-medium text-white opacity-80 whitespace-nowrap">
+                  <p className="text-xs font-medium whitespace-nowrap text-white opacity-80">
                     {getCategoryDisplayName(category)}
                   </p>
                 </div>
@@ -178,34 +178,34 @@ export function PortfolioSummaryCards({
         </div>
       </div>
 
-      <div className="bg-neutral-50 rounded px-4 py-6 flex flex-col gap-3 relative">
+      <div className="relative flex flex-col gap-3 rounded bg-neutral-50 px-4 py-6">
         <div className="flex flex-col gap-1">
-          <div className="flex flex-row justify-between items-center gap-1">
+          <div className="flex flex-row items-center justify-between gap-1">
             <div className="flex items-center gap-1.5">
-              <p className="text-sm font-medium text-white opacity-80 whitespace-nowrap">
+              <p className="text-sm font-medium whitespace-nowrap text-white opacity-80">
                 Projected Earnings
               </p>
               <div className="hidden lg:block">
                 <Tooltip
                   as="div"
                   content={
-                    <p className="text-xs text-white leading-relaxed">
+                    <p className="text-xs leading-relaxed text-white">
                       Expected earnings if current holdings are maintained for the selected
                       timeframe at the current APY
                     </p>
                   }
                   contentProps={{ side: 'top' }}
                 >
-                  <div className="flex items-center justify-center cursor-pointer">
+                  <div className="flex cursor-pointer items-center justify-center">
                     <InformationCircleIcon className="h-4 w-4 text-white opacity-50 hover:opacity-70" />
                   </div>
                 </Tooltip>
               </div>
             </div>
 
-            <div className="items-center bg-white/5 rounded-full p-0.5 gap-0.5 hidden xl:flex">
+            <div className="hidden items-center gap-0.5 rounded-full bg-white/5 p-0.5 xl:flex">
               <button
-                className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${
+                className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
                   earningsTimeframe === 'month'
                     ? 'bg-white text-black'
                     : 'text-white hover:bg-white/10'
@@ -215,7 +215,7 @@ export function PortfolioSummaryCards({
                 Month
               </button>
               <button
-                className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${
+                className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
                   earningsTimeframe === 'year'
                     ? 'bg-white text-black'
                     : 'text-white hover:bg-white/10'
@@ -233,20 +233,20 @@ export function PortfolioSummaryCards({
         </div>
 
         <div className="flex flex-col gap-3">
-          <p className="text-[28px] font-medium text-white tracking-[-0.56px]">
+          <p className="text-[28px] font-medium tracking-[-0.56px] text-white">
             {formatUSD(displayEarnings)}
           </p>
-          <p className="text-xs opacity-70 italic">
+          <p className="text-xs italic opacity-70">
             {formatSignedPercentage(earningsPercentage)} by {getTargetDate()}
           </p>
         </div>
       </div>
 
-      <div className="bg-neutral-50 rounded px-4 py-6 flex flex-col justify-between">
+      <div className="flex flex-col justify-between rounded bg-neutral-50 px-4 py-6">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1.5">
-              <p className="text-sm font-medium text-white opacity-80 whitespace-nowrap">
+              <p className="text-sm font-medium whitespace-nowrap text-white opacity-80">
                 Average APY
               </p>
               <div className="hidden lg:block">
@@ -254,7 +254,7 @@ export function PortfolioSummaryCards({
                   as="div"
                   content={
                     <div className="flex flex-col gap-2">
-                      <p className="text-xs text-white leading-relaxed">
+                      <p className="text-xs leading-relaxed text-white">
                         Average APY across all your positions
                       </p>
                       {categoryApy && (
@@ -290,7 +290,7 @@ export function PortfolioSummaryCards({
                   }
                   contentProps={{ side: 'top' }}
                 >
-                  <div className="flex items-center justify-center cursor-pointer">
+                  <div className="flex cursor-pointer items-center justify-center">
                     <InformationCircleIcon className="h-4 w-4 text-white opacity-50 hover:opacity-70" />
                   </div>
                 </Tooltip>
@@ -309,11 +309,11 @@ export function PortfolioSummaryCards({
               </p>
             )}
           </div>
-          <p className="text-[28px] font-medium text-white tracking-[-0.56px] whitespace-nowrap">
+          <p className="text-[28px] font-medium tracking-[-0.56px] whitespace-nowrap text-white">
             {formatPercentage(summary.netApy)}
           </p>
 
-          <p className="text-xs opacity-70 italic">Across all your positions</p>
+          <p className="text-xs italic opacity-70">Across all your positions</p>
         </div>
       </div>
     </div>

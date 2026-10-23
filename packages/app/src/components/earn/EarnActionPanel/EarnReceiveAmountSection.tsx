@@ -21,23 +21,23 @@ export function EarnReceiveAmountSection({
   outputBalance,
 }: EarnReceiveAmountSectionProps) {
   return (
-    <div className="bg-neutral-100 rounded flex flex-col p-4">
+    <div className="flex flex-col rounded bg-neutral-100 p-4">
       <div className="flex flex-col gap-2">
         <span className="text-xs font-medium text-white/50">{label}</span>
         <div className="flex items-center justify-between gap-2">
           {isLoading ? (
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-gray-400/30 border-t-gray-400 rounded-full animate-spin" />
-              <span className="text-gray-400 text-sm">Loading quote...</span>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400/30 border-t-gray-400" />
+              <span className="text-sm text-gray-400">Loading quote...</span>
             </div>
           ) : amount === null ? (
-            <span className="text-gray-400 text-sm">No quote found</span>
+            <span className="text-sm text-gray-400">No quote found</span>
           ) : (
             <input
               type="text"
               value={amount || '0.00'}
               readOnly
-              className="flex-1 bg-transparent w-full text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px] placeholder-gray-400 focus:outline-hidden h-[34px]"
+              className="h-[34px] w-full flex-1 bg-transparent text-[28px] leading-[1.15] font-normal tracking-[-0.56px] text-white placeholder-gray-400 focus:outline-hidden"
             />
           )}
           {tokenSelector ?? <EarnTokenBadge symbol={token.symbol} logoUrl={token.logoUrl} />}

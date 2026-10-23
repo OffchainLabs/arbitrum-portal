@@ -46,21 +46,21 @@ export function YourHoldingsEmptyState({ opportunities }: YourHoldingsEmptyState
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-neutral-50 rounded flex flex-col items-center justify-center px-8 gap-8 py-12">
+      <div className="flex flex-col items-center justify-center gap-8 rounded bg-neutral-50 px-8 py-12">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-24 h-24 shrink-0" aria-hidden="true">
+          <div className="h-24 w-24 shrink-0" aria-hidden="true">
             <Image
               src="/images/diamond-empty-state.svg"
               alt="Empty state diamond"
               width={96}
               height={96}
-              className="w-full h-full object-contain"
+              className="h-full w-full object-contain"
             />
           </div>
 
-          <h2 className="text-[32px] font-medium text-white text-center leading-normal">{title}</h2>
+          <h2 className="text-center text-[32px] leading-normal font-medium text-white">{title}</h2>
 
-          <p className="text-base text-white/50 text-center leading-[101.325%] max-w-[330px]">
+          <p className="max-w-[330px] text-center text-base leading-[101.325%] text-white/50">
             {description}
           </p>
         </div>
@@ -68,7 +68,7 @@ export function YourHoldingsEmptyState({ opportunities }: YourHoldingsEmptyState
         {isConnected ? (
           <Link
             href="/earn/market"
-            className="bg-primary-cta hover:bg-primary-cta/90 px-4 flex items-center justify-center transition-colors cursor-pointer rounded border border-dark text-sm text-white py-2 no-underline"
+            className="flex cursor-pointer items-center justify-center rounded border border-dark bg-primary-cta px-4 py-2 text-sm text-white no-underline transition-colors hover:bg-primary-cta/90"
           >
             Explore Opportunities
           </Link>
@@ -83,7 +83,7 @@ export function YourHoldingsEmptyState({ opportunities }: YourHoldingsEmptyState
               });
               openConnectModal();
             }}
-            className="bg-primary-cta hover:bg-primary-cta/90 px-4 flex items-center justify-center transition-colors cursor-pointer rounded border border-dark text-sm text-white py-2 no-underline"
+            className="flex cursor-pointer items-center justify-center rounded border border-dark bg-primary-cta px-4 py-2 text-sm text-white no-underline transition-colors hover:bg-primary-cta/90"
           >
             Connect Wallet
           </button>

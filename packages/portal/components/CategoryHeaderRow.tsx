@@ -46,7 +46,7 @@ export const CategoryHeaderRow = ({
       className="flex w-full cursor-pointer items-center justify-between lg:pointer-events-none"
       onClick={toggleExpansion}
     >
-      <span className="font-medium leading-6">{category.title}</span>
+      <span className="leading-6 font-medium">{category.title}</span>
       <div className="flex items-center justify-center gap-1">
         {showResetButton && (
           <button

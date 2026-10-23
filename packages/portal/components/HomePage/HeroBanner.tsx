@@ -31,7 +31,7 @@ const projectsToHighlight = inflateArrayToSize(
 
 export const HeroBanner = () => {
   return (
-    <Card className="relative flex h-[280px] md:h-[220px] flex-col justify-end bg-[#491BCA] p-6 lg:flex-row lg:items-center lg:justify-start lg:p-[50px]">
+    <Card className="relative flex h-[280px] flex-col justify-end bg-[#491BCA] p-6 md:h-[220px] lg:flex-row lg:items-center lg:justify-start lg:p-[50px]">
       <div className="z-20 flex shrink-0 flex-col gap-2 lg:max-w-sm lg:gap-6">
         <h1 className="text-4xl">Ethereum’s Leading Ecosystem</h1>
         <div className="text-base">
@@ -40,9 +40,9 @@ export const HeroBanner = () => {
         </div>
       </div>
 
-      <div className="absolute left-0 top-0 z-10 h-full w-full bg-linear-to-t from-[#491BCA] from-65% to-transparent md:from-35% lg:bg-linear-to-r lg:to-90%" />
+      <div className="absolute top-0 left-0 z-10 h-full w-full bg-linear-to-t from-[#491BCA] from-65% to-transparent md:from-35% lg:bg-linear-to-r lg:to-90%" />
 
-      <div className="absolute left-[-30px] top-[-10px] flex h-full min-w-[600px] scale-110 flex-wrap gap-2 lg:left-auto lg:right-[-50px]">
+      <div className="absolute top-[-10px] left-[-30px] flex h-full min-w-[600px] scale-110 flex-wrap gap-2 lg:right-[-50px] lg:left-auto">
         {projectsToHighlight.map((project, index) => {
           return (
             <Image

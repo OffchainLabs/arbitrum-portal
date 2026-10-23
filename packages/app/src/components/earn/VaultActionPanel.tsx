@@ -413,7 +413,7 @@ export function VaultActionPanel({
   const submitLabel = transactionQuoteLoading ? 'Fetching Quote...' : actionLabel;
 
   return (
-    <Card className="bg-gray-1 rounded flex flex-col gap-4 p-4">
+    <Card className="flex flex-col gap-4 rounded bg-gray-1 p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-medium text-white">
           {actionLabel} {assetSymbol}

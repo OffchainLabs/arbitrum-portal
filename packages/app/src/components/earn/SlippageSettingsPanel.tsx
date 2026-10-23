@@ -94,7 +94,7 @@ export function SlippageSettingsPanel({
       </div>
       {open && (
         <>
-          <div className="flex flex-nowrap items-start gap-1 text-xs py-2">
+          <div className="flex flex-nowrap items-start gap-1 py-2 text-xs">
             {slippageIsTooLow ? (
               <>
                 <ExclamationCircleIcon className="h-4 w-4 shrink-0 text-orange" />
@@ -134,7 +134,7 @@ export function SlippageSettingsPanel({
                   setDraft(p);
                   setCustomInput('');
                 }}
-                className={`rounded border px-3 py-2 text-center flex items-center justify-center text-xs font-medium ${
+                className={`flex items-center justify-center rounded border px-3 py-2 text-center text-xs font-medium ${
                   activePreset === p
                     ? 'border-white bg-neutral-200 text-white'
                     : 'border-neutral-200 bg-neutral-50 text-white hover:border-neutral-250'
@@ -159,7 +159,7 @@ export function SlippageSettingsPanel({
                 value={customInput}
                 onChange={handleInputChange}
                 placeholder="Custom"
-                className="w-full min-w-0 border-none bg-transparent text-xs text-white placeholder:text-gray-650 focus:outline-hidden [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full min-w-0 [appearance:textfield] border-none bg-transparent text-xs text-white placeholder:text-gray-650 focus:outline-hidden [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
               <span className="text-xs text-gray-650">%</span>
             </div>
