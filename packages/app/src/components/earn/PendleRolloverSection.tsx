@@ -34,7 +34,7 @@ export function PendleRolloverSection({
             )}
           >
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex min-w-0 items-center gap-3">
                 <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full">
                   <SafeImage
                     src={target.ptTokenIcon || ''}
@@ -44,10 +44,10 @@ export function PendleRolloverSection({
                   />
                 </div>
                 <div className="min-w-0">
-                  <div className="truncate text-base font-medium uppercase text-white">
+                  <div className="truncate text-base font-medium text-white uppercase">
                     {`PT${target.tokenSymbol}`}
                   </div>
-                  <div className="text-xs uppercase tracking-[0.24px] text-white/50">
+                  <div className="text-xs tracking-[0.24px] text-white/50 uppercase">
                     {getPendleRolloverLabel(target.expiry)}
                   </div>
                 </div>

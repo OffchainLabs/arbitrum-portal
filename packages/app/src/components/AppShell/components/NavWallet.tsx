@@ -89,7 +89,7 @@ function WalletConnectedDropdown({ wallet, connectableEcosystems }: WalletConnec
         <>
           <Popover.Button className="flex items-center gap-2 rounded-md bg-neutral-25 px-2 py-2 text-sm text-white transition-colors hover:bg-neutral-25/80 ui-open:bg-neutral-25/90">
             <Avatar />
-            <span className="text-sm hidden md:block">{displayName}</span>
+            <span className="hidden text-sm md:block">{displayName}</span>
             <ChevronDownIcon
               className={twMerge(
                 ICON_CLASSES,
@@ -99,18 +99,18 @@ function WalletConnectedDropdown({ wallet, connectableEcosystems }: WalletConnec
             />
           </Popover.Button>
 
-          <Popover.Panel className="absolute right-0 top-0 z-50 w-56 rounded-md border-0 bg-gray-1 p-3 shadow-lg">
+          <Popover.Panel className="absolute top-0 right-0 z-50 w-56 rounded-md border-0 bg-gray-1 p-3 shadow-lg">
             <button
               onClick={() => copy(displayAddress)}
               className={twMerge(MENU_ITEM_BUTTON_CLASSES, 'px-2 py-2.5 mb-0.5')}
               aria-label="Copy address"
             >
               <Avatar />
-              <span className="text-sm text-white flex-1 text-left">{formattedAddress}</span>
+              <span className="flex-1 text-left text-sm text-white">{formattedAddress}</span>
               {showCopied ? (
                 <>
                   <CheckIcon className={twMerge(ICON_CLASSES, 'text-gray-5')} />
-                  <span className="text-xs text-gray-5 shrink-0">Copied!</span>
+                  <span className="shrink-0 text-xs text-gray-5">Copied!</span>
                 </>
               ) : (
                 <DocumentDuplicateIcon className={twMerge(ICON_CLASSES, 'text-gray-5')} />
@@ -238,7 +238,7 @@ function WalletsConnectedDropdown({ wallets }: { wallets: WalletHandle[] }) {
                 />
               ))}
             </span>
-            <span className="text-sm hidden md:block">My wallets</span>
+            <span className="hidden text-sm md:block">My wallets</span>
             <ChevronDownIcon
               className={twMerge(
                 ICON_CLASSES,
@@ -248,7 +248,7 @@ function WalletsConnectedDropdown({ wallets }: { wallets: WalletHandle[] }) {
             />
           </Popover.Button>
 
-          <Popover.Panel className="absolute right-0 top-[0px] z-50 w-72 rounded-md border-0 bg-gray-1 p-3 shadow-lg">
+          <Popover.Panel className="absolute top-[0px] right-0 z-50 w-72 rounded-md border-0 bg-gray-1 p-3 shadow-lg">
             {wallets.map((wallet) => (
               <WalletRow key={wallet.ecosystem} wallet={wallet} />
             ))}
@@ -290,7 +290,7 @@ function WalletDisconnectedButton({ openConnectModal }: WalletDisconnectedButton
     <button
       onClick={openConnectModal}
       type="button"
-      className="rounded-md bg-primary-cta px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-cta/80 whitespace-nowrap"
+      className="rounded-md bg-primary-cta px-4 py-2 text-sm font-medium whitespace-nowrap text-white transition-colors hover:bg-primary-cta/80"
     >
       Connect Wallet
     </button>

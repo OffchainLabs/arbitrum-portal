@@ -25,13 +25,13 @@ export function PendleCapWarning({
 
   if (isCapReached) {
     return (
-      <Card className="bg-red-900/20 border border-red-400/50 rounded p-4">
+      <Card className="rounded border border-red-400/50 bg-red-900/20 p-4">
         <div className="flex items-start gap-3">
-          <div className="shrink-0 w-5 h-5 mt-0.5">
-            <ExclamationTriangleIcon className="w-full h-full text-red-400" />
+          <div className="mt-0.5 h-5 w-5 shrink-0">
+            <ExclamationTriangleIcon className="h-full w-full text-red-400" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-red-400 mb-1">Deposit Cap Reached</p>
+            <p className="mb-1 text-sm font-medium text-red-400">Deposit Cap Reached</p>
             <p className="text-xs text-red-300/80">
               This market has reached its deposit cap. New deposits are currently unavailable.
             </p>
@@ -43,13 +43,13 @@ export function PendleCapWarning({
 
   if (isNearCap) {
     return (
-      <Card className="bg-yellow-900/20 border border-yellow-400/50 rounded p-4">
+      <Card className="rounded border border-yellow-400/50 bg-yellow-900/20 p-4">
         <div className="flex items-start gap-3">
-          <div className="shrink-0 w-5 h-5 mt-0.5">
-            <ExclamationTriangleIcon className="w-full h-full text-yellow-400" />
+          <div className="mt-0.5 h-5 w-5 shrink-0">
+            <ExclamationTriangleIcon className="h-full w-full text-yellow-400" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-yellow-400 mb-1">Deposit Cap Warning</p>
+            <p className="mb-1 text-sm font-medium text-yellow-400">Deposit Cap Warning</p>
             <p className="text-xs text-yellow-300/80">
               This market is {capPercentage.toFixed(1)}% full. Only{' '}
               {remainingCap !== null ? formatCompactNumber(remainingCap) : 'a limited amount'}{' '}
@@ -62,13 +62,13 @@ export function PendleCapWarning({
   }
 
   return (
-    <Card className="bg-blue-900/20 border border-blue-400/50 rounded p-4">
+    <Card className="rounded border border-blue-400/50 bg-blue-900/20 p-4">
       <div className="flex items-start gap-3">
-        <div className="shrink-0 w-5 h-5 mt-0.5">
-          <InformationCircleIcon className="w-full h-full text-blue-400" />
+        <div className="mt-0.5 h-5 w-5 shrink-0">
+          <InformationCircleIcon className="h-full w-full text-blue-400" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-medium text-blue-400 mb-1">Deposit Cap</p>
+          <p className="mb-1 text-sm font-medium text-blue-400">Deposit Cap</p>
           <p className="text-xs text-blue-300/80">
             This market has a deposit cap of {formatCompactNumber(supplyCap)}{' '}
             {underlyingAssetSymbol}. Currently {capPercentage.toFixed(1)}% full.

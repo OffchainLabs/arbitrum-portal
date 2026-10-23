@@ -34,12 +34,12 @@ const ResourceCard = ({
         src={imageSrc}
         width={80}
         height={80}
-        className="z-10 -ml-2 mb-3 shrink-0 p-1 mix-blend-screen"
+        className="z-10 mb-3 -ml-2 shrink-0 p-1 mix-blend-screen"
       />
 
       <div className="flex w-full flex-nowrap items-end justify-between gap-4 text-lg lg:text-2xl">
         {content}
-        <div className="hidden whitespace-nowrap text-right text-xs underline underline-offset-4 md:flex">
+        <div className="hidden text-right text-xs whitespace-nowrap underline underline-offset-4 md:flex">
           Learn More
         </div>
       </div>

@@ -35,7 +35,7 @@ type CardAnalyticsProps = {
 type CardPropsWithAnalytics = CardProps & CardAnalyticsProps;
 
 const ExternalLinkArrow = () => (
-  <ArrowRightIcon className="absolute bottom-4 right-4 hidden h-4 w-4 group-hover:flex" />
+  <ArrowRightIcon className="absolute right-4 bottom-4 hidden h-4 w-4 group-hover:flex" />
 );
 
 export const Card = ({

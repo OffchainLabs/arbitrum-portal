@@ -67,7 +67,7 @@ export const OrbitTeamMembers = ({
           return (
             <Card
               key={`member_${index}`}
-              className="flex h-[40px] flex-nowrap items-center gap-3 overflow-hidden text-ellipsis whitespace-nowrap bg-white/10 fill-white p-3 hover:bg-white/20"
+              className="flex h-[40px] flex-nowrap items-center gap-3 overflow-hidden bg-white/10 fill-white p-3 text-ellipsis whitespace-nowrap hover:bg-white/20"
               cardType="externalLink"
               href={member.link ?? '#'}
             >

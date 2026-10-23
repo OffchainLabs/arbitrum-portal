@@ -22,7 +22,7 @@ export function EarnPositionValueCard({ positionValue, className }: EarnPosition
           </span>
         </div>
         <div className="flex flex-col gap-2">
-          <div className="text-[28px] font-normal text-white/70 leading-[1.15] tracking-[-0.56px]">
+          <div className="text-[28px] leading-[1.15] font-normal tracking-[-0.56px] text-white/70">
             {positionValue.amount}
           </div>
           {positionValue.usdValue && (

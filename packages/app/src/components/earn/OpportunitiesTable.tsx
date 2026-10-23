@@ -61,7 +61,7 @@ function SortableColumnHeader({
     <button
       type="button"
       onClick={() => onSort(column)}
-      className="flex gap-2 items-center min-w-0 cursor-pointer hover:opacity-75 transition-opacity"
+      className="flex min-w-0 cursor-pointer items-center gap-2 transition-opacity hover:opacity-75"
     >
       <p
         className={`text-xs whitespace-nowrap ${
@@ -72,12 +72,12 @@ function SortableColumnHeader({
       </p>
       {isActive ? (
         sortDirection === 'asc' ? (
-          <ChevronUpIcon className="h-3 w-3 text-white shrink-0" />
+          <ChevronUpIcon className="h-3 w-3 shrink-0 text-white" />
         ) : (
-          <ChevronDownIcon className="h-3 w-3 text-white shrink-0" />
+          <ChevronDownIcon className="h-3 w-3 shrink-0 text-white" />
         )
       ) : (
-        <ChevronDownIcon className="h-3 w-3 text-white opacity-50 shrink-0" />
+        <ChevronDownIcon className="h-3 w-3 shrink-0 text-white opacity-50" />
       )}
     </button>
   );
@@ -92,14 +92,14 @@ interface TableHeaderProps {
 
 function TableHeader({ sortColumn, sortDirection, onSort, category }: TableHeaderProps) {
   return (
-    <div className="hidden lg:flex gap-4 items-center pt-4 px-4 pb-0">
+    <div className="hidden items-center gap-4 px-4 pt-4 pb-0 lg:flex">
       <div className="w-[150px] shrink-0">
-        <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Name</p>
+        <p className="text-xs font-semibold whitespace-nowrap text-white opacity-50">Name</p>
       </div>
       <div className="w-[146px] shrink-0">
-        <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Token</p>
+        <p className="text-xs font-semibold whitespace-nowrap text-white opacity-50">Token</p>
       </div>
-      <div className="flex-1 flex gap-2 items-center min-w-0">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
         <SortableColumnHeader
           column="apy"
           label="APY"
@@ -110,20 +110,20 @@ function TableHeader({ sortColumn, sortDirection, onSort, category }: TableHeade
         {(category === OpportunityCategory.Lend ||
           category === OpportunityCategory.LiquidStaking) && (
           <Tooltip
-            content={<p className="text-xs text-white leading-relaxed">7-day average APY.</p>}
+            content={<p className="text-xs leading-relaxed text-white">7-day average APY.</p>}
             contentProps={{ side: 'top' }}
           >
             <button
               type="button"
               aria-label="APY methodology"
-              className="flex items-center justify-center cursor-pointer"
+              className="flex cursor-pointer items-center justify-center"
             >
               <InformationCircleIcon className="h-3.5 w-3.5 text-white opacity-50 hover:opacity-70" />
             </button>
           </Tooltip>
         )}
       </div>
-      <div className="flex-1 flex gap-2.5 items-center min-w-0">
+      <div className="flex min-w-0 flex-1 items-center gap-2.5">
         <SortableColumnHeader
           column="holdings"
           label="Your Holdings"
@@ -132,7 +132,7 @@ function TableHeader({ sortColumn, sortDirection, onSort, category }: TableHeade
           onSort={onSort}
         />
       </div>
-      <div className="flex-1 flex gap-2.5 items-center min-w-0">
+      <div className="flex min-w-0 flex-1 items-center gap-2.5">
         <div className="flex items-center gap-2">
           <SortableColumnHeader
             column="projectedEarnings"
@@ -144,20 +144,20 @@ function TableHeader({ sortColumn, sortDirection, onSort, category }: TableHeade
           <Tooltip
             as="div"
             content={
-              <p className="text-xs text-white leading-relaxed">
+              <p className="text-xs leading-relaxed text-white">
                 Projected earnings are annualized estimates based on current APY rates. Actual
                 earnings may vary and are not guaranteed, as APY rates can change over time.
               </p>
             }
             contentProps={{ side: 'top' }}
           >
-            <div className="flex items-center justify-center cursor-pointer">
+            <div className="flex cursor-pointer items-center justify-center">
               <InformationCircleIcon className="h-3.5 w-3.5 text-white opacity-50 hover:opacity-70" />
             </div>
           </Tooltip>
         </div>
       </div>
-      <div className="w-[116px] shrink-0 flex gap-2 items-center">
+      <div className="flex w-[116px] shrink-0 items-center gap-2">
         <SortableColumnHeader
           column="tvl"
           label="TVL"
@@ -166,8 +166,8 @@ function TableHeader({ sortColumn, sortDirection, onSort, category }: TableHeade
           onSort={onSort}
         />
       </div>
-      <div className="flex-1 flex gap-2 items-center min-w-0">
-        <p className="text-xs font-semibold text-white opacity-50 whitespace-nowrap">Protocol</p>
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <p className="text-xs font-semibold whitespace-nowrap text-white opacity-50">Protocol</p>
       </div>
       <div className="w-[42px] shrink-0"></div>
     </div>
@@ -340,7 +340,7 @@ export function OpportunitiesTable({
 
           return (
             <div key={category}>
-              <div className="mb-4 flex items-center justify-between top-[60px] sticky bg-black/70 backdrop-blur-xs">
+              <div className="sticky top-[60px] mb-4 flex items-center justify-between bg-black/70 backdrop-blur-xs">
                 <div className="flex items-center gap-2">
                   <div>
                     <h2 className="text-lg font-semibold text-white">
@@ -351,13 +351,13 @@ export function OpportunitiesTable({
                   <Tooltip
                     as="div"
                     content={
-                      <p className="text-xs text-white leading-relaxed">
+                      <p className="text-xs leading-relaxed text-white">
                         {CATEGORY_DESCRIPTIONS[category]}
                       </p>
                     }
                     contentProps={{ side: 'top' }}
                   >
-                    <div className="flex items-center justify-center cursor-pointer">
+                    <div className="flex cursor-pointer items-center justify-center">
                       <InformationCircleIcon className="h-4 w-4 text-white opacity-50 hover:opacity-70" />
                     </div>
                   </Tooltip>
@@ -389,8 +389,8 @@ export function OpportunitiesTable({
                     />
                   ))}
                 </div>
-                <div className="hidden lg:flex overflow-x-auto">
-                  <div className="flex flex-col gap-1 min-w-[900px] w-full">
+                <div className="hidden overflow-x-auto lg:flex">
+                  <div className="flex w-full min-w-[900px] flex-col gap-1">
                     <TableHeader
                       sortColumn={sortColumn}
                       sortDirection={sortDirection}
@@ -426,8 +426,8 @@ export function OpportunitiesTable({
             />
           ))}
         </div>
-        <div className="hidden lg:flex overflow-x-auto">
-          <div className="flex flex-col gap-1 min-w-[900px] w-full">
+        <div className="hidden overflow-x-auto lg:flex">
+          <div className="flex w-full min-w-[900px] flex-col gap-1">
             <TableHeader
               sortColumn={sortColumn}
               sortDirection={sortDirection}

@@ -53,7 +53,7 @@ export function EarnAmountInputSection({
   });
 
   return (
-    <div className="bg-neutral-100 rounded flex flex-col p-4 focus-within:ring-2 focus-within:ring-white/30">
+    <div className="flex flex-col rounded bg-neutral-100 p-4 focus-within:ring-2 focus-within:ring-white/30">
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-white/50">{label}</span>
@@ -61,7 +61,7 @@ export function EarnAmountInputSection({
             <Button
               variant="secondary"
               onClick={onMaxClick}
-              className="px-2.5 py-0 h-4 text-[10px] rounded-md bg-white/10 border-0"
+              className="h-4 rounded-md border-0 bg-white/10 px-2.5 py-0 text-[10px]"
             >
               MAX
             </Button>

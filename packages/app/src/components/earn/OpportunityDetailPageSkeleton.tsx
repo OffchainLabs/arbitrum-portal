@@ -1,136 +1,136 @@
 export function OpportunityDetailPageSkeleton() {
   return (
-    <div className="flex flex-col gap-4 animate-pulse pb-20 lg:pb-0">
+    <div className="flex animate-pulse flex-col gap-4 pb-20 lg:pb-0">
       <div className="flex items-center gap-2">
-        <div className="w-5 h-5 bg-neutral-200 rounded" />
-        <div className="h-5 bg-neutral-200 rounded w-12" />
+        <div className="h-5 w-5 rounded bg-neutral-200" />
+        <div className="h-5 w-12 rounded bg-neutral-200" />
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="h-6 bg-neutral-200 rounded w-48" />
-        <div className="h-6 bg-neutral-200 rounded w-20" />
+        <div className="h-6 w-48 rounded bg-neutral-200" />
+        <div className="h-6 w-20 rounded bg-neutral-200" />
       </div>
 
-      <div className="lg:hidden space-y-4">
-        <div className="bg-neutral-100 rounded flex flex-col p-4">
+      <div className="space-y-4 lg:hidden">
+        <div className="flex flex-col rounded bg-neutral-100 p-4">
           <div className="flex flex-col gap-2">
-            <div className="h-3 bg-neutral-200 rounded w-24" />
-            <div className="h-10 bg-neutral-200 rounded w-36" />
-            <div className="h-3 bg-neutral-200 rounded w-20" />
+            <div className="h-3 w-24 rounded bg-neutral-200" />
+            <div className="h-10 w-36 rounded bg-neutral-200" />
+            <div className="h-3 w-20 rounded bg-neutral-200" />
           </div>
         </div>
         <div className="flex items-center justify-between">
-          <div className="h-3 bg-neutral-200 rounded w-20" />
-          <div className="h-3 bg-neutral-200 rounded w-16" />
+          <div className="h-3 w-20 rounded bg-neutral-200" />
+          <div className="h-3 w-16 rounded bg-neutral-200" />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 flex flex-col gap-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="flex flex-col gap-4 lg:col-span-2">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {[...Array(4)].map((_, index) => (
-              <div key={index} className="rounded flex flex-col gap-3 bg-neutral-50 p-4">
-                <div className="h-3 bg-neutral-200 rounded w-16" />
+              <div key={index} className="flex flex-col gap-3 rounded bg-neutral-50 p-4">
+                <div className="h-3 w-16 rounded bg-neutral-200" />
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-neutral-200" />
-                  <div className="h-4 bg-neutral-200 rounded w-20" />
+                  <div className="h-5 w-5 rounded-full bg-neutral-200" />
+                  <div className="h-4 w-20 rounded bg-neutral-200" />
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="rounded bg-neutral-50 p-4 flex flex-col gap-4">
+          <div className="flex flex-col gap-4 rounded bg-neutral-50 p-4">
             <div className="flex items-center justify-between">
-              <div className="h-6 bg-neutral-200 rounded w-32" />
+              <div className="h-6 w-32 rounded bg-neutral-200" />
               <div className="flex gap-2">
-                <div className="h-8 bg-neutral-200 rounded w-16" />
-                <div className="h-8 bg-neutral-200 rounded w-16" />
+                <div className="h-8 w-16 rounded bg-neutral-200" />
+                <div className="h-8 w-16 rounded bg-neutral-200" />
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <div className="h-10 bg-neutral-200 rounded w-32" />
-              <div className="h-5 bg-neutral-200 rounded w-20" />
+              <div className="h-10 w-32 rounded bg-neutral-200" />
+              <div className="h-5 w-20 rounded bg-neutral-200" />
             </div>
-            <div className="h-[300px] bg-neutral-100 rounded" />
+            <div className="h-[300px] rounded bg-neutral-100" />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[...Array(3)].map((_, index) => (
-              <div key={index} className="rounded bg-neutral-50 p-4 flex flex-col gap-2">
-                <div className="h-3 bg-neutral-200 rounded w-32" />
-                <div className="h-5 bg-neutral-200 rounded w-16" />
+              <div key={index} className="flex flex-col gap-2 rounded bg-neutral-50 p-4">
+                <div className="h-3 w-32 rounded bg-neutral-200" />
+                <div className="h-5 w-16 rounded bg-neutral-200" />
               </div>
             ))}
           </div>
 
-          <div className="rounded bg-neutral-50 p-4 flex flex-col gap-3">
-            <div className="h-5 bg-neutral-200 rounded w-48" />
+          <div className="flex flex-col gap-3 rounded bg-neutral-50 p-4">
+            <div className="h-5 w-48 rounded bg-neutral-200" />
             <div className="flex flex-col gap-2">
-              <div className="h-4 bg-neutral-200 rounded w-full" />
-              <div className="h-4 bg-neutral-200 rounded w-full" />
-              <div className="h-4 bg-neutral-200 rounded w-3/4" />
+              <div className="h-4 w-full rounded bg-neutral-200" />
+              <div className="h-4 w-full rounded bg-neutral-200" />
+              <div className="h-4 w-3/4 rounded bg-neutral-200" />
             </div>
           </div>
 
-          <div className="rounded bg-neutral-50 p-4 flex flex-col gap-4">
-            <div className="h-5 bg-neutral-200 rounded w-40" />
+          <div className="flex flex-col gap-4 rounded bg-neutral-50 p-4">
+            <div className="h-5 w-40 rounded bg-neutral-200" />
             <div className="flex flex-col gap-2">
               {[...Array(3)].map((_, index) => (
-                <div key={index} className="h-12 bg-neutral-100 rounded" />
+                <div key={index} className="h-12 rounded bg-neutral-100" />
               ))}
             </div>
           </div>
         </div>
 
-        <div className="hidden lg:flex flex-col gap-4">
-          <div className="bg-neutral-50 rounded flex flex-col gap-4 p-4">
-            <div className="h-5 bg-neutral-200 rounded w-32" />
+        <div className="hidden flex-col gap-4 lg:flex">
+          <div className="flex flex-col gap-4 rounded bg-neutral-50 p-4">
+            <div className="h-5 w-32 rounded bg-neutral-200" />
 
-            <div className="bg-neutral-100 rounded flex flex-col p-4 gap-3">
-              <div className="h-3 bg-neutral-200 rounded w-24" />
-              <div className="h-8 bg-neutral-200 rounded w-40" />
-              <div className="h-3 bg-neutral-200 rounded w-24" />
+            <div className="flex flex-col gap-3 rounded bg-neutral-100 p-4">
+              <div className="h-3 w-24 rounded bg-neutral-200" />
+              <div className="h-8 w-40 rounded bg-neutral-200" />
+              <div className="h-3 w-24 rounded bg-neutral-200" />
             </div>
 
-            <div className="flex justify-between items-center">
-              <div className="h-3 bg-neutral-200 rounded w-20" />
-              <div className="h-3 bg-neutral-200 rounded w-16" />
+            <div className="flex items-center justify-between">
+              <div className="h-3 w-20 rounded bg-neutral-200" />
+              <div className="h-3 w-16 rounded bg-neutral-200" />
             </div>
 
             <div className="flex gap-2">
-              <div className="h-10 bg-neutral-200 rounded flex-1" />
-              <div className="h-10 bg-neutral-200 rounded flex-1" />
+              <div className="h-10 flex-1 rounded bg-neutral-200" />
+              <div className="h-10 flex-1 rounded bg-neutral-200" />
             </div>
 
             <div className="flex flex-col gap-2">
-              <div className="h-3 bg-neutral-200 rounded w-24" />
-              <div className="h-12 bg-neutral-100 rounded" />
-              <div className="flex justify-between items-center">
-                <div className="h-3 bg-neutral-200 rounded w-32" />
-                <div className="h-6 bg-neutral-200 rounded w-12" />
+              <div className="h-3 w-24 rounded bg-neutral-200" />
+              <div className="h-12 rounded bg-neutral-100" />
+              <div className="flex items-center justify-between">
+                <div className="h-3 w-32 rounded bg-neutral-200" />
+                <div className="h-6 w-12 rounded bg-neutral-200" />
               </div>
             </div>
 
             <div className="flex flex-col gap-2 border-t border-white/10 pt-4">
               <div className="flex justify-between">
-                <div className="h-3 bg-neutral-200 rounded w-20" />
-                <div className="h-3 bg-neutral-200 rounded w-16" />
+                <div className="h-3 w-20 rounded bg-neutral-200" />
+                <div className="h-3 w-16 rounded bg-neutral-200" />
               </div>
               <div className="flex justify-between">
-                <div className="h-3 bg-neutral-200 rounded w-28" />
-                <div className="h-3 bg-neutral-200 rounded w-12" />
+                <div className="h-3 w-28 rounded bg-neutral-200" />
+                <div className="h-3 w-12 rounded bg-neutral-200" />
               </div>
             </div>
 
-            <div className="h-12 bg-neutral-200 rounded" />
+            <div className="h-12 rounded bg-neutral-200" />
           </div>
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-1 border-t border-white/10 p-4 lg:hidden z-60">
+      <div className="fixed right-0 bottom-0 left-0 z-60 border-t border-white/10 bg-gray-1 p-4 lg:hidden">
         <div className="flex gap-2">
-          <div className="h-12 bg-neutral-200 rounded flex-1" />
-          <div className="h-12 bg-neutral-200 rounded flex-1 opacity-60" />
+          <div className="h-12 flex-1 rounded bg-neutral-200" />
+          <div className="h-12 flex-1 rounded bg-neutral-200 opacity-60" />
         </div>
       </div>
     </div>
