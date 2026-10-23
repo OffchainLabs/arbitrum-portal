@@ -45,7 +45,7 @@ export function MainContent() {
     <>
       <div className="main-panel mx-auto flex w-full flex-col items-center gap-3 md:ml-[-36px]">
         <RecoverFunds />
-        <div className="flex w-full items-center justify-center mb-8 md:mb-16 px-4">
+        <div className="mb-8 flex w-full items-center justify-center px-4 md:mb-16">
           {isBuyPage ? (
             <div className="w-full sm:max-w-[600px]">
               <BuyPanel />

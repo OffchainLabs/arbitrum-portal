@@ -54,18 +54,18 @@ export const FilterPanel = ({
             <FilterDropdownButton activeFilters={activeFilters} />
           </Popover.Button>
 
-          <Popover.Panel className="fixed inset-x-4 top-20 z-50 flex max-h-[80vh] flex-col overflow-auto rounded-md bg-[#181818] p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)] sm:w-[600px] md:w-[700px] lg:absolute lg:inset-auto lg:right-0 lg:top-auto lg:mt-4 lg:w-[700px] lg:max-w-3xl">
+          <Popover.Panel className="fixed inset-x-4 top-20 z-50 flex max-h-[80vh] flex-col overflow-auto rounded-md bg-[#181818] p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)] sm:w-[600px] md:w-[700px] lg:absolute lg:inset-auto lg:top-auto lg:right-0 lg:mt-4 lg:w-[700px] lg:max-w-3xl">
             <div className="mb-6 flex items-center justify-between">
               <h3 className="text-xl font-medium text-white">Filters</h3>
-              <Popover.Button className="rounded-full p-2 text-gray-400 hover:bg-gray-700/40 hover:text-white transition-colors">
+              <Popover.Button className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-700/40 hover:text-white">
                 <XMarkIcon className="h-6 w-6" />
               </Popover.Button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-4 lg:grid-cols-3 auto-rows-auto">
+            <div className="grid auto-rows-auto grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
               {/* Categories filter */}
               <div className="space-y-4">
-                <h4 className="text-base md:text-base font-medium text-gray-300">Categories</h4>
+                <h4 className="text-base font-medium text-gray-300 md:text-base">Categories</h4>
                 <div className="flex flex-col gap-3">
                   {filterOptions.categories.map((category) => (
                     <div key={category.id} className="flex cursor-pointer items-start">
@@ -80,7 +80,7 @@ export const FilterPanel = ({
                       />
                       <label
                         htmlFor={category.id}
-                        className="group flex cursor-pointer items-center gap-2 rounded-md p-1 px-3 text-left font-light text-white/50 hover:bg-white hover:text-black peer-checked:text-white peer-checked:hover:text-black"
+                        className="group flex cursor-pointer items-center gap-2 rounded-md p-1 px-3 text-left font-light text-white/50 peer-checked:text-white hover:bg-white hover:text-black peer-checked:hover:text-black"
                       >
                         <span className="flex items-center justify-center rounded-sm border border-gray-100/20 bg-default-black p-[3px] lg:p-px">
                           <CheckIcon className="checkIcon invisible h-4 w-4 stroke-black stroke-[3px] lg:h-3 lg:w-3" />
@@ -94,7 +94,7 @@ export const FilterPanel = ({
 
               {/* TVL Buckets filter */}
               <div className="space-y-4">
-                <h4 className="text-base md:text-base font-medium text-gray-300">TVL Range</h4>
+                <h4 className="text-base font-medium text-gray-300 md:text-base">TVL Range</h4>
                 <div className="flex flex-col gap-3">
                   {filterOptions.tvlBuckets.map((bucket) => (
                     <div key={bucket.label} className="flex cursor-pointer items-start">
@@ -109,7 +109,7 @@ export const FilterPanel = ({
                       />
                       <label
                         htmlFor={bucket.label}
-                        className="group flex cursor-pointer items-center gap-2 rounded-md p-1 px-3 text-left font-light text-white/50 hover:bg-white hover:text-black peer-checked:text-white peer-checked:hover:text-black"
+                        className="group flex cursor-pointer items-center gap-2 rounded-md p-1 px-3 text-left font-light text-white/50 peer-checked:text-white hover:bg-white hover:text-black peer-checked:hover:text-black"
                       >
                         <span className="flex items-center justify-center rounded-sm border border-gray-100/20 bg-default-black p-[3px] lg:p-px">
                           <CheckIcon className="checkIcon invisible h-4 w-4 stroke-black stroke-[3px] lg:h-3 lg:w-3" />
@@ -123,7 +123,7 @@ export const FilterPanel = ({
 
               {/* TPS Buckets filter */}
               <div className="space-y-4">
-                <h4 className="text-base md:text-base font-medium text-gray-300">TPS Range</h4>
+                <h4 className="text-base font-medium text-gray-300 md:text-base">TPS Range</h4>
                 <div className="flex flex-col gap-3">
                   {filterOptions.tpsBuckets.map((bucket) => (
                     <div key={bucket.label} className="flex cursor-pointer items-start">
@@ -138,7 +138,7 @@ export const FilterPanel = ({
                       />
                       <label
                         htmlFor={bucket.label}
-                        className="group flex cursor-pointer items-center gap-2 rounded-md p-1 px-3 text-left font-light text-white/50 hover:bg-white hover:text-black peer-checked:text-white peer-checked:hover:text-black"
+                        className="group flex cursor-pointer items-center gap-2 rounded-md p-1 px-3 text-left font-light text-white/50 peer-checked:text-white hover:bg-white hover:text-black peer-checked:hover:text-black"
                       >
                         <span className="flex items-center justify-center rounded-sm border border-gray-100/20 bg-default-black p-[3px] lg:p-px">
                           <CheckIcon className="checkIcon invisible h-4 w-4 stroke-black stroke-[3px] lg:h-3 lg:w-3" />
@@ -152,7 +152,7 @@ export const FilterPanel = ({
 
               {/* Gas Speed Limit Buckets filter */}
               <div className="space-y-4">
-                <h4 className="text-base md:text-base font-medium text-gray-300">
+                <h4 className="text-base font-medium text-gray-300 md:text-base">
                   Gas Speed Limit
                 </h4>
                 <div className="flex flex-col gap-3">
@@ -169,7 +169,7 @@ export const FilterPanel = ({
                       />
                       <label
                         htmlFor={bucket.label}
-                        className="group flex cursor-pointer items-center gap-2 rounded-md p-1 px-3 text-left font-light text-white/50 hover:bg-white hover:text-black peer-checked:text-white peer-checked:hover:text-black"
+                        className="group flex cursor-pointer items-center gap-2 rounded-md p-1 px-3 text-left font-light text-white/50 peer-checked:text-white hover:bg-white hover:text-black peer-checked:hover:text-black"
                       >
                         <span className="flex items-center justify-center rounded-sm border border-gray-100/20 bg-default-black p-[3px] lg:p-px">
                           <CheckIcon className="checkIcon invisible h-4 w-4 stroke-black stroke-[3px] lg:h-3 lg:w-3" />
@@ -183,7 +183,7 @@ export const FilterPanel = ({
 
               {/* Data Availability filter */}
               <div className="space-y-4">
-                <h4 className="text-base md:text-base font-medium text-gray-300">
+                <h4 className="text-base font-medium text-gray-300 md:text-base">
                   Data Availability
                 </h4>
                 <div className="flex flex-col gap-3">
@@ -200,7 +200,7 @@ export const FilterPanel = ({
                       />
                       <label
                         htmlFor={da}
-                        className="group flex cursor-pointer items-center gap-2 rounded-md p-1 px-3 text-left font-light text-white/50 hover:bg-white hover:text-black peer-checked:text-white peer-checked:hover:text-black"
+                        className="group flex cursor-pointer items-center gap-2 rounded-md p-1 px-3 text-left font-light text-white/50 peer-checked:text-white hover:bg-white hover:text-black peer-checked:hover:text-black"
                       >
                         <span className="flex items-center justify-center rounded-sm border border-gray-100/20 bg-default-black p-[3px] lg:p-px">
                           <CheckIcon className="checkIcon invisible h-4 w-4 stroke-black stroke-[3px] lg:h-3 lg:w-3" />
@@ -214,7 +214,7 @@ export const FilterPanel = ({
 
               {/* Gas Token filter */}
               <div className="space-y-4">
-                <h4 className="text-base md:text-base font-medium text-gray-300">Gas Token</h4>
+                <h4 className="text-base font-medium text-gray-300 md:text-base">Gas Token</h4>
                 <div className="flex flex-col gap-3">
                   {filterOptions.gasToken.map((token) => (
                     <div key={token} className="flex cursor-pointer items-start">
@@ -229,7 +229,7 @@ export const FilterPanel = ({
                       />
                       <label
                         htmlFor={token}
-                        className="group flex cursor-pointer items-center gap-2 rounded-md p-1 px-3 text-left font-light text-white/50 hover:bg-white hover:text-black peer-checked:text-white peer-checked:hover:text-black"
+                        className="group flex cursor-pointer items-center gap-2 rounded-md p-1 px-3 text-left font-light text-white/50 peer-checked:text-white hover:bg-white hover:text-black peer-checked:hover:text-black"
                       >
                         <span className="flex items-center justify-center rounded-sm border border-gray-100/20 bg-default-black p-[3px] lg:p-px">
                           <CheckIcon className="checkIcon invisible h-4 w-4 stroke-black stroke-[3px] lg:h-3 lg:w-3" />

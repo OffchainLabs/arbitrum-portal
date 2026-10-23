@@ -248,7 +248,7 @@ const ItemContent = ({
                 )}
               >
                 {!meta.isLive && !isPreviewMode && !isCompactMode && (
-                  <span className="inline-flex items-start justify-start gap-2 wrap-break-word rounded bg-orange px-1.5 py-0.5 text-xs font-normal text-dark-lime">
+                  <span className="inline-flex items-start justify-start gap-2 rounded bg-orange px-1.5 py-0.5 text-xs font-normal wrap-break-word text-dark-lime">
                     Coming Soon
                   </span>
                 )}
@@ -311,7 +311,7 @@ const ItemBoxLayout = ({
           once
           offset={100}
           className={twMerge(
-            `h-full relative rounded-md overflow-hidden`,
+            `relative h-full overflow-hidden rounded-md`,
             projectHasLiveIncentives && !isSpotlightMode && 'bg-live-incentives-dimmed-gradient',
           )}
         >

@@ -95,7 +95,7 @@ export function SubNav() {
               <ExternalLink
                 key={item.href}
                 href={href}
-                className="w-full block"
+                className="block w-full"
                 aria-label={item.ariaLabel}
               >
                 {content}
@@ -104,7 +104,7 @@ export function SubNav() {
           }
 
           return (
-            <Link key={item.href} href={href} className="w-full block" aria-label={item.ariaLabel}>
+            <Link key={item.href} href={href} className="block w-full" aria-label={item.ariaLabel}>
               {content}
             </Link>
           );

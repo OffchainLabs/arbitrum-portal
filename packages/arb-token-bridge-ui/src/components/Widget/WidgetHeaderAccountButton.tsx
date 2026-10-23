@@ -83,7 +83,7 @@ export const WidgetHeaderAccountButton = () => {
                 </Button>
               </PopoverButton>
               <Transition>
-                <PopoverPanel className="absolute right-0 top-0 z-10 origin-top overflow-hidden rounded-md text-sm text-white">
+                <PopoverPanel className="absolute top-0 right-0 z-10 origin-top overflow-hidden rounded-md text-sm text-white">
                   <div className="flex flex-col gap-2 rounded-md border border-white/20 bg-widget-background p-2">
                     <Button variant="secondary" onClick={copyToClipboard} className="border-none">
                       <AccountContent

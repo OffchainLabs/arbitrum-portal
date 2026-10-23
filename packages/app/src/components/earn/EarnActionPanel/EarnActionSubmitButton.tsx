@@ -38,7 +38,7 @@ export function EarnActionSubmitButton({
       variant="primary"
       onClick={handleClick}
       disabled={isConnected && (disabled || isSubmitting)}
-      className="w-full py-3 rounded bg-primary-cta border-none text-base disabled:bg-gray-650 disabled:border-none disabled:opacity-50 disabled:cursor-not-allowed"
+      className="w-full rounded border-none bg-primary-cta py-3 text-base disabled:cursor-not-allowed disabled:border-none disabled:bg-gray-650 disabled:opacity-50"
     >
       {isSubmitting ? (
         <div className="flex items-center gap-2">
