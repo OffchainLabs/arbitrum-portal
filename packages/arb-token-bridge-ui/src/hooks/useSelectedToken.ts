@@ -23,7 +23,7 @@ import {
 import { logger } from '../util/logger';
 import { getDestinationChainIds, isNetwork } from '../util/networks';
 import { sanitizeNullSelectedToken } from '../util/queryParamUtils';
-import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
+import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { ERC20BridgeToken, TokenType } from './arbTokenBridge.types';
 import { useArbQueryParams } from './useArbQueryParams';
 import { useNetworks } from './useNetworks';
@@ -162,8 +162,11 @@ export async function getUsdcToken({
   parentChainId: number;
   childChainId: number;
 }): Promise<ERC20BridgeToken | null> {
-  // Arbitrum USDC routing only exists between EVM chains
-  if (getWalletEcosystem(parentChainId) !== 'evm' || getWalletEcosystem(childChainId) !== 'evm') {
+  // Arbitrum USDC routing only exists between chains with Arbitrum's token bridge
+  if (
+    !getEcosystemConfig(parentChainId).hasParentChildTokenAddresses ||
+    !getEcosystemConfig(childChainId).hasParentChildTokenAddresses
+  ) {
     return null;
   }
 
