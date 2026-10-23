@@ -21,8 +21,8 @@ pnpm dev              # Start dev server (runs prebuild steps automatically)
 pnpm build            # Production build
 
 # Code Quality
-pnpm lint             # TypeScript check + ESLint
-pnpm lint:fix         # TypeScript check + ESLint with auto-fix
+pnpm lint             # TypeScript check + Oxlint
+pnpm lint:fix         # TypeScript check + Oxlint with auto-fix
 pnpm prettier:check   # Check formatting
 pnpm prettier:format  # Format all files
 
@@ -37,7 +37,7 @@ pnpm audit:ci         # Run security audit
 
 - **Next.js 14** (App Router) with **TypeScript** (strict mode)
 - **Tailwind CSS 3** for styling
-- **Zustand** for state management (custom ESLint rules enforced)
+- **Zustand** for state management (custom lint rules enforced)
 - **RainbowKit / wagmi / viem** for wallet and blockchain interactions
 - **`@arbitrum/sdk`** for Arbitrum-specific bridge logic
 - **pnpm 10** with workspaces
@@ -63,7 +63,7 @@ See `tsconfig.base.json` for the full list.
 ## Code Style
 
 - Prettier with `@offchainlabs/prettier-config` + Tailwind CSS plugin + import sorting
-- ESLint with `@offchainlabs/eslint-config-typescript` (base + next)
+- Oxlint (`oxlint.config.ts`) with the rules of `@offchainlabs/eslint-config-typescript` and `eslint-config-next`, plus type-aware rules
 - Zustand rules enforced: `no-state-mutation`, `require-shallow-selector`, `use-store-selectors`
 - **Prefer `twMerge`** over template literal className concatenation in new code. Do not refactor existing usages unprompted.
 - **Avoid unnecessary `useMemo`** — reserve for expensive derivations or stabilizing referential identity. Don't memoize simple strings, booleans, or pass-through values.
