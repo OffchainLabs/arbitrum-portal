@@ -7,6 +7,7 @@ import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { getNetworkName } from '../../util/networks';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { ecosystems } from '../../wallet/ecosystems';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextState } from '../App/AppContext';
 import { Button } from '../common/Button';
@@ -30,9 +31,8 @@ export function MoveFundsButton({ onClick }: MoveFundsButtonProps) {
   const {
     sourceWallet: { ecosystem: sourceEcosystem },
   } = useWallets();
-  // EVM transfers sign with wagmi's connector client, which resolves after the wallet connects
   const signer = useEthersSigner();
-  const isSignerReady = sourceEcosystem !== 'evm' || !!signer;
+  const isSignerReady = !ecosystems[sourceEcosystem].usesEthersSigner || !!signer;
   const isDisabled =
     !isSignerReady || (isDepositMode ? !transferReady.deposit : !transferReady.withdrawal);
 

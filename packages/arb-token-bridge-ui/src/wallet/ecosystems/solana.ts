@@ -41,5 +41,6 @@ export const solanaEcosystem: EcosystemConfig = {
   nativeTokenAddress: SOLANA_NATIVE_TOKEN_ADDRESS,
   hasParentChildTokenAddresses: false,
   hasGasPrice: false,
+  usesEthersSigner: false,
   hasTokenApprovals: false,
 };
