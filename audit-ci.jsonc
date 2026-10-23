@@ -64,10 +64,9 @@
     // https://github.com/advisories/GHSA-vfj7-8cjw-p6xm
     // braces stack-exhaustion denial of service through deeply nested brace patterns (CVE-2026-93687)
     // Reason to ignore: No patched version available (3.0.3 is the latest published version).
-    // braces only expands glob patterns we write ourselves: the Tailwind CLI's file watcher and
-    // eslint's fast-glob file matching at build/lint time. No untrusted input reaches it.
+    // braces only expands glob patterns we write ourselves in the Tailwind CLI's file watcher at
+    // build time. No untrusted input reaches it.
     // from: app>@tailwindcss/cli>@parcel/watcher>micromatch>braces
-    // from: eslint-config-next>@next/eslint-plugin-next>fast-glob>micromatch>braces
     "GHSA-vfj7-8cjw-p6xm",
   ],
 }
