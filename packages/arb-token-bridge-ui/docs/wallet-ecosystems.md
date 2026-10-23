@@ -24,7 +24,8 @@ We want to add Solana as a LiFi source without changing what EVM users see. We a
 
 - address and transaction id validation and normalization
 - the native token address used in balance requests and LiFi quotes
-- whether tokens have separate parent and child addresses
+- whether tokens have separate parent and child addresses, meaning the chain has Arbitrum's token bridge
+- whether its chains have an EVM gas price, whether transfers sign with wagmi's ethers signer, and whether AppKit identifies its networks by chain id
 - the explorer account path
 - the built-in chains
 - the AppKit namespace
@@ -52,31 +53,38 @@ A component that needs ecosystem-specific behaviour calls a helper or reads the 
 - the wallet name in the header comes from `ecosystems[ecosystem].name`
 - the connect modal opens on `getEcosystemConfig(chainId).namespace`
 
-The remaining checks are capability checks against `'evm'`: ENS and Unstoppable Domains, gas price, the Arbitrum token bridge. Those features only exist on EVM chains, so the question they ask is "is this EVM", not "is this Solana". A new ecosystem doesn't change them.
+Capabilities that only EVM chains have today, such as a gas price or Arbitrum's token bridge, are required fields of the config, not checks against `'evm'`. A new ecosystem config fails to compile until it answers each of them. The one check left is ENS and Unstoppable Domains in `useAccountMenu`, which narrows the address to `0x${string}`: those services only resolve EVM addresses, so no other ecosystem can answer yes.
 
 ### Per-ecosystem implementations live in typed records
 
 Behaviour that does need an RPC or an SDK lives in a `Record<WalletEcosystem, …>` next to the code that uses it:
 
-| Record                | File                                    |
-| --------------------- | --------------------------------------- |
-| native currency       | `services/nativeCurrency.ts`            |
-| token metadata        | `services/tokenMetadata.ts`             |
-| account type          | `util/AccountUtils.ts`                  |
-| LiFi SDK provider     | `token-bridge-sdk/LifiRouteExecutor.ts` |
-| default wallet handle | `wallet/WalletContext.ts`               |
+| Record                   | File                                        |
+| ------------------------ | ------------------------------------------- |
+| native currency          | `services/nativeCurrency.ts`                |
+| native currency fallback | `hooks/useNativeCurrency.ts`                |
+| token metadata           | `services/tokenMetadata.ts`                 |
+| account type             | `util/AccountUtils.ts`                      |
+| balance client           | `wallet/balance/getBalanceClient.ts`        |
+| LiFi SDK provider        | `token-bridge-sdk/LifiRouteExecutor.ts`     |
+| source transaction wait  | `token-bridge-sdk/LifiTransferStarter.ts`   |
+| LiFi routes              | `app/api/crosschain-transfers/constants.ts` |
+| default wallet handle    | `wallet/WalletContext.ts`                   |
+| wallet hooks             | `wallet/WalletProvider.tsx`                 |
 
-Adding a member to `WalletEcosystem` makes each record fail to compile until it gets an entry. That compile error is the checklist.
+The types follow the same rule. `WalletContextValue` is mapped over `WalletEcosystem`, and the address and signer of each ecosystem come from `AddressByEcosystem` and `Signers` in `wallet/types.ts`. Adding a member to `WalletEcosystem` makes each record and type map fail to compile, in its own file, until it gets an entry. That compile error is the checklist.
 
 ### Execution goes through LiFi's SDK providers
 
-Each wallet handle has a `signer` whose method names follow LiFi's provider options: `getWalletClient` for EVM, `getWalletAdapter` for Solana. `LifiRouteExecutor` registers one LiFi provider per enabled ecosystem that has a signer. It takes the signers from the source and destination wallets, plus the caller's `switchChainAsync`. Chain switching is a UI concern, so it stays with the caller instead of the signer.
+One `LifiTransferStarter` runs every LiFi route. It takes only the route, so it needs no provider to estimate gas or to start, and the factory returns it before creating any provider. Each wallet handle has a `signer` whose method names follow LiFi's provider options: `getWalletClient` for EVM, `getWalletAdapter` for Solana. `LifiRouteExecutor` registers one LiFi provider per enabled ecosystem that has a signer. It takes the signers from the source and destination wallets, plus the caller's `switchChainAsync`. Chain switching is a UI concern, so it stays with the caller instead of the signer.
 
-Signers read the wallet when called, not when created, so a route signs with the account connected at that moment. Before it runs or resumes a route, the executor picks the signer from the sender's address format and checks that it is still the sender's account. Both starters return `sourceChainTransaction.wait()`, so the panel waits for confirmation the same way for every ecosystem.
+Signers read the wallet when called, not when created, so a route signs with the account connected at that moment. Before it runs or resumes a route, the executor picks the signer from the sender's address format and checks that it is still the sender's account. The starter returns `sourceChainTransaction.wait()`, which reads a record keyed by ecosystem: EVM waits for the receipt through the source chain provider, and Solana resolves at once because LiFi only reports the signature after confirmation. Gas estimates come from the route. When the source chain has no gas price, as on Solana, the starter returns LiFi's quoted fees as well, and the gas summary shows those.
 
 ### Network metadata doesn't need an EVM provider
 
-`util/networkMetadata.ts` registers every built-in chain with its ecosystem. Chain names, native currency and explorers come from that registry. Code paths that used to create an ethers provider just to read chain data now read the registry, so selecting Solana doesn't create an EVM provider for it. Arbitrum-specific setup, such as the token bridge parameters, runs only when both chains are EVM.
+`util/networkMetadata.ts` registers every built-in chain with its ecosystem. Chain names, native currency and explorers come from that registry. Code paths that used to create an ethers provider just to read chain data now read the registry, so selecting Solana doesn't create an EVM provider for it. Arbitrum-specific setup, such as the token bridge parameters, runs only when both chains have Arbitrum's token bridge.
+
+Chains of an ecosystem without Arbitrum's token bridge only reach Arbitrum through LiFi. The supported chain ids, the root networks of the network list and their explorer URLs are read from those ecosystems' `chains`, so they need no per-chain entry. Built-in EVM chains do: `defaultRpcUrls` in `util/networks.ts` must have an entry for each of them, or the build fails.
 
 ### Balances share one cache
 
@@ -101,12 +109,12 @@ The default context value is a set of disconnected handles. A component rendered
 
 ## Boundaries
 
-| Layer                | Knows about ecosystems                                 | Examples                                                                      |
-| -------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| `wallet/`            | Yes. One file or folder per ecosystem, plus registries | `ecosystems/solana.ts`, `solana.tsx`, `balance/solana.ts`, `solana/appKit.ts` |
-| `services/`, `util/` | Through records and `ecosystems` loops only            | `nativeCurrency.ts`, `AddressUtils.ts`, `AccountUtils.ts`                     |
-| `token-bridge-sdk/`  | LiFi provider record and one starter per ecosystem     | `LifiRouteExecutor.ts`, `SolanaTransferStarter.ts`                            |
-| components and hooks | No. Handles, helpers and capability checks only        | `NavWallet.tsx`, `NetworkWalletButton.tsx`, `Route.tsx`                       |
+| Layer                | Knows about ecosystems                                  | Examples                                                                      |
+| -------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `wallet/`            | Yes. One file or folder per ecosystem, plus registries  | `ecosystems/solana.ts`, `solana.tsx`, `balance/solana.ts`, `solana/appKit.ts` |
+| `services/`, `util/` | Through records and `ecosystems` loops only             | `nativeCurrency.ts`, `AddressUtils.ts`, `AccountUtils.ts`                     |
+| `token-bridge-sdk/`  | LiFi provider and source wait records, one LiFi starter | `LifiRouteExecutor.ts`, `LifiTransferStarter.ts`                              |
+| components and hooks | No. Handles, helpers and capability checks only         | `NavWallet.tsx`, `NetworkWalletButton.tsx`, `Route.tsx`                       |
 
 EVM-only routes (canonical bridge, CCTP, OFT) stay EVM-only. LiFi is the only route that crosses ecosystems.
 
@@ -115,11 +123,10 @@ EVM-only routes (canonical bridge, CCTP, OFT) stay EVM-only. LiFi is the only ro
 **Adding an ecosystem** means:
 
 - new files in the wallet layer: config, wallet hook, network, AppKit wiring, signer, balance client
-- a LiFi starter
 - an entry in each typed record, which the compiler enforces
-- network enablement for the chain itself: chain id, query slug, UI config, explorer URL, LiFi pairs
+- network enablement for the chain itself: chain id, query slug, UI config, LiFi routes
 
-A few registration points are still plain branches the compiler doesn't check: `getBalanceClient`, `BridgeTransferStarterFactory`, `getNetworksRelationship`, `isSupportedChainId` and `TransactionsTableRowAction`. They are the ones to turn into records or config reads next.
+The compiler checks every step except a few. It doesn't check the chain's UI config in `util/bridgeUiConfig.ts`, the RPC URL that LiFi's SDK uses for the chain in `AppProviders.tsx`, the env vars or the dependencies. It also can't check that the chain id equals LiFi's id for that chain. The query slug is checked: `types/ChainQueryParam.ts` keys its slugs by every non-Orbit `ChainId`.
 
 **Two wallets** are visible in the UI. The header lists every connected wallet and offers to connect a wallet of each enabled ecosystem that isn't connected yet. Each network box shows its side's connected wallet. A user can connect only the source wallet and type a recipient instead of connecting the destination.
 
