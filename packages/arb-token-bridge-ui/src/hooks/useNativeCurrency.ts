@@ -5,6 +5,7 @@ import { nativeCurrencyEther } from '../services/evm/nativeCurrency';
 import { fetchNativeCurrency } from '../services/nativeCurrency';
 import { getChainMetadata } from '../util/networkMetadata';
 import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
+import type { WalletEcosystem } from '../wallet/types';
 import { useNetworks } from './useNetworks';
 import { useNetworksRelationship } from './useNetworksRelationship';
 
@@ -47,12 +48,15 @@ export function useNativeCurrency({ chainId }: { chainId: number }): NativeCurre
   return data ?? fallback;
 }
 
+const fallbackNativeCurrencies: Record<WalletEcosystem, (chainId: number) => NativeCurrencyEther> =
+  {
+    evm: () => nativeCurrencyEther,
+    solana: (chainId) => ({ ...getChainMetadata(chainId).nativeCurrency, isCustom: false }),
+  };
+
 function getFallbackNativeCurrency(chainId: number): NativeCurrencyEther {
   try {
-    if (getWalletEcosystem(chainId) === 'evm') {
-      return nativeCurrencyEther;
-    }
-    return { ...getChainMetadata(chainId).nativeCurrency, isCustom: false };
+    return fallbackNativeCurrencies[getWalletEcosystem(chainId)](chainId);
   } catch {
     return nativeCurrencyEther;
   }

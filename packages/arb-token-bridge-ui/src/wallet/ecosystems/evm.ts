@@ -11,6 +11,18 @@ import {
 
 import type { EcosystemConfig } from '.';
 
+// `as const` keeps each chain id literal, so `defaultRpcUrls` must list every one of them
+export const evmChains = [
+  mainnet,
+  sepolia,
+  arbitrum,
+  arbitrumNova,
+  arbitrumSepolia,
+  base,
+  baseSepolia,
+] as const;
+export type CoreEvmChainId = (typeof evmChains)[number]['id'];
+
 export const evmEcosystem: EcosystemConfig = {
   isEnabled: () => true,
   address: {
@@ -28,5 +40,5 @@ export const evmEcosystem: EcosystemConfig = {
   usesEthersSigner: true,
   hasTokenApprovals: true,
   explorerAccountPath: 'address',
-  chains: [mainnet, sepolia, arbitrum, arbitrumNova, arbitrumSepolia, base, baseSepolia],
+  chains: evmChains,
 };

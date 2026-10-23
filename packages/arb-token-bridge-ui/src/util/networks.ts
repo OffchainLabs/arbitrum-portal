@@ -9,6 +9,7 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
+import type { CoreEvmChainId } from '../wallet/ecosystems/evm';
 import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils';
 import { Erc20Data, fetchErc20Data } from './TokenUtils';
@@ -249,7 +250,7 @@ export const localL3NetworkRpcUrl = loadEnvironmentVariableWithFallback({
   fallback: 'http://127.0.0.1:3347',
 });
 
-const defaultRpcUrls: { [chainId: number]: string } = {
+const defaultRpcUrls = {
   // L1 Mainnet
   [ChainId.Ethereum]: loadEnvironmentVariableWithFallback({
     env: process.env.NEXT_PUBLIC_RPC_URL_ETHEREUM,
@@ -282,7 +283,7 @@ const defaultRpcUrls: { [chainId: number]: string } = {
     env: process.env.NEXT_PUBLIC_RPC_URL_BASE_SEPOLIA,
     fallback: getRpcUrl(ChainId.BaseSepolia),
   }),
-};
+} satisfies Record<CoreEvmChainId, string>;
 
 export const rpcURLs: { [chainId: number]: string } =
   !isProductionEnvironment || isE2eTestingEnvironment
