@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  getL1SubgraphClient,
-  getL2SubgraphClient,
-} from '../../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../../types/ChainId';
 import { isChildChainIndexed } from '../../../../util/txHistory/sources';
 import { GET } from './block-number';
@@ -12,14 +8,7 @@ vi.mock('../../../../util/txHistory/sources', () => ({
   isChildChainIndexed: vi.fn(),
 }));
 
-vi.mock('../../../../api-utils/ServerSubgraphUtils', () => ({
-  getL1SubgraphClient: vi.fn(),
-  getL2SubgraphClient: vi.fn(),
-}));
-
 const isChildChainIndexedMock = vi.mocked(isChildChainIndexed);
-const getL1SubgraphClientMock = vi.mocked(getL1SubgraphClient);
-const getL2SubgraphClientMock = vi.mocked(getL2SubgraphClient);
 
 function getBlockNumber(chainId: number) {
   return GET({} as never, { params: Promise.resolve({ chainId: String(chainId) }) });
@@ -30,9 +19,13 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    isChildChainIndexedMock.mockReturnValue(true);
     vi.stubEnv(
       'INDEXER_API_URL_BY_CHAIN',
-      JSON.stringify({ [ChainId.ArbitrumOne]: 'https://indexer.test' }),
+      JSON.stringify({
+        [ChainId.ArbitrumOne]: 'https://indexer.test',
+        [ChainId.ArbitrumNova]: 'https://indexer.test',
+      }),
     );
     fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
@@ -43,28 +36,38 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
     vi.unstubAllEnvs();
   });
 
-  it('returns the indexer block and bypasses the subgraph for an indexed chain (indexer wins when both exist)', async () => {
-    // Arbitrum One has a subgraph client, but it is also configured as indexed
-    isChildChainIndexedMock.mockReturnValue(true);
+  it('returns the indexer block for an indexed child chain', async () => {
     fetchMock.mockResolvedValue({
       ok: true,
       // the indexer serializes `id` as a string -> exercises the Number() coercion
       json: async () => ({
-        arbOne: { id: String(ChainId.ArbitrumOne), block: { number: 12345 } },
+        arbNova: { id: String(ChainId.ArbitrumNova), block: { number: 12345 } },
       }),
     });
 
-    const response = await getBlockNumber(ChainId.ArbitrumOne);
-    const body = await response.json();
+    const response = await getBlockNumber(ChainId.ArbitrumNova);
 
-    expect(body).toEqual({ meta: { source: 'arbitrum-indexer' }, data: 12345 });
+    expect(await response.json()).toEqual({
+      meta: { source: 'arbitrum-indexer' },
+      data: 12345,
+    });
     expect(fetchMock).toHaveBeenCalledWith('https://indexer.test/status', expect.anything());
-    // the subgraph is never consulted even though a client exists for this chain
-    expect(getL2SubgraphClientMock).not.toHaveBeenCalled();
+  });
+
+  it('preserves the parent-chain block-number path through the indexer', async () => {
+    isChildChainIndexedMock.mockReturnValue(false);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ ethereum: { id: String(ChainId.Ethereum), block: { number: 999 } } }),
+    });
+
+    const response = await getBlockNumber(ChainId.Ethereum);
+
+    expect(await response.json()).toEqual({ meta: { source: 'arbitrum-indexer' }, data: 999 });
+    expect(fetchMock).toHaveBeenCalledWith('https://indexer.test/status', expect.anything());
   });
 
   it('returns a 502 (not a misleading success) when the indexer block number cannot be fetched', async () => {
-    isChildChainIndexedMock.mockReturnValue(true);
     fetchMock.mockResolvedValue({ ok: false, status: 503 });
 
     const response = await getBlockNumber(ChainId.ArbitrumOne);
@@ -73,15 +76,10 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
     expect(await response.json()).toEqual({
       message: 'Unable to fetch latest indexed block',
     });
-    // failures must not fall through to the subgraph either
-    expect(getL2SubgraphClientMock).not.toHaveBeenCalled();
   });
 
   it('returns a 502 for an indexed chain that has no entry in the map', async () => {
-    // Nova is indexed but absent from the map: no host to ask, so this must surface.
-    isChildChainIndexedMock.mockReturnValue(true);
-
-    const response = await getBlockNumber(ChainId.ArbitrumNova);
+    const response = await getBlockNumber(ChainId.ArbitrumSepolia);
 
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({
@@ -91,7 +89,6 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
   });
 
   it('returns a 502 naming the chain when the indexer status does not list it', async () => {
-    isChildChainIndexedMock.mockReturnValue(true);
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({ ethereum: { id: '1', block: { number: 999 } } }),
@@ -105,52 +102,7 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
     });
   });
 
-  it('surfaces a subgraph failure as a 502', async () => {
-    isChildChainIndexedMock.mockReturnValue(false);
-    getL2SubgraphClientMock.mockReturnValue({
-      client: { query: vi.fn().mockRejectedValue(new Error('subgraph unavailable')) },
-      source: 'l2-arbitrum-nova',
-    } as never);
-
-    const response = await getBlockNumber(ChainId.ArbitrumNova);
-
-    expect(response.status).toBe(502);
-    expect(await response.json()).toEqual({ message: 'Unable to fetch latest indexed block' });
-  });
-
-  it("uses Nova's subgraph when Nova isn't in the indexed list", async () => {
-    isChildChainIndexedMock.mockReturnValue(false);
-    const query = vi.fn().mockResolvedValue({ data: { _meta: { block: { number: 999 } } } });
-    getL2SubgraphClientMock.mockReturnValue({
-      client: { query },
-      source: 'l2-arbitrum-nova',
-    } as never);
-
-    const response = await getBlockNumber(ChainId.ArbitrumNova);
-    const body = await response.json();
-
-    expect(body).toEqual({ meta: { source: 'l2-arbitrum-nova' }, data: 999 });
-    expect(query).toHaveBeenCalled();
-    // the indexer is never consulted for a non-indexed chain
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it('uses the canonical child-chain indexer configuration for a parent-chain block', async () => {
-    isChildChainIndexedMock.mockReturnValue(false);
-    fetchMock.mockResolvedValue({
-      ok: true,
-      json: async () => ({ ethereum: { id: String(ChainId.Ethereum), block: { number: 111 } } }),
-    });
-
-    const response = await getBlockNumber(ChainId.Ethereum);
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ meta: { source: 'arbitrum-indexer' }, data: 111 });
-    expect(fetchMock).toHaveBeenCalledWith('https://indexer.test/status', expect.anything());
-    expect(getL1SubgraphClientMock).not.toHaveBeenCalled();
-  });
-
-  it('answers 0 for a chain with no configured history source', async () => {
+  it('answers 0 for a chain nothing serves, rather than a failure', async () => {
     isChildChainIndexedMock.mockReturnValue(false);
 
     const response = await getBlockNumber(33139);
@@ -158,7 +110,5 @@ describe.sequential('GET /api/chains/[chainId]/block-number', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ data: 0 });
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(getL1SubgraphClientMock).not.toHaveBeenCalled();
-    expect(getL2SubgraphClientMock).not.toHaveBeenCalled();
   });
 });
