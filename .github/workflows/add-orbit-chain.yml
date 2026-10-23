@@ -76,7 +76,7 @@ jobs:
           NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
 
       - name: Format files
-        run: pnpm prettier --write "packages/arb-token-bridge-ui/src/**/*.{ts,tsx,js,jsx,json}"
+        run: pnpm oxfmt packages/arb-token-bridge-ui/src
 
       - name: Generate OG image
         run: pnpm --filter arb-token-bridge-ui generateOpenGraphImages:orbit

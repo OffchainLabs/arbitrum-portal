@@ -61,7 +61,7 @@ jobs:
           NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
 
       - name: Format files
-        run: pnpm prettier --write "packages/arb-token-bridge-ui/src/util/orbitChainsData.json"
+        run: pnpm oxfmt packages/arb-token-bridge-ui/src/util/orbitChainsData.json
 
       - name: Check for changes
         id: changes

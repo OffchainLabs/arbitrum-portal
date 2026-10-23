@@ -156,8 +156,8 @@ jobs:
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
 
-      - name: Check formatting with Prettier
-        run: pnpm prettier:check
+      - name: Check formatting with oxfmt
+        run: pnpm format:check
 
       - name: Type-check and lint
         run: pnpm lint
