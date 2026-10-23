@@ -34,7 +34,7 @@ export function EarnActionPanelInput({
       placeholder="0"
       value={value}
       onChange={handleChange}
-      className="flex-1 bg-transparent w-full text-[28px] font-normal text-white leading-[1.15] tracking-[-0.56px] placeholder-gray-400 outline-hidden focus:outline-hidden focus-visible:outline-hidden! h-[34px]"
+      className="h-[34px] w-full flex-1 bg-transparent text-[28px] leading-[1.15] font-normal tracking-[-0.56px] text-white placeholder-gray-400 outline-hidden focus:outline-hidden focus-visible:outline-hidden!"
     />
   );
 }

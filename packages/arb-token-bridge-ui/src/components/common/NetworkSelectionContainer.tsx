@@ -420,7 +420,7 @@ export function NetworksPanel({
           <div style={style} className="px-5">
             <ExternalLink
               href={NOVA_MINIMIZED_STATE_LINK}
-              className="mt-2 flex items-center justify-between gap-1 whitespace-normal rounded bg-destructive/20 px-[10px] py-[15px] text-xs text-destructive"
+              className="mt-2 flex items-center justify-between gap-1 rounded bg-destructive/20 px-[10px] py-[15px] text-xs whitespace-normal text-destructive"
             >
               <span className="flex items-center gap-1">
                 <ShieldExclamationIcon className="h-4 w-4 shrink-0 text-destructive" />
@@ -464,7 +464,7 @@ export function NetworksPanel({
         showSearch={showSearch}
         isDialog
       >
-        <div className="min-h-0 h-full flex-1">
+        <div className="h-full min-h-0 flex-1">
           <AutoSizer>
             {({ height, width }) => (
               <List

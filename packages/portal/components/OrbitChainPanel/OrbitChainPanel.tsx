@@ -85,7 +85,7 @@ export const OrbitChainPanel = () => {
             {/* Website link CTA */}
             {orbitChain.links.website && (
               <ExternalLink
-                className="flex h-[40px] items-center gap-2 whitespace-nowrap rounded-md bg-white/10 p-3 hover:bg-[#333]"
+                className="flex h-[40px] items-center gap-2 rounded-md bg-white/10 p-3 whitespace-nowrap hover:bg-[#333]"
                 href={orbitChain.links.website}
                 onClick={() => {
                   posthog?.capture('Orbit Panel Clicks', {
@@ -141,7 +141,7 @@ export const OrbitChainPanel = () => {
                 href={orbitChain.chain.bridgeUrl}
               >
                 Bridge funds to {orbitChain.title}
-                <ArrowRightIcon className="align-center bottom-6 right-4 flex h-4 w-4 justify-center" />
+                <ArrowRightIcon className="align-center right-4 bottom-6 flex h-4 w-4 justify-center" />
               </Card>
             )}
           </div>

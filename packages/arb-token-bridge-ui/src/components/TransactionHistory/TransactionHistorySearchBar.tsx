@@ -214,7 +214,7 @@ export function TransactionHistorySearchBar() {
   return (
     <div className="mb-4 flex flex-col items-stretch gap-2 pr-4 md:flex-row md:justify-between md:pr-0">
       <div className="flex items-center gap-2">
-        <span className="whitespace-nowrap text-sm font-light text-white/60">
+        <span className="text-sm font-light whitespace-nowrap text-white/60">
           Showing history for:
         </span>
         <TransactionHistoryChainFilter />
@@ -234,7 +234,7 @@ export function TransactionHistorySearchBar() {
       >
         <Listbox value={searchMode} onChange={handleSearchModeChange}>
           <ListboxButton
-            className="arb-hover flex shrink-0 select-none items-center gap-1 text-sm tracking-[-0.28px]"
+            className="arb-hover flex shrink-0 items-center gap-1 text-sm tracking-[-0.28px] select-none"
             aria-label="Transaction history search mode"
           >
             {searchModeConfig[searchMode].label}
@@ -249,13 +249,13 @@ export function TransactionHistorySearchBar() {
             // menu; width 0 is ignored for the browser's auto style
             // spans border to divider: button width plus the 10px field padding on the
             // left and the 10px gap on the right, shifted to the field's left edge
-            className="z-20 w-[calc(var(--button-width)+20px)] overflow-hidden rounded-[10px] border border-gray-dark bg-gray-1 py-1 text-sm font-light text-white [--anchor-offset:-10px] outline-none"
+            className="z-20 w-[calc(var(--button-width)+20px)] overflow-hidden rounded-[10px] border border-gray-dark bg-gray-1 py-1 text-sm font-light text-white outline-none [--anchor-offset:-10px]"
           >
             {(Object.keys(searchModeConfig) as TransactionHistorySearchMode[]).map((mode) => (
               <ListboxOption
                 key={mode}
                 value={mode}
-                className="cursor-pointer whitespace-nowrap px-[10px] py-2 data-focus:bg-white/10 data-selected:bg-white/20"
+                className="cursor-pointer px-[10px] py-2 whitespace-nowrap data-focus:bg-white/10 data-selected:bg-white/20"
               >
                 {searchModeConfig[mode].label}
               </ListboxOption>
@@ -291,7 +291,7 @@ export function TransactionHistorySearchBar() {
                 : 'Transaction history wallet address input'
             }
             // focus-visible:outline-0 beats the global white input outline; the form shows focus
-            className="h-full w-full bg-transparent text-sm font-light tracking-[-0.28px] outline-hidden focus-visible:outline-0 placeholder:text-white/50"
+            className="h-full w-full bg-transparent text-sm font-light tracking-[-0.28px] outline-hidden placeholder:text-white/50 focus-visible:outline-0"
             // stop password managers from autofilling
             data-1p-ignore
             data-lpignore="true"

@@ -65,7 +65,7 @@ function useTxHistoryRoutes(filter: TxHistoryChainFilter) {
 
 function SectionLabel({ children }: PropsWithChildren) {
   return (
-    <div className="px-3 pb-1 pt-3 text-xs font-medium uppercase tracking-wider text-white/40">
+    <div className="px-3 pt-3 pb-1 text-xs font-medium tracking-wider text-white/40 uppercase">
       {children}
     </div>
   );
@@ -233,7 +233,7 @@ export function TransactionHistoryChainFilter() {
             <PopoverButton
               as={Button}
               variant="secondary"
-              className="px-[10px] py-[5px] h-[36px]"
+              className="h-[36px] px-[10px] py-[5px]"
               aria-label="Filter transaction history by network"
             >
               <div className="flex flex-nowrap items-center gap-1 text-sm leading-[1.1]">
@@ -247,19 +247,19 @@ export function TransactionHistoryChainFilter() {
               // panel's overflow (which clipped it on mobile); padding keeps it off the edges.
               anchor={{ to: 'bottom start', gap: 4, padding: 16 }}
               transition
-              className="z-20 flex w-[360px] max-h-[min(var(--anchor-max-height,420px),420px)] origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-closed:scale-95 data-closed:opacity-0"
+              className="z-20 flex max-h-[min(var(--anchor-max-height,420px),420px)] w-[360px] origin-top flex-col overflow-hidden rounded border border-gray-dark bg-gray-1 transition duration-150 data-closed:scale-95 data-closed:opacity-0"
             >
               <div className="flex min-h-0 flex-1 flex-col">
                 <div className="p-2">
                   <div className="relative flex w-full items-center rounded bg-black/50 text-white shadow-input">
-                    <MagnifyingGlassIcon className="absolute left-3 top-[11px] h-3 w-3 shrink-0" />
+                    <MagnifyingGlassIcon className="absolute top-[11px] left-3 h-3 w-3 shrink-0" />
                     <input
                       type="search"
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
                       placeholder="Search by network name"
                       aria-label="Search networks"
-                      className="w-full rounded bg-transparent py-2 pl-8 pr-2 text-sm font-light placeholder:text-sm placeholder:text-white"
+                      className="w-full rounded bg-transparent py-2 pr-2 pl-8 text-sm font-light placeholder:text-sm placeholder:text-white"
                     />
                   </div>
                 </div>

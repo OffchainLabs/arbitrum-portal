@@ -382,7 +382,9 @@ export const getParentToChildMessageDataFromParentTxHash = async ({
 }): Promise<{
   isClassic?: boolean;
   parentToChildMsg?:
-    ParentToChildMessageReaderClassic | EthDepositMessage | ParentToChildMessageReader;
+    | ParentToChildMessageReaderClassic
+    | EthDepositMessage
+    | ParentToChildMessageReader;
 }> => {
   // fetch Parent transaction receipt
   const depositTxReceipt = await parentProvider.getTransactionReceipt(depositTxId);

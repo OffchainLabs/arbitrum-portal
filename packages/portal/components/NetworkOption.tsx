@@ -67,7 +67,7 @@ export const NetworkOption = ({ network }: { network: Network }) => {
         <span className="flex items-center justify-center rounded-sm border border-gray-100/20 bg-default-black p-[3px] lg:p-px">
           <CheckIcon className="checkIcon invisible h-4 w-4 stroke-black stroke-[3px] lg:h-3 lg:w-3" />
         </span>
-        <span className="ml-2 mr-1 shrink-0">
+        <span className="mr-1 ml-2 shrink-0">
           <Image
             src={network.logoUrl}
             width={24}

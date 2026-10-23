@@ -198,8 +198,8 @@ const BalanceWrapper = memo(function BalanceWrapper() {
       </p>
 
       {isBalanceLessThan15Usd && (
-        <p className="text-sm p-2 rounded-sm bg-white/10 flex gap-2 items-center justify-center leading-none">
-          <ExclamationCircleIcon className="w-3 h-3" />
+        <p className="flex items-center justify-center gap-2 rounded-sm bg-white/10 p-2 text-sm leading-none">
+          <ExclamationCircleIcon className="h-3 w-3" />
           <span>Low wallet balance</span>
         </p>
       )}

@@ -7,18 +7,18 @@ export const NetworkDropdown = () => {
   return (
     <Popover className="relative w-full lg:w-max">
       <Popover.Button className="group flex h-[40px] w-full min-w-[100px] items-center justify-between gap-1 rounded-md border border-dark-gray bg-black px-1 py-[5px] text-sm text-white hover:bg-white hover:text-black lg:w-max lg:px-2">
-        <div className="flex shrink-0 flex-nowrap items-center lg:gap-2 gap-1">
+        <div className="flex shrink-0 flex-nowrap items-center gap-1 lg:gap-2">
           <span className="flex items-center justify-center p-0.5">
-            <LinkIcon className="lg:h-5 lg:w-5 h-4 w-4 stroke-white group-hover:stroke-black" />
+            <LinkIcon className="h-4 w-4 stroke-white group-hover:stroke-black lg:h-5 lg:w-5" />
           </span>
 
           <span>Chains</span>
         </div>
         <span className="flex shrink-0 items-center justify-center p-1 lg:block">
-          <ChevronDownIcon className=" h-3 w-3 stroke-white stroke-2 group-hover:stroke-black lg:h-4 lg:w-4" />
+          <ChevronDownIcon className="h-3 w-3 stroke-white stroke-2 group-hover:stroke-black lg:h-4 lg:w-4" />
         </span>
       </Popover.Button>
-      <Popover.Panel className="absolute right-0 z-50 mt-4 flex max-h-[350px] w-full min-w-max flex-col overflow-scroll rounded-md bg-neutral-50 border border-neutral-200 p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)] lg:left-0 lg:right-auto">
+      <Popover.Panel className="absolute right-0 z-50 mt-4 flex max-h-[350px] w-full min-w-max flex-col overflow-scroll rounded-md border border-neutral-200 bg-neutral-50 p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)] lg:right-auto lg:left-0">
         <NetworkOptionList />
       </Popover.Panel>
     </Popover>

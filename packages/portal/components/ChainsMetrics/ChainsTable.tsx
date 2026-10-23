@@ -133,7 +133,7 @@ const HeaderTooltip = ({ tooltip }: { tooltip: string }) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <Popover className="relative inline-block ml-1">
+    <Popover className="relative ml-1 inline-block">
       {() => (
         <>
           <Popover.Button
@@ -143,7 +143,7 @@ const HeaderTooltip = ({ tooltip }: { tooltip: string }) => {
             onMouseLeave={() => setIsOpen(false)}
             onClick={(e) => e.preventDefault()}
           >
-            <InformationCircleIcon className="h-4 w-4 text-gray-400 hover:text-white cursor-help" />
+            <InformationCircleIcon className="h-4 w-4 cursor-help text-gray-400 hover:text-white" />
           </Popover.Button>
 
           {typeof document !== 'undefined' &&
@@ -171,9 +171,9 @@ const HeaderTooltip = ({ tooltip }: { tooltip: string }) => {
                   onMouseLeave={() => setIsOpen(false)}
                 >
                   <div className="rounded-lg shadow-lg ring-1 ring-black/5">
-                    <div className="relative bg-gray-800 p-2 rounded-lg">
+                    <div className="relative rounded-lg bg-gray-800 p-2">
                       <div
-                        className="absolute -bottom-2 left-1/2 -ml-2 w-4 h-4 bg-gray-800"
+                        className="absolute -bottom-2 left-1/2 -ml-2 h-4 w-4 bg-gray-800"
                         style={{
                           clipPath: 'polygon(50% 100%, 0% 0%, 100% 0%)',
                         }}
@@ -240,8 +240,8 @@ const Toast = ({
       leaveFrom="opacity-100"
       leaveTo="opacity-0"
     >
-      <div className="fixed bottom-4 right-4 z-50">
-        <div className="rounded-lg bg-[#181818] border border-gray-700 p-4 shadow-lg">
+      <div className="fixed right-4 bottom-4 z-50">
+        <div className="rounded-lg border border-gray-700 bg-[#181818] p-4 shadow-lg">
           <div className="flex items-center">
             <div className="shrink-0">
               <svg className="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
@@ -786,7 +786,7 @@ export const ChainsTable = () => {
           </div>
           <input
             type="text"
-            className="w-full rounded-md border border-gray-700 bg-[#181818] py-2 pl-10 pr-4 text-sm text-white placeholder-gray-400 focus:border-blue-500 focus:outline-hidden"
+            className="w-full rounded-md border border-gray-700 bg-[#181818] py-2 pr-4 pl-10 text-sm text-white placeholder-gray-400 focus:border-blue-500 focus:outline-hidden"
             placeholder="Search chains..."
             value={searchQuery}
             onChange={handleSearchChange}
@@ -816,13 +816,11 @@ export const ChainsTable = () => {
           />
 
           <button
-            className={`h-9 rounded-md border text-sm font-medium transition-colors duration-150 w-20
-              ${
-                activeFiltersCount === 0
-                  ? 'bg-[#181818] text-gray-500 border-gray-700 opacity-50 cursor-not-allowed hover:bg-[#181818]'
-                  : 'bg-[#181818] text-white border-gray-700 hover:bg-[#222222] cursor-pointer'
-              }
-            `}
+            className={`h-9 w-20 rounded-md border text-sm font-medium transition-colors duration-150 ${
+              activeFiltersCount === 0
+                ? 'cursor-not-allowed border-gray-700 bg-[#181818] text-gray-500 opacity-50 hover:bg-[#181818]'
+                : 'cursor-pointer border-gray-700 bg-[#181818] text-white hover:bg-[#222222]'
+            } `}
             onClick={clearFilters}
             disabled={activeFiltersCount === 0}
             tabIndex={activeFiltersCount === 0 ? -1 : 0}
@@ -832,13 +830,11 @@ export const ChainsTable = () => {
           </button>
 
           <button
-            className={`h-9 rounded-md border text-sm font-medium transition-colors duration-150 w-20
-              ${
-                isSharing
-                  ? 'bg-[#181818] text-gray-500 border-gray-700 opacity-50 cursor-not-allowed hover:bg-[#181818]'
-                  : 'bg-[#181818] text-white border-gray-700 hover:bg-[#222222] cursor-pointer'
-              }
-            `}
+            className={`h-9 w-20 rounded-md border text-sm font-medium transition-colors duration-150 ${
+              isSharing
+                ? 'cursor-not-allowed border-gray-700 bg-[#181818] text-gray-500 opacity-50 hover:bg-[#181818]'
+                : 'cursor-pointer border-gray-700 bg-[#181818] text-white hover:bg-[#222222]'
+            } `}
             onClick={shareFilters}
             disabled={isSharing}
           >
@@ -891,7 +887,7 @@ export const ChainsTable = () => {
                   <td className="px-6 py-3 text-sm text-blue-400/70">
                     <div className="flex items-center">
                       <div className="mr-4 h-6 w-6 shrink-0">
-                        <div className="h-6 w-6 rounded-full bg-blue-500/20 flex items-center justify-center">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/20">
                           <span className="text-xs text-blue-400/70">Σ</span>
                         </div>
                       </div>
@@ -936,7 +932,7 @@ export const ChainsTable = () => {
                     <tr key={`empty-spacer-${index}`} className="h-[52px] border-none">
                       <td
                         colSpan={COLUMN_DEFINITIONS.length}
-                        className="bg-transparent border-none"
+                        className="border-none bg-transparent"
                       />
                     </tr>
                   ))}
@@ -973,10 +969,10 @@ export const ChainsTable = () => {
                         <td className="bg-[#181818] px-6 py-3 text-sm text-gray-300 transition-colors duration-150 group-hover:bg-[#222222]">
                           {formatCategoryName(chain.category)}
                         </td>
-                        <td className="bg-[#181818] px-6 py-3 text-sm text-gray-300 transition-colors duration-150 group-hover:bg-[#222222] tabular-nums">
+                        <td className="bg-[#181818] px-6 py-3 text-sm text-gray-300 tabular-nums transition-colors duration-150 group-hover:bg-[#222222]">
                           {chain.tvl > 0 ? formatter.format(chain.tvl) : '$0'}
                         </td>
-                        <td className="bg-[#181818] px-6 py-3 text-sm text-gray-300 transition-colors duration-150 group-hover:bg-[#222222] tabular-nums">
+                        <td className="bg-[#181818] px-6 py-3 text-sm text-gray-300 tabular-nums transition-colors duration-150 group-hover:bg-[#222222]">
                           {chain.tps > 0 ? tpsFormatter.format(chain.tps) : '-'}
                         </td>
                         <td className="bg-[#181818] px-6 py-3 text-sm text-gray-300 transition-colors duration-150 group-hover:bg-[#222222]">
@@ -999,7 +995,7 @@ export const ChainsTable = () => {
                         {Array.from({ length: COLUMN_DEFINITIONS.length }).map((_, colIndex) => (
                           <td
                             key={`spacer-cell-${colIndex}`}
-                            className="bg-transparent border-none"
+                            className="border-none bg-transparent"
                           />
                         ))}
                       </tr>
@@ -1011,7 +1007,7 @@ export const ChainsTable = () => {
         </div>
       </div>
 
-      <div className="text-center text-xs italic text-gray-500">
+      <div className="text-center text-xs text-gray-500 italic">
         Data is updated daily. Features are added based on Arbitrum technology adoption.
       </div>
 

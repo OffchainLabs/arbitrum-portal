@@ -35,7 +35,7 @@ export function BestOpportunitiesShowcase({
   }
 
   return (
-    <div className="hidden lg:grid lg:grid-cols-3 gap-4">
+    <div className="hidden gap-4 lg:grid lg:grid-cols-3">
       {bestOpportunities.map((opportunity) => (
         <BestOpportunityCard
           key={opportunity.id}

@@ -132,29 +132,29 @@ export function EarnTransactionDetailsPopup({
       isOpen={isOpen}
       onClose={handleClose}
       title={
-        <span className="text-lg font-medium text-white/40 text-center w-full">{titleText}</span>
+        <span className="w-full text-center text-lg font-medium text-white/40">{titleText}</span>
       }
       closeable
       isFooterHidden
       className="border-0! md:max-w-[450px]!"
     >
-      <div className="flex flex-col gap-6 items-start w-full pb-6">
+      <div className="flex w-full flex-col items-start gap-6 pb-6">
         {isLoading && (
-          <div className="flex flex-col items-center gap-6 w-full">
-            <div className="flex items-center justify-center w-[46px] h-[46px] rounded-full bg-white/5">
-              <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+          <div className="flex w-full flex-col items-center gap-6">
+            <div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-white/5">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-white" />
             </div>
 
-            <div className="flex flex-col gap-1.5 items-center justify-center w-full">
-              <div className="text-[36px] font-medium text-white text-center tracking-[0.72px]">
+            <div className="flex w-full flex-col items-center justify-center gap-1.5">
+              <div className="text-center text-[36px] font-medium tracking-[0.72px] text-white">
                 {formattedAmount}
               </div>
               {formattedUsd && (
-                <div className="text-sm text-white/40 text-center">~{formattedUsd}</div>
+                <div className="text-center text-sm text-white/40">~{formattedUsd}</div>
               )}
             </div>
 
-            <p className="text-sm text-white/50 text-center">
+            <p className="text-center text-sm text-white/50">
               Please wait while we confirm your transaction...
             </p>
           </div>
@@ -167,45 +167,45 @@ export function EarnTransactionDetailsPopup({
               showSuccessAnimation ? 'opacity-100 scale-100' : 'opacity-0 scale-95',
             )}
           >
-            <div className="flex flex-col gap-2 items-center w-full py-6">
+            <div className="flex w-full flex-col items-center gap-2 py-6">
               {transactionDetails.assetLogo ? (
-                <div className="relative shrink-0 size-[46px]">
+                <div className="relative size-[46px] shrink-0">
                   <SafeImage
                     src={transactionDetails.assetLogo}
                     alt={transactionDetails.tokenSymbol}
-                    className="absolute inset-0 max-w-none object-50%-50% object-cover rounded-full size-full"
+                    className="object-50%-50% absolute inset-0 size-full max-w-none rounded-full object-cover"
                     width={46}
                     height={46}
                     fallback={
-                      <div className="absolute inset-0 rounded-full bg-white/10 size-full" />
+                      <div className="absolute inset-0 size-full rounded-full bg-white/10" />
                     }
                   />
                   {showSuccessAnimation && (
-                    <div className="absolute -bottom-1 -right-1 flex items-center justify-center w-5 h-5 bg-earn-success rounded-full animate-in fade-in zoom-in duration-300">
-                      <CheckCircleIcon className="w-3.5 h-3.5 text-white" />
+                    <div className="animate-in fade-in zoom-in absolute -right-1 -bottom-1 flex h-5 w-5 items-center justify-center rounded-full bg-earn-success duration-300">
+                      <CheckCircleIcon className="h-3.5 w-3.5 text-white" />
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="flex items-center justify-center w-[46px] h-[46px] rounded-full bg-white/10">
-                  <CheckCircleIcon className="w-[23px] h-[23px] text-earn-success" />
+                <div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-white/10">
+                  <CheckCircleIcon className="h-[23px] w-[23px] text-earn-success" />
                 </div>
               )}
 
-              <div className="flex flex-col gap-1.5 items-center justify-center w-full">
-                <div className="text-3xl font-medium text-white text-center">{formattedAmount}</div>
+              <div className="flex w-full flex-col items-center justify-center gap-1.5">
+                <div className="text-center text-3xl font-medium text-white">{formattedAmount}</div>
                 {formattedUsd && (
-                  <div className="text-sm text-white/40 text-center">~{formattedUsd}</div>
+                  <div className="text-center text-sm text-white/40">~{formattedUsd}</div>
                 )}
               </div>
             </div>
 
-            <div className="bg-white/5 flex flex-col gap-2 items-start p-4 rounded-lg w-full">
-              <div className="flex h-[25px] items-center justify-between px-0 py-2 w-full">
-                <span className="text-[14px] text-white/50 leading-[1.35] tracking-[-0.28px]">
+            <div className="flex w-full flex-col items-start gap-2 rounded-lg bg-white/5 p-4">
+              <div className="flex h-[25px] w-full items-center justify-between px-0 py-2">
+                <span className="text-[14px] leading-[1.35] tracking-[-0.28px] text-white/50">
                   Network
                 </span>
-                <div className="flex gap-2 items-center justify-end">
+                <div className="flex items-center justify-end gap-2">
                   <SafeImage
                     src={ARBITRUM_LOGO}
                     alt={networkName}
@@ -213,27 +213,27 @@ export function EarnTransactionDetailsPopup({
                     height={21}
                     className="shrink-0"
                   />
-                  <span className="text-[14px] text-white leading-[1.35] tracking-[-0.28px]">
+                  <span className="text-[14px] leading-[1.35] tracking-[-0.28px] text-white">
                     {networkName}
                   </span>
                 </div>
               </div>
 
-              <div className="flex h-[25px] items-center justify-between px-0 py-2 w-full">
-                <span className="text-[14px] text-white/50 leading-[1.35] tracking-[-0.28px]">
+              <div className="flex h-[25px] w-full items-center justify-between px-0 py-2">
+                <span className="text-[14px] leading-[1.35] tracking-[-0.28px] text-white/50">
                   Date
                 </span>
-                <span className="text-[14px] text-white leading-[1.35] tracking-[-0.28px]">
+                <span className="text-[14px] leading-[1.35] tracking-[-0.28px] text-white">
                   {formattedDate}
                 </span>
               </div>
 
               {transactionDetails.protocolName && (
-                <div className="flex h-[25px] items-center justify-between px-0 py-2 w-full">
-                  <span className="text-[14px] text-white/50 leading-[1.35] tracking-[-0.28px]">
+                <div className="flex h-[25px] w-full items-center justify-between px-0 py-2">
+                  <span className="text-[14px] leading-[1.35] tracking-[-0.28px] text-white/50">
                     Protocol
                   </span>
-                  <div className="flex gap-2 items-center justify-end">
+                  <div className="flex items-center justify-end gap-2">
                     {transactionDetails.protocolLogo && (
                       <SafeImage
                         src={transactionDetails.protocolLogo}
@@ -244,7 +244,7 @@ export function EarnTransactionDetailsPopup({
                         fallback={<div className="h-[21px] w-[21px] rounded-full bg-white/10" />}
                       />
                     )}
-                    <span className="text-[14px] text-white leading-[1.35] tracking-[-0.28px] capitalize">
+                    <span className="text-[14px] leading-[1.35] tracking-[-0.28px] text-white capitalize">
                       {transactionDetails.protocolName}
                     </span>
                   </div>
@@ -252,22 +252,22 @@ export function EarnTransactionDetailsPopup({
               )}
 
               {displayNetworkFee && (
-                <div className="flex h-[25px] items-center justify-between px-0 py-2 w-full">
-                  <span className="text-[14px] text-white/50 leading-[1.35] tracking-[-0.28px]">
+                <div className="flex h-[25px] w-full items-center justify-between px-0 py-2">
+                  <span className="text-[14px] leading-[1.35] tracking-[-0.28px] text-white/50">
                     Network Fee
                   </span>
-                  <span className="text-[14px] text-white leading-[17px] tracking-[0.14px]">
+                  <span className="text-[14px] leading-[17px] tracking-[0.14px] text-white">
                     {displayNetworkFee.amount}{' '}
                     {displayNetworkFee.usd ? `(${displayNetworkFee.usd})` : ''}
                   </span>
                 </div>
               )}
               {isFetchingFee && !displayNetworkFee && (
-                <div className="flex h-[25px] items-center justify-between px-0 py-2 w-full">
-                  <span className="text-[14px] text-white/50 leading-[1.35] tracking-[-0.28px]">
+                <div className="flex h-[25px] w-full items-center justify-between px-0 py-2">
+                  <span className="text-[14px] leading-[1.35] tracking-[-0.28px] text-white/50">
                     Network Fee
                   </span>
-                  <span className="text-[14px] text-white/50 leading-[17px] tracking-[0.14px]">
+                  <span className="text-[14px] leading-[17px] tracking-[0.14px] text-white/50">
                     Loading...
                   </span>
                 </div>
@@ -277,7 +277,7 @@ export function EarnTransactionDetailsPopup({
             {txHash && (
               <ExternalLink
                 href={`${explorerUrl}/tx/${txHash}`}
-                className="bg-neutral-250 flex items-center justify-center px-[15px] py-2.5 h-[59px] rounded-lg w-full text-[16px] font-medium text-white text-center hover:opacity-90 cursor-pointer transition-opacity"
+                className="flex h-[59px] w-full cursor-pointer items-center justify-center rounded-lg bg-neutral-250 px-[15px] py-2.5 text-center text-[16px] font-medium text-white transition-opacity hover:opacity-90"
               >
                 View on {explorerName}
               </ExternalLink>

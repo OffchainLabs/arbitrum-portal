@@ -343,7 +343,7 @@ function TokenBalance({
   }
 
   return (
-    <span className="flex items-center whitespace-nowrap text-sm text-white">
+    <span className="flex items-center text-sm whitespace-nowrap text-white">
       {balance ? (
         formatAmount(balance, {
           decimals,
@@ -530,8 +530,8 @@ export function TokenRow({
           )}
         >
           {/* Row 1: Token name + Balance */}
-          <div className="font-medium truncate text-left flex items-center gap-1">
-            <span className="text-base font-medium leading-none">{tokenSymbol}</span>
+          <div className="flex items-center gap-1 truncate text-left font-medium">
+            <span className="text-base leading-none font-medium">{tokenSymbol}</span>
             <span className="text-xs text-white/70">{tokenName}</span>
             <span>{isArbitrumToken && <ArbitrumTokenBadge />}</span>
             <span>{isNativeStablecoin && <NativeStablecoinBadge />}</span>
@@ -541,7 +541,7 @@ export function TokenRow({
           </div>
 
           {/* Row 2: Contract or token list info + USD value */}
-          <div className="text-left flex items-center">
+          <div className="flex items-center text-left">
             {!token || addressesEqual(token.address, constants.AddressZero) ? (
               <TokenListInfo token={token} />
             ) : (
