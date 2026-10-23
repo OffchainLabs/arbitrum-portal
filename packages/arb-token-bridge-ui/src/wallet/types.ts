@@ -28,8 +28,9 @@ export type EvmWalletHandle = WalletHandleBase<'evm'>;
 
 export type SolanaWalletHandle = WalletHandleBase<'solana'>;
 
-export type WalletHandle = EvmWalletHandle | SolanaWalletHandle;
+export type WalletHandle = WalletContextValue[WalletEcosystem];
 
+// Mapped over `WalletEcosystem`, so a missing ecosystem fails where its types are declared
 export type WalletContextValue = {
-  [Ecosystem in WalletEcosystem]: Extract<WalletHandle, { ecosystem: Ecosystem }>;
+  [Ecosystem in WalletEcosystem]: WalletHandleBase<Ecosystem>;
 };
