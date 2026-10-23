@@ -44,6 +44,8 @@ export const solanaEcosystem: EcosystemConfig = {
   hasParentChildTokenAddresses: false,
   hasGasPrice: false,
   usesEthersSigner: false,
+  // AppKit identifies Solana networks by their genesis hash
+  isAppKitNetworkIdChainId: false,
   hasTokenApprovals: false,
   // Solscan
   explorerAccountPath: 'account',

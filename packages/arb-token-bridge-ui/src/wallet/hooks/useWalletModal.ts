@@ -16,7 +16,7 @@ export function useWalletModal() {
 
   const openConnectModalFor = useCallback(
     async (ecosystem: WalletEcosystem) => {
-      const { namespace } = ecosystems[ecosystem];
+      const { namespace, isAppKitNetworkIdChainId } = ecosystems[ecosystem];
       if (appKit) {
         // Preselect the chain of that ecosystem on either side of the transfer
         const chainId = [sourceChainId, destinationChainId].find(
@@ -24,7 +24,7 @@ export function useWalletModal() {
         );
         const caipNetwork = appKit.getCaipNetwork(
           namespace,
-          namespace === 'eip155' ? chainId : undefined,
+          isAppKitNetworkIdChainId ? chainId : undefined,
         );
         if (caipNetwork) {
           appKit.setCaipNetwork(caipNetwork);

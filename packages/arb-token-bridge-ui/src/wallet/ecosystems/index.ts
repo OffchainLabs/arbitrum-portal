@@ -33,6 +33,8 @@ export type EcosystemConfig = {
   hasGasPrice: boolean;
   /** Transfers sign with wagmi's ethers signer, which is only ready once the wallet connects */
   usesEthersSigner: boolean;
+  /** AppKit identifies the networks of this ecosystem by their chain id, so the connect modal can preselect one */
+  isAppKitNetworkIdChainId: boolean;
   /** Tokens need an allowance before a transfer can move them, as with ERC-20 approvals */
   hasTokenApprovals: boolean;
   /** Explorer path segment for account pages */
