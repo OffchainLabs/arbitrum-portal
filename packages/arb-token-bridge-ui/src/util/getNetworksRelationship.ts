@@ -1,4 +1,5 @@
 import { ChainId } from '../types/ChainId';
+import { findEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { isDepositMode } from './isDepositMode';
 
 /**
@@ -30,9 +31,10 @@ export function getNetworksRelationship({
     };
   }
 
-  // Solana routes are source-only LiFi deposits. Treat the source as the parent side of the
-  // relationship so shared UI and history code keep the transfer direction consistent.
-  if (sourceChainId === ChainId.Solana) {
+  // Chains without Arbitrum's token bridge, such as Solana, only send LiFi deposits. Treat the source
+  // as the parent side of the relationship so shared UI and history code keep the transfer direction
+  // consistent.
+  if (findEcosystemConfig(sourceChainId)?.hasParentChildTokenAddresses === false) {
     return {
       parentChainId: sourceChainId,
       childChainId: destinationChainId,

@@ -14,7 +14,6 @@ import type { UseTransactionHistoryResult } from '../../hooks/useTransactionHist
 import { DepositStatus, MergedTransaction, WithdrawalStatus } from '../../state/app/state';
 import { isDepositReadyToRedeem } from '../../state/app/utils';
 import { useClaimCctp } from '../../state/cctpState';
-import { ChainId } from '../../types/ChainId';
 import { addressesEqual } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { isLifiRouteComplete } from '../../util/LifiTransactionStatus';
@@ -23,6 +22,7 @@ import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { formatTransactionError, isUserRejectedError } from '../../util/isUserRejectedError';
 import { getNetworkName } from '../../util/networks';
 import { useWalletContext } from '../../wallet/WalletContext';
+import { findWalletEcosystem } from '../../wallet/getWalletEcosystem';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
@@ -66,7 +66,7 @@ export function TransactionsTableRowAction({
   const {
     account: { address: connectedAddress, chainId },
     isConnected,
-  } = useWalletContext(tx.sourceChainId === ChainId.Solana ? 'solana' : 'evm');
+  } = useWalletContext(findWalletEcosystem(tx.sourceChainId) ?? 'evm');
   const wagmiConfig = useConfig();
   const { switchChainAsync } = useSwitchNetworkWithConfig();
   const updateLifiTransactionInCache = useLifiMergedTransactionCacheStore(
