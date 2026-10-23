@@ -8,7 +8,7 @@
     ]
   },
   "include": [
-    "eslint.config.mjs",
+    "oxlint.config.ts",
     "packages/**/*.ts",
     "packages/**/*.tsx",
     "packages/**/*.cts",
