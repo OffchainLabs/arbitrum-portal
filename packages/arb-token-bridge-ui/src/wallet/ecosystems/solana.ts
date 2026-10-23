@@ -45,6 +45,8 @@ export const solanaEcosystem: EcosystemConfig = {
   nativeTokenAddress: SOLANA_NATIVE_TOKEN_ADDRESS,
   isLifiOnly: true,
   hasGasPrice: false,
+  // AppKit identifies Solana networks by their genesis hash
+  isAppKitNetworkIdChainId: false,
   hasTokenApprovals: false,
   // Solscan
   explorerAccountPath: 'account',
