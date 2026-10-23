@@ -102,7 +102,7 @@ function SourceChainTokenBalance({
       <>
         <span className="text-sm font-light text-gray-6">Balance: </span>
         <span
-          className="whitespace-nowrap text-sm text-gray-6"
+          className="text-sm whitespace-nowrap text-gray-6"
           aria-label={`${symbol} balance amount on ${isDepositMode ? 'parentChain' : 'childChain'}`}
         >
           {formattedBalance}

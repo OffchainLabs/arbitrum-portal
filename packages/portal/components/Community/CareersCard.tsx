@@ -19,7 +19,7 @@ export const CareersCard = () => (
       src="/images/arbitrum-logo-white.svg"
       width={190}
       height={40}
-      className="z-10 -ml-3 -mt-2 mb-3 w-[150px] shrink-0 p-1 mix-blend-screen lg:-ml-4 lg:mt-0 lg:w-auto"
+      className="z-10 -mt-2 mb-3 -ml-3 w-[150px] shrink-0 p-1 mix-blend-screen lg:mt-0 lg:-ml-4 lg:w-auto"
     />
 
     <div className="flex w-full flex-col flex-nowrap items-start justify-between gap-4 text-lg lg:flex-row lg:items-end lg:text-2xl">
@@ -27,7 +27,7 @@ export const CareersCard = () => (
         <span className="text-white">Jobs in the Arbitrum Ecosystem.</span> Career opportunities to
         build a more secure and decentralized tomorrow.
       </div>
-      <div className="whitespace-nowrap text-xs underline underline-offset-8">Learn More</div>
+      <div className="text-xs whitespace-nowrap underline underline-offset-8">Learn More</div>
     </div>
   </Card>
 );

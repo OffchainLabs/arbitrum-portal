@@ -24,12 +24,12 @@ export function LinkoutOnrampPanel({ serviceSlug }: { serviceSlug: string }) {
       )}
     >
       <div className="flex items-start justify-center gap-4">
-        <div className="shrink-0 rounded-md overflow-hidden">
+        <div className="shrink-0 overflow-hidden rounded-md">
           <Image src={service.logo} alt={service.name} width={48} height={48} />
         </div>
         <div className="flex flex-col gap-1">
           <h2 className="text-xl">{service.name}</h2>
-          <p className="text-sm max-w-md">
+          <p className="max-w-md text-sm">
             Buy and transfer instantly using your debit card or bank account with {service.name}.
           </p>
         </div>

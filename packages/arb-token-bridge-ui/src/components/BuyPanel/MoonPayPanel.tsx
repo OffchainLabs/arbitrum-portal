@@ -27,14 +27,14 @@ export function MoonPaySkeleton({ children }: PropsWithChildren) {
         embedMode && 'bg-widget-background',
       )}
     >
-      <div className="moonpay-ellipse absolute left-0 top-0 h-[190px] w-full bg-[url('/images/gray_square_background.svg')] moonpay-ellipse"></div>
+      <div className="moonpay-ellipse moonpay-ellipse absolute top-0 left-0 h-[190px] w-full bg-[url('/images/gray_square_background.svg')]"></div>
       <div className="relative mb-4 flex flex-col items-center justify-center">
         <SafeImage
           src="/images/onramp/moonpay.svg"
           alt="MoonPay"
           width={embedMode ? 45 : 65}
           height={embedMode ? 45 : 65}
-          fallback={<div className="bg-gray-dark/70 h-8 w-8 min-w-8 rounded-full" />}
+          fallback={<div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />}
         />
         <p className={twMerge('mt-2 text-3xl', embedMode && 'text-xl')}>MoonPay</p>
         <p className={twMerge('mt-1 text-xl', embedMode && 'text-sm')}>

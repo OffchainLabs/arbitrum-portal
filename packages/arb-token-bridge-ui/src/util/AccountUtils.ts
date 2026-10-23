@@ -1,7 +1,9 @@
 import { getProviderForChainId } from '../token-bridge-sdk/utils';
 
 export type AccountType =
-  'externally-owned-account' | 'delegated-account' | 'smart-contract-wallet';
+  | 'externally-owned-account'
+  | 'delegated-account'
+  | 'smart-contract-wallet';
 
 export async function getAccountType({
   address,

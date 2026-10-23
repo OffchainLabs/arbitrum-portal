@@ -14,7 +14,7 @@ export function LiveIncentivesBadge({ className }: { className?: string }) {
         alt="Live Incentives"
         width={12}
         height={12}
-        className="saturate-0 invert"
+        className="invert saturate-0"
       />
       <span className="text-black">Incentive</span>
     </div>

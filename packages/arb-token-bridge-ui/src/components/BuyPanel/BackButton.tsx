@@ -17,9 +17,9 @@ export function BackButton() {
         pathname: embedMode ? PathnameEnum.EMBED_BUY : PathnameEnum.BUY,
         query: searchParams.toString(),
       }}
-      className="flex flex-row justify-content items-center absolute top-4 left-4 gap-2 hover:opacity-80"
+      className="justify-content absolute top-4 left-4 flex flex-row items-center gap-2 hover:opacity-80"
     >
-      <span className="rounded-full w-6 h-6 flex items-center justify-center bg-white/20 backdrop-blur-sm border-none hover:opacity-100 hover:bg-white/20 hover:text-white/70">
+      <span className="flex h-6 w-6 items-center justify-center rounded-full border-none bg-white/20 backdrop-blur-sm hover:bg-white/20 hover:text-white/70 hover:opacity-100">
         <ChevronLeftIcon className="h-3 w-3" />
       </span>
       <span>Back</span>
