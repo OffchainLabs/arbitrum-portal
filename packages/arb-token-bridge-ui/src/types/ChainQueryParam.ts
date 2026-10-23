@@ -2,151 +2,99 @@ import { Chain } from 'wagmi/chains';
 import * as chains from 'wagmi/chains';
 
 import { ChainId } from '../types/ChainId';
-import { isSupportedChainId } from '../util/chainUtils';
+import { getEnabledLifiOnlyChainIds } from '../util/chainUtils';
 import { getChainMetadata } from '../util/networkMetadata';
 import { getCustomChainFromLocalStorageById, getSupportedChainIds } from '../util/networks';
 import { getOrbitChains, orbitChains } from '../util/orbitChainsList';
 import * as customChains from '../util/wagmi/wagmiAdditionalNetworks';
 import { chainToWagmiChain } from '../util/wagmi/wagmiAdditionalNetworks';
-import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
+import { findEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 
-const chainQueryParams = [
-  'solana',
-  'ethereum',
-  'sepolia',
-  'arbitrum-one',
-  'arbitrum-nova',
-  'base',
-  'arbitrum-sepolia',
-  'base-sepolia',
-  'nitro-testnode-l1',
-  'nitro-testnode-l2',
-  'nitro-testnode-l3',
-] as const;
+// Orbit chains use the slug from `orbitChainsData`
+type OrbitChainId = ChainId.ApeChain | ChainId.RobinhoodChain | ChainId.RobinhoodChainTestnet;
 
-export type ChainKeyQueryParam = (typeof chainQueryParams)[number];
+// Keyed by every other `ChainId`, so a new chain id fails to compile until it has a slug
+const coreChains = {
+  [ChainId.Solana]: { slug: 'solana', getChain: () => getChainMetadata(ChainId.Solana) },
+  [ChainId.Ethereum]: { slug: 'ethereum', getChain: () => chains.mainnet },
+  [ChainId.Sepolia]: { slug: 'sepolia', getChain: () => chains.sepolia },
+  [ChainId.ArbitrumOne]: { slug: 'arbitrum-one', getChain: () => chains.arbitrum },
+  [ChainId.ArbitrumNova]: { slug: 'arbitrum-nova', getChain: () => customChains.arbitrumNova },
+  [ChainId.Base]: { slug: 'base', getChain: () => customChains.base },
+  [ChainId.ArbitrumSepolia]: {
+    slug: 'arbitrum-sepolia',
+    getChain: () => customChains.arbitrumSepolia,
+  },
+  [ChainId.BaseSepolia]: { slug: 'base-sepolia', getChain: () => customChains.baseSepolia },
+  [ChainId.Local]: { slug: 'nitro-testnode-l1', getChain: () => customChains.localL1Network },
+  [ChainId.ArbitrumLocal]: {
+    slug: 'nitro-testnode-l2',
+    getChain: () => customChains.localL2Network,
+  },
+  [ChainId.L3Local]: { slug: 'nitro-testnode-l3', getChain: () => customChains.localL3Network },
+} as const satisfies Record<
+  Exclude<ChainId, OrbitChainId>,
+  { slug: string; getChain: () => Chain }
+>;
+
+type CoreChainId = keyof typeof coreChains;
+const coreChainList = Object.values(coreChains);
+
+export type ChainKeyQueryParam = (typeof coreChains)[CoreChainId]['slug'];
 export type ChainQueryParam = ChainKeyQueryParam | ChainId | number | string;
 
-function isNonEvmChain(chainId: number): boolean {
-  try {
-    return getWalletEcosystem(chainId) !== 'evm';
-  } catch {
-    return false;
-  }
+function isCoreChainId(chainId: number): chainId is CoreChainId {
+  return chainId in coreChains;
+}
+
+// Chains of other ecosystems are only valid while that ecosystem is enabled
+function isEcosystemEnabled(chainId: number): boolean {
+  return findEcosystemConfig(chainId)?.isEnabled() ?? true;
 }
 
 export function isValidChainQueryParam(value: string | number): boolean {
   if (typeof value === 'string') {
-    const isValidCoreChainSlug = (chainQueryParams as readonly string[]).includes(value);
-    const isValidOrbitChainSlug = getOrbitChains().some((chain) => chain.slug === value);
-    if (!isValidCoreChainSlug) {
-      return isValidOrbitChainSlug;
+    const coreChain = coreChainList.find((chain) => chain.slug === value);
+    if (!coreChain) {
+      return getOrbitChains().some((chain) => chain.slug === value);
     }
-    // Chains of other ecosystems are only valid while that ecosystem is enabled
-    const { id } = getChainForChainKeyQueryParam(value as ChainKeyQueryParam);
-    return !isNonEvmChain(id) || isSupportedChainId(id);
+    return isEcosystemEnabled(coreChain.getChain().id);
   }
 
   const supportedNetworkIds = getSupportedChainIds({ includeTestnets: true });
-  return supportedNetworkIds.includes(value) || (isNonEvmChain(value) && isSupportedChainId(value));
+  return supportedNetworkIds.includes(value) || getEnabledLifiOnlyChainIds().includes(value);
 }
 
 export function getChainQueryParamForChain(chainId: ChainId): ChainQueryParam {
-  switch (chainId) {
-    case ChainId.Solana:
-      return 'solana';
-
-    case ChainId.Ethereum:
-      return 'ethereum';
-
-    case ChainId.ArbitrumOne:
-      return 'arbitrum-one';
-
-    case ChainId.ArbitrumNova:
-      return 'arbitrum-nova';
-
-    case ChainId.Base:
-      return 'base';
-
-    case ChainId.Sepolia:
-      return 'sepolia';
-
-    case ChainId.ArbitrumSepolia:
-      return 'arbitrum-sepolia';
-
-    case ChainId.BaseSepolia:
-      return 'base-sepolia';
-
-    case ChainId.Local:
-      return 'nitro-testnode-l1';
-
-    case ChainId.ArbitrumLocal:
-      return 'nitro-testnode-l2';
-
-    case ChainId.L3Local:
-      return 'nitro-testnode-l3';
-
-    default:
-      const customChain = getCustomChainFromLocalStorageById(chainId);
-
-      const orbitChain = orbitChains[chainId];
-
-      if (customChain) {
-        return customChain.chainId;
-      }
-
-      if (orbitChain) {
-        return orbitChain.slug ?? orbitChain.chainId;
-      }
-
-      throw new Error(`[getChainQueryParamForChain] Unexpected chain id: ${chainId}`);
+  if (isCoreChainId(chainId)) {
+    return coreChains[chainId].slug;
   }
+
+  const customChain = getCustomChainFromLocalStorageById(chainId);
+  if (customChain) {
+    return customChain.chainId;
+  }
+
+  const orbitChain = orbitChains[chainId];
+  if (orbitChain) {
+    return orbitChain.slug ?? orbitChain.chainId;
+  }
+
+  throw new Error(`[getChainQueryParamForChain] Unexpected chain id: ${chainId}`);
 }
 
 export function getChainForChainKeyQueryParam(chainKeyQueryParam: ChainKeyQueryParam): Chain {
-  switch (chainKeyQueryParam) {
-    case 'solana':
-      return getChainMetadata(ChainId.Solana);
-
-    case 'ethereum':
-      return chains.mainnet;
-
-    case 'sepolia':
-      return chains.sepolia;
-
-    case 'arbitrum-one':
-      return chains.arbitrum;
-
-    case 'arbitrum-nova':
-      return customChains.arbitrumNova;
-
-    case 'base':
-      return customChains.base;
-
-    case 'arbitrum-sepolia':
-      return customChains.arbitrumSepolia;
-
-    case 'base-sepolia':
-      return customChains.baseSepolia;
-
-    case 'nitro-testnode-l1':
-      return customChains.localL1Network;
-
-    case 'nitro-testnode-l2':
-      return customChains.localL2Network;
-
-    case 'nitro-testnode-l3':
-      return customChains.localL3Network;
-
-    default:
-      const orbitChain = getOrbitChains().find((chain) => chain.slug === chainKeyQueryParam);
-
-      if (orbitChain) {
-        return chainToWagmiChain(orbitChain);
-      }
-
-      throw new Error(
-        `[getChainForChainKeyQueryParam] Unexpected chainKeyQueryParam: ${chainKeyQueryParam}`,
-      );
+  const coreChain = coreChainList.find((chain) => chain.slug === chainKeyQueryParam);
+  if (coreChain) {
+    return coreChain.getChain();
   }
+
+  const orbitChain = getOrbitChains().find((chain) => chain.slug === chainKeyQueryParam);
+  if (orbitChain) {
+    return chainToWagmiChain(orbitChain);
+  }
+
+  throw new Error(
+    `[getChainForChainKeyQueryParam] Unexpected chainKeyQueryParam: ${chainKeyQueryParam}`,
+  );
 }

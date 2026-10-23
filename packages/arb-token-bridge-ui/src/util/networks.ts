@@ -9,10 +9,9 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
-import { ecosystems } from '../wallet/ecosystems';
+import { getLifiOnlyEcosystems } from '../wallet/ecosystems';
 import type { CoreEvmChainId } from '../wallet/ecosystems/evm';
 import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
-import { solanaChain } from '../wallet/solana/network';
 import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils';
 import { Erc20Data, fetchErc20Data } from './TokenUtils';
 import { getBridgeUiConfigForChain } from './bridgeUiConfig';
@@ -70,12 +69,19 @@ const baseNetworks: { [chainId: number]: BlockNumberReferenceNetwork } = {
   },
 };
 
-// Solana has no Arbitrum child chain: it is only a root for its LiFi pairs
-const solanaNetwork: BlockNumberReferenceNetwork = {
-  chainId: ChainId.Solana,
-  blockTime: 0.4,
-  isTestnet: false,
-};
+// Chains without Arbitrum's token bridge, such as Solana, have no Arbitrum child chain: they are
+// only roots for their LiFi pairs
+function getLifiOnlyNetworks(): BlockNumberReferenceNetwork[] {
+  return getLifiOnlyEcosystems()
+    .filter((ecosystem) => ecosystem.isEnabled())
+    .flatMap((ecosystem) => ecosystem.chains)
+    .map((chain) => ({
+      chainId: chain.id,
+      // viem chains give the block time in milliseconds
+      blockTime: (chain.blockTime ?? 0) / 1_000,
+      isTestnet: Boolean(chain.testnet),
+    }));
+}
 
 export const getChains = (
   { includeRootChainsWithoutDestination } = {
@@ -89,7 +95,7 @@ export const getChains = (
   ];
 
   if (includeRootChainsWithoutDestination) {
-    return ecosystems.solana.isEnabled() ? [...chains, solanaNetwork] : chains;
+    return [...chains, ...getLifiOnlyNetworks()];
   }
 
   return chains.filter((chain) => {
@@ -306,7 +312,13 @@ export const rpcURLs: { [chainId: number]: string } =
     : defaultRpcUrls;
 
 export const explorerUrls: { [chainId: number]: string } = {
-  [ChainId.Solana]: solanaChain.blockExplorers.default.url,
+  ...Object.fromEntries(
+    getLifiOnlyEcosystems()
+      .flatMap((ecosystem) => ecosystem.chains)
+      .flatMap((chain) =>
+        chain.blockExplorers ? [[chain.id, chain.blockExplorers.default.url]] : [],
+      ),
+  ),
   // L1
   [ChainId.Ethereum]: 'https://etherscan.io',
   // L1 Testnets
