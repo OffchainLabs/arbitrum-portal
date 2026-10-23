@@ -48,7 +48,12 @@ export type SolanaSigner = SignerBase & {
   getWalletAdapter: () => Promise<SolanaWalletAdapter>;
 };
 
-export type Signers = { evm: EvmSigner; solana: SolanaSigner };
+export type Signers = ByEcosystem<{ evm: EvmSigner; solana: SolanaSigner }>;
+
+// Falls back to the base signer for an ecosystem without an entry, so the error stays on `Signers`
+type SignerOf<Ecosystem extends WalletEcosystem> = Ecosystem extends keyof Signers
+  ? Signers[Ecosystem]
+  : SignerBase;
 
 type WalletHandleBase<Ecosystem extends WalletEcosystem> = {
   ecosystem: Ecosystem;
@@ -57,7 +62,7 @@ type WalletHandleBase<Ecosystem extends WalletEcosystem> = {
   /** Old Trust Wallet versions can sign on the wrong network, so transfers warn first. */
   needsNetworkSigningWarning?: boolean;
   disconnect: () => Promise<void>;
-  signer: Signers[Ecosystem];
+  signer: SignerOf<Ecosystem>;
 };
 
 export type EvmWalletHandle = WalletHandleBase<'evm'>;

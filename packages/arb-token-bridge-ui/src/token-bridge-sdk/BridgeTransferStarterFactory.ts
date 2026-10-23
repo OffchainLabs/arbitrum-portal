@@ -1,4 +1,4 @@
-import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
+import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import {
   BridgeTransferStarter,
   BridgeTransferStarterPropsWithChainIds,
@@ -9,7 +9,6 @@ import { EthDepositStarter } from './EthDepositStarter';
 import { EthWithdrawalStarter } from './EthWithdrawalStarter';
 import { LifiTransferStarter } from './LifiTransferStarter';
 import { OftV2TransferStarter } from './OftV2TransferStarter';
-import { SolanaTransferStarter } from './SolanaTransferStarter';
 import { getOftV2TransferConfig } from './oftUtils';
 import { getBridgeTransferProperties, getProviderForChainId } from './utils';
 
@@ -22,10 +21,6 @@ function getCacheKey(props: BridgeTransferStarterPropsWithChainIds): string {
 
   if (props.destinationChainErc20Address) {
     cacheKey += `-destinationErc20:${props.destinationChainErc20Address}`;
-  }
-
-  if (props.lifiRoute) {
-    cacheKey += `-${props.lifiRoute.protocolData.route.id}`;
   }
 
   return cacheKey;
@@ -46,15 +41,16 @@ export class BridgeTransferStarterFactory {
   ): BridgeTransferStarter;
   public static create(
     props: BridgeTransferStarterPropsWithChainIds,
-  ): TransferStarter | SolanaTransferStarter;
-  public static create(
-    props: BridgeTransferStarterPropsWithChainIds,
-  ): TransferStarter | SolanaTransferStarter {
-    if (getWalletEcosystem(props.sourceChainId) === 'solana') {
-      if (!props.lifiRoute) {
-        throw new Error('A LiFi quote is required to estimate a Solana transfer.');
-      }
-      return new SolanaTransferStarter({ lifiRoute: props.lifiRoute });
+  ): TransferStarter;
+  public static create(props: BridgeTransferStarterPropsWithChainIds): TransferStarter {
+    // LiFi routes need no provider, whichever ecosystem they start from
+    if (props.lifiRoute) {
+      return new LifiTransferStarter({ lifiRoute: props.lifiRoute });
+    }
+
+    // Without Arbitrum's token bridge, LiFi is the only way to transfer
+    if (!getEcosystemConfig(props.sourceChainId).hasParentChildTokenAddresses) {
+      throw new Error('A LiFi quote is required to transfer from this chain.');
     }
 
     const sourceChainProvider = getProviderForChainId(props.sourceChainId);
@@ -91,13 +87,6 @@ export class BridgeTransferStarterFactory {
       destinationChainId: props.destinationChainId,
       sourceChainErc20Address: props.sourceChainErc20Address,
     });
-
-    if (props.lifiRoute) {
-      return withCache(
-        cacheKey,
-        new LifiTransferStarter({ ...initProps, lifiRoute: props.lifiRoute }),
-      );
-    }
 
     if (isOft.isValid) {
       return withCache(cacheKey, new OftV2TransferStarter(initProps));

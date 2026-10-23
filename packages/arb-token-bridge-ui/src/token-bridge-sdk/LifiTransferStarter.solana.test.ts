@@ -7,7 +7,7 @@ import { createMockLifiRoute } from '../test-utils/lifi';
 import { createMockSigners } from '../test-utils/signers';
 import { ChainId } from '../types/ChainId';
 import { BridgeTransferStarterFactory } from './BridgeTransferStarterFactory';
-import { SolanaTransferStarter } from './SolanaTransferStarter';
+import { LifiTransferStarter } from './LifiTransferStarter';
 import * as providers from './utils';
 
 const signature = '5'.repeat(88);
@@ -73,7 +73,7 @@ function transferProps() {
   };
 }
 
-describe('SolanaTransferStarter', () => {
+describe('LifiTransferStarter from Solana', () => {
   it('executes multi-step routes through the shared LiFi executor', async () => {
     const quote = route([step(ChainId.Ethereum), step()]);
     const executedRoute = { ...quote.protocolData.route, id: 'executed' } as RouteExtended;
@@ -81,7 +81,7 @@ describe('SolanaTransferStarter', () => {
     const props = transferProps();
 
     await expect(
-      new SolanaTransferStarter({ lifiRoute: quote }).transfer(props, { executeRoute }),
+      new LifiTransferStarter({ lifiRoute: quote }).transfer(props, { executeRoute }),
     ).resolves.toEqual({
       transferType: 'lifi',
       status: 'pending',
@@ -124,14 +124,14 @@ describe('Solana gas estimates', () => {
         details: { id: 'gas', label: 'Gas fee', via: 'LI.FI' },
       },
     ];
-    const starter = new SolanaTransferStarter({ lifiRoute: quote });
+    const starter = new LifiTransferStarter({ lifiRoute: quote });
     await expect(starter.transferEstimateGas()).resolves.toEqual({
       estimatedParentChainGas: BigNumber.from(100000),
       estimatedChildChainGas: BigNumber.from(20),
     });
   });
 
-  it('selects the Solana starter without EVM providers', async () => {
+  it('creates the LiFi starter without EVM providers', async () => {
     const provider = vi.spyOn(providers, 'getProviderForChainId').mockImplementation(() => {
       throw new Error('Solana estimates must not create an EVM provider');
     });
@@ -151,7 +151,7 @@ describe('Solana gas estimates', () => {
         destinationChainId: ChainId.ArbitrumOne,
         lifiRoute: quote,
       });
-      expect(starter).toBeInstanceOf(SolanaTransferStarter);
+      expect(starter).toBeInstanceOf(LifiTransferStarter);
       await expect(
         starter.transferEstimateGas({
           amount: BigNumber.from(1),
