@@ -24,6 +24,7 @@ export function parseChainIds(raw: string | undefined): number[] {
 // indexed chains but must never remove these required defaults.
 const DEFAULT_INDEXER_CHILD_CHAIN_IDS: readonly number[] = [
   ChainId.ArbitrumOne,
+  ChainId.ArbitrumNova,
   ChainId.ArbitrumSepolia,
 ];
 
