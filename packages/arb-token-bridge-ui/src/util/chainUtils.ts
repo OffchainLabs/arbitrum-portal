@@ -1,7 +1,7 @@
 import { arbitrum, mainnet } from '@wagmi/core/chains';
 
 import { ChainId } from '../types/ChainId';
-import { ecosystems } from '../wallet/ecosystems';
+import { getLifiOnlyEcosystems } from '../wallet/ecosystems';
 import { getCustomChainsFromLocalStorage } from './networks';
 import { getOrbitChains } from './orbitChainsList';
 import {
@@ -33,8 +33,15 @@ export function isSupportedChainId(chainId: ChainId | undefined): chainId is Cha
     arbitrumLocal.id,
     l3Local.id,
     local.id,
-    ...(ecosystems.solana.isEnabled() ? [ChainId.Solana] : []),
+    ...getEnabledLifiOnlyChainIds(),
     ...getOrbitChains().map((chain) => chain.chainId),
     ...customChainIds,
   ].includes(chainId);
+}
+
+/** Built-in chains of the enabled ecosystems that only reach Arbitrum through LiFi */
+export function getEnabledLifiOnlyChainIds(): number[] {
+  return getLifiOnlyEcosystems()
+    .filter((ecosystem) => ecosystem.isEnabled())
+    .flatMap((ecosystem) => ecosystem.chains.map((chain) => chain.id));
 }
