@@ -121,7 +121,9 @@ export interface LayerZeroTransaction extends Omit<BaseMergedTransaction, 'isOft
 }
 
 export type MergedTransaction =
-  BaseMergedTransaction | LifiMergedTransaction | LayerZeroTransaction;
+  | BaseMergedTransaction
+  | LifiMergedTransaction
+  | LayerZeroTransaction;
 
 export interface WarningTokens {
   [address: string]: {

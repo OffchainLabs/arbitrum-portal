@@ -38,7 +38,10 @@ export function getBlockBeforeConfirmation(chainId: ChainId) {
 }
 
 export type CCTPSupportedChainId =
-  ChainId.Ethereum | ChainId.Sepolia | ChainId.ArbitrumOne | ChainId.ArbitrumSepolia;
+  | ChainId.Ethereum
+  | ChainId.Sepolia
+  | ChainId.ArbitrumOne
+  | ChainId.ArbitrumSepolia;
 
 function getSourceChainIdFromSourceDomain(
   sourceDomain: ChainDomain,

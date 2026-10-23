@@ -30,7 +30,8 @@ type SourcedClient = {
 };
 
 type Subgraph =
-  { kind: 'self-hosted'; name: string } | { kind: 'graph-network'; subgraphId: string };
+  | { kind: 'self-hosted'; name: string }
+  | { kind: 'graph-network'; subgraphId: string };
 
 const subgraphs = {
   'l1-arbitrum-nova': {

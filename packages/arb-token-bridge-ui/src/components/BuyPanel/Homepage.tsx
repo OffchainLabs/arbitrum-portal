@@ -21,7 +21,7 @@ function OnrampServiceTile({ name, logo, slug }: { name: string; logo: string; s
   return (
     <Link
       href={{ pathname: `${pathname}/${slug}`, query: searchParams.toString() }}
-      className="relative col-span-1 flex h-full w-full flex-col items-center justify-center rounded-md bg-white/5 p-4 overflow-hidden hover:opacity-80"
+      className="relative col-span-1 flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-md bg-white/5 p-4 hover:opacity-80"
       onClick={() => {
         trackEvent('Onramp Service Click', { service: name });
       }}
@@ -31,7 +31,7 @@ function OnrampServiceTile({ name, logo, slug }: { name: string; logo: string; s
       </span>
       <p className="mt-2 text-lg">{name}</p>
 
-      <span className="absolute right-3 top-3 rounded-full bg-white/10 p-[6px]">
+      <span className="absolute top-3 right-3 rounded-full bg-white/10 p-[6px]">
         <ArrowUpRightIcon className="h-[12px] w-[12px] stroke-2" />
       </span>
     </Link>
@@ -52,13 +52,13 @@ function MoonPayTile() {
         trackEvent('Onramp Service Click', { service: 'MoonPay' });
       }}
     >
-      <div className="absolute left-0 top-0 h-[190px] w-full bg-[url('/images/gray_square_background.svg')] rounded-md moonpay-ellipse"></div>
+      <div className="moonpay-ellipse absolute top-0 left-0 h-[190px] w-full rounded-md bg-[url('/images/gray_square_background.svg')]"></div>
       <div className="relative flex flex-col items-center justify-center">
         <Image src={MoonPay} alt="MoonPay" width={50} height={50} />
         <p className="mt-2 text-lg">MoonPay</p>
         <p className="mt-1 text-xs text-white/60">Pay using PayPal, Apple Pay & more</p>
       </div>
-      <span className="mt-2 py-2 relative w-[200px] bg-white/10 rounded-lg text-sm text-white flex items-center justify-center">
+      <span className="relative mt-2 flex w-[200px] items-center justify-center rounded-lg bg-white/10 py-2 text-sm text-white">
         Buy now
       </span>
     </Link>
@@ -86,7 +86,7 @@ export function Homepage() {
       <Button
         variant="tertiary"
         showArrow
-        className="col-span-2 md:col-span-3 mx-auto text-lg"
+        className="col-span-2 mx-auto text-lg md:col-span-3"
         onClick={allOnrampOnClick}
       >
         See all on-ramps

@@ -76,7 +76,7 @@ export const LinksWidget = ({ entityDetails }: { entityDetails: FullProject | Or
 
   return (
     <div className="col-span-4 flex flex-col flex-nowrap gap-4 rounded-lg bg-default-black p-6 lg:flex-row lg:items-center">
-      <span className="whitespace-nowrap pr-4">Connect</span>
+      <span className="pr-4 whitespace-nowrap">Connect</span>
 
       {socialLinks.map((socialLink) => {
         if (!socialLink.href) return null;

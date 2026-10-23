@@ -44,7 +44,7 @@ export function PageTabs({ title, tabs, className }: PageTabsProps) {
       </div>
 
       {/* Desktop */}
-      <div className="hidden md:flex gap-2">
+      <div className="hidden gap-2 md:flex">
         {tabs.map((tab) => {
           const active = isActive(tab.pathMatch);
           return (

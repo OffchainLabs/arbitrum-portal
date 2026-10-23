@@ -118,7 +118,7 @@ function LifiNetworkLogo({ chainId }: { chainId: number }) {
     <Image
       src={network.logo}
       alt={`${getNetworkName(chainId)} logo`}
-      className="absolute left-4 top-0 h-6 w-6 rounded-full ring-2 ring-dark"
+      className="absolute top-0 left-4 h-6 w-6 rounded-full ring-2 ring-dark"
       width={24}
       height={24}
     />
@@ -143,8 +143,8 @@ function LifiTokenFlowRow({ item }: { item: Extract<LifiTokenFlowItem, { type: '
           src={item.token.logoURI ?? undefined}
           width={24}
           height={24}
-          className="absolute left-0 top-0 h-6 w-6 rounded-full"
-          fallback={<div className="absolute left-0 top-0 h-6 w-6 rounded-full bg-white/20" />}
+          className="absolute top-0 left-0 h-6 w-6 rounded-full"
+          fallback={<div className="absolute top-0 left-0 h-6 w-6 rounded-full bg-white/20" />}
         />
         <LifiNetworkLogo chainId={item.chainId} />
       </div>

@@ -60,7 +60,7 @@ export function WidgetTransferPanel({
               <WidgetRoutes />
             </div>
 
-            <div className="flex flex-col gap-2 max-[850px]:fixed max-[850px]:left-0 max-[850px]:bottom-0 max-[850px]:w-full max-[850px]:p-4 max-[850px]:bg-widget-background z-10">
+            <div className="z-10 flex flex-col gap-2 max-[850px]:fixed max-[850px]:bottom-0 max-[850px]:left-0 max-[850px]:w-full max-[850px]:bg-widget-background max-[850px]:p-4">
               <ToSConfirmationCheckbox />
 
               {isConnected ? (

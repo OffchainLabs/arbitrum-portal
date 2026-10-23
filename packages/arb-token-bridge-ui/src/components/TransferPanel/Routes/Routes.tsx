@@ -99,7 +99,7 @@ export const Routes = React.memo(() => {
               openDialog('settings');
             }}
           >
-            <div className="w-full whitespace-break-spaces text-left">
+            <div className="w-full text-left whitespace-break-spaces">
               Want more options? Consider updating your slippage in settings.
             </div>
           </Button>

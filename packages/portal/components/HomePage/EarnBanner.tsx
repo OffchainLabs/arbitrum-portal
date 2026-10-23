@@ -60,7 +60,7 @@ function StatTile({
 
 function MarketCard() {
   return (
-    <div className="pointer-events-none absolute -right-28 -bottom-24 z-10 rotate-6 shadow-lg lg:relative md:right-8 md:-bottom-14 w-[400px] lg:transition-all lg:duration-300 lg:group-hover:-bottom-10 scale-75 md:scale-100">
+    <div className="pointer-events-none absolute -right-28 -bottom-24 z-10 w-[400px] scale-75 rotate-6 shadow-lg md:right-8 md:-bottom-14 md:scale-100 lg:relative lg:transition-all lg:duration-300 lg:group-hover:-bottom-10">
       <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black p-4">
         {/* Header row */}
         <div className="flex items-center justify-between">
@@ -112,21 +112,21 @@ export function EarnBanner() {
     <Card
       cardType="link"
       href="/earn"
-      className="group relative flex h-[380px] items-start lg:items-center overflow-hidden bg-arb-blue-navy p-6 md:h-[282px] lg:p-14 justify-between"
+      className="group relative flex h-[380px] items-start justify-between overflow-hidden bg-arb-blue-navy p-6 md:h-[282px] lg:items-center lg:p-14"
       analyticsProps={{
         eventName: 'Homepage Earn Banner Click',
       }}
     >
       {/* Mirrored so the convergence sits on the right, behind the card */}
-      <ArbitrumStripes className="absolute z-10 inset-0 size-full -scale-x-100 opacity-50 pointer-events-none" />
+      <ArbitrumStripes className="pointer-events-none absolute inset-0 z-10 size-full -scale-x-100 opacity-50" />
 
       {/* Left content */}
-      <div className="z-20 flex flex-col gap-3 max-w-[300px] lg:max-w-[620px] lg:gap-4">
-        <h2 className="text-2xl font-bold uppercase leading-tight tracking-tight lg:text-4xl lg:leading-[1.15]">
+      <div className="z-20 flex max-w-[300px] flex-col gap-3 lg:max-w-[620px] lg:gap-4">
+        <h2 className="text-2xl leading-tight font-bold tracking-tight uppercase lg:text-4xl lg:leading-[1.15]">
           <span className="block text-arb-cyan">Start earning today</span>
           <span className="block">on Arbitrum</span>
         </h2>
-        <p className="text-sm leading-relaxed lg:text-base lg:max-w-[500px]">
+        <p className="text-sm leading-relaxed lg:max-w-[500px] lg:text-base">
           Stake, lend and access yields across Aave, Morpho, Fluid, Pendle and more – all in one
           place
         </p>
