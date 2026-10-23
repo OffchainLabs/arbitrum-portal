@@ -722,6 +722,12 @@ export function TokenRegistryPoc() {
                       {route.destinationEndpointId}
                     </p>
                   )}
+                  {route.provider === 'canonical' && route.batchDeposit && (
+                    <p className="mt-2 text-xs text-white/40">
+                      Batch deposit: send {route.batchDeposit.sourceToken.symbol}, receive{' '}
+                      {route.batchDeposit.destinationToken.symbol}
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>

@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { isExcludedToken } from '../constants';
+import { CanonicalBridge } from '../server/canonicalBridge';
 import { resolveImport } from '../server/resolveImport';
+import { Address, ChainPair } from '../types';
 
 const readContract = vi.fn();
 
@@ -26,8 +28,20 @@ const CHILD = '0x35e6a59f786d9266c7961ea28c7b768b33959cbb';
 const NORMAL_GATEWAY = '0xa3a7b6f88361f48403514059f1f16c8e78d60eec';
 const DISABLED_GATEWAY = '0x0000000000000000000000000000000000000001';
 
+const PARENT_GATEWAY_ROUTER = '0x72ce9c846789fdb6fc1f34ac4ad25dd9ef7031ef' as Address;
+
 const depositPair = { sourceChainId: 1, destinationChainId: 42161 };
 const withdrawalPair = { sourceChainId: 42161, destinationChainId: 1 };
+const bridge: CanonicalBridge = {
+  parentChainId: 1,
+  childChainId: 42161,
+  parentGatewayRouter: PARENT_GATEWAY_ROUTER,
+  tokenListUrls: [],
+};
+
+function importToken(pair: ChainPair, rawAddress: string) {
+  return resolveImport({ bridge, pair, rawAddress });
+}
 
 function mockContracts({
   gateway,
@@ -93,7 +107,7 @@ describe('resolveImport (deposit)', () => {
   it('resolves the picker-excluded PEPE demo token, falling back to parent metadata for an undeployed child', async () => {
     mockContracts({ gateway: NORMAL_GATEWAY, childDeployed: false });
 
-    const resolution = await resolveImport(depositPair, PARENT);
+    const resolution = await importToken(depositPair, PARENT);
 
     expect(isExcludedToken(1, PARENT)).toBe(true);
     expect(isExcludedToken(42161, CHILD)).toBe(true);
@@ -107,12 +121,18 @@ describe('resolveImport (deposit)', () => {
     expect(resolution?.sourceToken.id).toBe(`1:${PARENT}`);
     expect(resolution?.destinationToken.id).toBe(`42161:${CHILD}`);
     expect(resolution?.destinationToken.symbol).toBe('PEPE');
+    expect(readContract).toHaveBeenCalledWith(
+      expect.objectContaining({
+        address: PARENT_GATEWAY_ROUTER,
+        functionName: 'calculateL2TokenAddress',
+      }),
+    );
   });
 
   it('accepts the destination-chain child address and resolves the source parent token', async () => {
     mockContracts({ gateway: NORMAL_GATEWAY });
 
-    const resolution = await resolveImport(depositPair, CHILD);
+    const resolution = await importToken(depositPair, CHILD);
 
     expect(resolution?.sourceToken.id).toBe(`1:${PARENT}`);
     expect(resolution?.destinationToken.id).toBe(`42161:${CHILD}`);
@@ -128,11 +148,11 @@ describe('resolveImport (deposit)', () => {
   it('rejects tokens whose deposits are disabled on the router', async () => {
     mockContracts({ gateway: DISABLED_GATEWAY });
 
-    expect(await resolveImport(depositPair, PARENT)).toBeNull();
+    expect(await importToken(depositPair, PARENT)).toBeNull();
   });
 
   it('rejects invalid addresses', async () => {
-    expect(await resolveImport(depositPair, 'not-an-address')).toBeNull();
+    expect(await importToken(depositPair, 'not-an-address')).toBeNull();
     expect(readContract).not.toHaveBeenCalled();
   });
 });
@@ -141,7 +161,7 @@ describe('resolveImport (withdrawal)', () => {
   it('resolves the source-chain child address', async () => {
     mockContracts({ gateway: NORMAL_GATEWAY });
 
-    const resolution = await resolveImport(withdrawalPair, CHILD);
+    const resolution = await importToken(withdrawalPair, CHILD);
 
     expect(resolution?.sourceToken.id).toBe(`42161:${CHILD}`);
     expect(resolution?.destinationToken.id).toBe(`1:${PARENT}`);
@@ -157,7 +177,7 @@ describe('resolveImport (withdrawal)', () => {
   it('accepts the destination-chain parent address and resolves the source child token', async () => {
     mockContracts({ gateway: NORMAL_GATEWAY });
 
-    const resolution = await resolveImport(withdrawalPair, PARENT);
+    const resolution = await importToken(withdrawalPair, PARENT);
 
     expect(resolution?.sourceToken.id).toBe(`42161:${CHILD}`);
     expect(resolution?.destinationToken.id).toBe(`1:${PARENT}`);
