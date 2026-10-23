@@ -47,8 +47,8 @@ export function LiveIncentivesProjects() {
     lazyLoad: true,
   };
   return (
-    <div className="flex flex-col gap-4 max-h-[285px]">
-      <div className="text-2xl flex items-center gap-2">
+    <div className="flex max-h-[285px] flex-col gap-4">
+      <div className="flex items-center gap-2 text-2xl">
         <Image src="/icons/liveIncentives.svg" alt="Live Incentives" width={24} height={24} />
         <span>Live Incentives</span>
       </div>
@@ -71,7 +71,7 @@ export function LiveIncentivesProjects() {
             key={project.slug}
             analyticsSource={'Homepage Trending Projects'}
             displayMode="spotlight"
-            className="lg:max-w-[calc(33%-0.5rem)] max-w-[296px] ml-3"
+            className="ml-3 max-w-[296px] lg:max-w-[calc(33%-0.5rem)]"
             lazyload={false}
           />
         ))}

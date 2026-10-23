@@ -116,21 +116,21 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
       </Link>
 
       <div className="flex items-center gap-2">
-        <div className="text-lg text-white font-medium">{opportunity.name}</div>
-        <div className="text-xs text-white bg-white/10 rounded px-2 py-1">Fixed Yield</div>
+        <div className="text-lg font-medium text-white">{opportunity.name}</div>
+        <div className="rounded bg-white/10 px-2 py-1 text-xs text-white">Fixed Yield</div>
         {isMarketExpired && (
-          <div className="text-xs font-medium text-amber-400 bg-amber-400/15 rounded px-2 py-1">
+          <div className="rounded bg-amber-400/15 px-2 py-1 text-xs font-medium text-amber-400">
             Matured
           </div>
         )}
       </div>
 
       {mobileHasPosition && (
-        <div className="lg:hidden space-y-4">
-          <div className="bg-neutral-100 rounded flex flex-col p-4">
+        <div className="space-y-4 lg:hidden">
+          <div className="flex flex-col rounded bg-neutral-100 p-4">
             <div className="flex flex-col gap-2">
               <span className="text-xs font-medium text-white/50">PT Position Value</span>
-              <div className="text-[28px] font-normal text-white/70 leading-[1.15] tracking-[-0.56px]">
+              <div className="text-[28px] leading-[1.15] font-normal tracking-[-0.56px] text-white/70">
                 {formatAmount(ptBalance ?? BigNumber.from(0), {
                   decimals: fixedYield.ptTokenDecimals ?? 18,
                   symbol: `PT${underlyingAssetSymbol}`,
@@ -142,23 +142,23 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
             </div>
           </div>
 
-          <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-white">Fixed APY</span>
-            <span className="text-xs font-medium text-success">
+            <span className="text-success text-xs font-medium">
               {fixedApy != null ? formatPercentage(fixedApy) : '—'}
             </span>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
           <div
             className={twMerge('grid grid-cols-2 gap-4', !isPositionExpired && 'lg:grid-cols-4')}
           >
-            <Card className="rounded flex flex-col gap-3 bg-neutral-50 p-4">
-              <span className="text-xs text-white/50 leading-none">Protocol</span>
-              <div className="flex items-center gap-2 h-8">
+            <Card className="flex flex-col gap-3 rounded bg-neutral-50 p-4">
+              <span className="text-xs leading-none text-white/50">Protocol</span>
+              <div className="flex h-8 items-center gap-2">
                 <SafeImage
                   src={PENDLE_LOGO_URL}
                   alt="Pendle"
@@ -167,22 +167,22 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
                   className="object-contain"
                   style={{ objectFit: 'contain' }}
                 />
-                <span className="text-base font-medium text-white leading-none">Pendle</span>
+                <span className="text-base leading-none font-medium text-white">Pendle</span>
               </div>
             </Card>
 
-            <Card className="rounded flex flex-col gap-3 bg-neutral-50 p-4">
-              <span className="text-xs text-white/50 leading-none">Maturity Date</span>
-              <div className="text-base font-medium text-white h-8 flex items-center">
+            <Card className="flex flex-col gap-3 rounded bg-neutral-50 p-4">
+              <span className="text-xs leading-none text-white/50">Maturity Date</span>
+              <div className="flex h-8 items-center text-base font-medium text-white">
                 {maturityDate}
               </div>
             </Card>
 
             {!isPositionExpired && (
               <>
-                <Card className="rounded flex flex-col gap-3 bg-neutral-50 p-4">
-                  <span className="text-xs text-white/50 leading-none">TVL</span>
-                  <div className="text-base font-medium text-white h-8 flex items-center">
+                <Card className="flex flex-col gap-3 rounded bg-neutral-50 p-4">
+                  <span className="text-xs leading-none text-white/50">TVL</span>
+                  <div className="flex h-8 items-center text-base font-medium text-white">
                     {typeof fixedYield.detailsTvlUsd === 'number' &&
                     Number.isFinite(fixedYield.detailsTvlUsd)
                       ? formatCompactUsd(fixedYield.detailsTvlUsd)
@@ -190,9 +190,9 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
                   </div>
                 </Card>
 
-                <Card className="rounded flex flex-col gap-3 bg-neutral-50 p-4">
-                  <span className="text-xs text-white/50 leading-none">24h Volume</span>
-                  <div className="text-base font-medium text-white h-8 flex items-center">
+                <Card className="flex flex-col gap-3 rounded bg-neutral-50 p-4">
+                  <span className="text-xs leading-none text-white/50">24h Volume</span>
+                  <div className="flex h-8 items-center text-base font-medium text-white">
                     {typeof fixedYield.detailsTradingVolumeUsd === 'number' &&
                     Number.isFinite(fixedYield.detailsTradingVolumeUsd)
                       ? formatCompactUsd(fixedYield.detailsTradingVolumeUsd)
@@ -205,11 +205,11 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
 
           {isPositionExpired && (
             <div className="rounded bg-neutral-50 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <InformationCircleIcon className="h-5 w-5 text-white/50 shrink-0" />
+              <div className="mb-3 flex items-center gap-2">
+                <InformationCircleIcon className="h-5 w-5 shrink-0 text-white/50" />
                 <h3 className="text-base font-medium text-white">Market Matured</h3>
               </div>
-              <p className="text-sm text-white/50 leading-relaxed">
+              <p className="text-sm leading-relaxed text-white/50">
                 This market reached maturity on {maturityDate}. Principal Tokens (PT) can now be
                 redeemed at full face value for the underlying asset, or rolled over into an
                 eligible active market to continue earning a fixed yield.
@@ -228,13 +228,13 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded bg-neutral-50 p-4">
-                  <div className="text-xs text-white/50 mb-1">Fixed APY</div>
+                  <div className="mb-1 text-xs text-white/50">Fixed APY</div>
                   <div className="text-base font-medium text-white">
                     {fixedApy != null ? formatPercentage(fixedApy) : '—'}
                   </div>
                 </div>
                 <div className="rounded bg-neutral-50 p-4">
-                  <div className="text-xs text-white/50 mb-1">Underlying APY</div>
+                  <div className="mb-1 text-xs text-white/50">Underlying APY</div>
                   <div className="text-base font-medium text-white">
                     {underlyingApy != null ? formatPercentage(underlyingApy) : '—'}
                   </div>
@@ -242,10 +242,10 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
               </div>
 
               <div className="rounded bg-neutral-50 p-4">
-                <h3 className="text-base font-medium text-white mb-3">
+                <h3 className="mb-3 text-base font-medium text-white">
                   Where does the yield come from?
                 </h3>
-                <p className="text-sm text-white/50 leading-relaxed">
+                <p className="text-sm leading-relaxed text-white/50">
                   Users can lock in a fixed rate and redeem for full value at maturity, or sell
                   sooner and accept the prevailing market rate. In exchange for the fixed return,
                   users forfeit variable upside from the underlying asset.
@@ -265,7 +265,7 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
           />
         </div>
 
-        <div className="hidden lg:block space-y-4">
+        <div className="hidden space-y-4 lg:block">
           <PendleActionPanel
             opportunity={opportunity}
             checkAndShowToS={checkAndShowToS}
@@ -275,7 +275,7 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
       </div>
 
       {showActionPanel && (
-        <div className="fixed inset-0 bg-overlay z-70 lg:hidden flex flex-col mt-0!">
+        <div className="fixed inset-0 z-70 mt-0! flex flex-col bg-overlay lg:hidden">
           <div className="flex items-center p-4">
             <button
               type="button"
@@ -298,10 +298,10 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
       )}
 
       {!showActionPanel && (
-        <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-white/10 p-4 lg:hidden z-60">
+        <div className="fixed right-0 bottom-0 left-0 z-60 border-t border-white/10 bg-neutral-50 p-4 lg:hidden">
           <div className="flex gap-2">
             {!mobileHasPosition && isMarketExpired ? (
-              <div className="flex-1 text-center py-3 text-sm text-white/50">
+              <div className="flex-1 py-3 text-center text-sm text-white/50">
                 This market has matured
               </div>
             ) : !mobileHasPosition ? (
@@ -311,7 +311,7 @@ export function PendleDetailPage({ opportunity }: PendleDetailPageProps) {
                   setSelectedAction('enter');
                   setShowActionPanel(true);
                 }}
-                className="flex-1 rounded flex items-center border-none disabled:border-none justify-center py-3 text-base font-medium transition-colors bg-primary-cta text-white"
+                className="flex flex-1 items-center justify-center rounded border-none bg-primary-cta py-3 text-base font-medium text-white transition-colors disabled:border-none"
               >
                 Enter
               </button>

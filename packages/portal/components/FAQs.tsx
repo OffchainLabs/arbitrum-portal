@@ -32,7 +32,7 @@ export const FAQs = ({ content }: { content: FAQ[] }) => {
                   )}
                 </DisclosureButton>
                 <DisclosurePanel>
-                  <div className="relative z-10 pr-[30px] pt-2 opacity-70 lg:pr-[150px]">{c.a}</div>
+                  <div className="relative z-10 pt-2 pr-[30px] opacity-70 lg:pr-[150px]">{c.a}</div>
                 </DisclosurePanel>
               </div>
             )}

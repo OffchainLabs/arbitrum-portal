@@ -122,7 +122,7 @@ export const BuildSection = () => {
             height={30}
             width={120}
             alt="Arbitrum Foundation Grants"
-            className="absolute bottom-4 right-4"
+            className="absolute right-4 bottom-4"
           />
         </Card>
       </Card>

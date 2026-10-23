@@ -40,7 +40,7 @@ export const WidgetTransactionHistory = (props: UseDialogProps) => {
       isFooterHidden={true}
       className="relative h-screen overflow-hidden"
     >
-      <Button variant="secondary" className="absolute right-6 top-3 border-none bg-primary-cta">
+      <Button variant="secondary" className="absolute top-3 right-6 border-none bg-primary-cta">
         <ExternalLink
           href={`https://portal.arbitrum.io/bridge?tab=${TabParamEnum.TX_HISTORY}`}
           className="flex items-center gap-1 text-xs"

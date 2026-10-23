@@ -182,7 +182,7 @@ export const DyorChecklist = ({
           'linear-gradient(163deg, rgba(29,63,112,1) 0%, rgba(91,101,147,1) 26%, rgba(91,53,103,1) 40%, rgba(40,52,115,1) 60%, rgba(126,91,212,1) 84%, rgba(135,64,64,1) 100%)',
       }}
     >
-      <div className="absolute left-0 top-0 z-10 h-full w-full bg-black/60 backdrop-blur-lg" />
+      <div className="absolute top-0 left-0 z-10 h-full w-full bg-black/60 backdrop-blur-lg" />
 
       <div className="z-20 mb-2 flex flex-col gap-2">
         <div className="flex items-start gap-2 text-xl">
@@ -272,7 +272,7 @@ export const DyorChecklist = ({
 
       <Link
         href="/bookmarks?myAppsView=dyor"
-        className="self-end justify-self-end underline underline-offset-4	"
+        className="self-end justify-self-end underline underline-offset-4"
       >
         See all DYOR projects
       </Link>

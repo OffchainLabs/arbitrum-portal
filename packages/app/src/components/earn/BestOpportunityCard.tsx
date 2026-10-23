@@ -41,7 +41,7 @@ export function BestOpportunityCard({
             />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-lg font-bold leading-tight text-white">
+            <p className="truncate text-lg leading-tight font-bold text-white">
               {opportunity.name}
             </p>
             <p className="mt-1 truncate text-xs leading-tight text-white/50">
@@ -68,9 +68,9 @@ export function BestOpportunityCard({
       <div className="flex items-end justify-between gap-3">
         <div className="flex flex-col">
           <p className="text-sm leading-none text-white/50">APY</p>
-          <p className="text-xl font-medium leading-tight text-white">{opportunity.apy}</p>
+          <p className="text-xl leading-tight font-medium text-white">{opportunity.apy}</p>
         </div>
-        <div className="bg-white/10 rounded p-2 flex items-center justify-center group-hover:bg-white/20 shrink-0">
+        <div className="flex shrink-0 items-center justify-center rounded bg-white/10 p-2 group-hover:bg-white/20">
           <ChevronRightIcon className="h-4 w-4 text-white" />
         </div>
       </div>

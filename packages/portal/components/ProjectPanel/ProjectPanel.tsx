@@ -100,7 +100,7 @@ export const ProjectPanel = () => {
             {/* Website link CTA */}
             {project.links.website && (
               <ExternalLink
-                className="flex h-[40px] items-center gap-2 whitespace-nowrap rounded-md bg-white/10 p-3 hover:bg-[#333]"
+                className="flex h-[40px] items-center gap-2 rounded-md bg-white/10 p-3 whitespace-nowrap hover:bg-[#333]"
                 href={project.links.website}
                 onClick={() => {
                   posthog?.capture('Project Panel Clicks', {
@@ -160,7 +160,7 @@ export const ProjectPanel = () => {
             {/* Tags */}
             <p className="flex flex-wrap justify-start gap-3 text-center leading-6 text-white">
               {!project.meta.isLive && (
-                <span className="inline-flex items-start justify-start gap-2 wrap-break-word rounded bg-orange px-1.5 py-0.5 text-xs font-normal text-dark-lime">
+                <span className="inline-flex items-start justify-start gap-2 rounded bg-orange px-1.5 py-0.5 text-xs font-normal wrap-break-word text-dark-lime">
                   Coming Soon
                 </span>
               )}
@@ -168,14 +168,14 @@ export const ProjectPanel = () => {
               {project.subcategories.slice(0, 2).map((subcategory) => (
                 <span
                   key={`${project.id}-${subcategory.id}`}
-                  className="inline-flex items-start justify-start gap-2 truncate wrap-break-word rounded-sm bg-white/25 px-1.5 py-0.5 text-xs font-normal text-white"
+                  className="inline-flex items-start justify-start gap-2 truncate rounded-sm bg-white/25 px-1.5 py-0.5 text-xs font-normal wrap-break-word text-white"
                 >
                   {subcategory.title}
                 </span>
               ))}
 
               {project.meta.isArbitrumNative && (
-                <span className="inline-flex cursor-help items-start justify-start gap-2 wrap-break-word rounded bg-ocl-blue px-1.5 py-0.5 text-xs font-normal text-white">
+                <span className="inline-flex cursor-help items-start justify-start gap-2 rounded bg-ocl-blue px-1.5 py-0.5 text-xs font-normal wrap-break-word text-white">
                   <Tooltip
                     content={
                       <p className="text-xs">
@@ -197,10 +197,10 @@ export const ProjectPanel = () => {
         {hasLiveIncentives && (
           <div
             className={
-              'relative flex flex-col md:items-center gap-3 md:flex-row bg-linear-to-b from-[rgba(153,242,78,0.10)] to-[rgba(8,214,243,0.10)] rounded-lg p-4'
+              'relative flex flex-col gap-3 rounded-lg bg-linear-to-b from-[rgba(153,242,78,0.10)] to-[rgba(8,214,243,0.10)] p-4 md:flex-row md:items-center'
             }
           >
-            <div className="flex items-center gap-2 font-normal shrink-0">
+            <div className="flex shrink-0 items-center gap-2 font-normal">
               <Image src="/icons/liveIncentives.svg" alt="Live Incentives" width={20} height={20} />
               <span>Active Incentives Live on {project.title}</span>
             </div>
@@ -211,7 +211,7 @@ export const ProjectPanel = () => {
               )}
             >
               <div
-                className="absolute h-full top-0 left-0 rounded bg-linear-to-r from-[#99F24E] to-[#08D6F3] animate-progress-bar"
+                className="absolute top-0 left-0 h-full animate-progress-bar rounded bg-linear-to-r from-[#99F24E] to-[#08D6F3]"
                 style={{
                   width:
                     ((new Date().getTime() - new Date(LIVE_INCENTIVES_START_DATE).getTime()) /
@@ -223,15 +223,15 @@ export const ProjectPanel = () => {
               />
             </div>
             {!liveIncentivesEnded && (
-              <div className="flex w-full md:w-fit justify-between ml-auto shrink-0">
-                <span className="md:hidden text-white/50">End Date</span>
+              <div className="ml-auto flex w-full shrink-0 justify-between md:w-fit">
+                <span className="text-white/50 md:hidden">End Date</span>
                 <span className="shrink-0">
                   {dayjs(LIVE_INCENTIVES_END_DATE).format('MMM D, YYYY')}
                 </span>
               </div>
             )}
             <ExternalLink
-              className="bg-white/10 rounded-md w-5 h-5 flex items-center justify-center absolute top-5 right-5 md:top-auto md:right-auto md:relative hover:bg-white/20"
+              className="absolute top-5 right-5 flex h-5 w-5 items-center justify-center rounded-md bg-white/10 hover:bg-white/20 md:relative md:top-auto md:right-auto"
               href={project.links.website ?? ''}
             >
               <ArrowTopRightOnSquareIcon className="h-3 w-3" />
