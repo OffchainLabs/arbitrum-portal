@@ -36,6 +36,8 @@ export type EcosystemConfig = {
   isLifiOnly: boolean;
   /** Chains price gas with an EVM gas price, as returned by `eth_gasPrice` */
   hasGasPrice: boolean;
+  /** AppKit identifies the networks of this ecosystem by their chain id, so the connect modal can preselect one */
+  isAppKitNetworkIdChainId: boolean;
   /** Tokens need an allowance before a transfer can move them, as with ERC-20 approvals */
   hasTokenApprovals: boolean;
   /** Explorer path segment for account pages */
