@@ -17,8 +17,6 @@ overrides:
   '@babel/runtime': 7.26.10
   'form-data': 4.0.6
   'axios': 1.20.0
-  '@eslint/plugin-kit': 0.3.4
-  '@humanfs/node': 0.16.8
   '@types/react': 19.3.0
   '@types/react-dom': 19.3.0
   '@types/node': 22.19.19
@@ -29,14 +27,10 @@ overrides:
   'lodash-es': 4.18.1
   'sha.js': 2.4.12
   'bn.js': 5.2.3
-  'flatted': 3.4.2
   'defu': 6.1.6
   'brace-expansion': 1.1.21
-  '@typescript-eslint/eslint-plugin': 8.59.3
-  '@typescript-eslint/parser': 8.59.3
   'next-query-params>next': 16.4.2
   '@reown/appkit-adapter-wagmi>@wagmi/core': 2.22.1
-  'eslint-plugin-react-hooks': 7.1.1
   'utf-8-validate': 6.0.6
   'hono': 4.13.13
   'sharp': 0.35.5
@@ -71,6 +65,14 @@ overrides:
   '@synthetixio/synpress>cypress-wait-until': '-'
   '@synthetixio/synpress>etherscan-api': '-'
 
+# Oxlint runs eslint-plugin-zustand-rules as a JS plugin, so the plugin doesn't need ESLint.
+# Without this, autoInstallPeers installs ESLint for its peer dependency.
+packageExtensions:
+  eslint-plugin-zustand-rules:
+    peerDependenciesMeta:
+      eslint:
+        optional: true
+
 autoInstallPeers: true
 shamefullyHoist: true
 dedupePeerDependents: true
@@ -96,7 +98,6 @@ allowBuilds:
   keccak: true
   protobufjs: true
   sharp: true
-  unrs-resolver: true
   utf-8-validate: true
 
 # Block transitive dependencies from using exotic sources (git repos, tarball URLs).
@@ -119,7 +120,6 @@ trustPolicyExclude:
   - '@noble/curves@1.8.0'
   - '@noble/hashes@1.7.0'
   - '@reduxjs/toolkit@2.9.2'
-  - 'eslint-import-resolver-typescript@3.10.1'
   - 'react-redux@9.2.0'
   - 'reselect@5.1.1'
   - 'semver@5.7.2'
