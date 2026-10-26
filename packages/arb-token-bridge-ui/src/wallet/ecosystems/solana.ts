@@ -50,5 +50,6 @@ export const solanaEcosystem: EcosystemConfig = {
   // Solscan
   explorerAccountPath: 'account',
   chains: [solanaChain],
+  nativeAssetType: 'SOL',
   namespace: 'solana',
 };

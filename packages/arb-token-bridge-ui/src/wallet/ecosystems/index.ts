@@ -41,6 +41,8 @@ export type EcosystemConfig = {
   explorerAccountPath: string;
   /** Built-in chains. The network registry adds Orbit, local and custom chains as EVM */
   chains: readonly Chain[];
+  /** Asset type reported to analytics for the native currency */
+  nativeAssetType: 'ETH' | 'SOL';
   /** AppKit (CAIP-2) namespace */
   namespace: 'eip155' | 'solana';
 };
