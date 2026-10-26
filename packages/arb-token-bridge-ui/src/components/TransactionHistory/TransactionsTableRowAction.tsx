@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useAccount, useConfig } from 'wagmi';
+import { useConfig } from 'wagmi';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 import { resumeLifiRoute } from '@/token-bridge-sdk/LifiRouteExecutor';
@@ -21,6 +21,8 @@ import { formatAmount } from '../../util/NumberUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { formatTransactionError, isUserRejectedError } from '../../util/isUserRejectedError';
 import { getNetworkName } from '../../util/networks';
+import { useWalletContext } from '../../wallet/WalletContext';
+import { findWalletEcosystem } from '../../wallet/getWalletEcosystem';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
@@ -59,7 +61,12 @@ export function TransactionsTableRowAction({
   type: 'deposits' | 'withdrawals';
   updateTransaction?: UseTransactionHistoryResult['updateTransaction'];
 }) {
-  const { address: connectedAddress, chain, isConnected } = useAccount();
+  // LiFi routes are resumed by the sender's wallet; claims and redeems are EVM actions.
+  // Picking the ecosystem without a chain lookup keeps rows for unknown chains renderable.
+  const {
+    account: { address: connectedAddress, chainId },
+    isConnected,
+  } = useWalletContext(findWalletEcosystem(tx.sourceChainId) ?? 'evm');
   const wagmiConfig = useConfig();
   const { switchChainAsync } = useSwitchNetworkWithConfig();
   const updateLifiTransactionInCache = useLifiMergedTransactionCacheStore(
@@ -67,11 +74,12 @@ export function TransactionsTableRowAction({
   );
   const [isResumingLifiRoute, setIsResumingLifiRoute] = useState(false);
   const [dialogProps, openDialog] = useDialog2();
-  const networkName = getNetworkName(chain?.id ?? 0);
+  const networkName = getNetworkName(chainId ?? 0);
   const searchedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
 
-  const isViewingAnotherAddress =
-    connectedAddress && searchedAddress && !addressesEqual(connectedAddress, searchedAddress);
+  const isViewingAnotherAddress = Boolean(
+    connectedAddress && searchedAddress && !addressesEqual(connectedAddress, searchedAddress),
+  );
 
   const isError = useMemo(() => {
     if (tx.isCctp || !tx.isWithdrawal) {
@@ -100,8 +108,8 @@ export function TransactionsTableRowAction({
   const { redeem, isRedeeming } = useRedeemRetryable(tx, searchedAddress);
 
   const isConnectedToCorrectNetworkForAction = isDepositReadyToRedeem(tx)
-    ? chain?.id === tx.childChainId // for redemption actions, we connect to the child chain
-    : chain?.id === tx.destinationChainId; // for claims, we need to be on the destination chain
+    ? chainId === tx.childChainId // for redemption actions, we connect to the child chain
+    : chainId === tx.destinationChainId; // for claims, we need to be on the destination chain
 
   const handleRedeemRetryable = useCallback(async () => {
     try {

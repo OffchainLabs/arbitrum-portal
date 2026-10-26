@@ -1,4 +1,5 @@
 import { ChainId } from '../types/ChainId';
+import { findEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { isDepositMode } from './isDepositMode';
 
 /**
@@ -23,6 +24,17 @@ export function getNetworksRelationship({
   // Nova to ArbitrumOne is a LiFi sibling transfer, not parent-child.
   // Set Nova as parent so the LiFi token list keyed on (parent=Nova, child=One) resolves.
   if (sourceChainId === ChainId.ArbitrumNova && destinationChainId === ChainId.ArbitrumOne) {
+    return {
+      parentChainId: sourceChainId,
+      childChainId: destinationChainId,
+      isDepositMode: true,
+    };
+  }
+
+  // Chains without Arbitrum's token bridge, such as Solana, only send LiFi deposits. Treat the source
+  // as the parent side of the relationship so shared UI and history code keep the transfer direction
+  // consistent.
+  if (findEcosystemConfig(sourceChainId)?.hasParentChildTokenAddresses === false) {
     return {
       parentChainId: sourceChainId,
       childChainId: destinationChainId,
