@@ -7,7 +7,7 @@ import { defaultWalletContextValue } from '../../wallet/WalletContext';
 import { TransactionHistoryDisclaimer } from './TransactionHistoryDisclaimer';
 
 afterEach(cleanup);
-describe.sequential('TransactionHistoryDisclaimer', () => {
+describe('TransactionHistoryDisclaimer', () => {
   it.each([
     { accountType: 'externally-owned-account', balance: 0n, showLifi: false, showOft: false },
     { accountType: 'externally-owned-account', balance: 1n, showLifi: false, showOft: false },
