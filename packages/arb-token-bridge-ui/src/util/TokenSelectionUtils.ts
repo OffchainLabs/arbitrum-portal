@@ -240,39 +240,24 @@ export function getTokenForRow({
   return selectUsdcToken({ usdcToken, storedToken: listedToken });
 }
 
-/** A token list is on while `bridgeTokens` holds any of its tokens, like the token list switches. */
-export function getEnabledTokenListIds(
-  bridgeTokens: ContractStorage<ERC20BridgeToken> | undefined,
-): Set<string> {
-  return new Set(
-    Object.values(bridgeTokens ?? {}).flatMap((bridgeToken) => [...(bridgeToken?.listIds ?? [])]),
-  );
-}
-
 /**
- * Held tokens only show in the picker before a search when they come from a list the user has on.
- * Native USDC is on no list, so it shows whenever it is held.
+ * Held tokens only show in the picker before a search when they come from a list the user has on,
+ * which puts them in `bridgeTokens`, or were imported. Native USDC is on no list, so it shows
+ * whenever it is held.
  */
 export function isHeldTokenFromEnabledList({
   address,
-  token,
   tokensFromUser,
   bridgeTokens,
-  enabledTokenListIds,
 }: {
   address: string;
-  token: ERC20BridgeToken | null | undefined;
   tokensFromUser: ContractStorage<ERC20BridgeToken>;
   bridgeTokens: ContractStorage<ERC20BridgeToken> | undefined;
-  enabledTokenListIds: Set<string>;
 }): boolean {
-  if (isTokenArbitrumOneNativeUSDC(address) || isTokenArbitrumSepoliaNativeUSDC(address)) {
-    return true;
-  }
-
   return (
+    isTokenArbitrumOneNativeUSDC(address) ||
+    isTokenArbitrumSepoliaNativeUSDC(address) ||
     !!tokensFromUser[address] ||
-    !!bridgeTokens?.[address] ||
-    [...(token?.listIds ?? [])].some((listId) => enabledTokenListIds.has(listId))
+    !!bridgeTokens?.[address]
   );
 }
