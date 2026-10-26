@@ -162,11 +162,8 @@ export async function getUsdcToken({
   parentChainId: number;
   childChainId: number;
 }): Promise<ERC20BridgeToken | null> {
-  // Arbitrum USDC routing only exists between chains with Arbitrum's token bridge
-  if (
-    !getEcosystemConfig(parentChainId).hasParentChildTokenAddresses ||
-    !getEcosystemConfig(childChainId).hasParentChildTokenAddresses
-  ) {
+  // Arbitrum USDC routing doesn't reach LiFi-only chains
+  if (getEcosystemConfig(parentChainId).isLifiOnly || getEcosystemConfig(childChainId).isLifiOnly) {
     return null;
   }
 
