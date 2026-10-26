@@ -1,9 +1,9 @@
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { useLatest } from 'react-use';
 import { twMerge } from 'tailwind-merge';
-import { useAccount } from 'wagmi';
 
 import { TOS_LOCALSTORAGE_KEY } from '../../constants';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAmountBigNumber } from '../TransferPanel/hooks/useAmountBigNumber';
 import { Checkbox } from '../common/Checkbox';
 import { ExternalLink } from '../common/ExternalLink';
@@ -11,7 +11,9 @@ import { ExternalLink } from '../common/ExternalLink';
 export function ToSConfirmationCheckbox({ className }: { className?: string }) {
   const [tosAccepted, setTosAccepted] = useLocalStorage<boolean>(TOS_LOCALSTORAGE_KEY, false);
 
-  const { isConnected } = useAccount();
+  const {
+    sourceWallet: { isConnected },
+  } = useWallets();
   const { current: amountBigNumber } = useLatest(useAmountBigNumber());
 
   /**
