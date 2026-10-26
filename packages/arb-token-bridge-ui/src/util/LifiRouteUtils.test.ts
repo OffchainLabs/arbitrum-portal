@@ -8,6 +8,9 @@ import {
   createMockLifiBatchedTransaction,
   createMockLifiPartialTransaction,
 } from '../test-utils/lifi';
+import { ChainId } from '../types/ChainId';
+import { SOLANA_NATIVE_TOKEN_ADDRESS } from '../wallet/ecosystems/solana';
+import { CommonAddress } from './CommonAddressUtils';
 import {
   getLifiRouteDisplaySteps,
   getLifiRouteHistorySteps,
@@ -267,4 +270,32 @@ describe('getLifiTransactionSnapshot', () => {
     expect(snapshot?.durationMs).toBe(60_000);
     expect(snapshot?.toolsDetails).toEqual([toolDetails]);
   });
+});
+
+describe('getLifiRouteHistorySteps approvals', () => {
+  const solanaUsdc = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+  it.each([
+    { chainId: ChainId.Ethereum, address: constants.AddressZero, requiresApproval: false },
+    { chainId: ChainId.Ethereum, address: CommonAddress.Ethereum.USDC, requiresApproval: true },
+    { chainId: ChainId.Solana, address: SOLANA_NATIVE_TOKEN_ADDRESS, requiresApproval: false },
+    { chainId: ChainId.Solana, address: solanaUsdc, requiresApproval: false },
+    // Old history rows can come from chains the bridge no longer supports
+    { chainId: 999_999, address: constants.AddressZero, requiresApproval: false },
+    { chainId: 999_999, address: CommonAddress.Ethereum.USDC, requiresApproval: true },
+  ])(
+    'requires an approval for $address on chain $chainId: $requiresApproval',
+    ({ chainId, address, requiresApproval }) => {
+      const tx = createMockLifiPartialTransaction();
+      const step = tx.lifiRoute?.steps[0];
+      if (!tx.lifiRoute || !step) throw new Error('Missing fixture step');
+      step.action = {
+        ...step.action,
+        fromChainId: chainId,
+        fromToken: { ...step.action.fromToken, chainId, address },
+      };
+
+      expect(getLifiRouteHistorySteps(tx.lifiRoute)[0]?.requiresApproval).toBe(requiresApproval);
+    },
+  );
 });
