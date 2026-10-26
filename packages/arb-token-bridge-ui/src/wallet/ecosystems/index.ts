@@ -27,6 +27,8 @@ export type EcosystemConfig = {
   hasParentChildTokenAddresses: boolean;
   /** Chains price gas with an EVM gas price, as returned by `eth_gasPrice` */
   hasGasPrice: boolean;
+  /** Transfers sign with wagmi's ethers signer, which is only ready once the wallet connects */
+  usesEthersSigner: boolean;
   /** Tokens need an allowance before a transfer can move them, as with ERC-20 approvals */
   hasTokenApprovals: boolean;
 };

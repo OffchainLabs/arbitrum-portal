@@ -16,5 +16,6 @@ export const evmEcosystem: EcosystemConfig = {
   nativeTokenAddress: zeroAddress,
   hasParentChildTokenAddresses: true,
   hasGasPrice: true,
+  usesEthersSigner: true,
   hasTokenApprovals: true,
 };
