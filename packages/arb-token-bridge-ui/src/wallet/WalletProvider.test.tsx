@@ -1,10 +1,14 @@
 import { useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react';
+import { PublicKey } from '@solana/web3.js';
 import { act } from '@testing-library/react';
 import { cleanup, renderHook } from '@testing-library/react';
-import { useState } from 'react';
+import { type PropsWithChildren, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { WagmiProvider, createConfig, http } from 'wagmi';
+import { mainnet } from 'wagmi/chains';
 
 import { ChainId } from '../types/ChainId';
+import { appKit } from '../util/wagmi/setup';
 import { useWalletContext } from './WalletContext';
 import { WalletProvider } from './WalletProvider';
 import { useSolanaWallet } from './solana';
@@ -19,6 +23,22 @@ vi.mock('wagmi', async (importOriginal) => ({
   ...(await importOriginal<typeof import('wagmi')>()),
   useAccount: () => useAccountMock(),
 }));
+vi.mock('../util/wagmi/setup', () => ({ appKit: { getProvider: vi.fn() } }));
+
+const wagmiConfig = createConfig({
+  storage: null,
+  chains: [mainnet],
+  transports: { [mainnet.id]: http() },
+  multiInjectedProviderDiscovery: false,
+});
+
+function Wrapper({ children }: PropsWithChildren) {
+  return (
+    <WagmiProvider config={wagmiConfig}>
+      <WalletProvider>{children}</WalletProvider>
+    </WagmiProvider>
+  );
+}
 
 const disconnect = vi.fn();
 const walletInfo = { name: 'MetaMask', icon: 'https://example.com/wallet.png' };
@@ -51,7 +71,7 @@ describe.sequential('WalletProvider', () => {
   });
 
   it('maps the EVM account with the wagmi chain ID and walletInfo', () => {
-    const { result } = renderHook(() => useWalletContext('evm'), { wrapper: WalletProvider });
+    const { result } = renderHook(() => useWalletContext('evm'), { wrapper: Wrapper });
     expect(result.current.account).toEqual({
       ecosystem: 'evm',
       address,
@@ -69,15 +89,29 @@ describe.sequential('WalletProvider', () => {
     vi.mocked(useWalletInfo).mockReturnValue({ walletInfo: { name: 'Trust Wallet', icon: '' } });
     const { result } = renderHook(
       () => ({ evm: useWalletContext('evm'), solana: useSolanaWallet() }),
-      { wrapper: WalletProvider },
+      { wrapper: Wrapper },
     );
     expect(result.current.evm.needsNetworkSigningWarning).toBe(true);
     expect(result.current.solana.needsNetworkSigningWarning).toBe(false);
   });
 
+  it('exposes signers that read the connected wallets when called', () => {
+    const publicKey = new PublicKey('So11111111111111111111111111111111111111112');
+    const { result } = renderHook(
+      () => ({ evm: useWalletContext('evm'), solana: useWalletContext('solana') }),
+      { wrapper: Wrapper },
+    );
+
+    // The test wagmi config has no connection, and the Solana wallet connects after the render
+    expect(result.current.evm.signer.getAddress()).toBeUndefined();
+    vi.mocked(appKit.getProvider).mockReturnValue({ publicKey });
+    expect(result.current.solana.signer.getAddress()).toBe(publicKey.toBase58());
+    expect(appKit.getProvider).toHaveBeenCalledWith('solana');
+  });
+
   it('reacts to the EVM account chain changing', () => {
     const { result, rerender } = renderHook(() => useWalletContext('evm'), {
-      wrapper: WalletProvider,
+      wrapper: Wrapper,
     });
     useAccountMock.mockReturnValue({ chain: { id: 1 } });
     rerender();
@@ -86,7 +120,7 @@ describe.sequential('WalletProvider', () => {
 
   it('leaves the chain ID unset when the wallet is on a chain outside the wagmi config', () => {
     useAccountMock.mockReturnValue({ chain: undefined });
-    const { result } = renderHook(() => useWalletContext('evm'), { wrapper: WalletProvider });
+    const { result } = renderHook(() => useWalletContext('evm'), { wrapper: Wrapper });
     expect(result.current.account.chainId).toBeUndefined();
   });
 
@@ -98,13 +132,13 @@ describe.sequential('WalletProvider', () => {
       status: 'connected',
       allAccounts: [],
     });
-    const { result } = renderHook(() => useWalletContext('evm'), { wrapper: WalletProvider });
+    const { result } = renderHook(() => useWalletContext('evm'), { wrapper: Wrapper });
     expect(result.current.account.address).toBeUndefined();
   });
 
   it('updates the handle when the account disconnects', () => {
     const { result, rerender } = renderHook(() => useWalletContext('evm'), {
-      wrapper: WalletProvider,
+      wrapper: Wrapper,
     });
     vi.mocked(useAppKitAccount).mockReturnValue({ ...disconnectedAccount, status: undefined });
     useAccountMock.mockReturnValue({ chain: undefined });
@@ -122,19 +156,19 @@ describe.sequential('WalletProvider', () => {
 
   it.each(['connecting', 'reconnecting'] as const)('preserves %s status', (status) => {
     vi.mocked(useAppKitAccount).mockReturnValue({ ...disconnectedAccount, status });
-    const { result } = renderHook(() => useWalletContext('evm'), { wrapper: WalletProvider });
+    const { result } = renderHook(() => useWalletContext('evm'), { wrapper: Wrapper });
     expect(result.current.account.status).toBe(status);
   });
 
   it('disconnects only the EVM namespace', async () => {
-    const { result } = renderHook(() => useWalletContext('evm'), { wrapper: WalletProvider });
+    const { result } = renderHook(() => useWalletContext('evm'), { wrapper: Wrapper });
     await result.current.disconnect();
     expect(disconnect).toHaveBeenCalledExactlyOnceWith({ namespace: 'eip155' });
   });
 
   it('does not disconnect an absent EVM session', async () => {
     vi.mocked(useAppKitAccount).mockReturnValue(disconnectedAccount);
-    const { result } = renderHook(() => useWalletContext('evm'), { wrapper: WalletProvider });
+    const { result } = renderHook(() => useWalletContext('evm'), { wrapper: Wrapper });
     await result.current.disconnect();
     expect(disconnect).not.toHaveBeenCalled();
   });
@@ -142,7 +176,7 @@ describe.sequential('WalletProvider', () => {
   it('propagates disconnect errors', async () => {
     const error = new Error('Disconnect failed');
     disconnect.mockRejectedValueOnce(error);
-    const { result } = renderHook(() => useWalletContext('evm'), { wrapper: WalletProvider });
+    const { result } = renderHook(() => useWalletContext('evm'), { wrapper: Wrapper });
     await expect(result.current.disconnect()).rejects.toBe(error);
   });
 
@@ -155,7 +189,7 @@ describe.sequential('WalletProvider', () => {
         ? disconnectedAccount
         : { address, isConnected: true, status: 'connected', allAccounts: [], caipAddress },
     );
-    const { result } = renderHook(() => useWalletContext('solana'), { wrapper: WalletProvider });
+    const { result } = renderHook(() => useWalletContext('solana'), { wrapper: Wrapper });
     expect(result.current.account).toEqual({
       ecosystem: 'solana',
       address: undefined,
@@ -207,7 +241,7 @@ describe.sequential('WalletProvider with Solana', () => {
   });
 
   it('retains the EVM account chain while Solana is connected', () => {
-    const { result } = renderHook(useBothWallets, { wrapper: WalletProvider });
+    const { result } = renderHook(useBothWallets, { wrapper: Wrapper });
     expect(result.current.evm.account.chainId).toBe(42161);
     expect(result.current.solana.account.chainId).toBe(ChainId.Solana);
     expect(result.current.solana.account.address).toBe(
@@ -219,7 +253,7 @@ describe.sequential('WalletProvider with Solana', () => {
   it.each(['evm', 'solana'] as const)(
     'disconnects %s without changing the other session',
     async (ecosystem) => {
-      const { result, rerender } = renderHook(useBothWallets, { wrapper: WalletProvider });
+      const { result, rerender } = renderHook(useBothWallets, { wrapper: Wrapper });
       await result.current[ecosystem].disconnect();
       rerender();
       expect(disconnect).toHaveBeenCalledExactlyOnceWith({
@@ -236,7 +270,7 @@ describe.sequential('WalletProvider with Solana', () => {
       sessions.evm = false;
       sessions.solana = false;
       const { result, rerender } = renderHook(() => ({ ...useBothWallets(), state: useState(0) }), {
-        wrapper: WalletProvider,
+        wrapper: Wrapper,
       });
       act(() => result.current.state[1](7));
       sessions.evm = true;
@@ -249,7 +283,7 @@ describe.sequential('WalletProvider with Solana', () => {
   );
 
   it.each(['evm', 'solana'] as const)('reconnects %s independently', (ecosystem) => {
-    const { result, rerender } = renderHook(useBothWallets, { wrapper: WalletProvider });
+    const { result, rerender } = renderHook(useBothWallets, { wrapper: Wrapper });
     sessions[ecosystem] = false;
     rerender();
     expect(result.current[ecosystem].isConnected).toBe(false);

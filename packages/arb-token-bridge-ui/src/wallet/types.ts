@@ -1,3 +1,6 @@
+import type { SolanaProviderOptions } from '@lifi/sdk';
+import type { WalletClient } from 'viem';
+
 import type { EvmAddress, SolanaAddress } from '../util/AddressUtils';
 
 export type WalletEcosystem = 'evm' | 'solana';
@@ -27,6 +30,31 @@ export type WalletAccount<Ecosystem extends WalletEcosystem> = {
   walletInfo?: ConnectedWalletInfo;
 };
 
+export type SolanaWalletAdapter = Awaited<
+  ReturnType<NonNullable<SolanaProviderOptions['getWalletAdapter']>>
+>;
+
+/** Signs LiFi route steps. Each method reads the wallet when called, not when the signer is created. */
+type SignerBase = {
+  getAddress: () => string | undefined;
+};
+
+export type EvmSigner = SignerBase & {
+  getWalletClient: (chainId?: number) => Promise<WalletClient>;
+};
+
+export type SolanaSigner = SignerBase & {
+  /** Throws when no Solana wallet is connected */
+  getWalletAdapter: () => Promise<SolanaWalletAdapter>;
+};
+
+export type Signers = ByEcosystem<{ evm: EvmSigner; solana: SolanaSigner }>;
+
+// Falls back to the base signer for an ecosystem without an entry, so the error stays on `Signers`
+type SignerOf<Ecosystem extends WalletEcosystem> = Ecosystem extends keyof Signers
+  ? Signers[Ecosystem]
+  : SignerBase;
+
 type WalletHandleBase<Ecosystem extends WalletEcosystem> = {
   ecosystem: Ecosystem;
   account: WalletAccount<Ecosystem>;
@@ -34,6 +62,7 @@ type WalletHandleBase<Ecosystem extends WalletEcosystem> = {
   /** Old Trust Wallet versions can sign on the wrong network, so transfers warn first. */
   needsNetworkSigningWarning?: boolean;
   disconnect: () => Promise<void>;
+  signer: SignerOf<Ecosystem>;
 };
 
 export type EvmWalletHandle = WalletHandleBase<'evm'>;

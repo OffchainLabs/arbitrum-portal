@@ -1,3 +1,4 @@
+import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import {
   BridgeTransferStarter,
   BridgeTransferStarterPropsWithChainIds,
@@ -22,10 +23,6 @@ function getCacheKey(props: BridgeTransferStarterPropsWithChainIds): string {
     cacheKey += `-destinationErc20:${props.destinationChainErc20Address}`;
   }
 
-  if (props.lifiRoute) {
-    cacheKey += `-${props.lifiRoute.protocolData.route.id}`;
-  }
-
   return cacheKey;
 }
 
@@ -42,8 +39,20 @@ export class BridgeTransferStarterFactory {
   public static create(
     props: BridgeTransferStarterPropsWithChainIds & { lifiRoute?: never },
   ): BridgeTransferStarter;
-  public static create(props: BridgeTransferStarterPropsWithChainIds): TransferStarter;
+  public static create(
+    props: BridgeTransferStarterPropsWithChainIds,
+  ): TransferStarter;
   public static create(props: BridgeTransferStarterPropsWithChainIds): TransferStarter {
+    // LiFi routes need no provider, whichever ecosystem they start from
+    if (props.lifiRoute) {
+      return new LifiTransferStarter({ lifiRoute: props.lifiRoute });
+    }
+
+    // Without Arbitrum's token bridge, LiFi is the only way to transfer
+    if (!getEcosystemConfig(props.sourceChainId).hasParentChildTokenAddresses) {
+      throw new Error('A LiFi quote is required to transfer from this chain.');
+    }
+
     const sourceChainProvider = getProviderForChainId(props.sourceChainId);
     const destinationChainProvider = getProviderForChainId(props.destinationChainId);
 
@@ -78,13 +87,6 @@ export class BridgeTransferStarterFactory {
       destinationChainId: props.destinationChainId,
       sourceChainErc20Address: props.sourceChainErc20Address,
     });
-
-    if (props.lifiRoute) {
-      return withCache(
-        cacheKey,
-        new LifiTransferStarter({ ...initProps, lifiRoute: props.lifiRoute }),
-      );
-    }
 
     if (isOft.isValid) {
       return withCache(cacheKey, new OftV2TransferStarter(initProps));
