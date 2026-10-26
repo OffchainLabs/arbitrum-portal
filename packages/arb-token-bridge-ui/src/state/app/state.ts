@@ -12,7 +12,7 @@ import {
   ParentToChildMessageData,
   TxnType,
 } from '../../types/Transactions';
-import { Address } from '../../util/AddressUtils';
+import { Address, EvmAddress } from '../../util/AddressUtils';
 import { CCTPSupportedChainId } from '../cctpState';
 
 export enum DepositStatus {
@@ -97,7 +97,7 @@ export interface BaseMergedTransaction {
   destinationChainId: number;
   cctpData?: {
     sourceChainId?: CCTPSupportedChainId;
-    attestationHash?: Address | null;
+    attestationHash?: EvmAddress | null;
     messageBytes?: string | null;
     receiveMessageTransactionHash?: Address | null;
     receiveMessageTimestamp?: number | null;

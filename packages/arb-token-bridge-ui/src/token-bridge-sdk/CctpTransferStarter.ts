@@ -3,7 +3,7 @@ import { TransactionRequest } from '@ethersproject/providers';
 import { Config, simulateContract, writeContract } from '@wagmi/core';
 import { BigNumber, constants, utils } from 'ethers';
 
-import { Address } from '../util/AddressUtils';
+import { EvmAddress } from '../util/AddressUtils';
 import { formatAmount } from '../util/NumberUtils';
 import { fetchErc20Allowance } from '../util/TokenUtils';
 import { TokenMessengerAbi } from '../util/cctp/TokenMessengerAbi';
@@ -113,7 +113,7 @@ export class CctpTransferStarter extends BridgeTransferStarter {
     const recipient = destinationAddress ?? from;
     // burn token on the selected chain to be transferred from cctp contracts to the other chain
     // CCTP uses 32 bytes addresses, while EVEM uses 20 bytes addresses
-    const mintRecipient = utils.hexlify(utils.zeroPad(recipient, 32)) as Address;
+    const mintRecipient = utils.hexlify(utils.zeroPad(recipient, 32)) as EvmAddress;
 
     const { usdcContractAddress, tokenMessengerContractAddress, targetChainDomain } =
       getCctpContracts({
