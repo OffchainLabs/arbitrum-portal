@@ -24,7 +24,7 @@ We want to add Solana as a LiFi source without changing what EVM users see. We a
 
 - address and transaction id validation and normalization
 - the native token address used in balance requests and LiFi quotes
-- whether tokens have separate parent and child addresses, meaning the chain has Arbitrum's token bridge
+- whether every chain of the ecosystem only reaches Arbitrum through LiFi (`isLifiOnly`), with no parent and child token addresses and no canonical bridge
 - whether its chains have an EVM gas price, whether transfers sign with wagmi's ethers signer, and whether AppKit identifies its networks by chain id
 - the explorer account path
 - the built-in chains
@@ -53,7 +53,7 @@ A component that needs ecosystem-specific behaviour calls a helper or reads the 
 - the wallet name in the header comes from `ecosystems[ecosystem].name`
 - the connect modal opens on `getEcosystemConfig(chainId).namespace`
 
-Capabilities that only EVM chains have today, such as a gas price or Arbitrum's token bridge, are required fields of the config, not checks against `'evm'`. A new ecosystem config fails to compile until it answers each of them. The one check left is ENS and Unstoppable Domains in `useAccountMenu`, which narrows the address to `0x${string}`: those services only resolve EVM addresses, so no other ecosystem can answer yes.
+Capabilities that only EVM chains have today, such as a gas price or a route that doesn't need LiFi, are required fields of the config, not checks against `'evm'`. A new ecosystem config fails to compile until it answers each of them. The one check left is ENS and Unstoppable Domains in `useAccountMenu`, which narrows the address to `0x${string}`: those services only resolve EVM addresses, so no other ecosystem can answer yes.
 
 ### Per-ecosystem implementations live in typed records
 
@@ -82,9 +82,9 @@ Signers read the wallet when called, not when created, so a route signs with the
 
 ### Network metadata doesn't need an EVM provider
 
-`util/networkMetadata.ts` registers every built-in chain with its ecosystem. Chain names, native currency and explorers come from that registry. Code paths that used to create an ethers provider just to read chain data now read the registry, so selecting Solana doesn't create an EVM provider for it. Arbitrum-specific setup, such as the token bridge parameters, runs only when both chains have Arbitrum's token bridge.
+`util/networkMetadata.ts` registers every built-in chain with its ecosystem. Chain names, native currency and explorers come from that registry. Code paths that used to create an ethers provider just to read chain data now read the registry, so selecting Solana doesn't create an EVM provider for it. Arbitrum-specific setup, such as the token bridge parameters, runs only when neither chain is LiFi-only.
 
-Chains of an ecosystem without Arbitrum's token bridge only reach Arbitrum through LiFi. The supported chain ids, the root networks of the network list and their explorer URLs are read from those ecosystems' `chains`, so they need no per-chain entry. Built-in EVM chains do: `defaultRpcUrls` in `util/networks.ts` must have an entry for each of them, or the build fails.
+The supported chain ids, the root networks of the network list and the explorer URLs of LiFi-only ecosystems are read from their `chains`, so those chains need no per-chain entry. Built-in EVM chains do: `defaultRpcUrls` in `util/networks.ts` must have an entry for each of them, or the build fails.
 
 ### Balances share one cache
 
