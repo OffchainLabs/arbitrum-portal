@@ -16,6 +16,8 @@ export type EcosystemConfig = {
     isValid: (address: string, options?: ValidationOptions) => boolean;
     normalize: (address: string) => string;
   };
+  /** Address that stands for the native currency in balance requests and LiFi quotes */
+  nativeTokenAddress: string;
 };
 
 export const ecosystems: Record<WalletEcosystem, EcosystemConfig> = {
