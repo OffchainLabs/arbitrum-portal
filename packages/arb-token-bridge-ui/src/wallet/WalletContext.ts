@@ -14,6 +14,9 @@ export const defaultWalletContextValue: WalletContextValue = {
       getWalletClient: async () => {
         throw new Error('Connect a wallet to continue.');
       },
+      getEthersSigner: async () => {
+        throw new Error('Connect a wallet to continue.');
+      },
     },
   },
   solana: {

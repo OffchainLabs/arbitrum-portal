@@ -11,6 +11,7 @@ export function createMockSigners({
     evm: {
       getAddress: () => evm,
       getWalletClient: vi.fn<EvmSigner['getWalletClient']>(),
+      getEthersSigner: vi.fn<EvmSigner['getEthersSigner']>(),
     },
     solana: {
       getAddress: () => solana,
