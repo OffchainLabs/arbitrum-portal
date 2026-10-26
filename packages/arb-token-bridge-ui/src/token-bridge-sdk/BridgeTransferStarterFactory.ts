@@ -48,8 +48,8 @@ export class BridgeTransferStarterFactory {
       return new LifiTransferStarter({ lifiRoute: props.lifiRoute });
     }
 
-    // Without Arbitrum's token bridge, LiFi is the only way to transfer
-    if (!getEcosystemConfig(props.sourceChainId).hasParentChildTokenAddresses) {
+    // A LiFi-only chain has no canonical bridge to fall back to
+    if (getEcosystemConfig(props.sourceChainId).isLifiOnly) {
       throw new Error('A LiFi quote is required to transfer from this chain.');
     }
 
