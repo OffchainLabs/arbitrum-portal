@@ -11,7 +11,10 @@ const nonEvmLifiRoutes: Record<
   NonEvmEcosystem,
   {
     destinationChainIds: Record<number, number[]>;
-    /** Its tokens have no counterpart in the Arbitrum token lists */
+    /**
+     * Its chains allow "unmatched" tokens, which exist on that chain but not on the other one, so
+     * LiFi swaps can send or receive them
+     */
     allowsUnmatchedTokens: boolean;
   }
 > = {
