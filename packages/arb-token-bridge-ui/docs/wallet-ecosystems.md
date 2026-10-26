@@ -25,7 +25,7 @@ We want to add Solana as a LiFi source without changing what EVM users see. We a
 - address and transaction id validation and normalization
 - the native token address used in balance requests and LiFi quotes
 - whether every chain of the ecosystem only reaches Arbitrum through LiFi (`isLifiOnly`), with no parent and child token addresses and no canonical bridge
-- whether its chains have an EVM gas price, whether transfers sign with the ethers signer that `useEthersSigner` builds from the wagmi connection, and whether AppKit identifies its networks by chain id
+- whether its chains have an EVM gas price, and whether AppKit identifies its networks by chain id
 - the explorer account path
 - the built-in chains
 - the AppKit namespace
@@ -76,7 +76,7 @@ The types follow the same rule. `WalletContextValue` is mapped over `WalletEcosy
 
 ### Execution goes through LiFi's SDK providers
 
-One `LifiTransferStarter` runs every LiFi route. It takes only the route, so it needs no provider to estimate gas or to start, and the factory returns it before creating any provider. Each wallet handle has a `signer` whose method names follow LiFi's provider options: `getWalletClient` for EVM, `getWalletAdapter` for Solana. `LifiRouteExecutor` registers one LiFi provider per enabled ecosystem that has a signer. It takes the signers from the source and destination wallets, plus the caller's `switchChainAsync`. Chain switching is a UI concern, so it stays with the caller instead of the signer.
+One `LifiTransferStarter` runs every LiFi route. It takes only the route, so it needs no provider to estimate gas or to start, and the factory returns it before creating any provider. Each wallet handle has a `signer` whose method names follow LiFi's provider options: `getWalletClient` for EVM, `getWalletAdapter` for Solana. The EVM signer also has `getEthersSigner`, which canonical bridge, CCTP and OFT transactions sign with, so every EVM transfer reads the same wallet. `LifiRouteExecutor` registers one LiFi provider per enabled ecosystem that has a signer. It takes the signers from the source and destination wallets, plus the caller's `switchChainAsync`. Chain switching is a UI concern, so it stays with the caller instead of the signer.
 
 Signers read the wallet when called, not when created, so a route signs with the account connected at that moment. Before it runs or resumes a route, the executor picks the signer from the sender's address format and checks that it is still the sender's account. The starter returns `sourceChainTransaction.wait()`, which reads a record keyed by ecosystem: EVM waits for the receipt through the source chain provider, and Solana resolves at once because LiFi only reports the signature after confirmation. Gas estimates come from the route. When the source chain has no gas price, as on Solana, the starter returns LiFi's quoted fees as well, and the gas summary shows those.
 
