@@ -27,7 +27,7 @@ const solana: SolanaWalletHandle = {
   isConnected: true,
   disconnect: async () => {},
 };
-describe.sequential('useWallets', () => {
+describe('useWallets', () => {
   afterEach(cleanup);
   it('returns the same injected EVM handle for both sides without Reown providers', () => {
     const { result } = renderHook(() => useWallets(), {
