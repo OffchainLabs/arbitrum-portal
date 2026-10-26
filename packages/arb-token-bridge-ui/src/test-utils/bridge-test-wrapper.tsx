@@ -12,6 +12,7 @@ import { useAppStore } from '../state';
 import { type AppState, defaultState } from '../state/app/state';
 import type { EvmAddress } from '../util/AddressUtils';
 import { getNetworksRelationship } from '../util/getNetworksRelationship';
+import { initializeBridgeNetworks } from '../util/networks';
 import { defaultWalletContextValue } from '../wallet/WalletContext';
 import { getBalanceClient } from '../wallet/balance/getBalanceClient';
 import type { BalanceClient, WalletContextValue } from '../wallet/types';
@@ -44,6 +45,7 @@ export function createBridgeTestWrapper({
   app?: Partial<AppState>;
   wagmiConfig?: Config;
 }) {
+  initializeBridgeNetworks();
   const { parentChainId, childChainId } = getNetworksRelationship({
     sourceChainId: query.sourceChain,
     destinationChainId: query.destinationChain,

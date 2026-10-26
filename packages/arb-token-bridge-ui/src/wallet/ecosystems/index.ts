@@ -1,3 +1,5 @@
+import type { Chain } from 'viem';
+
 import type { WalletEcosystem } from '../types';
 import { evmEcosystem } from './evm';
 import { solanaEcosystem } from './solana';
@@ -31,6 +33,10 @@ export type EcosystemConfig = {
   usesEthersSigner: boolean;
   /** Tokens need an allowance before a transfer can move them, as with ERC-20 approvals */
   hasTokenApprovals: boolean;
+  /** Explorer path segment for account pages */
+  explorerAccountPath: string;
+  /** Built-in chains. The network registry adds Orbit, local and custom chains as EVM */
+  chains: readonly Chain[];
 };
 
 export const ecosystems: Record<WalletEcosystem, EcosystemConfig> = {

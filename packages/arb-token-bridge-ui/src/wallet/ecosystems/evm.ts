@@ -1,6 +1,27 @@
 import { isAddress, isHash, zeroAddress } from 'viem';
+import {
+  arbitrum,
+  arbitrumNova,
+  arbitrumSepolia,
+  base,
+  baseSepolia,
+  mainnet,
+  sepolia,
+} from 'viem/chains';
 
 import type { EcosystemConfig } from '.';
+
+// `as const` keeps each chain id literal, so `defaultRpcUrls` must list every one of them
+export const evmChains = [
+  mainnet,
+  sepolia,
+  arbitrum,
+  arbitrumNova,
+  arbitrumSepolia,
+  base,
+  baseSepolia,
+] as const;
+export type CoreEvmChainId = (typeof evmChains)[number]['id'];
 
 export const evmEcosystem: EcosystemConfig = {
   isEnabled: () => true,
@@ -18,4 +39,6 @@ export const evmEcosystem: EcosystemConfig = {
   hasGasPrice: true,
   usesEthersSigner: true,
   hasTokenApprovals: true,
+  explorerAccountPath: 'address',
+  chains: evmChains,
 };
