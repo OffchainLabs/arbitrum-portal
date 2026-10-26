@@ -53,35 +53,142 @@ describe.sequential('useTokenBalances', () => {
     expect(result.current.data).toEqual({ token: 42n });
   });
 
-  it('does not retain another account balance during loading, RPC failure, or disconnect', async () => {
-    const fetchBalance = vi.fn(async ({ walletAddress }: { walletAddress: string }) => {
-      if (walletAddress === SECOND_ADDRESS) throw new Error('RPC unavailable');
-      return { token: 7n };
-    });
+  it('does not poll token-list requests when periodic refresh is disabled', async () => {
+    vi.useFakeTimers();
+    const fetchBalance = vi.fn(async () => ({ token: 7n }));
     vi.mocked(getBalanceClient).mockReturnValue({ fetchBalance });
     const wrapper = ({ children }: PropsWithChildren) => (
-      <SWRConfig value={{ provider: () => new Map(), shouldRetryOnError: false }}>
-        {children}
-      </SWRConfig>
+      <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>{children}</SWRConfig>
     );
-    const initialProps: { walletAddress?: string } = { walletAddress: FIRST_ADDRESS };
+    const { result } = renderHook(
+      () =>
+        useObservedTokenBalances({
+          chainId: 1,
+          walletAddress: ACCOUNT_ADDRESS,
+          tokenAddresses: ['token'],
+          refreshInterval: 0,
+        }),
+      { wrapper },
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20);
+    });
+    expect(result.current.data).toEqual({ token: 7n });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(fetchBalance).toHaveBeenCalledTimes(1);
+  });
+
+  it('revalidates cached balances when a consumer without polling mounts again', async () => {
+    let balance = 1n;
+    vi.mocked(getBalanceClient).mockReturnValue({ fetchBalance: async () => ({ token: balance }) });
+    const cache = new Map();
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <SWRConfig value={{ provider: () => cache, dedupingInterval: 0 }}>{children}</SWRConfig>
+    );
+    const input = {
+      chainId: 1,
+      walletAddress: ACCOUNT_ADDRESS,
+      tokenAddresses: ['token'],
+      refreshInterval: 0,
+    };
+    const first = renderHook(() => useObservedTokenBalances(input), { wrapper });
+    await waitFor(() => expect(first.result.current.data).toEqual({ token: 1n }));
+    first.unmount();
+    balance = 2n;
+    const second = renderHook(() => useObservedTokenBalances(input), { wrapper });
+    await waitFor(() => expect(second.result.current.data).toEqual({ token: 2n }));
+  });
+
+  it('keeps previous balances while a changed token list loads, but not after disconnect', async () => {
+    vi.mocked(getBalanceClient).mockReturnValue({
+      fetchBalance: async ({ tokenAddresses }) =>
+        Object.fromEntries(tokenAddresses.map((token) => [token, 1n])),
+    });
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <SWRConfig value={{ provider: () => new Map() }}>{children}</SWRConfig>
+    );
+    const initialProps: { walletAddress?: string; tokens: string[] } = {
+      walletAddress: ACCOUNT_ADDRESS,
+      tokens: ['first'],
+    };
     const { result, rerender } = renderHook(
-      ({ walletAddress }: { walletAddress?: string }) =>
+      ({ walletAddress, tokens }) =>
         useObservedTokenBalances({
           chainId: 1,
           walletAddress,
-          tokenAddresses: ['token'],
+          tokenAddresses: tokens,
+          keepPreviousData: true,
         }),
       { wrapper, initialProps },
     );
-    await waitFor(() => expect(result.current.data).toEqual({ token: 7n }));
-    rerender({ walletAddress: SECOND_ADDRESS });
+    await waitFor(() => expect(result.current.data).toEqual({ first: 1n }));
+    rerender({ walletAddress: ACCOUNT_ADDRESS, tokens: ['first', 'second'] });
+    expect(result.current.data).toEqual({ first: 1n });
+    await waitFor(() => expect(result.current.data).toEqual({ first: 1n, second: 1n }));
+    rerender({ walletAddress: undefined, tokens: ['first', 'second'] });
     expect(result.current.data).toBeUndefined();
-    await waitFor(() => expect(result.current.error?.message).toBe('RPC unavailable'));
+  });
+
+  it.each([false, true])(
+    'does not retain another account balance during loading, RPC failure, or disconnect (keepPreviousData: %s)',
+    async (keepPreviousData) => {
+      const fetchBalance = vi.fn(async ({ walletAddress }: { walletAddress: string }) => {
+        if (walletAddress === SECOND_ADDRESS) throw new Error('RPC unavailable');
+        return { token: 7n };
+      });
+      vi.mocked(getBalanceClient).mockReturnValue({ fetchBalance });
+      const wrapper = ({ children }: PropsWithChildren) => (
+        <SWRConfig value={{ provider: () => new Map(), shouldRetryOnError: false }}>
+          {children}
+        </SWRConfig>
+      );
+      const initialProps: { walletAddress?: string } = { walletAddress: FIRST_ADDRESS };
+      const { result, rerender } = renderHook(
+        ({ walletAddress }: { walletAddress?: string }) =>
+          useObservedTokenBalances({
+            chainId: 1,
+            walletAddress,
+            tokenAddresses: ['token'],
+            keepPreviousData,
+          }),
+        { wrapper, initialProps },
+      );
+      await waitFor(() => expect(result.current.data).toEqual({ token: 7n }));
+      rerender({ walletAddress: SECOND_ADDRESS });
+      expect(result.current.data).toBeUndefined();
+      await waitFor(() => expect(result.current.error?.message).toBe('RPC unavailable'));
+      expect(result.current.data).toBeUndefined();
+      rerender({ walletAddress: undefined });
+      expect(result.current.data).toBeUndefined();
+      expect(result.current.error).toBeUndefined();
+    },
+  );
+
+  it('does not retain balances from another chain while the new chain loads', async () => {
+    vi.mocked(getBalanceClient).mockReturnValue({
+      fetchBalance: async ({ chainId }) => ({ token: BigInt(chainId) }),
+    });
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <SWRConfig value={{ provider: () => new Map() }}>{children}</SWRConfig>
+    );
+    const { result, rerender } = renderHook(
+      ({ chainId }) =>
+        useObservedTokenBalances({
+          chainId,
+          walletAddress: ACCOUNT_ADDRESS,
+          tokenAddresses: ['token'],
+          keepPreviousData: true,
+        }),
+      { wrapper, initialProps: { chainId: ChainId.Ethereum } },
+    );
+    await waitFor(() => expect(result.current.data).toEqual({ token: 1n }));
+    rerender({ chainId: ChainId.ArbitrumOne });
     expect(result.current.data).toBeUndefined();
-    rerender({ walletAddress: undefined });
-    expect(result.current.data).toBeUndefined();
-    expect(result.current.error).toBeUndefined();
+    await waitFor(() =>
+      expect(result.current.data).toEqual({ token: BigInt(ChainId.ArbitrumOne) }),
+    );
   });
   it('shares identical requests across token consumers', async () => {
     const fetchBalance = vi.fn(async ({ tokenAddresses }: { tokenAddresses: string[] }) =>

@@ -9,6 +9,7 @@ import {
   ARB_ONE_NATIVE_USDC_TOKEN,
   ARB_SEPOLIA_NATIVE_USDC_TOKEN,
   getTokenForRow,
+  isHeldTokenFromEnabledList,
   isTokenDepositUnavailable,
   resolveDestinationSelection,
   selectUsdcToken,
@@ -438,5 +439,42 @@ describe('getTokenForRow', () => {
         }),
       ).toBe(storedUsdc);
     });
+  });
+});
+
+describe('isHeldTokenFromEnabledList', () => {
+  const address = CommonAddress.Ethereum.USDC.toLowerCase();
+  const token = buildToken({ address, listIds: new Set(['5']) });
+
+  it.each([CommonAddress.ArbitrumOne.USDC, CommonAddress.ArbitrumSepolia.USDC])(
+    'shows held native USDC %s, which is on no list',
+    (usdcAddress) => {
+      expect(
+        isHeldTokenFromEnabledList({ address: usdcAddress, tokensFromUser: {}, bridgeTokens: {} }),
+      ).toBe(true);
+    },
+  );
+
+  it('hides a token from a list the user has off', () => {
+    expect(isHeldTokenFromEnabledList({ address, tokensFromUser: {}, bridgeTokens: {} })).toBe(
+      false,
+    );
+  });
+
+  it('shows imported and bridge tokens', () => {
+    expect(
+      isHeldTokenFromEnabledList({
+        address,
+        tokensFromUser: { [address]: token },
+        bridgeTokens: {},
+      }),
+    ).toBe(true);
+    expect(
+      isHeldTokenFromEnabledList({
+        address,
+        tokensFromUser: {},
+        bridgeTokens: { [address]: token },
+      }),
+    ).toBe(true);
   });
 });

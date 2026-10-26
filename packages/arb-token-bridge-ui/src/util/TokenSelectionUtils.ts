@@ -239,3 +239,25 @@ export function getTokenForRow({
 
   return selectUsdcToken({ usdcToken, storedToken: listedToken });
 }
+
+/**
+ * Held tokens only show in the picker before a search when they come from a list the user has on,
+ * which puts them in `bridgeTokens`, or were imported. Native USDC is on no list, so it shows
+ * whenever it is held.
+ */
+export function isHeldTokenFromEnabledList({
+  address,
+  tokensFromUser,
+  bridgeTokens,
+}: {
+  address: string;
+  tokensFromUser: ContractStorage<ERC20BridgeToken>;
+  bridgeTokens: ContractStorage<ERC20BridgeToken> | undefined;
+}): boolean {
+  return (
+    isTokenArbitrumOneNativeUSDC(address) ||
+    isTokenArbitrumSepoliaNativeUSDC(address) ||
+    !!tokensFromUser[address] ||
+    !!bridgeTokens?.[address]
+  );
+}
