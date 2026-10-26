@@ -21,7 +21,6 @@ const starter = vi.hoisted(() => ({
   requiresNativeCurrencyApproval: vi.fn(),
   transfer: vi.fn(),
 }));
-const signer = vi.hoisted(() => ({ getAddress: async () => evmAddress }));
 
 vi.mock('@sentry/react', async (actual) => ({
   ...(await actual<typeof import('@sentry/react')>()),
@@ -30,7 +29,6 @@ vi.mock('@sentry/react', async (actual) => ({
 vi.mock('../../util/AccountUtils', () => ({
   getAccountType: async () => 'externally-owned-account',
 }));
-vi.mock('../../util/wagmi/useEthersSigner', () => ({ useEthersSigner: () => signer }));
 vi.mock('../../token-bridge-sdk/BridgeTransferStarterFactory', () => ({
   BridgeTransferStarterFactory: { create: () => starter },
 }));
