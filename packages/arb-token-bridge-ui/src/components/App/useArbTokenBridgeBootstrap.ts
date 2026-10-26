@@ -14,10 +14,10 @@ export function useArbTokenBridgeBootstrap(): TokenBridgeParams | null {
   const [tokenBridgeParams, setTokenBridgeParams] = useState<TokenBridgeParams | null>(null);
   const nextTokenBridgeParams = useMemo<TokenBridgeParams | null>(
     () => {
-      // The token bridge only connects chains that have Arbitrum's token bridge
+      // LiFi-only chains have no Arbitrum token bridge to set up
       if (
-        !getEcosystemConfig(parentChain.id).hasParentChildTokenAddresses ||
-        !getEcosystemConfig(childChain.id).hasParentChildTokenAddresses
+        getEcosystemConfig(parentChain.id).isLifiOnly ||
+        getEcosystemConfig(childChain.id).isLifiOnly
       ) {
         return null;
       }
