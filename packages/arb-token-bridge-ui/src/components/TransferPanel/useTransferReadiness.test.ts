@@ -399,7 +399,7 @@ describe.sequential('custom gas token decimals', () => {
   );
 });
 
-describe.sequential('source wallet', () => {
+describe('source wallet', () => {
   it('is not ready while the source wallet is disconnected', () => {
     Object.assign(data, { amount: '1' });
     const { result } = renderReadiness(defaultWalletContextValue);
