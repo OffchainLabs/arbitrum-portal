@@ -25,12 +25,15 @@ export function useTokenBalances({
       : null;
   const result = useSWR(
     key,
-    ([currentChainId, currentWalletAddress, currentTokenAddresses]) =>
-      fetchBalances({
+    async ([currentChainId, currentWalletAddress, currentTokenAddresses]) => ({
+      chainId: currentChainId,
+      walletAddress: currentWalletAddress,
+      balances: await fetchBalances({
         chainId: currentChainId,
         walletAddress: currentWalletAddress,
         tokenAddresses: currentTokenAddresses,
       }),
+    }),
     {
       refreshInterval,
       revalidateOnFocus: refreshInterval > 0,
@@ -38,8 +41,11 @@ export function useTokenBalances({
     },
   );
 
-  // `keepPreviousData` would keep returning the last balances after the wallet disconnects
-  return key ? result : { ...result, data: undefined };
+  // `keepPreviousData` returns the previous key's balances while the next key loads, and keeps them
+  // if it fails. Only a token list change should reuse them, not a disconnect or another wallet or chain.
+  const isCurrentWallet =
+    !!key && result.data?.chainId === chainId && result.data.walletAddress === walletAddress;
+  return { ...result, data: isCurrentWallet ? result.data?.balances : undefined };
 }
 
 export function useRefreshTokenBalances() {

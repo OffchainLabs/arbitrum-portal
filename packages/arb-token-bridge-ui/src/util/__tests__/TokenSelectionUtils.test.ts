@@ -8,7 +8,9 @@ import { LIFI_TRANSFER_LIST_ID } from '../TokenListUtils';
 import {
   ARB_ONE_NATIVE_USDC_TOKEN,
   ARB_SEPOLIA_NATIVE_USDC_TOKEN,
+  getEnabledTokenListIds,
   getTokenForRow,
+  isHeldTokenFromEnabledList,
   isTokenDepositUnavailable,
   resolveDestinationSelection,
   selectUsdcToken,
@@ -438,5 +440,90 @@ describe('getTokenForRow', () => {
         }),
       ).toBe(storedUsdc);
     });
+  });
+});
+
+describe('getEnabledTokenListIds', () => {
+  it('collects the lists of every bridge token', () => {
+    expect(
+      getEnabledTokenListIds({
+        a: buildToken({ listIds: new Set(['1', '2']) }),
+        b: buildToken({ listIds: new Set(['2', LIFI_TRANSFER_LIST_ID]) }),
+        c: buildToken(),
+      }),
+    ).toEqual(new Set(['1', '2', LIFI_TRANSFER_LIST_ID]));
+  });
+
+  it('has no list before bridge tokens load', () => {
+    expect(getEnabledTokenListIds(undefined)).toEqual(new Set());
+  });
+});
+
+describe('isHeldTokenFromEnabledList', () => {
+  const address = CommonAddress.Ethereum.USDC.toLowerCase();
+  const token = buildToken({ address, listIds: new Set(['2']) });
+
+  it.each([CommonAddress.ArbitrumOne.USDC, CommonAddress.ArbitrumSepolia.USDC])(
+    'shows held native USDC %s, which is on no list',
+    (usdcAddress) => {
+      expect(
+        isHeldTokenFromEnabledList({
+          address: usdcAddress,
+          token:
+            usdcAddress === CommonAddress.ArbitrumOne.USDC
+              ? ARB_ONE_NATIVE_USDC_TOKEN
+              : ARB_SEPOLIA_NATIVE_USDC_TOKEN,
+          tokensFromUser: {},
+          bridgeTokens: {},
+          enabledTokenListIds: new Set(),
+        }),
+      ).toBe(true);
+    },
+  );
+
+  it('shows a token from a list the user has on, even when bridge tokens skipped it', () => {
+    expect(
+      isHeldTokenFromEnabledList({
+        address,
+        token,
+        tokensFromUser: {},
+        bridgeTokens: {},
+        enabledTokenListIds: new Set(['2']),
+      }),
+    ).toBe(true);
+  });
+
+  it('hides a token from a default list the user turned off', () => {
+    expect(
+      isHeldTokenFromEnabledList({
+        address,
+        token,
+        tokensFromUser: {},
+        bridgeTokens: {},
+        enabledTokenListIds: new Set(['1']),
+      }),
+    ).toBe(false);
+  });
+
+  it('shows imported and bridge tokens', () => {
+    const unlistedToken = buildToken({ address });
+    expect(
+      isHeldTokenFromEnabledList({
+        address,
+        token: unlistedToken,
+        tokensFromUser: { [address]: unlistedToken },
+        bridgeTokens: {},
+        enabledTokenListIds: new Set(),
+      }),
+    ).toBe(true);
+    expect(
+      isHeldTokenFromEnabledList({
+        address,
+        token: unlistedToken,
+        tokensFromUser: {},
+        bridgeTokens: { [address]: unlistedToken },
+        enabledTokenListIds: new Set(),
+      }),
+    ).toBe(true);
   });
 });
