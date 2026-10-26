@@ -29,7 +29,6 @@ import {
 } from '../../util/NovaUtils';
 import { isTokenUSDG, isUsdgSurfacedLikeEth } from '../../util/RobinhoodStablecoinUtils';
 import {
-  BRIDGE_TOKEN_LISTS,
   BridgeTokenList,
   SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID,
   addBridgeTokenListToBridge,
@@ -40,7 +39,9 @@ import {
 import {
   ARB_ONE_NATIVE_USDC_TOKEN,
   ARB_SEPOLIA_NATIVE_USDC_TOKEN,
+  getEnabledTokenListIds,
   getTokenForRow,
+  isHeldTokenFromEnabledList,
 } from '../../util/TokenSelectionUtils';
 import {
   fetchErc20Data,
@@ -62,10 +63,6 @@ import { Switch } from '../common/atoms/Switch';
 import { warningToast } from '../common/atoms/Toast';
 import { TokenRow } from './TokenRow';
 import { addTokenFromSearch, useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
-
-const defaultTokenListIds = new Set(
-  BRIDGE_TOKEN_LISTS.filter((list) => list.isDefault).map((list) => list.id),
-);
 
 function TokenListRow({ tokenList }: { tokenList: BridgeTokenList }) {
   const {
@@ -242,11 +239,15 @@ function TokensPanel({
   const getToken = useCallback(
     (address: string): ERC20BridgeToken | null => {
       if (address === NATIVE_CURRENCY_IDENTIFIER) return null;
-      if (isTokenArbitrumOneNativeUSDC(address)) {
-        return isOrbitChain ? usdcToken : ARB_ONE_NATIVE_USDC_TOKEN;
-      }
-      if (isTokenArbitrumSepoliaNativeUSDC(address)) {
-        return isOrbitChain ? usdcToken : ARB_SEPOLIA_NATIVE_USDC_TOKEN;
+      if (isTokenArbitrumOneNativeUSDC(address) || isTokenArbitrumSepoliaNativeUSDC(address)) {
+        // Same token as the row, so balances keep a listed USDC mapping over the source-only fallback
+        return getTokenForRow({
+          address,
+          tokensFromLists,
+          tokensFromUser,
+          isOrbitChain,
+          usdcToken,
+        });
       }
 
       return (
@@ -258,6 +259,7 @@ function TokensPanel({
     },
     [bridgeTokens, isOrbitChain, tokensFromLists, tokensFromUser, usdcToken],
   );
+  const enabledTokenListIds = useMemo(() => getEnabledTokenListIds(bridgeTokens), [bridgeTokens]);
   const childNativeCurrencyAddress = nativeCurrency.isCustom ? nativeCurrency.address : undefined;
   const sourceTokenAddresses = useMemo(
     () =>
@@ -447,11 +449,13 @@ function TokensPanel({
             return true;
           }
 
-          // Held tokens only show for enabled lists: the default ones and those the user turned on
-          const isFromEnabledList =
-            !!tokensFromUser[address] ||
-            !!bridgeTokens?.[address] ||
-            [...(token?.listIds ?? [])].some((listId) => defaultTokenListIds.has(listId));
+          const isFromEnabledList = isHeldTokenFromEnabledList({
+            address,
+            token,
+            tokensFromUser,
+            bridgeTokens,
+            enabledTokenListIds,
+          });
           const balance = getBalance(address);
           // Only show tokens with a balance greater than zero
           return isFromEnabledList && balance && balance.gt(0);
@@ -536,6 +540,7 @@ function TokensPanel({
     tokensFromUser,
     tokensFromLists,
     bridgeTokens,
+    enabledTokenListIds,
     isDepositMode,
     networks.sourceChain.id,
     networks.destinationChain.id,
