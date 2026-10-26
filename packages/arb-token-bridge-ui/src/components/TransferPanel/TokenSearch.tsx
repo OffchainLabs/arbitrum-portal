@@ -39,7 +39,6 @@ import {
 import {
   ARB_ONE_NATIVE_USDC_TOKEN,
   ARB_SEPOLIA_NATIVE_USDC_TOKEN,
-  getEnabledTokenListIds,
   getTokenForRow,
   isHeldTokenFromEnabledList,
 } from '../../util/TokenSelectionUtils';
@@ -259,7 +258,6 @@ function TokensPanel({
     },
     [bridgeTokens, isOrbitChain, tokensFromLists, tokensFromUser, usdcToken],
   );
-  const enabledTokenListIds = useMemo(() => getEnabledTokenListIds(bridgeTokens), [bridgeTokens]);
   const childNativeCurrencyAddress = nativeCurrency.isCustom ? nativeCurrency.address : undefined;
   const sourceTokenAddresses = useMemo(
     () =>
@@ -451,10 +449,8 @@ function TokensPanel({
 
           const isFromEnabledList = isHeldTokenFromEnabledList({
             address,
-            token,
             tokensFromUser,
             bridgeTokens,
-            enabledTokenListIds,
           });
           const balance = getBalance(address);
           // Only show tokens with a balance greater than zero
@@ -540,7 +536,6 @@ function TokensPanel({
     tokensFromUser,
     tokensFromLists,
     bridgeTokens,
-    enabledTokenListIds,
     isDepositMode,
     networks.sourceChain.id,
     networks.destinationChain.id,
