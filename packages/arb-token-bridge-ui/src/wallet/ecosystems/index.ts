@@ -47,7 +47,7 @@ export const ecosystems: Record<WalletEcosystem, EcosystemConfig> = {
   solana: solanaEcosystem,
 };
 
-/** Ecosystems without Arbitrum's token bridge, such as Solana, whose chains only reach Arbitrum through LiFi */
+/** Ecosystems such as Solana whose chains only reach Arbitrum through LiFi */
 export function getLifiOnlyEcosystems(): EcosystemConfig[] {
-  return Object.values(ecosystems).filter((ecosystem) => !ecosystem.hasParentChildTokenAddresses);
+  return Object.values(ecosystems).filter((ecosystem) => ecosystem.isLifiOnly);
 }

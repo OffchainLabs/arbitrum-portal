@@ -69,8 +69,8 @@ const baseNetworks: { [chainId: number]: BlockNumberReferenceNetwork } = {
   },
 };
 
-// Chains without Arbitrum's token bridge, such as Solana, have no Arbitrum child chain: they are
-// only roots for their LiFi pairs
+// LiFi-only chains, such as Solana, have no Arbitrum child chain: they are only roots for their LiFi
+// pairs
 function getLifiOnlyNetworks(): BlockNumberReferenceNetwork[] {
   return getLifiOnlyEcosystems()
     .filter((ecosystem) => ecosystem.isEnabled())
