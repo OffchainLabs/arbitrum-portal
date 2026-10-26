@@ -29,7 +29,8 @@ export function resolveTokenAddress({
   const chainRole = chainId === parentChainId ? 'parent' : 'child';
   const chainNativeCurrencyIsCustom = chainId === childChainId && !!childNativeCurrencyAddress;
 
-  if (!getEcosystemConfig(chainId).hasParentChildTokenAddresses) {
+  // A LiFi-only chain has no child chain address, so a token has a single address
+  if (getEcosystemConfig(chainId).isLifiOnly) {
     return token?.address ?? getNativeTokenAddress(chainId);
   }
 
