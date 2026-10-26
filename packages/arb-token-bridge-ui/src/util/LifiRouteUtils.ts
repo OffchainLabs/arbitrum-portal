@@ -167,6 +167,8 @@ export function getLifiRouteHistorySteps(route: RouteExtended | undefined): Lifi
   }
 
   const historySteps = route.steps.map((step) => {
+    // Unknown on history rows from chains the bridge no longer supports
+    const ecosystem = findEcosystemConfig(step.action.fromChainId);
     const includedSteps = getLifiRouteDisplaySteps({ steps: [step] });
     const displaySteps = includedSteps.map((displayStep, index) => {
       const fallbackToolDetails = getLifiToolDetails(displayStep.toolDetails);
@@ -192,8 +194,11 @@ export function getLifiRouteHistorySteps(route: RouteExtended | undefined): Lifi
       id: step.id,
       fromChainId: step.action.fromChainId,
       requiresApproval:
-        (findEcosystemConfig(step.action.fromChainId)?.hasTokenApprovals ?? true) &&
-        !addressesEqual(step.action.fromToken.address, constants.AddressZero),
+        (ecosystem?.hasTokenApprovals ?? true) &&
+        !addressesEqual(
+          step.action.fromToken.address,
+          ecosystem?.nativeTokenAddress ?? constants.AddressZero,
+        ),
       displaySteps,
       execution: step.execution
         ? {

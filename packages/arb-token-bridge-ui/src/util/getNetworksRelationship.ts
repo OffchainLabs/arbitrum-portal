@@ -31,10 +31,9 @@ export function getNetworksRelationship({
     };
   }
 
-  // Chains without Arbitrum's token bridge, such as Solana, only send LiFi deposits. Treat the source
-  // as the parent side of the relationship so shared UI and history code keep the transfer direction
-  // consistent.
-  if (findEcosystemConfig(sourceChainId)?.hasParentChildTokenAddresses === false) {
+  // LiFi-only chains, such as Solana, only send LiFi deposits. Treat the source as the parent side of
+  // the relationship so shared UI and history code keep the transfer direction consistent.
+  if (findEcosystemConfig(sourceChainId)?.isLifiOnly) {
     return {
       parentChainId: sourceChainId,
       childChainId: destinationChainId,
