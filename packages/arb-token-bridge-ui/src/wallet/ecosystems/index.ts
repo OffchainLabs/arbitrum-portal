@@ -25,6 +25,8 @@ export type EcosystemConfig = {
   nativeTokenAddress: string;
   /** Tokens have separate parent and child chain addresses, as with Arbitrum's token bridge */
   hasParentChildTokenAddresses: boolean;
+  /** Chains price gas with an EVM gas price, as returned by `eth_gasPrice` */
+  hasGasPrice: boolean;
   /** Tokens need an allowance before a transfer can move them, as with ERC-20 approvals */
   hasTokenApprovals: boolean;
 };

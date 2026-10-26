@@ -7,7 +7,6 @@ import ArbitrumLogo from '@/images/ArbitrumLogo.svg';
 import CctpLogoColor from '@/images/CctpLogoColor.svg';
 import EthereumLogoRoundLight from '@/images/EthereumLogoRoundLight.svg';
 import LayerZeroIcon from '@/images/LayerZeroIcon.png';
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { GET_HELP_LINK, ether } from '../../constants';
 import { useETHPrice } from '../../hooks/useETHPrice';
@@ -125,8 +124,7 @@ const LegacyTransactionDetailsContent = ({
   embedMode,
 }: TransactionDetailsContentProps & { embedMode: boolean }) => {
   const { ethToUSD } = useETHPrice();
-  const childProvider = getProviderForChainId(tx.childChainId);
-  const nativeCurrency = useNativeCurrency({ provider: childProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: tx.childChainId });
 
   if (!nativeCurrency) {
     return null;

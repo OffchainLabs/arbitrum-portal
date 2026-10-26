@@ -3,7 +3,7 @@ import { utils } from 'ethers';
 
 import { defaultErc20Decimals } from '../../defaults';
 import { AssetType } from '../../hooks/arbTokenBridge.types';
-import { fetchNativeCurrency } from '../../hooks/useNativeCurrency';
+import { fetchEvmNativeCurrency } from '../../services/evm/nativeCurrency';
 import { Transaction } from '../../types/Transactions';
 import { logger } from '../logger';
 import {
@@ -47,7 +47,7 @@ export const fetchDeposits = async ({
   const l1ChainId = (await l1Provider.getNetwork()).chainId;
   const l2ChainId = (await l2Provider.getNetwork()).chainId;
 
-  const nativeCurrency = await fetchNativeCurrency({ provider: l2Provider });
+  const nativeCurrency = await fetchEvmNativeCurrency({ provider: l2Provider });
 
   if (!fromBlock) {
     fromBlock = 0;
