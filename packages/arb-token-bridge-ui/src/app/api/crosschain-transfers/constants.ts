@@ -1,6 +1,28 @@
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressEquality';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
+import { ecosystems } from '../../../wallet/ecosystems';
+import type { WalletEcosystem } from '../../../wallet/types';
+
+type NonEvmEcosystem = Exclude<WalletEcosystem, 'evm'>;
+
+// Keyed by ecosystem, so a new ecosystem fails to compile until it declares its LiFi routes
+const nonEvmLifiRoutes: Record<
+  NonEvmEcosystem,
+  {
+    destinationChainIds: Record<number, number[]>;
+    /** Its tokens have no counterpart in the Arbitrum token lists */
+    allowsUnmatchedTokens: boolean;
+  }
+> = {
+  solana: {
+    destinationChainIds: {
+      [ChainId.Solana]: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.RobinhoodChain],
+    },
+    allowsUnmatchedTokens: true,
+  },
+};
+const nonEvmEcosystems = Object.keys(nonEvmLifiRoutes) as NonEvmEcosystem[];
 
 export const lifiDestinationChainIds: Record<number, number[]> = {
   [ChainId.Ethereum]: [
@@ -14,6 +36,12 @@ export const lifiDestinationChainIds: Record<number, number[]> = {
   [ChainId.ApeChain]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.RobinhoodChain],
   [ChainId.Base]: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.RobinhoodChain],
   [ChainId.RobinhoodChain]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain],
+  ...Object.assign(
+    {},
+    ...nonEvmEcosystems
+      .filter((ecosystem) => ecosystems[ecosystem].isEnabled())
+      .map((ecosystem) => nonEvmLifiRoutes[ecosystem].destinationChainIds),
+  ),
 };
 
 export const allowedLifiSourceChainIds: number[] = Object.keys(lifiDestinationChainIds).map((id) =>
@@ -28,7 +56,14 @@ export const allowedLifiDestinationChainIds: number[] = Object.values(
  * Some tokens only exist on one chain (for example stock tokens on Robinhood),
  * we want to allow them to be source or destination of swaps through LiFi
  */
-const UNMATCHED_LIFI_TOKEN_CHAIN_IDS = new Set<number>([ChainId.RobinhoodChain]);
+const UNMATCHED_LIFI_TOKEN_CHAIN_IDS = new Set<number>([
+  ChainId.RobinhoodChain,
+  ...nonEvmEcosystems
+    .filter((ecosystem) => nonEvmLifiRoutes[ecosystem].allowsUnmatchedTokens)
+    .flatMap((ecosystem) =>
+      Object.keys(nonEvmLifiRoutes[ecosystem].destinationChainIds).map(Number),
+    ),
+]);
 
 /**
  * Individual tokens allowed to be "unmatched" on chains that don't allow all of them.

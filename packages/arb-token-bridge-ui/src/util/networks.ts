@@ -9,6 +9,7 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
+import { getLifiOnlyEcosystems } from '../wallet/ecosystems';
 import type { CoreEvmChainId } from '../wallet/ecosystems/evm';
 import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils';
@@ -67,6 +68,21 @@ const baseNetworks: { [chainId: number]: BlockNumberReferenceNetwork } = {
     isTestnet: true,
   },
 };
+
+// Chains without Arbitrum's token bridge, such as Solana, have no Arbitrum child chain: they are
+// only roots for their LiFi pairs
+function getLifiOnlyNetworks(): BlockNumberReferenceNetwork[] {
+  return getLifiOnlyEcosystems()
+    .filter((ecosystem) => ecosystem.isEnabled())
+    .flatMap((ecosystem) => ecosystem.chains)
+    .map((chain) => ({
+      chainId: chain.id,
+      // viem chains give the block time in milliseconds
+      blockTime: (chain.blockTime ?? 0) / 1_000,
+      isTestnet: Boolean(chain.testnet),
+    }));
+}
+
 export const getChains = (
   { includeRootChainsWithoutDestination } = {
     includeRootChainsWithoutDestination: false,
@@ -79,7 +95,7 @@ export const getChains = (
   ];
 
   if (includeRootChainsWithoutDestination) {
-    return chains;
+    return [...chains, ...getLifiOnlyNetworks()];
   }
 
   return chains.filter((chain) => {
@@ -296,6 +312,13 @@ export const rpcURLs: { [chainId: number]: string } =
     : defaultRpcUrls;
 
 export const explorerUrls: { [chainId: number]: string } = {
+  ...Object.fromEntries(
+    getLifiOnlyEcosystems()
+      .flatMap((ecosystem) => ecosystem.chains)
+      .flatMap((chain) =>
+        chain.blockExplorers ? [[chain.id, chain.blockExplorers.default.url]] : [],
+      ),
+  ),
   // L1
   [ChainId.Ethereum]: 'https://etherscan.io',
   // L1 Testnets

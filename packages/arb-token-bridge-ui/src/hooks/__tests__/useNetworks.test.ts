@@ -1,10 +1,26 @@
 import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
-import { MockInstance, afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import { MockInstance, afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { createWalletTestWrapper } from '../../test-utils/wallet-test-wrapper';
+import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { ChainId } from '../../types/ChainId';
 import { customChainLocalStorageKey, isNetwork } from '../../util/networks';
-import { sanitizeQueryParams } from '../useNetworks';
+import { defaultWalletContextValue } from '../../wallet/WalletContext';
+import { useWallets } from '../../wallet/hooks/useWallets';
+import { sanitizeQueryParams, useNetworks } from '../useNetworks';
 import { createMockOrbitChain } from './helpers';
+
+vi.mock('../../token-bridge-sdk/utils', async (actual) => ({
+  ...(await actual<typeof import('../../token-bridge-sdk/utils')>()),
+  getProviderForChainId: vi.fn(),
+}));
+// The LiFi pairs read the Solana flag when they load
+vi.mock('../../wallet/ecosystems/solana', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../wallet/ecosystems/solana')>();
+  actual.solanaEcosystem.isEnabled = () => true;
+  return actual;
+});
 
 describe('sanitizeQueryParams', () => {
   let localStorageGetItemMock: MockInstance<(key: string) => string | null>;
@@ -817,5 +833,35 @@ describe('sanitizeQueryParams', () => {
         expect(result2).not.toEqual(result);
       });
     });
+  });
+});
+
+describe('useNetworks', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('selects Solana and its wallet without requesting EVM providers', () => {
+    vi.stubEnv('NEXT_PUBLIC_FEATURE_FLAG_LIFI', 'true');
+    const wallets = {
+      ...defaultWalletContextValue,
+      solana: {
+        ...defaultWalletContextValue.solana,
+        account: {
+          ...defaultWalletContextValue.solana.account,
+          address: 'So11111111111111111111111111111111111111112',
+        },
+      },
+    };
+    const { result } = renderHook(() => ({ networks: useNetworks()[0], wallets: useWallets() }), {
+      wrapper: createWalletTestWrapper({
+        wallets,
+        query: { sourceChain: ChainId.Solana, destinationChain: ChainId.ArbitrumOne },
+      }),
+    });
+    expect(result.current.networks.sourceChain.id).toBe(ChainId.Solana);
+    expect(result.current.wallets.sourceWallet).toBe(wallets.solana);
+    expect(result.current.wallets.destinationWallet).toBe(wallets.evm);
+    expect(getProviderForChainId).not.toHaveBeenCalled();
   });
 });

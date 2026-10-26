@@ -19,6 +19,7 @@ export const solanaChain = {
   id: ChainId.Solana,
   name: 'Solana',
   nativeCurrency: { name: 'Solana', symbol: 'SOL', decimals: 9 },
+  blockTime: 400,
   rpcUrls: { default: { http: [solanaRpcUrl] } },
   blockExplorers: { default: { name: 'Solscan', url: 'https://solscan.io' } },
 } satisfies Chain;
