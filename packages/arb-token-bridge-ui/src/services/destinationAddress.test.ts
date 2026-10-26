@@ -10,6 +10,13 @@ vi.mock('../util/AccountUtils', async (importOriginal) => ({
   getAccountType: vi.fn(),
 }));
 
+const flags = vi.hoisted(() => ({ solana: true }));
+vi.mock('../wallet/ecosystems/solana', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../wallet/ecosystems/solana')>();
+  actual.solanaEcosystem.isEnabled = () => flags.solana;
+  return actual;
+});
+
 const evmAddress = '0x8ba1f109551bD432803012645Ac136ddd64DBA72';
 const solanaAddress = 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5';
 const contractWarning =
@@ -18,6 +25,7 @@ const contractWarning =
 describe.sequential('destination address warnings', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    flags.solana = true;
     vi.mocked(getAccountType).mockResolvedValue('smart-contract-wallet');
   });
 
@@ -43,7 +51,6 @@ describe.sequential('destination address warnings', () => {
     { destinationAddress: '', destinationChainId: ChainId.Ethereum },
     { destinationAddress: 'invalid', destinationChainId: ChainId.Ethereum },
     { destinationAddress: solanaAddress, destinationChainId: ChainId.Ethereum },
-    { destinationAddress: solanaAddress, destinationChainId: ChainId.Solana },
     { destinationAddress: evmAddress, destinationChainId: ChainId.Solana },
     { destinationAddress: evmAddress, destinationChainId: -1 },
   ])(
@@ -58,6 +65,34 @@ describe.sequential('destination address warnings', () => {
       expect(getAccountType).not.toHaveBeenCalled();
     },
   );
+
+  it('skips a Solana destination while Solana is disabled', async () => {
+    flags.solana = false;
+    expect(
+      await getDestinationAddressWarning({
+        destinationAddress: solanaAddress,
+        destinationChainId: ChainId.Solana,
+        accountType: 'externally-owned-account',
+      }),
+    ).toBeNull();
+    expect(getAccountType).not.toHaveBeenCalled();
+  });
+
+  it('does not warn about a Solana destination while Solana is enabled', async () => {
+    // The Solana probe classifies every valid address as externally owned
+    vi.mocked(getAccountType).mockResolvedValue('externally-owned-account');
+    expect(
+      await getDestinationAddressWarning({
+        destinationAddress: solanaAddress,
+        destinationChainId: ChainId.Solana,
+        accountType: 'externally-owned-account',
+      }),
+    ).toBeNull();
+    expect(getAccountType).toHaveBeenCalledExactlyOnceWith({
+      address: solanaAddress,
+      chainId: ChainId.Solana,
+    });
+  });
 
   it('warns delegated senders about contract destinations', async () => {
     expect(
