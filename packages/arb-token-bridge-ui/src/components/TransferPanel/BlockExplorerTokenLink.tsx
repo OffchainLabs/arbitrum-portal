@@ -1,4 +1,5 @@
 import { ChainId } from '../../types/ChainId';
+import { normalizeAddress } from '../../util/AddressUtils';
 import { shortenAddress } from '../../util/CommonUtils';
 import { getExplorerUrl } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
@@ -20,7 +21,7 @@ export function BlockExplorerTokenLink({
       className="arb-hover text-xs underline"
       onClick={(e) => e.stopPropagation()}
     >
-      {shortenAddress(address).toLowerCase()}
+      {shortenAddress(normalizeAddress(address))}
     </ExternalLink>
   );
 }

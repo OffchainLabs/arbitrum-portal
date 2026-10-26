@@ -1,5 +1,6 @@
 import { ContractStorage, ERC20BridgeToken } from '../hooks/arbTokenBridge.types';
 import { NativeCurrency } from '../hooks/useNativeCurrency';
+import { normalizeAddress } from './AddressUtils';
 
 /**
  * Return USD value for a given amount using token/native price data.
@@ -21,14 +22,14 @@ export function getUsdValueForAmount({
   if (selectedToken) {
     const priceUSD =
       selectedToken.priceUSD ??
-      tokensFromLists[selectedToken.address.toLowerCase()]?.priceUSD ??
+      tokensFromLists[normalizeAddress(selectedToken.address)]?.priceUSD ??
       null;
     return priceUSD ? priceUSD * amountNumber : null;
   }
 
   if (nativeCurrency.isCustom) {
     const priceUSD =
-      tokensFromLists[nativeCurrency.address.toLowerCase()]?.priceUSD ??
+      tokensFromLists[normalizeAddress(nativeCurrency.address)]?.priceUSD ??
       nativeCurrencyPrice ??
       null;
     return priceUSD ? priceUSD * amountNumber : null;
