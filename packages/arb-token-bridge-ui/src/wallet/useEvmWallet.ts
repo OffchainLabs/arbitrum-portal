@@ -1,9 +1,10 @@
 import { useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react';
-import { getAccount, getWalletClient } from '@wagmi/core';
+import { getAccount, getConnectorClient, getWalletClient } from '@wagmi/core';
 import { useCallback, useMemo } from 'react';
 import { isAddress } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
 
+import { clientToSigner } from '../util/wagmi/clientToSigner';
 import type { EvmSigner, EvmWalletHandle } from './types';
 
 export function useEvmWallet(): EvmWalletHandle {
@@ -20,11 +21,13 @@ export function useEvmWallet(): EvmWalletHandle {
     }
   }, [disconnect, isConnected]);
 
-  // Reads wagmi's state when LiFi calls it, so a route signs with the account connected at that point
+  // Reads wagmi's state when called, so a transfer signs with the account connected at that point
   const signer = useMemo<EvmSigner>(
     () => ({
       getAddress: () => getAccount(wagmiConfig).address,
       getWalletClient: (chainId) => getWalletClient(wagmiConfig, { chainId }),
+      getEthersSigner: async (chainId) =>
+        clientToSigner(await getConnectorClient(wagmiConfig, { chainId })),
     }),
     [wagmiConfig],
   );

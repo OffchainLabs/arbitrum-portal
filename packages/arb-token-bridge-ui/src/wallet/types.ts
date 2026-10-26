@@ -1,4 +1,5 @@
 import type { SolanaProviderOptions } from '@lifi/sdk';
+import type { providers } from 'ethers';
 import type { WalletClient } from 'viem';
 
 import type { EvmAddress, SolanaAddress } from '../util/AddressUtils';
@@ -41,6 +42,11 @@ type SignerBase = {
 
 export type EvmSigner = SignerBase & {
   getWalletClient: (chainId?: number) => Promise<WalletClient>;
+  /**
+   * Signs canonical bridge, CCTP and OFT transactions. Throws when no wallet is connected or when the
+   * wallet is on another chain than `chainId`.
+   */
+  getEthersSigner: (chainId?: number) => Promise<providers.JsonRpcSigner>;
 };
 
 export type SolanaSigner = SignerBase & {

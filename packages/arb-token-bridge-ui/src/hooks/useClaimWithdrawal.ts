@@ -15,7 +15,7 @@ import { MergedTransaction, WithdrawalStatus } from '../state/app/state';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { fetchErc20Data } from '../util/TokenUtils';
 import { formatTransactionError, isUserRejectedError } from '../util/isUserRejectedError';
-import { useEthersSigner } from '../util/wagmi/useEthersSigner';
+import { useWalletContext } from '../wallet/WalletContext';
 import { AssetType, L2ToL1EventResultPlus } from './arbTokenBridge.types';
 import { getUniqueIdOrHashFromEvent } from './useArbTokenBridge';
 import { useTransactionHistory } from './useTransactionHistory';
@@ -31,7 +31,7 @@ export function useClaimWithdrawal(tx: MergedTransaction): UseClaimWithdrawalRes
   } = useAppState();
   const { address } = useAccount();
   const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
-  const signer = useEthersSigner({ chainId: tx.parentChainId });
+  const { signer: evmSigner } = useWalletContext('evm');
   const { updatePendingTransaction } = useTransactionHistory(sanitizedAddress ?? address);
   const [isClaiming, setIsClaiming] = useState(false);
 
@@ -94,9 +94,7 @@ export function useClaimWithdrawal(tx: MergedTransaction): UseClaimWithdrawalRes
     };
 
     try {
-      if (!signer) {
-        throw 'Signer is undefined';
-      }
+      const signer = await evmSigner.getEthersSigner(tx.parentChainId);
       if (tx.assetType === AssetType.ETH) {
         res = await arbTokenBridge.eth.triggerOutbox({
           event: extendedEvent,
@@ -140,7 +138,14 @@ export function useClaimWithdrawal(tx: MergedTransaction): UseClaimWithdrawalRes
     if (isSuccess) {
       setParentChainTxDetailsOfWithdrawalClaimTx(tx, txHash);
     }
-  }, [arbTokenBridge.eth, arbTokenBridge.token, isClaiming, signer, tx, updatePendingTransaction]);
+  }, [
+    arbTokenBridge.eth,
+    arbTokenBridge.token,
+    isClaiming,
+    evmSigner,
+    tx,
+    updatePendingTransaction,
+  ]);
 
   return { claim, isClaiming };
 }

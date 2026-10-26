@@ -6,9 +6,6 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { getNetworkName } from '../../util/networks';
-import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
-import { ecosystems } from '../../wallet/ecosystems';
-import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextState } from '../App/AppContext';
 import { Button } from '../common/Button';
 import { useRouteStore } from './hooks/useRouteStore';
@@ -28,13 +25,7 @@ export function MoveFundsButton({ onClick }: MoveFundsButtonProps) {
   );
   const { accountType } = useAccountType();
   const { transferReady } = useTransferReadiness();
-  const {
-    sourceWallet: { ecosystem: sourceEcosystem },
-  } = useWallets();
-  const signer = useEthersSigner();
-  const isSignerReady = !ecosystems[sourceEcosystem].usesEthersSigner || !!signer;
-  const isDisabled =
-    !isSignerReady || (isDepositMode ? !transferReady.deposit : !transferReady.withdrawal);
+  const isDisabled = isDepositMode ? !transferReady.deposit : !transferReady.withdrawal;
 
   return (
     <Button

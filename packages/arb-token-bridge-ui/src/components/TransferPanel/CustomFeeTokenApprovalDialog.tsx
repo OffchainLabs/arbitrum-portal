@@ -14,7 +14,7 @@ import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { shortenAddress } from '../../util/CommonUtils';
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
 import { getExplorerUrl, isNetwork } from '../../util/networks';
-import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { useWalletContext } from '../../wallet/WalletContext';
 import { Checkbox } from '../common/Checkbox';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { ExternalLink } from '../common/ExternalLink';
@@ -40,7 +40,7 @@ export function CustomFeeTokenApprovalDialog(props: CustomFeeTokenApprovalDialog
 
   const isBatchTransfer = isBatchTransferSupported && Number(amount2) > 0;
 
-  const l1Signer = useEthersSigner({ chainId: parentChain.id });
+  const { signer: evmSigner } = useWalletContext('evm');
   const l1GasPrice = useGasPrice({ chainId: parentChain.id });
 
   const [checked, setChecked] = useState(false);
@@ -64,6 +64,7 @@ export function CustomFeeTokenApprovalDialog(props: CustomFeeTokenApprovalDialog
     }
 
     async function getEstimatedGas() {
+      const l1Signer = await evmSigner.getEthersSigner(parentChain.id).catch(() => undefined);
       if (l1Signer) {
         /*
          Note:
@@ -89,7 +90,7 @@ export function CustomFeeTokenApprovalDialog(props: CustomFeeTokenApprovalDialog
     }
 
     getEstimatedGas();
-  }, [isOpen, selectedToken, l1Signer, sourceChain, destinationChain]);
+  }, [isOpen, selectedToken, evmSigner, parentChain.id, sourceChain, destinationChain]);
 
   function closeWithReset(confirmed: boolean) {
     props.onClose(confirmed);
