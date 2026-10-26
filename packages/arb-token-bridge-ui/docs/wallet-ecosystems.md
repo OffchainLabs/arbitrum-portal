@@ -25,7 +25,7 @@ We want to add Solana as a LiFi source without changing what EVM users see. We a
 - address and transaction id validation and normalization
 - the native token address used in balance requests and LiFi quotes
 - whether every chain of the ecosystem only reaches Arbitrum through LiFi (`isLifiOnly`), with no parent and child token addresses and no canonical bridge
-- whether its chains have an EVM gas price, whether transfers sign with wagmi's ethers signer, and whether AppKit identifies its networks by chain id
+- whether its chains have an EVM gas price, whether transfers sign with the ethers signer that `useEthersSigner` builds from the wagmi connection, and whether AppKit identifies its networks by chain id
 - the explorer account path
 - the built-in chains
 - the AppKit namespace

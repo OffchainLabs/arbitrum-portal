@@ -125,7 +125,7 @@ beforeEach(() => {
   starter.transfer.mockRejectedValue(new Error('transfer failed'));
 });
 
-describe.sequential('TransferPanel LiFi submission', () => {
+describe('TransferPanel LiFi submission', () => {
   it('records a native SOL transfer in the LiFi history', async () => {
     const solanaWallets: WalletContextValue = {
       ...wallets,
