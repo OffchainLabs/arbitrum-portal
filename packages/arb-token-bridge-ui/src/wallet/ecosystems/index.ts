@@ -13,6 +13,8 @@ export type ValidationOptions = {
 export type EcosystemConfig = {
   /** Whether the bridge offers this ecosystem */
   isEnabled: () => boolean;
+  /** Shown next to the wallet of this ecosystem */
+  name: string;
   address: {
     /** False while the ecosystem is disabled, unless `ignoreFeatureFlag` is set */
     isValid: (address: string, options?: ValidationOptions) => boolean;
@@ -31,12 +33,16 @@ export type EcosystemConfig = {
   hasGasPrice: boolean;
   /** Transfers sign with wagmi's ethers signer, which is only ready once the wallet connects */
   usesEthersSigner: boolean;
+  /** AppKit identifies the networks of this ecosystem by their chain id, so the connect modal can preselect one */
+  isAppKitNetworkIdChainId: boolean;
   /** Tokens need an allowance before a transfer can move them, as with ERC-20 approvals */
   hasTokenApprovals: boolean;
   /** Explorer path segment for account pages */
   explorerAccountPath: string;
   /** Built-in chains. The network registry adds Orbit, local and custom chains as EVM */
   chains: readonly Chain[];
+  /** AppKit (CAIP-2) namespace */
+  namespace: 'eip155' | 'solana';
 };
 
 export const ecosystems: Record<WalletEcosystem, EcosystemConfig> = {

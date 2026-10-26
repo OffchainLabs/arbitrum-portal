@@ -25,6 +25,7 @@ export type CoreEvmChainId = (typeof evmChains)[number]['id'];
 
 export const evmEcosystem: EcosystemConfig = {
   isEnabled: () => true,
+  name: 'EVM',
   address: {
     isValid: (address) => isAddress(address),
     // EVM addresses are case-insensitive: lowercasing drops the checksum casing
@@ -38,7 +39,9 @@ export const evmEcosystem: EcosystemConfig = {
   hasParentChildTokenAddresses: true,
   hasGasPrice: true,
   usesEthersSigner: true,
+  isAppKitNetworkIdChainId: true,
   hasTokenApprovals: true,
   explorerAccountPath: 'address',
   chains: evmChains,
+  namespace: 'eip155',
 };
