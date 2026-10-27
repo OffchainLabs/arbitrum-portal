@@ -50,7 +50,7 @@ export const CategoryHeaderRow = ({
       <div className="flex items-center justify-center gap-1">
         {showResetButton && (
           <button
-            className="flex items-center justify-center gap-1 rounded-full bg-white px-2 py-1 text-xs text-black hover:bg-black hover:text-white [&>svg]:hover:stroke-cyan"
+            className="flex items-center justify-center gap-1 rounded-full bg-white px-2 py-1 text-xs text-black hover:bg-black hover:text-white hover:[&>svg]:stroke-cyan"
             onClick={resetFilters}
           >
             {isEverySubcategorySelected ? 'All' : selectedSubcategoriesCount}

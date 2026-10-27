@@ -159,7 +159,7 @@ export function SlippageSettingsPanel({
                 value={customInput}
                 onChange={handleInputChange}
                 placeholder="Custom"
-                className="w-full min-w-0 border-none bg-transparent text-xs text-white placeholder:text-gray-650 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full min-w-0 border-none bg-transparent text-xs text-white placeholder:text-gray-650 focus:outline-hidden [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <span className="text-xs text-gray-650">%</span>
             </div>

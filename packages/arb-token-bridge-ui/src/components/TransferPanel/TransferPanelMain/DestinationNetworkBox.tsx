@@ -236,7 +236,7 @@ function BalancesContainer() {
 
       {isShowingBatchedTransfer && (
         <>
-          <div className="h-[1px] w-full bg-white/20" />
+          <div className="h-px w-full bg-white/20" />
 
           <div className="flex w-full flex-row items-center justify-between">
             <div className="flex max-w-[250px] flex-col gap-1 overflow-clip text-xl sm:max-w-[350px] sm:text-3xl">

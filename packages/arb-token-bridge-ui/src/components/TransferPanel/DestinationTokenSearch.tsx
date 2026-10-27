@@ -330,7 +330,7 @@ export function DestinationTokenSearch(props: UseDialogProps) {
       actionButtonProps={{ hidden: true }}
       isFooterHidden={true}
       className={twMerge(
-        'h-screen overflow-hidden md:h-[calc(100vh_-_175px)] md:max-h-[900px] md:max-w-[500px]',
+        'h-screen overflow-hidden md:h-[calc(100vh-175px)] md:max-h-[900px] md:max-w-[500px]',
         embedMode && 'md:h-full',
       )}
     >

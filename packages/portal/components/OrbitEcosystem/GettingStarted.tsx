@@ -132,7 +132,7 @@ export const GettingStarted = () => {
 
             <div className="relative h-[250px] w-full shrink-0 lg:h-full lg:w-1/2">
               {item.gradientOverlay && (
-                <div className="absolute left-0 top-0 z-10 h-full w-full bg-gradient-to-b from-default-black to-transparent lg:bg-gradient-to-r" />
+                <div className="absolute left-0 top-0 z-10 h-full w-full bg-linear-to-b from-default-black to-transparent lg:bg-linear-to-r" />
               )}
               {item.image}
             </div>

@@ -53,7 +53,7 @@ export const OrbitChainPanel = () => {
           />
           <button
             onClick={closeOrbitSidePanel}
-            className="flex cursor-pointer flex-row flex-nowrap items-center gap-1 rounded-md bg-default-black bg-white/10 p-2 outline-none outline-0 hover:bg-[#333] lg:px-3"
+            className="flex cursor-pointer flex-row flex-nowrap items-center gap-1 rounded-md bg-default-black bg-white/10 p-2 outline-hidden outline-0 hover:bg-[#333] lg:px-3"
           >
             <XMarkIcon className="h-5 w-5 stroke-white" />
             <span className="hidden text-sm lg:flex"> Close</span>

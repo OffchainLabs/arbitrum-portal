@@ -73,16 +73,6 @@
     // from: arb-token-bridge-ui>@synthetixio/synpress>download>got>cacheable-request>normalize-url>query-string>decode-uri-component
     "GHSA-vcc3-ghjq-m6fr|*>@synthetixio/synpress>*>query-string>decode-uri-component",
     //
-    // https://github.com/advisories/GHSA-rj75-hqrm-r3gf
-    // postcss-selector-parser quadratic-time parsing of flat selectors with repeated class or id tokens allows CPU exhaustion (CVE-2026-104844)
-    // Reason to ignore: Only 7.1.6 is patched and tailwindcss@3 / postcss-nested@6 pin ^6.1.x, so the fix is a major
-    // bump the parents do not declare support for. The parser only runs at build time over selectors we author
-    // ourselves (tailwind utilities, our own CSS); the advisory scopes the impact to services parsing untrusted
-    // selectors, not build-time use.
-    // from: @headlessui/tailwindcss>tailwindcss>postcss-selector-parser
-    // from: tailwindcss>postcss-nested>postcss-selector-parser
-    "GHSA-rj75-hqrm-r3gf",
-    //
     // https://github.com/advisories/GHSA-mrhx-c7xc-m3w5
     // Zod can exhaust memory while validating oversized constrained collections
     // Fixed for zod 4: pnpm-workspace.yaml overrides 'zod@>=4.0.0 <4.6.6' to 4.6.7.
