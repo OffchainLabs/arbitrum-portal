@@ -14,6 +14,33 @@
 | @name    | `in-progress` | YYYY-MM-DD  |
 | …        |               |             |
 
+## TL;DR
+
+The bridge stores each token as one parent-chain address paired with one child-chain address. That model cannot describe PYUSD, which reaches two different tokens on Arbitrum One. It also cannot describe USDC, where two Arbitrum One tokens withdraw to one Ethereum token. Today each of these cases is a hardcoded branch, and every new chain or provider adds more.
+
+This RFC moves token management to the backend and replaces the address pair with two types:
+
+- `Token` is one token on one chain, with its own symbol and name.
+- `RouteOption` names the exact source token and destination token for one provider: canonical, LayerZero, or LiFi.
+
+The goal is that a new multi-route asset or chain pair needs a configuration change, not new bridge code. The PoC at `/token-registry-poc` implements the design for Ethereum, Arbitrum One, and Robinhood.
+
+The key decisions are these:
+
+- The backend builds tokens and routes from the Arbitrum token lists, LiFi, and the configured routes. It also picks the default destination, resolves token imports, applies route blocks, and decides batch support and picker pins.
+- The frontend renders and searches the lists, sorts tokens by balance, and builds runtime routes from live quotes.
+- Three endpoints replace the client-side token lists: selection, source picker, and destination picker. The page loads 1.2 KB to 1.5 KB instead of 1,573 KB. Picker lists load when the user opens a picker.
+- The backend caches token metadata per chain and routes per chain pair for one hour. Every entry stays under the 2 MiB cache limit. The largest entry, Ethereum tokens, uses 64% of it.
+- The bridge moves to the API in one step, with no compatibility layer. The migration then deletes the old token management.
+
+The design has three costs:
+
+- The first request for a cold pair waits about 4.8 seconds for upstream data. We like this cost least.
+- The source picker response is 1.33 MB raw and 301 KB gzipped.
+- A request reads three cache entries, and the entries expire separately.
+
+One question is still open: whether a short configured list can replace the `oftVersion()` fallback for the OFT deposit block. See [Open Questions](#9-open-questions).
+
 # 1. Overview
 
 The bridge models a token as one address on the parent chain paired with one address on the child chain. That model cannot describe stablecoins like PYUSD and USDC. Ethereum PYUSD reaches two different tokens on Arbitrum One. Ethereum USDC reaches native USDC and bridged USDC.e on Arbitrum One, and both of those withdraw to the same Ethereum USDC. The same asset also has a different symbol and name on each chain. Today each of these cases is a hardcoded branch in bridge code, and every new chain, provider, or multi-route asset adds another branch.
@@ -399,7 +426,7 @@ The work has three milestones. The bridge does not consume the new API until the
 4. If one provider fails on a cold build, omit that provider and keep the data from the healthy providers.
 5. If an upstream call fails during a rebuild, keep the last good entry.
 6. Apply the transfer-disabled and withdraw-only lists after each cache read, so a list change applies without a rebuild.
-7. Apply the OFT deposit block when the pair entry builds, because a token rarely becomes an OFT. Cache the trimmed LayerZero metadata in its own entry, which uses 16% of the limit. A listed token already has its canonical child address in the registry, so the metadata check needs no RPC call. For a token that the metadata does not list, call `oftVersion()` on the parent chain when the chain entry builds, in batched multicalls. The result belongs to the token, so every pair on that chain reuses it. If the metadata is unavailable on a cold build, fail the build instead of dropping the block. An import runs the same check when it resolves.
+7. Apply the OFT deposit block when the pair entry builds, because a token rarely becomes an OFT. Cache the trimmed LayerZero metadata in its own entry, which uses 16% of the limit. A listed token already has its canonical child address in the registry, so the metadata check needs no RPC call. For a token that the metadata does not mark as an OFT, call `oftVersion()` on the parent chain when the chain entry builds, in batched multicalls. The result belongs to the token, so every pair on that chain reuses it. If the metadata is unavailable on a cold build, fail the build instead of dropping the block. An import runs the same check when it resolves.
 8. Find canonical bridges in the bridge's chain registry. A pair has a canonical bridge when one chain is the other's parent. The registry also gives the gateway router.
 9. For a chain that pays gas in its own token, give that token the zero address on the child chain. Take its name, symbol, and logo from `orbitChainsData.json`, and read its decimals from the parent chain contract.
 10. Keep imported tokens outside the cached registry. Resolve an import during selection for every source token without a canonical route, cache the result, and add its canonical route.
@@ -565,7 +592,14 @@ To invalidate every cache entry at once, bump `REGISTRY_CACHE_VERSION`. No manua
 
 To roll back, revert the migration.
 
-# 9. FAQ
+# 9. Open Questions
+
+**Can we drop the `oftVersion()` fallback?**
+On master, `isBlockedOftDeposit` calls `oftVersion()` on the parent token when the LayerZero metadata does not mark it as an OFT. The registry has to make that call for thousands of Ethereum tokens on each chain entry build. The fallback only matters for an OFT that LayerZero has not marked yet, and we do not know how often that happens.
+
+Before the migration, add an analytics event to master's `isOftTokenOnChain` through `trackEvent`. Send the token address, the chain pair, and whether `oftVersion()` found an OFT. If only a few tokens come back as OFTs, drop the fallback and list those tokens in the registry configuration. The OFT check then reads the LayerZero metadata and that list, and the chain entry build makes no RPC calls for it.
+
+# 10. FAQ
 
 **Does a new source selection reload the source picker list?**
 No. The source picker SWR key holds only the chain pair. The destination picker key holds the chain pair and the source token, so a new destination selection does not reload that list either.
@@ -579,7 +613,7 @@ One source token can have a canonical route and a LiFi route, and only the canon
 **Does a configured destination override hide other routes?**
 No. An override changes the default destination only. Ethereum PYUSD has both a canonical route and a LiFi route, and its default is LiFi PYUSD on Arbitrum One. Ethereum USDC defaults to native USDC through LiFi, and its canonical route still delivers USDC.e.
 
-# 10. Appendix
+# 11. Appendix
 
 ## Glossary
 
