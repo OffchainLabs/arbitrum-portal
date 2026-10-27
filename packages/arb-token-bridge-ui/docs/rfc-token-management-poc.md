@@ -389,11 +389,13 @@ The work has three milestones. The bridge does not consume the new API until the
 1. Define shared schemas for `Token`, `RouteOption`, and each endpoint response. The route handlers and the bridge client both use them.
 2. Fetch canonical, LayerZero, and LiFi data independently. Validate every upstream response with Zod before normalization.
 3. Cache token metadata per chain and provider routes per pair with `unstable_cache`. Keep every entry below 1.5 MiB as Next measures it.
-4. If one provider fails, omit that provider and keep the data from the healthy providers.
-5. Derive canonical bridges from the network registry. Map custom gas tokens to the child chain's zero address, and read native-token metadata from `orbitChainsData.json`. Read decimals onchain, because the file does not contain them.
-6. Keep imported tokens outside the cached registry. Resolve an import during selection for every source token without a canonical route, cache the result, and add its canonical route.
-7. Implement the three endpoints.
-8. Add the production pair and route configuration after representative pairs pass the API tests.
+4. If one provider fails on a cold build, omit that provider and keep the data from the healthy providers.
+5. If an upstream call fails during a rebuild, keep the last good entry.
+6. Apply the transfer-disabled and withdraw-only lists after each cache read, so a list change applies without a rebuild. Check the OFT deposit block (`isBlockedOftDeposit`) on each selection request, outside the hourly cache, because it reads live LayerZero metadata and onchain state.
+7. Derive canonical bridges from the network registry. Map custom gas tokens to the child chain's zero address, and read native-token metadata from `orbitChainsData.json`. Read decimals onchain, because the file does not contain them.
+8. Keep imported tokens outside the cached registry. Resolve an import during selection for every source token without a canonical route, cache the result, and add its canonical route.
+9. Implement the three endpoints.
+10. Add the production pair and route configuration after representative pairs pass the API tests.
 
 ## Move the bridge to the API
 
@@ -420,7 +422,9 @@ Both pickers keep their current behavior:
 
 Remove the token-list management panel, the provenance labels, and the list toggles.
 
-For a disconnected user, show the curated order from the registry. For a connected user, load balances after the picker data arrives, and rank tokens by balance. Split picker balance reads into bounded multicalls. If one chunk fails, keep the successful chunks, and use the curated order to break ties. Read balances again when the account or a relevant chain changes, and ignore results for an old account or chain. Load the selected token balance separately from picker ranking.
+Both pickers sort on the client, as the bridge does today. The endpoints return tokens sorted by symbol. The client puts the pinned tokens first, ranks the rest by balance, and keeps the server order for ties and for disconnected users. The pins are the current rules: the native currency, ETH, and USDG where `isUsdgSurfacedLikeEth` holds. The destination picker also pins native USDC, USDT, and WBTC. The pins and the balance sort share one helper, so the balance sort cannot move a pinned token down.
+
+For a connected user, load balances after the picker data arrives. Split picker balance reads into bounded multicalls. If one chunk fails, keep the successful chunks. Read balances again when the account or a relevant chain changes, and ignore results for an old account or chain. Load the selected token balance separately from picker ranking.
 
 ### Feed `availableRoutes` into runtime route construction
 
@@ -436,7 +440,8 @@ For canonical and LayerZero, compare the `destinationToken` of each route with t
 - live LiFi quotes and liquidity
 - fastest and cheapest route selection
 - the route that the user selected
-- transfer-disabled, withdraw-only, and live gateway checks
+
+The backend applies the transfer-disabled, withdraw-only, and OFT deposit blocks, so the runtime layer no longer checks them.
 
 Before the bridge evaluates a new selection key, clear the old runtime route, even when the provider name stays the same.
 
@@ -471,7 +476,7 @@ Token lists also own price updates and imported-token markers today. Replace eac
 - Derive imported status from the session overlay. Combine that status with the existing deployment check for first-deployment confirmation.
 - Derive provider availability from `availableRoutes`.
 - Keep warning-token checks in the transfer layer.
-- Keep stable picker ordering in registry metadata.
+- Keep the picker pins in the client, next to the balance sort.
 
 For a configured Orbit chain, build the native `Token` from `orbitChainsData.json`. For a custom chain that a user adds in the browser, build the native `Token` from its registered chain configuration in the browser.
 
@@ -509,6 +514,8 @@ API tests cover these cases:
 - no `batchDeposit` for native, excluded, or withdrawal source tokens
 - tokens that exist on one chain only
 - independent provider failures and malformed upstream payloads
+- a failed rebuild that keeps the last good entry
+- transfer-disabled, withdraw-only, and OFT deposit blocks on canonical routes
 - native-token metadata and zero-address identity
 - every chain entry and pair entry below 1.5 MiB, measured the way Next measures it
 - one cached entry per chain, shared by every pair that touches the chain
@@ -522,14 +529,15 @@ Bridge acceptance tests run before and after the bridge moves to the API. They u
 | Explicit destination | The backend accepts a reachable destination and falls back when the destination is invalid.                     |
 | Source picker        | The picker loads on open, searches the complete list, and keeps the selected import visible.                    |
 | Destination picker   | The picker shows fixed-route destinations and every reachable LiFi token.                                       |
-| Connected ranking    | Chunked multicalls rank balances and keep partial results after one chunk fails.                                |
-| Disconnected ranking | The picker uses curated order without wallet-specific requests.                                                 |
+| Connected ranking    | Pinned tokens stay first. Chunked multicalls rank the rest and keep partial results if one chunk fails.         |
+| Disconnected ranking | The picker shows the pinned tokens, then the server order, without wallet-specific requests.                    |
 | Provider failure     | Healthy providers and their routes stay available.                                                              |
 | Rapid changes        | Late selection, import, and balance responses cannot replace the current selection key.                         |
 | Native tokens        | Zero-address tokens use the correct metadata, decimals, balance, approval, and execution path.                  |
 | Both directions      | Balances, gas, approvals, quotes, and execution receive the exact source-chain and destination-chain addresses. |
 | Batch deposits       | The second amount field appears only with `batchDeposit`, and the extra amount reaches the destination address. |
-| Runtime policy       | Settings, live quotes, warnings, disabled transfers, and withdraw-only behavior stay unchanged.                 |
+| Route blocks         | Transfer-disabled, withdraw-only, and blocked OFT deposit tokens have no canonical route.                       |
+| Runtime policy       | Settings, live quotes, and warnings stay unchanged.                                                             |
 | Records              | Analytics payloads and pending transaction records keep their current meaning.                                  |
 | Cache                | Every chain entry and pair entry stays below 1.5 MiB through the real `unstable_cache` path.                    |
 | Deletion             | Repository searches find no production callers of the legacy token types, hooks, stores, or endpoints.          |
