@@ -16,7 +16,7 @@
 
 ## TL;DR
 
-The bridge stores each token as one parent-chain address paired with one child-chain address. That model cannot describe PYUSD, which reaches two different tokens on Arbitrum One. It also cannot describe USDC, where two Arbitrum One tokens withdraw to one Ethereum token. Today each of these cases is a hardcoded branch, and every new chain or provider adds more.
+The bridge stores each token as one parent-chain address paired with one child-chain address. That model cannot describe PYUSD, which reaches two different tokens on Arbitrum One. It also cannot describe USDC, where two Arbitrum One tokens withdraw to one Ethereum token. Today each of these cases is a hardcoded branch, and every new chain or provider adds more branches.
 
 This RFC moves token management to the backend and replaces the address pair with two types:
 
@@ -27,10 +27,10 @@ The goal is that a new multi-route asset or chain pair needs a configuration cha
 
 The key decisions are these:
 
-- The backend builds tokens and routes from the Arbitrum token lists, LiFi, and the configured routes. It also picks the default destination, resolves token imports, applies route blocks, and decides batch support and picker pins.
+- The backend builds tokens and routes from the Arbitrum token lists, LiFi, and the configured routes. It also picks the default destination, resolves token imports, and decides batch support and picker pins. It applies the transfer-disabled, withdraw-only, and OFT deposit blocks.
 - The frontend renders and searches the lists, sorts tokens by balance, and builds runtime routes from live quotes.
 - Three endpoints replace the client-side token lists: selection, source picker, and destination picker. The page loads 1.2 KB to 1.5 KB instead of 1,573 KB. Picker lists load when the user opens a picker.
-- The backend caches token metadata per chain and routes per chain pair for one hour. Every entry stays under the 2 MiB cache limit. The largest entry, Ethereum tokens, uses 64% of it.
+- The backend caches token metadata per chain and routes per chain pair for one hour. Every entry stays under the 2 MiB cache limit. The largest entry, Ethereum tokens, uses 64% of the limit.
 - The bridge moves to the API in one step, with no compatibility layer. The migration then deletes the old token management.
 
 The design has three costs:
@@ -425,13 +425,14 @@ The work has three milestones. The bridge does not consume the new API until the
 3. Cache token metadata per chain and provider routes per pair with `unstable_cache`. Keep every entry below 1.5 MiB as Next measures it.
 4. If one provider fails on a cold build, omit that provider and keep the data from the healthy providers.
 5. If an upstream call fails during a rebuild, keep the last good entry.
-6. Apply the transfer-disabled and withdraw-only lists after each cache read, so a list change applies without a rebuild.
-7. Apply the OFT deposit block when the pair entry builds, because a token rarely becomes an OFT. Cache the trimmed LayerZero metadata in its own entry, which uses 16% of the limit. A listed token already has its canonical child address in the registry, so the metadata check needs no RPC call. For a token that the metadata does not mark as an OFT, call `oftVersion()` on the parent chain when the chain entry builds, in batched multicalls. The result belongs to the token, so every pair on that chain reuses it. If the metadata is unavailable on a cold build, fail the build instead of dropping the block. An import runs the same check when it resolves.
-8. Find canonical bridges in the bridge's chain registry. A pair has a canonical bridge when one chain is the other's parent. The registry also gives the gateway router.
-9. For a chain that pays gas in its own token, give that token the zero address on the child chain. Take its name, symbol, and logo from `orbitChainsData.json`, and read its decimals from the parent chain contract.
-10. Keep imported tokens outside the cached registry. Resolve an import during selection for every source token without a canonical route, cache the result, and add its canonical route.
-11. Implement the three endpoints.
-12. Add the production pair and route configuration after representative pairs pass the API tests.
+6. Apply the transfer-disabled and withdraw-only lists after each cache read, so a list change takes effect without a rebuild.
+7. Apply the OFT deposit block when the pair entry builds, because a token rarely becomes an OFT. Cache the trimmed LayerZero metadata in its own entry, which uses 16% of the limit. A token from the token lists already has its canonical child address in the registry, so checking it against the metadata needs no RPC call. If the metadata is unavailable on a cold build, fail the build instead of dropping the block. An import runs the same check when it resolves.
+8. For a token that the metadata does not mark as an OFT, call `oftVersion()` on the parent chain when the chain entry builds. Batch the calls into multicalls. The result depends only on the token, so every pair on that chain reuses it.
+9. Find canonical bridges in the bridge's chain registry. A pair has a canonical bridge when one chain is the other's parent. The registry also gives the gateway router.
+10. For a chain that pays gas in its own token, give that token the zero address on the child chain. Take its name, symbol, and logo from `orbitChainsData.json`, and read its decimals from the token contract on the parent chain.
+11. Keep imported tokens outside the cached registry. Resolve an import during selection for every source token without a canonical route, cache the result, and add its canonical route.
+12. Implement the three endpoints.
+13. Add the production pair and route configuration after representative pairs pass the API tests.
 
 ## Move the bridge to the API
 
@@ -464,7 +465,7 @@ Both pickers show tokens in this order:
 2. tokens with a balance, highest balance first
 3. the other tokens, in the server's symbol order
 
-The server decides the pins and keeps today's rules. Both pickers pin the native currency, ETH, and USDG on the pairs where `isUsdgSurfacedLikeEth` returns true. The destination picker also pins native USDC, USDT, and WBTC. The client only sorts `tokens` by balance, so a balance cannot move a pinned token.
+The server decides the pins and keeps today's rules. Both pickers pin the native currency, ETH, and USDG on the pairs where `isUsdgSurfacedLikeEth` returns true. The destination picker also pins native USDC, USDT, and WBTC. The client sorts only `tokens` by balance, so a balance cannot move a pinned token.
 
 ### Feed `availableRoutes` into runtime route construction
 
@@ -595,9 +596,9 @@ To roll back, revert the migration.
 # 9. Open Questions
 
 **Can we drop the `oftVersion()` fallback?**
-On master, `isBlockedOftDeposit` calls `oftVersion()` on the parent token when the LayerZero metadata does not mark it as an OFT. The registry has to make that call for thousands of Ethereum tokens on each chain entry build. The fallback only matters for an OFT that LayerZero has not marked yet, and we do not know how often that happens.
+On master, `isBlockedOftDeposit` calls `oftVersion()` on the parent token when the LayerZero metadata does not mark it as an OFT. The registry has to make that call for thousands of Ethereum tokens on each chain entry build. The fallback matters only for an OFT that LayerZero has not marked yet, and we do not know how many of those exist.
 
-Before the migration, add an analytics event to master's `isOftTokenOnChain` through `trackEvent`. Send the token address, the chain pair, and whether `oftVersion()` found an OFT. If only a few tokens come back as OFTs, drop the fallback and list those tokens in the registry configuration. The OFT check then reads the LayerZero metadata and that list, and the chain entry build makes no RPC calls for it.
+Before the migration, add an analytics event to master's `isOftTokenOnChain` through `trackEvent`. Send the token address, the chain pair, and whether `oftVersion()` found an OFT. If only a few tokens come back as OFTs, drop the fallback and list those tokens in the registry configuration. The OFT check then reads the LayerZero metadata and that list, and the chain entry build makes no RPC calls for the OFT check.
 
 # 10. FAQ
 
