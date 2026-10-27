@@ -92,14 +92,6 @@ See `tsconfig.base.json` for the full list.
 - **Prebuild Steps**: `pnpm dev` and `pnpm build` automatically run data-fetching and CSS build steps via `predev`/`prebuild` scripts.
 - **Per-Package Context**: Check each package's own `package.json` and `tsconfig.json` for package-specific configuration.
 
-## Dependency Pins
-
-These look like leftovers but are deliberate. Don't remove or loosen them without the check described.
-
-- **`swr` is pinned to exactly `2.4.1`** in `packages/app` and `packages/arb-token-bridge-ui`. From 2.4.2 on, `TransferPanel.default-tokens.integration.test.tsx` fails: the destination token picker doesn't reopen after a token was chosen. It reads like a flaky test. 2.4.2's only runtime changes are vercel/swr#4252 (double-unsubscribe guard) and vercel/swr#4271 (suspense status), and the root cause in our code isn't known yet.
-- **`supports-color` is a devDependency of `packages/app` and `packages/arb-token-bridge-ui`** even though no code imports it. It makes pnpm fill debug's optional `supports-color` peer with the same version in both packages. Without it they resolve different versions, wagmi loads twice and every page throws `WagmiProviderNotFoundError`. Unit tests still pass when that happens, so open the app to check. See the comment above `dedupePeers` in `pnpm-workspace.yaml`.
-- **`@playwright/test` comes from the pnpm `catalog`** in `pnpm-workspace.yaml`, and an override keeps synpress and next on it. Bump it there, not in a `package.json`. Two copies fail every e2e test with "Requiring @playwright/test second time".
-
 ## Working Style
 
 - **Minimize line churn**: Keep diffs small and focused. Avoid reformatting, reordering, or touching code unrelated to the task.
