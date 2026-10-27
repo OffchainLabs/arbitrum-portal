@@ -1,7 +1,15 @@
 packages:
   - 'packages/*'
 
+# The bridge e2e suite, synpress and next's optional peer must share one @playwright/test.
+# Two copies fail every e2e test with "Requiring @playwright/test second time".
+# Bump the version here: the bridge uses `catalog:` and the override below follows it.
+catalog:
+  '@playwright/test': 1.64.1
+
 overrides:
+  # Keeps synpress (^1.37.0) and next's peer on the catalog version, see `catalog` above.
+  '@playwright/test': 'catalog:'
   # 2.26.0 depends on @reown/appkit 1.8.19, the version we use. Keep them in sync to avoid a second appkit copy.
   '@walletconnect/ethereum-provider': 2.26.0
   # unstorage 1.15+ dropped listhen, which pulled in node-forge. @walletconnect/keyvaluestorage accepts ^1.9.0.
