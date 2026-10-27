@@ -16,6 +16,7 @@ import {
   Address,
   ChainPair,
   NATIVE_TOKEN_ADDRESS,
+  PickerTokens,
   ProviderId,
   SelectedTokenAvailability,
   Token,
@@ -296,7 +297,7 @@ export function TokenRegistryPoc() {
       ? [pair.sourceChainId, pair.destinationChainId, 'token-registry-source-tokens']
       : null,
     ([sourceChainId, destinationChainId]) =>
-      fetchJson<Token[]>(
+      fetchJson<PickerTokens>(
         `/api/token-registry/source-tokens/${sourceChainId}/${destinationChainId}`,
       ),
     AGGRESSIVE_CACHE_OPTIONS,
@@ -307,25 +308,21 @@ export function TokenRegistryPoc() {
       return [];
     }
 
+    // Pinned tokens first, then imported tokens, then the server's symbol order.
     const seen = new Set<TokenId>();
-    const imported: Token[] = [];
-    for (const token of pairImportedSourceTokens) {
-      if (token.chainId === pair.sourceChainId && !seen.has(token.id)) {
+    const orderedTokens: Token[] = [];
+    for (const token of [
+      ...sourceTokensFromServer.pinnedTokens,
+      ...pairImportedSourceTokens.filter((imported) => imported.chainId === pair.sourceChainId),
+      ...sourceTokensFromServer.tokens,
+    ]) {
+      if (!seen.has(token.id)) {
         seen.add(token.id);
-        imported.push(token);
+        orderedTokens.push(token);
       }
     }
 
-    const base = sourceTokensFromServer.filter((token) => {
-      if (seen.has(token.id)) {
-        return false;
-      }
-      seen.add(token.id);
-      return true;
-    });
-    base.sort((a, b) => a.symbol.localeCompare(b.symbol));
-
-    return filterTokenList([...imported, ...base], search);
+    return filterTokenList(orderedTokens, search);
   }, [
     isSourcePickerOpen,
     pair.sourceChainId,
@@ -391,7 +388,7 @@ export function TokenRegistryPoc() {
           'token-registry-destination-tokens',
         ],
     ([sourceChainId, destinationChainId, sourceTokenAddress]) =>
-      fetchJson<Token[]>(
+      fetchJson<PickerTokens>(
         getDestinationTokensUrl({
           pair: { sourceChainId, destinationChainId },
           sourceTokenAddress: sourceTokenAddress as Address,
@@ -400,7 +397,12 @@ export function TokenRegistryPoc() {
     AGGRESSIVE_CACHE_OPTIONS,
   );
 
-  const destinationTokenOptions = destinationTokenOptionsFromServer ?? [];
+  const destinationTokenOptions = destinationTokenOptionsFromServer
+    ? [
+        ...destinationTokenOptionsFromServer.pinnedTokens,
+        ...destinationTokenOptionsFromServer.tokens,
+      ]
+    : [];
   const destinationTokens = filterTokenList(destinationTokenOptions, destinationSearch);
 
   const replaceSelectionUrl = useCallback(

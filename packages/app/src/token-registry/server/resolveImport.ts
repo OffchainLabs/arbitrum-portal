@@ -1,10 +1,9 @@
-import { createPublicClient, http, isAddress } from 'viem';
-
-import { rpcURLs } from '@/bridge/util/networks';
+import { isAddress } from 'viem';
 
 import { normalizeToken } from '../normalize';
 import { Address, ChainPair, RouteOption, SelectedTokenAvailability } from '../types';
 import { CanonicalBridge, isCanonicalDeposit } from './canonicalBridge';
+import { getPublicClient } from './publicClient';
 
 const erc20Abi = [
   {
@@ -58,14 +57,6 @@ const arbStandardTokenAbi = [
     outputs: [{ type: 'address' }],
   },
 ] as const;
-
-function getPublicClient(chainId: number) {
-  const url = rpcURLs[chainId];
-  if (!url) {
-    throw new Error(`No RPC URL configured for chain ${chainId}`);
-  }
-  return createPublicClient({ transport: http(url) });
-}
 
 type Erc20Metadata = { symbol: string; name: string; decimals: number };
 

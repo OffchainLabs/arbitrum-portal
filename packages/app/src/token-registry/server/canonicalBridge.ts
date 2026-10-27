@@ -8,7 +8,7 @@ import { isTransferDisabledToken } from '@/bridge/util/TokenTransferDisabledUtil
 import { isWithdrawOnlyToken } from '@/bridge/util/WithdrawOnlyUtils';
 import { initializeBridgeNetworks } from '@/bridge/util/networks';
 
-import { transferDisabledExemptions } from '../constants';
+import { canonicalBlockExemptions } from '../constants';
 import { Address, ChainPair, NATIVE_TOKEN_ADDRESS } from '../types';
 
 export type CanonicalBridge = {
@@ -91,7 +91,7 @@ export function isCanonicalTransferAllowed({
 }): boolean {
   if (
     isTransferDisabledToken(parentTokenAddress, bridge.childChainId) &&
-    !transferDisabledExemptions[bridge.childChainId]?.includes(parentTokenAddress)
+    !canonicalBlockExemptions[bridge.childChainId]?.includes(parentTokenAddress)
   ) {
     return false;
   }
