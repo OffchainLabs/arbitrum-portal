@@ -20,6 +20,28 @@ This RFC moves token management from the frontend to the backend. After the chan
 
 Two types describe every transfer. A `Token` is one token on one chain, with its own symbol and name. A `RouteOption` names the exact source token and destination token for one provider: canonical, LayerZero, or LiFi.
 
+For example, the `selection` endpoint returns this for Ethereum PYUSD to Arbitrum One. PYUSD has two destinations, one for each provider:
+
+```ts
+// GET /api/token-registry/selection/1/42161?sourceToken=0x6c3ea9036406852006290770bedfcaba0e23a0e8
+{
+  sourceToken: { id: '1:0x6c3e…a0e8', symbol: 'PYUSD', … },
+  // the configured default destination
+  destinationToken: { id: '42161:0x4685…6984', symbol: 'PYUSD', … },
+  availableRoutes: [
+    {
+      provider: 'canonical',
+      destinationToken: { id: '42161:0x3270…342e', symbol: 'PYUSD', … },
+      batchDeposit: { sourceToken: ETH, destinationToken: ETH },
+    },
+    {
+      provider: 'lifi',
+      destinationToken: { id: '42161:0x4685…6984', symbol: 'PYUSD', … },
+    },
+  ],
+}
+```
+
 The backend aggregates the Arbitrum token lists, LiFi, and the configured routes into one registry. It caches token metadata per chain and routes per chain pair, each for one hour. Every cache entry stays under the 2 MiB limit. The largest entry, Ethereum tokens, uses 64% of the limit.
 
 Three endpoints read the registry:
@@ -31,7 +53,7 @@ The backend also picks the default destination, resolves token imports, and deci
 
 The bridge moves to the API in one step, with no compatibility layer. The migration then deletes the old token management.
 
-The PoC at `/token-registry-poc` implements the design for Ethereum, Arbitrum One, and Robinhood. One question is still open: whether a short configured list can replace the `oftVersion()` fallback for the OFT deposit block. See [Open Questions](#9-open-questions).
+The PoC at `/token-registry-poc` implements the design for Ethereum, Arbitrum One, and Robinhood.
 
 # 1. Overview
 
