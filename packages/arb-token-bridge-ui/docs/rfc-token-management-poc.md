@@ -16,21 +16,22 @@
 
 ## TL;DR
 
-This RFC moves token management to the backend. A `Token` is one token on one chain, with its own symbol and name. A `RouteOption` names the exact source token and destination token for one provider: canonical, LayerZero, or LiFi.
+This RFC moves token management from the frontend to the backend. After the change, a new multi-route asset or chain pair needs a configuration change instead of new bridge code.
 
-The backend aggregates the Arbitrum token lists, LiFi, and the configured routes into one registry. Three endpoints return its results: selection, source picker, and destination picker. The page no longer loads complete token lists. On load, it requests only the selection. It calls the source picker or destination picker endpoint only when the user opens that picker.
+Two types describe every transfer. A `Token` is one token on one chain, with its own symbol and name. A `RouteOption` names the exact source token and destination token for one provider: canonical, LayerZero, or LiFi.
 
-The goal is that a new multi-route asset or chain pair needs a configuration change, not new bridge code. The PoC at `/token-registry-poc` implements the design for Ethereum, Arbitrum One, and Robinhood.
+The backend aggregates the Arbitrum token lists, LiFi, and the configured routes into one registry. It caches token metadata per chain and routes per chain pair, each for one hour. Every cache entry stays under the 2 MiB limit. The largest entry, Ethereum tokens, uses 64% of the limit.
 
-The key decisions are these:
+Three endpoints read the registry:
 
-- The backend picks the default destination, resolves token imports, and decides batch support and picker pins. It applies the transfer-disabled, withdraw-only, and OFT deposit blocks.
-- The frontend renders and searches the lists, sorts tokens by balance, and builds runtime routes from live quotes.
-- The three endpoints replace the client-side token lists. The page loads 1.2 KB to 1.5 KB instead of 1,573 KB.
-- The backend caches token metadata per chain and routes per chain pair for one hour. Every entry stays under the 2 MiB cache limit. The largest entry, Ethereum tokens, uses 64% of the limit.
-- The bridge moves to the API in one step, with no compatibility layer. The migration then deletes the old token management.
+- `selection` returns the selected source token, its destination token, and the routes between them. On load, the page requests only this endpoint, which returns 1.2 KB to 1.5 KB instead of the 1,573 KB of token lists that the page loads today.
+- `source-tokens` and `destination-tokens` return the picker lists. The page calls them only when the user opens a picker.
 
-One question is still open: whether a short configured list can replace the `oftVersion()` fallback for the OFT deposit block. See [Open Questions](#9-open-questions).
+The backend also picks the default destination, resolves token imports, and decides batch support and picker pins. It applies the transfer-disabled, withdraw-only, and OFT deposit blocks. The frontend renders and searches the lists, sorts tokens by balance after the pinned tokens, and builds runtime routes from live quotes.
+
+The bridge moves to the API in one step, with no compatibility layer. The migration then deletes the old token management.
+
+The PoC at `/token-registry-poc` implements the design for Ethereum, Arbitrum One, and Robinhood. One question is still open: whether a short configured list can replace the `oftVersion()` fallback for the OFT deposit block. See [Open Questions](#9-open-questions).
 
 # 1. Overview
 
