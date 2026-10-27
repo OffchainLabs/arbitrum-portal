@@ -20,8 +20,8 @@ export default defineConfig({
         // silently at runtime instead of at build time.
         ...builtinModules,
         ...builtinModules.map((builtin) => `node:${builtin}`),
-        '@actions/core',
-        '@actions/github',
+        // @actions/core and @actions/github are bundled: they are ESM-only and
+        // their exports maps have no `require` entry, so the cjs build can't load them.
         'axios',
         'commander',
         'ethers',
