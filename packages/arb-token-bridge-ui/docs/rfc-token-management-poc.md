@@ -49,7 +49,7 @@ Three endpoints read the registry:
 - `selection` returns the selected source token, its destination token, and the routes between them. On load, the page requests only this endpoint, which returns 1.2 KB to 1.5 KB instead of the 1,573 KB of token lists that the page loads today.
 - `source-tokens` and `destination-tokens` return the picker lists. The page calls them only when the user opens a picker.
 
-The backend also picks the default destination, resolves token imports, and decides batch support and picker pins. It applies the transfer-disabled, withdraw-only, and OFT deposit blocks. The frontend renders and searches the lists, sorts tokens by balance after the pinned tokens, and builds runtime routes from live quotes.
+The backend also picks the default destination, resolves token imports, and decides batch support and picker pins. It applies the transfer-disabled, withdraw-only, warning-token, and OFT deposit blocks. The frontend renders and searches the lists, sorts tokens by balance after the pinned tokens, and builds runtime routes from live quotes.
 
 The bridge moves to the API in one step, with no compatibility layer. The migration then deletes the old token management.
 
@@ -129,12 +129,10 @@ The design succeeds when it meets these targets:
 - A new multi-route asset or chain pair needs a configuration change only, with no change to bridge code.
 - Every caller receives the exact source token and destination token, with no direction-based address lookup.
 
-The smaller initial response, about 1.2 KB to 1.5 KB instead of 1,573 KB, is a bonus. It is not a success criterion.
-
 ## Non-Goals
 
 - The design does not preserve the old token-management API. The new API replaces it.
-- The design adds no compatibility layer for the old token types. The [implementation plan](#6-implementation-plan) moves every caller to the new types and deletes the old ones.
+- The design adds no compatibility layer for the old token types.
 - The selection response does not list every swap destination. The destination picker endpoint returns that list when the user asks for it.
 
 # 4. Proposed Design
@@ -187,7 +185,7 @@ type RouteOption =
     };
 ```
 
-A `RouteOption` describes what a provider can transfer. It is not an executable route. `availableRoutes` holds at most one `RouteOption` for each provider that supports the selected source token. Canonical and LayerZero routes always name a destination token. A canonical route can also carry a `batchDeposit`, described in [Canonical deposits declare batch support](#canonical-deposits-declare-batch-support). A LiFi route names a destination token when a same-asset token exists on the destination chain. When no same-asset token exists, the LiFi route omits `destinationToken`, and the backend picks the destination native token as the default.
+A `RouteOption` describes what a provider can transfer. It is not an executable route. `availableRoutes` holds at most one `RouteOption` for each provider that supports the selected source token. Canonical and LayerZero routes always name a destination token. A canonical route can also carry a `batchDeposit`. A LiFi route names a destination token when a same-asset token exists on the destination chain. When no same-asset token exists, the LiFi route omits `destinationToken`, and the backend picks the destination native token as the default.
 
 The LiFi route does not list every possible swap destination. The destination picker endpoint returns that list.
 
@@ -245,6 +243,9 @@ A canonical route gets `batchDeposit` when all of these hold:
 1. The pair is a canonical deposit.
 2. The source token is not the native token.
 3. `batchDepositExcludedSourceTokens` does not list the source token. The list holds Ethereum USDC, which the current bridge never batches.
+4. The request does not disable `batch-transfers`.
+
+The frontend passes the page's `disabledFeatures` query parameter to the selection endpoint, and adds `batch-transfers` on an `/embed` page. The CDN caches the selection response per query string, so the flag adds one cache variant per selection.
 
 Imports follow the same rules. LayerZero and LiFi routes never carry the field.
 
@@ -300,6 +301,7 @@ The endpoint accepts these query parameters:
 | ------------------ | -------- | --------------------------------------------------- |
 | `sourceToken`      | No       | Source token address. Defaults to the zero address. |
 | `destinationToken` | No       | Requested destination token address.                |
+| `disabledFeatures` | No       | `batch-transfers` removes `batchDeposit`.           |
 
 The endpoint returns this shape:
 
@@ -341,47 +343,6 @@ GET /api/token-registry/destination-tokens/[sourceChainId]/[destinationChainId]?
 `sourceToken` names the current source token and defaults to the zero address. The endpoint returns a `PickerTokens` with every fixed-route destination and every destination token that the LiFi connection accepts. For an imported token, the list also holds the imported canonical destination.
 
 The frontend calls this endpoint when the destination picker opens. The SWR key holds the chain pair and the source token, so a new destination selection does not reload the list.
-
-## Token metadata is cached per chain, and routes per pair
-
-All three endpoints read from the same server path:
-
-```text
-token lists + LiFi tokens         token lists + LiFi connection + configured routes
-          |                                         |
-  one entry per chain                       one entry per pair
-          |                                         |
-          +------------------+----------------------+
-                             |
-                       unstable_cache
-                             |
-            +----------------+----------------+
-            |                |                |
-        selection     source tokens   destination tokens
-```
-
-The cached values have these shapes:
-
-```ts
-// token-registry-chain-[chainId]-v[version]
-type CachedChainToken = Omit<Token, 'id' | 'chainId'> & {
-  coinKey?: string;
-};
-
-// token-registry-pair-[sourceChainId]->[destinationChainId]-v[version]
-type CachedPairRoutes = {
-  providers: ProviderRoutes[];
-  lifiDestinationAddresses: Address[];
-};
-```
-
-A request reads the pair entry and both chain entries in parallel, then builds the token indexes in memory. Each entry revalidates after one hour, and each key includes `REGISTRY_CACHE_VERSION`. The route build reads LiFi `coinKey` values from the chain entries, so a cold build fetches LiFi token metadata once per chain.
-
-The split keeps every entry under the data-cache limit. Next stores nothing for an entry over 2 MiB. Its size check counts the entry's JSON after a second escaping, so every quote counts twice. Measured that way, the single Ethereum to Arbitrum One registry was 2,217,540 bytes, so Next never cached it. Token metadata was 92% of that size.
-
-After the split, the Ethereum token entry uses 64% of the limit, and every Ethereum pair shares it. Each route entry uses 26% or less. The [detailed measurements](#detailed-measurements) list every entry. The builder logs an error when an entry passes 1.5 MiB.
-
-The split has two costs. A request reads three entries instead of one. The entries also expire separately, so a route can name a token that its chain entry does not have yet. The backend skips that route until both entries agree.
 
 ## The common path costs about 1 KB
 
@@ -439,9 +400,9 @@ The work has three milestones. The bridge does not consume the new API until the
 3. Cache token metadata per chain and provider routes per pair with `unstable_cache`. Keep every entry below 1.5 MiB as Next measures it.
 4. If one provider fails on a cold build, omit that provider and keep the data from the healthy providers.
 5. If an upstream call fails during a rebuild, keep the last good entry.
-6. Apply the transfer-disabled and withdraw-only lists after each cache read, so a list change takes effect without a rebuild.
+6. Apply the transfer-disabled, withdraw-only, and warning-token lists after each cache read, so a list change takes effect without a rebuild. The warning-token list holds rebasing and interest-accruing tokens. Master blocks their canonical transfers in both directions.
 7. Apply the OFT deposit block when the pair entry builds, because a token rarely becomes an OFT. Cache the trimmed LayerZero metadata in its own entry, which uses 16% of the limit. A token from the token lists already has its canonical child address in the registry, so checking it against the metadata needs no RPC call. If the metadata is unavailable on a cold build, fail the build instead of dropping the block. An import runs the same check when it resolves.
-8. For a token that the metadata does not mark as an OFT, call `oftVersion()` on the parent chain when the chain entry builds. Batch the calls into multicalls. The result depends only on the token, so every pair on that chain reuses it.
+8. For a token that the metadata does not list, call `oftVersion()` on the parent chain when the chain entry builds. Batch the calls into multicalls. The result depends only on the token, so every pair on that chain reuses it.
 9. Find canonical bridges in the bridge's chain registry. A pair has a canonical bridge when one chain is the other's parent. The registry also gives the gateway router.
 10. For a chain that pays gas in its own token, give that token the zero address on the child chain. Take its name, symbol, and logo from `orbitChainsData.json`, and read its decimals from the token contract on the parent chain.
 11. Keep imported tokens outside the cached registry. Resolve an import during selection for every source token without a canonical route, cache the result, and add its canonical route.
@@ -505,7 +466,7 @@ Replace `useIsBatchTransferSupported` with a read of `batchDeposit` on the canon
 - Show the second amount field only when the canonical route has `batchDeposit`.
 - Read the balance and the approval for the extra amount from `batchDeposit.sourceToken`. On a custom-gas-token chain, add the extra amount to the fee-token approval, as the bridge does today.
 - Show the received extra amount in `batchDeposit.destinationToken`.
-- Keep the `batch-transfers` disabled-feature flag in the runtime layer.
+- Pass the page's disabled features to the selection endpoint. On an `/embed` page, add `batch-transfers`.
 
 ### Replace paired-address consumers
 
@@ -528,7 +489,6 @@ Token lists also own price updates and imported-token markers today. Replace eac
 - Add a price resource keyed by `Token.id`. Give prices their own refresh policy, separate from the one-hour registry cache.
 - Derive imported status from the session overlay. Combine that status with the existing deployment check for first-deployment confirmation.
 - Derive provider availability from `availableRoutes`.
-- Keep warning-token checks in the transfer layer.
 - Keep the picker pins in the server configuration.
 
 For a configured Orbit chain, build the native `Token` from `orbitChainsData.json`. For a custom chain that a user adds in the browser, build the native `Token` from its registered chain configuration in the browser.
@@ -545,6 +505,7 @@ Before the token state goes, move the unrelated outbox and transaction methods o
 - the token-list settings, storage, and management UI
 - the client-side provider discovery helpers that `availableRoutes` replaces
 - `useIsBatchTransferSupported`, which `batchDeposit` replaces
+- the warning-token fetch in `App.tsx` and `warningTokens` in the app store
 
 Keep the bridge execution, outbox, warning, account, and transaction-history code that still has production callers.
 
@@ -564,11 +525,11 @@ API tests cover these cases:
 - LiFi source tokens without a same-asset destination
 - one-to-many and many-to-one token mappings
 - `batchDeposit` on canonical deposits, with the extra token on both chains
-- no `batchDeposit` for native, excluded, or withdrawal source tokens
+- no `batchDeposit` for native, excluded, or withdrawal source tokens, or when the request disables `batch-transfers`
 - tokens that exist on one chain only
 - independent provider failures and malformed upstream payloads
 - a failed rebuild that keeps the last good entry
-- transfer-disabled, withdraw-only, and OFT deposit blocks on canonical routes
+- transfer-disabled, withdraw-only, warning-token, and OFT deposit blocks on canonical routes
 - native-token metadata and zero-address identity
 - every chain entry and pair entry below 1.5 MiB, measured the way Next measures it
 - one cached entry per chain, shared by every pair that touches the chain
@@ -576,45 +537,35 @@ API tests cover these cases:
 
 Bridge acceptance tests run before and after the bridge moves to the API. They use fixed token and provider fixtures, so live token-list contents cannot change the results. Each behavior below needs this proof:
 
-| Behavior             | Required proof                                                                                                  |
-| -------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Initial render       | The bridge requests only selection data and renders the default tokens and routes.                              |
-| Explicit destination | The backend accepts a reachable destination and falls back when the destination is invalid.                     |
-| Source picker        | The picker loads on open, searches the complete list, and keeps the selected import visible.                    |
-| Destination picker   | The picker shows fixed-route destinations and every reachable LiFi token.                                       |
-| Connected ranking    | Pinned tokens stay first, then tokens with a balance, then the other tokens.                                    |
-| Disconnected ranking | The picker shows the pinned tokens, then the server order, without wallet-specific requests.                    |
-| Provider failure     | Healthy providers and their routes stay available.                                                              |
-| Rapid changes        | Late selection, import, and balance responses cannot replace the current selection key.                         |
-| Native tokens        | Zero-address tokens use the correct metadata, decimals, balance, approval, and execution path.                  |
-| Both directions      | Balances, gas, approvals, quotes, and execution receive the exact source-chain and destination-chain addresses. |
-| Batch deposits       | The second amount field appears only with `batchDeposit`, and the extra amount reaches the destination address. |
-| Route blocks         | Transfer-disabled tokens get no canonical route. Withdraw-only and OFT-blocked tokens get no canonical deposit. |
-| Runtime policy       | Settings, live quotes, and warnings stay unchanged.                                                             |
-| Records              | Analytics payloads and pending transaction records keep their current meaning.                                  |
-| Cache                | Every chain entry and pair entry stays below 1.5 MiB through the real `unstable_cache` path.                    |
-| Deletion             | Repository searches find no production callers of the legacy token types, hooks, stores, or endpoints.          |
+| Behavior             | Required proof                                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Initial render       | The bridge requests only selection data and renders the default tokens and routes.                                  |
+| Explicit destination | The backend accepts a reachable destination and falls back when the destination is invalid.                         |
+| Source picker        | The picker loads on open, searches the complete list, and keeps the selected import visible.                        |
+| Destination picker   | The picker shows fixed-route destinations and every reachable LiFi token.                                           |
+| Connected ranking    | Pinned tokens stay first, then tokens with a balance, then the other tokens.                                        |
+| Disconnected ranking | The picker shows the pinned tokens, then the server order, without wallet-specific requests.                        |
+| Provider failure     | Healthy providers and their routes stay available.                                                                  |
+| Rapid changes        | Late selection, import, and balance responses cannot replace the current selection key.                             |
+| Native tokens        | Zero-address tokens use the correct metadata, decimals, balance, approval, and execution path.                      |
+| Both directions      | Balances, gas, approvals, quotes, and execution receive the exact source-chain and destination-chain addresses.     |
+| Batch deposits       | The second amount field appears only with `batchDeposit`, and the extra amount reaches the destination address.     |
+| Route blocks         | Transfer-disabled and warning tokens get no canonical route. Withdraw-only and OFT tokens get no canonical deposit. |
+| Runtime policy       | Settings and live quotes stay unchanged.                                                                            |
+| Records              | Analytics payloads and pending transaction records keep their current meaning.                                      |
+| Cache                | Every chain entry and pair entry stays below 1.5 MiB through the real `unstable_cache` path.                        |
+| Deletion             | Repository searches find no production callers of the legacy token types, hooks, stores, or endpoints.              |
 
 The migration is complete when every token-selection path uses the new API and the old token-management system no longer exists.
 
-# 8. Rollout & Migration
-
-The bridge moves to the new API in one step. The migration adds no compatibility types, no feature flag, and no second production path.
-
-Existing analytics event names and stored transaction shapes stay the same. Some existing fields require a canonical parent address. At each of those write boundaries, the bridge maps the chain-specific token to its canonical parent address. Token-list settings that users stored locally go away with the management UI.
-
-To invalidate every cache entry at once, bump `REGISTRY_CACHE_VERSION`. No manual cache purge is needed.
-
-To roll back, revert the migration.
-
-# 9. Open Questions
+# 8. Open Questions
 
 **Can we drop the `oftVersion()` fallback?**
-On master, `isBlockedOftDeposit` calls `oftVersion()` on the parent token when the LayerZero metadata does not mark it as an OFT. The registry has to make that call for thousands of Ethereum tokens on each chain entry build. The fallback matters only for an OFT that LayerZero has not marked yet, and we do not know how many of those exist.
+On master, `isBlockedOftDeposit` calls `oftVersion()` on the parent token when the LayerZero metadata does not list it. The fallback matters only for an OFT that LayerZero has not listed yet. In the PoC, the Ethereum chain entry checks 890 of its 1,062 canonical parent tokens this way in about 400 ms, and none of them is an OFT today.
 
 Before the migration, add an analytics event to master's `isOftTokenOnChain` through `trackEvent`. Send the token address, the chain pair, and whether `oftVersion()` found an OFT. If only a few tokens come back as OFTs, drop the fallback and list those tokens in the registry configuration. The OFT check then reads the LayerZero metadata and that list, and the chain entry build makes no RPC calls for the OFT check.
 
-# 10. FAQ
+# 9. FAQ
 
 **Does a new source selection reload the source picker list?**
 No. The source picker SWR key holds only the chain pair. The destination picker key holds the chain pair and the source token, so a new destination selection does not reload that list either.
@@ -628,7 +579,7 @@ One source token can have a canonical route and a LiFi route, and only the canon
 **Does a configured destination override hide other routes?**
 No. An override changes the default destination only. Ethereum PYUSD has both a canonical route and a LiFi route, and its default is LiFi PYUSD on Arbitrum One. Ethereum USDC defaults to native USDC through LiFi, and its canonical route still delivers USDC.e.
 
-# 11. Appendix
+# 10. Appendix
 
 ## Glossary
 
