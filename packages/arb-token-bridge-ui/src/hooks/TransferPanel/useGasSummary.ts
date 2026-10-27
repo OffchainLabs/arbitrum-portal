@@ -23,7 +23,11 @@ import { useSelectedToken } from '../useSelectedToken';
 import { useGasEstimates } from './useGasEstimates';
 
 export type GasEstimationStatus =
-  'loading' | 'success' | 'error' | 'unavailable' | 'insufficientBalance';
+  | 'loading'
+  | 'success'
+  | 'error'
+  | 'unavailable'
+  | 'insufficientBalance';
 
 export type UseGasSummaryResult = {
   status: GasEstimationStatus;

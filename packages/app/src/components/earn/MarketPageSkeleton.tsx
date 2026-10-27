@@ -1,45 +1,45 @@
 function MobileOpportunityCardSkeleton() {
   return (
-    <div className="bg-neutral-50 rounded p-4 flex flex-col gap-5">
+    <div className="flex flex-col gap-5 rounded bg-neutral-50 p-4">
       <div className="flex items-center gap-2.5">
-        <div className="w-3 h-3 rounded-full bg-neutral-200 shrink-0" />
-        <div className="h-4 bg-neutral-200 rounded w-1/2" />
+        <div className="h-3 w-3 shrink-0 rounded-full bg-neutral-200" />
+        <div className="h-4 w-1/2 rounded bg-neutral-200" />
       </div>
 
       <div className="flex items-center justify-between gap-2.5">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-neutral-200 shrink-0" />
+          <div className="h-6 w-6 shrink-0 rounded-full bg-neutral-200" />
           <div className="flex flex-col gap-1">
-            <div className="h-5 bg-neutral-200 rounded w-16" />
-            <div className="h-3 bg-neutral-200 rounded w-12" />
+            <div className="h-5 w-16 rounded bg-neutral-200" />
+            <div className="h-3 w-12 rounded bg-neutral-200" />
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="h-5 bg-neutral-200 rounded w-12" />
-          <div className="h-5 bg-neutral-200 rounded w-10" />
+          <div className="h-5 w-12 rounded bg-neutral-200" />
+          <div className="h-5 w-10 rounded bg-neutral-200" />
         </div>
       </div>
 
       <div className="flex flex-col gap-1">
         <div className="flex gap-1">
-          <div className="flex-1 bg-neutral-100 rounded p-3 h-[78px] flex flex-col gap-2">
-            <div className="h-3 bg-neutral-200 rounded w-10" />
-            <div className="h-5 bg-neutral-200 rounded w-16" />
+          <div className="flex h-[78px] flex-1 flex-col gap-2 rounded bg-neutral-100 p-3">
+            <div className="h-3 w-10 rounded bg-neutral-200" />
+            <div className="h-5 w-16 rounded bg-neutral-200" />
           </div>
-          <div className="flex-1 bg-neutral-100 rounded p-3 h-[78px] flex flex-col gap-2">
-            <div className="h-3 bg-neutral-200 rounded w-14" />
-            <div className="h-5 bg-neutral-200 rounded w-20" />
+          <div className="flex h-[78px] flex-1 flex-col gap-2 rounded bg-neutral-100 p-3">
+            <div className="h-3 w-14 rounded bg-neutral-200" />
+            <div className="h-5 w-20 rounded bg-neutral-200" />
           </div>
         </div>
 
         <div className="flex gap-1">
-          <div className="flex-1 bg-neutral-100 rounded p-3 flex flex-col gap-2">
-            <div className="h-3 bg-neutral-200 rounded w-20" />
-            <div className="h-5 bg-neutral-200 rounded w-14" />
+          <div className="flex flex-1 flex-col gap-2 rounded bg-neutral-100 p-3">
+            <div className="h-3 w-20 rounded bg-neutral-200" />
+            <div className="h-5 w-14 rounded bg-neutral-200" />
           </div>
-          <div className="flex-1 bg-neutral-100 rounded p-3 flex flex-col gap-2">
-            <div className="h-3 bg-neutral-200 rounded w-16" />
-            <div className="h-5 bg-neutral-200 rounded w-14" />
+          <div className="flex flex-1 flex-col gap-2 rounded bg-neutral-100 p-3">
+            <div className="h-3 w-16 rounded bg-neutral-200" />
+            <div className="h-5 w-14 rounded bg-neutral-200" />
           </div>
         </div>
       </div>
@@ -49,84 +49,84 @@ function MobileOpportunityCardSkeleton() {
 
 function DesktopOpportunityRowSkeleton() {
   return (
-    <div className="bg-neutral-50 rounded h-[66px] px-4 py-3 flex gap-4 items-center">
-      <div className="w-[150px] shrink-0 flex items-center gap-2.5">
-        <div className="w-2.5 h-2.5 rounded bg-neutral-200" />
+    <div className="flex h-[66px] items-center gap-4 rounded bg-neutral-50 px-4 py-3">
+      <div className="flex w-[150px] shrink-0 items-center gap-2.5">
+        <div className="h-2.5 w-2.5 rounded bg-neutral-200" />
         <div className="flex flex-col gap-0.5">
-          <div className="h-4 bg-neutral-200 rounded w-24" />
-          <div className="h-3 bg-neutral-200 rounded w-16" />
+          <div className="h-4 w-24 rounded bg-neutral-200" />
+          <div className="h-3 w-16 rounded bg-neutral-200" />
         </div>
       </div>
-      <div className="w-[146px] shrink-0 flex items-center gap-2">
-        <div className="w-6 h-6 rounded-full bg-neutral-200 shrink-0" />
+      <div className="flex w-[146px] shrink-0 items-center gap-2">
+        <div className="h-6 w-6 shrink-0 rounded-full bg-neutral-200" />
         <div className="flex flex-col gap-0.5">
-          <div className="h-4 bg-neutral-200 rounded w-12" />
-          <div className="h-3 bg-neutral-200 rounded w-16" />
+          <div className="h-4 w-12 rounded bg-neutral-200" />
+          <div className="h-3 w-16 rounded bg-neutral-200" />
         </div>
       </div>
-      <div className="flex-1 flex items-center gap-2 min-w-0">
-        <div className="h-4 bg-neutral-200 rounded w-12" />
-        <div className="w-5 h-5 rounded-full bg-neutral-200" />
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div className="h-4 w-12 rounded bg-neutral-200" />
+        <div className="h-5 w-5 rounded-full bg-neutral-200" />
       </div>
-      <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-        <div className="h-4 bg-neutral-200 rounded w-16" />
-        <div className="h-3 bg-neutral-200 rounded w-12" />
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="h-4 w-16 rounded bg-neutral-200" />
+        <div className="h-3 w-12 rounded bg-neutral-200" />
       </div>
-      <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-        <div className="h-4 bg-neutral-200 rounded w-16" />
-        <div className="h-3 bg-neutral-200 rounded w-12" />
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="h-4 w-16 rounded bg-neutral-200" />
+        <div className="h-3 w-12 rounded bg-neutral-200" />
       </div>
       <div className="w-[116px] shrink-0">
-        <div className="h-4 bg-neutral-200 rounded w-16" />
+        <div className="h-4 w-16 rounded bg-neutral-200" />
       </div>
-      <div className="flex-1 flex items-center gap-2 min-w-0">
-        <div className="w-6 h-6 rounded-full bg-neutral-200 shrink-0" />
-        <div className="h-4 bg-neutral-200 rounded w-20" />
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div className="h-6 w-6 shrink-0 rounded-full bg-neutral-200" />
+        <div className="h-4 w-20 rounded bg-neutral-200" />
       </div>
-      <div className="bg-white/10 rounded p-2 w-8 h-8" />
+      <div className="h-8 w-8 rounded bg-white/10 p-2" />
     </div>
   );
 }
 
 export function MarketPageSkeleton() {
   return (
-    <div className="flex flex-col gap-8 animate-pulse">
-      <div className="hidden lg:grid grid-cols-3 gap-4">
+    <div className="flex animate-pulse flex-col gap-8">
+      <div className="hidden grid-cols-3 gap-4 lg:grid">
         {[...Array(3)].map((_, index) => (
-          <div key={index} className="bg-neutral-100 rounded p-4 flex items-center gap-4">
-            <div className="shrink-0 w-10 h-10 rounded-full bg-neutral-200" />
-            <div className="flex-1 min-w-0 space-y-2">
-              <div className="h-4 bg-neutral-200 rounded w-3/4" />
-              <div className="h-3 bg-neutral-200 rounded w-1/2" />
-              <div className="h-5 bg-neutral-200 rounded w-1/3 mt-2" />
+          <div key={index} className="flex items-center gap-4 rounded bg-neutral-100 p-4">
+            <div className="h-10 w-10 shrink-0 rounded-full bg-neutral-200" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="h-4 w-3/4 rounded bg-neutral-200" />
+              <div className="h-3 w-1/2 rounded bg-neutral-200" />
+              <div className="mt-2 h-5 w-1/3 rounded bg-neutral-200" />
             </div>
-            <div className="shrink-0 bg-white/10 rounded p-2 w-8 h-8" />
+            <div className="h-8 w-8 shrink-0 rounded bg-white/10 p-2" />
           </div>
         ))}
       </div>
 
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <div className="h-6 bg-neutral-200 rounded w-32" />
-          <div className="h-8 bg-neutral-200 rounded w-24" />
+          <div className="h-6 w-32 rounded bg-neutral-200" />
+          <div className="h-8 w-24 rounded bg-neutral-200" />
         </div>
 
-        <div className="md:hidden flex flex-col gap-1">
+        <div className="flex flex-col gap-1 md:hidden">
           {[...Array(3)].map((_, index) => (
             <MobileOpportunityCardSkeleton key={index} />
           ))}
         </div>
 
-        <div className="hidden md:flex overflow-x-auto">
-          <div className="flex flex-col gap-1 min-w-[900px] w-full">
-            <div className="flex gap-4 items-center pt-4 px-4 pb-0">
-              <div className="w-[150px] shrink-0 h-3 bg-neutral-200 rounded" />
-              <div className="w-[146px] shrink-0 h-3 bg-neutral-200 rounded" />
-              <div className="flex-1 h-3 bg-neutral-200 rounded" />
-              <div className="flex-1 h-3 bg-neutral-200 rounded" />
-              <div className="flex-1 h-3 bg-neutral-200 rounded" />
-              <div className="w-[116px] shrink-0 h-3 bg-neutral-200 rounded" />
-              <div className="flex-1 h-3 bg-neutral-200 rounded" />
+        <div className="hidden overflow-x-auto md:flex">
+          <div className="flex w-full min-w-[900px] flex-col gap-1">
+            <div className="flex items-center gap-4 px-4 pt-4 pb-0">
+              <div className="h-3 w-[150px] shrink-0 rounded bg-neutral-200" />
+              <div className="h-3 w-[146px] shrink-0 rounded bg-neutral-200" />
+              <div className="h-3 flex-1 rounded bg-neutral-200" />
+              <div className="h-3 flex-1 rounded bg-neutral-200" />
+              <div className="h-3 flex-1 rounded bg-neutral-200" />
+              <div className="h-3 w-[116px] shrink-0 rounded bg-neutral-200" />
+              <div className="h-3 flex-1 rounded bg-neutral-200" />
               <div className="w-[42px] shrink-0" />
             </div>
 

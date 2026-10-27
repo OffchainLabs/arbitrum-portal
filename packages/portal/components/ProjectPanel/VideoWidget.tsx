@@ -53,7 +53,7 @@ export const VideoWidget = ({ project }: { project: FullProject }) => {
 
         <Image
           alt="logo"
-          className="absolute left-3 top-3 overflow-hidden rounded-full"
+          className="absolute top-3 left-3 overflow-hidden rounded-full"
           src={project.images.logoUrl}
           width={30}
           height={30}

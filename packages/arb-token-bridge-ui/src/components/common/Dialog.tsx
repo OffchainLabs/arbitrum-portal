@@ -181,7 +181,7 @@ export function Dialog(props: DialogProps) {
                 />
               ) : (
                 <XMarkIcon
-                  className="arb-hover h-7 w-7 p-1 text-gray-7 bg-white/5 rounded-sm"
+                  className="arb-hover h-7 w-7 rounded-sm bg-white/5 p-1 text-gray-7"
                   aria-label="Close Dialog"
                 />
               )}
@@ -192,14 +192,14 @@ export function Dialog(props: DialogProps) {
         <div className="px-6">{props.children}</div>
 
         {!isFooterHidden && (
-          <div className="mt-auto flex flex-row justify-between gap-2 h-12 m-6">
+          <div className="m-6 mt-auto flex h-12 flex-row justify-between gap-2">
             {closeable && (
               <Button
                 ref={cancelButtonRef}
                 variant="tertiary"
                 onClick={() => handleClose(false)}
                 aria-label={props.cancelButtonTitle || 'Dialog Cancel'}
-                className="text-white w-full h-full text-center"
+                className="h-full w-full text-center text-white"
                 {...(props.cancelButtonProps || {})}
               >
                 {props.cancelButtonTitle || 'Cancel'}
@@ -210,7 +210,7 @@ export function Dialog(props: DialogProps) {
               onClick={() => handleClose(true)}
               {...(props.actionButtonProps || {})}
               aria-label={props.actionButtonTitle || 'Dialog Continue'}
-              className="w-full bg-white text-black text-center h-full border-none"
+              className="h-full w-full border-none bg-white text-center text-black"
             >
               {props.actionButtonTitle || 'Continue'}
             </Button>

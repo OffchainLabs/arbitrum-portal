@@ -12,7 +12,7 @@ const Title = ({ children }: PropsWithChildren) => {
 };
 
 const DataKey = ({ children }: PropsWithChildren) => {
-  return <div className="whitespace-nowrap text-sm text-white/40">{children}</div>;
+  return <div className="text-sm whitespace-nowrap text-white/40">{children}</div>;
 };
 
 const DataValue = ({ children }: PropsWithChildren) => {

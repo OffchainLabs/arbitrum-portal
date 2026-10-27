@@ -176,7 +176,7 @@ export function TransactionHistorySearchResults() {
         {isForeignTxHashResult ? (
           // replaces the claim reminder: it addresses the connected wallet,
           // which this searched transaction does not belong to
-          <div className="mb-3 mt-3 w-full rounded border-x-0 border-white/30 bg-orange-dark px-3 py-2 text-left text-sm text-white sm:border md:mt-0">
+          <div className="mt-3 mb-3 w-full rounded border-x-0 border-white/30 bg-orange-dark px-3 py-2 text-left text-sm text-white sm:border md:mt-0">
             <div className="flex space-x-2">
               <ExclamationTriangleIcon width={20} className="shrink-0" />
               <span>The searched transaction does not belong to your connected wallet.</span>

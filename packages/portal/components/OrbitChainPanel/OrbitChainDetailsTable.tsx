@@ -92,11 +92,11 @@ const Table = ({ id, data }: { id: string; data: TableData }) => {
                       Copied to clipboard!
                     </div>
                   )}
-                  <DocumentDuplicateIcon className="align-center bottom-6 right-4 hidden h-4 w-4 justify-center group-hover:flex" />
+                  <DocumentDuplicateIcon className="align-center right-4 bottom-6 hidden h-4 w-4 justify-center group-hover:flex" />
                 </div>
               )}
               {row.link && (
-                <ArrowTopRightOnSquareIcon className="align-center bottom-6 right-4 hidden h-3 w-3 justify-center group-hover:flex" />
+                <ArrowTopRightOnSquareIcon className="align-center right-4 bottom-6 hidden h-3 w-3 justify-center group-hover:flex" />
               )}
             </div>
           </Element>

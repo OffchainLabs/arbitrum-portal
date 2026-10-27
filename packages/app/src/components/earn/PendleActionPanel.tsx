@@ -294,7 +294,7 @@ export function PendleActionPanel({
   };
 
   return (
-    <Card className="bg-neutral-50 rounded flex flex-col gap-4 p-4 overflow-visible!">
+    <Card className="flex flex-col gap-4 overflow-visible! rounded bg-neutral-50 p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-medium text-white">{data.panelTitle}</h3>
       </div>

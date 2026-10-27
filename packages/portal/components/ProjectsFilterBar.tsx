@@ -50,7 +50,7 @@ export const ProjectsFilterBar = () => {
     <nav className="z-100 w-full py-2">
       <div className="flex w-full items-center justify-between">
         {/* Left side: Filter buttons */}
-        <ul className="flex w-full items-center gap-2 lg:gap-4 text-center lg:w-auto lg:flex-row">
+        <ul className="flex w-full items-center gap-2 text-center lg:w-auto lg:flex-row lg:gap-4">
           <li className="hidden lg:block">
             <CategoryDropdown />
           </li>
@@ -65,7 +65,7 @@ export const ProjectsFilterBar = () => {
           </li>
         </ul>
         {/* Right side: Add your project button */}
-        <div className="items-center hidden lg:flex">
+        <div className="hidden items-center lg:flex">
           <ExternalLink
             href={isOrbitPage ? SUBMIT_ORBIT_CHAIN_LINK : SUBMIT_PROJECT_LINK}
             className={twMerge(
@@ -82,12 +82,12 @@ export const ProjectsFilterBar = () => {
         <div className="flex items-center justify-between px-4 py-8 text-white">
           <button
             onClick={closePanel}
-            className="flex items-center justify-center gap-1 text-sm font-medium leading-7 hover:opacity-70"
+            className="flex items-center justify-center gap-1 text-sm leading-7 font-medium hover:opacity-70"
           >
             <ArrowSmallLeftIcon className="h-4 w-4 stroke-2" />
             <span>Done</span>
           </button>
-          <button className="text-sm font-medium leading-7 hover:opacity-70" onClick={resetFilters}>
+          <button className="text-sm leading-7 font-medium hover:opacity-70" onClick={resetFilters}>
             Clear all
           </button>
         </div>

@@ -26,13 +26,13 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
     <Link
       href={`/earn/opportunity/${opportunity.category}/${opportunity.id}`}
       onClick={() => onOpportunitySelect?.(opportunity, 'table-row')}
-      className="group bg-neutral-50 rounded h-[66px] px-4 py-3 flex gap-4 items-center hover:bg-default-black-hover transition-colors w-full text-left border-0"
+      className="group flex h-[66px] w-full items-center gap-4 rounded border-0 bg-neutral-50 px-4 py-3 text-left transition-colors hover:bg-default-black-hover"
     >
       <div className="w-[150px] shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${categoryClass}`} />
+          <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${categoryClass}`} />
           <div className="flex flex-col gap-0.5">
-            <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">
+            <p className="text-sm leading-[1.15] tracking-[-0.28px] text-white">
               {opportunity.name}
             </p>
             {isExpired ? (
@@ -46,13 +46,13 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
                 }
                 contentProps={{ side: 'top' }}
               >
-                <span className="text-[10px] font-medium leading-none text-amber-400 bg-amber-400/15 rounded px-1.5 py-0.5 cursor-default">
+                <span className="cursor-default rounded bg-amber-400/15 px-1.5 py-0.5 text-[10px] leading-none font-medium text-amber-400">
                   Matured
                 </span>
               </Tooltip>
             ) : (
               opportunity.maturityDate && (
-                <p className="text-xs text-white opacity-50 leading-none">
+                <p className="text-xs leading-none text-white opacity-50">
                   {opportunity.maturityDate}
                 </p>
               )
@@ -61,17 +61,17 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
         </div>
       </div>
 
-      <div className="w-[146px] shrink-0 flex items-center gap-2">
+      <div className="flex w-[146px] shrink-0 items-center gap-2">
         <SafeImage
           src={opportunity.tokenIcon}
           alt={opportunity.token}
           width={24}
           height={24}
-          className="rounded-full shrink-0"
-          fallback={<div className="size-6 rounded-full bg-white/10 shrink-0" />}
+          className="shrink-0 rounded-full"
+          fallback={<div className="size-6 shrink-0 rounded-full bg-white/10" />}
         />
         <div className="flex flex-col gap-0.5">
-          <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap">
+          <p className="text-sm leading-[1.15] tracking-[-0.28px] whitespace-nowrap text-white">
             {opportunity.token}
           </p>
           {opportunity.tokenNetwork && (
@@ -83,7 +83,7 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
                 height={12}
                 className="shrink-0"
               />
-              <p className="text-xs text-white opacity-50 leading-none whitespace-nowrap">
+              <p className="text-xs leading-none whitespace-nowrap text-white opacity-50">
                 {opportunity.tokenNetwork.toLowerCase() === 'arbitrum'
                   ? 'Arbitrum One'
                   : opportunity.tokenNetwork}
@@ -93,16 +93,16 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
         </div>
       </div>
 
-      <div className="flex-1 flex items-center gap-1 min-w-0">
-        <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] w-[45px]">
+      <div className="flex min-w-0 flex-1 items-center gap-1">
+        <p className="w-[45px] text-sm leading-[1.15] tracking-[-0.28px] text-white">
           {opportunity.apy}
         </p>
         {opportunity.apyBreakdown && opportunity.apyBreakdown.reward > 0 && (
           <Tooltip
             as="div"
             content={
-              <div className="flex flex-col min-w-[173px]">
-                <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg">
+              <div className="flex min-w-[173px] flex-col">
+                <div className="flex items-center gap-2.5 rounded-lg px-3 py-2">
                   <div className="flex items-center gap-2">
                     <ChartBarIcon className="h-4 w-4 text-white opacity-50" />
                     <span className="text-sm font-medium text-white opacity-50">Base APY</span>
@@ -111,7 +111,7 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
                     {formatPercentage(opportunity.apyBreakdown.base)}
                   </span>
                 </div>
-                <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg">
+                <div className="flex items-center gap-2.5 rounded-lg px-3 py-2">
                   <div className="flex items-center gap-2">
                     <Image
                       src="/images/sparkles.svg"
@@ -120,11 +120,11 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
                       height={16}
                       aria-hidden
                     />
-                    <span className="text-sm font-medium bg-linear-to-b from-bright-blue to-electric-blue bg-clip-text text-transparent">
+                    <span className="bg-linear-to-b from-bright-blue to-electric-blue bg-clip-text text-sm font-medium text-transparent">
                       Rewards
                     </span>
                   </div>
-                  <span className="ml-auto text-sm font-medium bg-linear-to-b from-bright-blue to-electric-blue bg-clip-text text-transparent">
+                  <span className="ml-auto bg-linear-to-b from-bright-blue to-electric-blue bg-clip-text text-sm font-medium text-transparent">
                     {formatPercentage(opportunity.apyBreakdown.reward)}
                   </span>
                 </div>
@@ -132,21 +132,21 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
             }
             contentProps={{ side: 'top' }}
           >
-            <div className="w-6 h-6 shrink-0 flex items-center justify-center cursor-pointer hover:bg-white/5 rounded p-0.5">
+            <div className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded p-0.5 hover:bg-white/5">
               <Image src="/images/sparkles.svg" alt="Sparkles" width={24} height={24} aria-hidden />
             </div>
           </Tooltip>
         )}
       </div>
 
-      <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         {opportunity.deposited != null ? (
           <>
-            <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">
+            <p className="text-sm leading-[1.15] tracking-[-0.28px] text-white">
               {opportunity.deposited}
             </p>
             {opportunity.depositedUsd != null && (
-              <p className="text-xs text-white opacity-50 leading-none">
+              <p className="text-xs leading-none text-white opacity-50">
                 {formatUSD(opportunity.depositedUsd)}
               </p>
             )}
@@ -156,9 +156,9 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
         )}
       </div>
 
-      <div className="flex-1 flex items-center min-w-0">
+      <div className="flex min-w-0 flex-1 items-center">
         {opportunity.projectedEarningsUsd != null ? (
-          <p className="text-sm text-white leading-[1.15] tracking-[-0.28px]">
+          <p className="text-sm leading-[1.15] tracking-[-0.28px] text-white">
             {formatUSD(opportunity.projectedEarningsUsd)}
           </p>
         ) : (
@@ -166,27 +166,27 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
         )}
       </div>
 
-      <div className="w-[116px] shrink-0 flex items-center gap-2">
-        <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap">
+      <div className="flex w-[116px] shrink-0 items-center gap-2">
+        <p className="text-sm leading-[1.15] tracking-[-0.28px] whitespace-nowrap text-white">
           {opportunity.tvl}
         </p>
       </div>
 
-      <div className="flex-1 flex items-center gap-2 min-w-0">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
         <SafeImage
           src={opportunity.protocolIcon}
           alt={opportunity.protocol}
           width={24}
           height={24}
-          className="shrink-0 object-contain rounded"
-          fallback={<div className="size-6 rounded-full bg-white/10 shrink-0" />}
+          className="shrink-0 rounded object-contain"
+          fallback={<div className="size-6 shrink-0 rounded-full bg-white/10" />}
         />
-        <p className="text-sm text-white leading-[1.15] tracking-[-0.28px] whitespace-nowrap capitalize">
+        <p className="text-sm leading-[1.15] tracking-[-0.28px] whitespace-nowrap text-white capitalize">
           {opportunity.protocol}
         </p>
       </div>
 
-      <div className="bg-white/10 rounded p-2 flex items-center justify-center group-hover:bg-white/20 shrink-0">
+      <div className="flex shrink-0 items-center justify-center rounded bg-white/10 p-2 group-hover:bg-white/20">
         <ChevronRightIcon className="h-4 w-4 text-white" />
       </div>
     </Link>

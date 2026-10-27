@@ -230,7 +230,7 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
                     (slippageIsTooHigh || slippageIsTooLow) && 'border-orange-dark bg-orange-dark',
                   )}
                 />
-                <div className="absolute bottom-0 right-2 top-0 flex items-center">%</div>
+                <div className="absolute top-0 right-2 bottom-0 flex items-center">%</div>
               </span>
             </div>
 
