@@ -7,8 +7,8 @@ import { getParentChainInfo } from '../addOrbitChain/schemas';
 
 // Load env vars from packages/app/.env (where RPC keys live).
 // Try both repo root (direct invocation) and packages/scripts (yarn workspace).
-dotenv.config({ path: path.resolve(process.cwd(), 'packages/app/.env') });
-dotenv.config({ path: path.resolve(process.cwd(), '../app/.env') });
+dotenv.config({ path: path.resolve(process.cwd(), 'packages/app/.env'), quiet: true });
+dotenv.config({ path: path.resolve(process.cwd(), '../app/.env'), quiet: true });
 
 type OrbitChainConfig = {
   chainId: number;
