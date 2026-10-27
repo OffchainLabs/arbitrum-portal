@@ -391,7 +391,7 @@ The work has three milestones. The bridge does not consume the new API until the
 3. Cache token metadata per chain and provider routes per pair with `unstable_cache`. Keep every entry below 1.5 MiB as Next measures it.
 4. If one provider fails on a cold build, omit that provider and keep the data from the healthy providers.
 5. If an upstream call fails during a rebuild, keep the last good entry.
-6. Apply the transfer-disabled and withdraw-only lists after each cache read, so a list change applies without a rebuild. Check the OFT deposit block (`isBlockedOftDeposit`) on each selection request, outside the hourly cache, because it reads live LayerZero metadata and onchain state.
+6. Apply the transfer-disabled and withdraw-only lists after each cache read, so a list change applies without a rebuild. Run `isBlockedOftDeposit` on each selection request, outside the hourly cache. It reads LayerZero metadata and onchain state, which can change within the hour.
 7. Derive canonical bridges from the network registry. Map custom gas tokens to the child chain's zero address, and read native-token metadata from `orbitChainsData.json`. Read decimals onchain, because the file does not contain them.
 8. Keep imported tokens outside the cached registry. Resolve an import during selection for every source token without a canonical route, cache the result, and add its canonical route.
 9. Implement the three endpoints.
@@ -422,7 +422,9 @@ Both pickers keep their current behavior:
 
 Remove the token-list management panel, the provenance labels, and the list toggles.
 
-Both pickers sort on the client, as the bridge does today. The endpoints return tokens sorted by symbol. The client puts the pinned tokens first, ranks the rest by balance, and keeps the server order for ties and for disconnected users. The pins are the current rules: the native currency, ETH, and USDG where `isUsdgSurfacedLikeEth` holds. The destination picker also pins native USDC, USDT, and WBTC. The pins and the balance sort share one helper, so the balance sort cannot move a pinned token down.
+Both pickers sort on the client, as the bridge does today. The endpoints return tokens sorted by symbol. The client moves pinned tokens to the top and ranks the rest by balance. Tokens with equal balances keep the server order, and a disconnected user sees the pins followed by the server order.
+
+The pins stay the same as today. Both pickers pin the native currency, ETH, and USDG where `isUsdgSurfacedLikeEth` returns true. The destination picker also pins native USDC, USDT, and WBTC. One helper applies the pins and the balance sort, so a balance can never move a pinned token down.
 
 For a connected user, load balances after the picker data arrives. Split picker balance reads into bounded multicalls. If one chunk fails, keep the successful chunks. Read balances again when the account or a relevant chain changes, and ignore results for an old account or chain. Load the selected token balance separately from picker ranking.
 
@@ -536,7 +538,7 @@ Bridge acceptance tests run before and after the bridge moves to the API. They u
 | Native tokens        | Zero-address tokens use the correct metadata, decimals, balance, approval, and execution path.                  |
 | Both directions      | Balances, gas, approvals, quotes, and execution receive the exact source-chain and destination-chain addresses. |
 | Batch deposits       | The second amount field appears only with `batchDeposit`, and the extra amount reaches the destination address. |
-| Route blocks         | Transfer-disabled, withdraw-only, and blocked OFT deposit tokens have no canonical route.                       |
+| Route blocks         | Transfer-disabled tokens get no canonical route. Withdraw-only and OFT-blocked tokens get no canonical deposit. |
 | Runtime policy       | Settings, live quotes, and warnings stay unchanged.                                                             |
 | Records              | Analytics payloads and pending transaction records keep their current meaning.                                  |
 | Cache                | Every chain entry and pair entry stays below 1.5 MiB through the real `unstable_cache` path.                    |
