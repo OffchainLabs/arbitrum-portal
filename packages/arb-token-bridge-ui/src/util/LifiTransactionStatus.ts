@@ -7,7 +7,6 @@ import { WithdrawalStatus } from '../state/app/state';
 export const LIFI_TRANSFER_PROCESS_TYPES: ReadonlySet<ProcessType> = new Set([
   'CROSS_CHAIN',
   'SWAP',
-  'TRANSACTION',
 ]);
 export function isValidLifiTransactionHash(txHash: string | null | undefined): txHash is string {
   return typeof txHash === 'string' && utils.isHexString(txHash, 32);
@@ -25,7 +24,9 @@ export function isActiveLifiProcess(process: Pick<Process, 'status'>) {
   return (
     process.status === 'PENDING' ||
     process.status === 'STARTED' ||
-    process.status === 'ACTION_REQUIRED'
+    process.status === 'ACTION_REQUIRED' ||
+    process.status === 'MESSAGE_REQUIRED' ||
+    process.status === 'RESET_REQUIRED'
   );
 }
 
