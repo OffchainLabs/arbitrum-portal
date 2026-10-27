@@ -345,6 +345,10 @@ describe.sequential('TransferPanel LiFi Integration - Default Token', () => {
           tokenExpectationsByChain.RobinhoodChain.USDG,
         ],
       });
+      // Fails from swr 2.4.2 on: the destination token picker doesn't reopen after a token
+      // was chosen. That's why swr is pinned to exactly 2.4.1 in packages/app and
+      // packages/arb-token-bridge-ui. 2.4.2 only changed vercel/swr#4252 (double-unsubscribe
+      // guard) and vercel/swr#4271 (suspense status). The cause on our side isn't known yet.
       await setDestinationToken(tokenExpectationsByChain.RobinhoodChain.USDG);
       await expectTokenButtonContent({
         isDestination: true,
