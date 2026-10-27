@@ -367,11 +367,11 @@ The loading strategy is a second trade. Each selection change now costs a reques
 
 The design has three costs that reviewers should weigh:
 
-- The first request for a cold pair waits for all upstream token and route data. In the measured run, that wait was about 4.8 seconds.
+- The first request for a cold pair waits for all upstream token and route data. In the measured run, that wait was about 2 seconds.
 - The source picker response is large, at about 1.33 MB raw and 301 KB gzipped.
 - A request reads three cache entries, and the entries can expire at different times.
 
-The cold-pair wait is the cost we like least. A visitor who lands on a cold pair waits almost five seconds for the selection response.
+The cold-pair wait is the cost we like least. A visitor who lands on a cold pair waits about 2 seconds for the selection response.
 
 # 5. Alternatives Considered
 
@@ -611,12 +611,16 @@ The cache entries were measured on October 23, 2026, the way Next checks its 2 M
 
 A route entry counts its source tokens and the destination tokens that LiFi accepts. The 100% column assumes the same average size per token.
 
-`Cached registry lookup` is the time spent waiting for the cached pair registry. A cold lookup includes the registry build. A warm lookup reads the cached value. `Handler total` runs from route-handler entry to the point before response serialization.
+The latency run used a local Next dev server. `Cached registry lookup` is the time spent reading the two chain entries and the pair entry and building the token indexes. A cold lookup includes building every entry, which checked 890 Ethereum tokens with `oftVersion()`. A warm lookup reads the cached entries. `Import` is the time spent on a canonical import. `Handler total` runs from route-handler entry to the point before response serialization.
 
-| Request state                         | Cached registry lookup | Handler total |
-| ------------------------------------- | ---------------------: | ------------: |
-| Cold selected-token request           |             4,757.1 ms |    4,762.8 ms |
-| Warm selected-token request           |                 3.6 ms |        6.2 ms |
-| Warm request for another source token |                 3.5 ms |        7.8 ms |
+| Request state                                             | Cached registry lookup |   Import | Handler total |
+| --------------------------------------------------------- | ---------------------: | -------: | ------------: |
+| Cold selected-token request                               |             1,999.8 ms |   0.1 ms |    2,000.2 ms |
+| Warm selected-token request, median of 20                 |                 8.5 ms |   0.0 ms |        8.6 ms |
+| Warm request for another source token, median of 30       |                 7.8 ms |   0.0 ms |        8.0 ms |
+| First request that tries a canonical import, median of 20 |                 9.8 ms | 248.0 ms |      259.2 ms |
+| The same tokens after the import is cached, median of 20  |                 7.9 ms |   0.6 ms |        8.6 ms |
 
-Warm destination-token requests for two more source tokens finished in 12.2 ms and 13.4 ms. A warm source-token response finished in 32.7 ms.
+The import waits on RPC calls, so its 95th percentile reached 2,157.1 ms. The import result is cached for one hour, so only the first request for a token pays it.
+
+Measured from the client, warm destination-token requests for USDC and DAI finished in 14 ms to 22 ms. A warm source-token response finished in 25 ms.
