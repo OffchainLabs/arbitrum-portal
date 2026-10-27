@@ -7,7 +7,7 @@ import { getTools } from '@lifi/sdk';
 import React, { useCallback, useMemo, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import { twMerge } from 'tailwind-merge';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { isValidLifiTransfer } from '../../app/api/crosschain-transfers/utils';
 import { useNetworks } from '../../hooks/useNetworks';
@@ -114,13 +114,12 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
   const { data: tokensFromLists } = useTokensFromLists();
   const { slippage, setSlippage, storeDisabledBridges, setDisabledBridgesToStore } =
     useLifiSettingsStore(
-      (state) => ({
+      useShallow((state) => ({
         slippage: state.slippage,
         setSlippage: state.setSlippage,
         storeDisabledBridges: state.disabledBridges,
         setDisabledBridgesToStore: state.setDisabledBridges,
-      }),
-      shallow,
+      })),
     );
   const isLifiSupported = useMemo(
     () =>

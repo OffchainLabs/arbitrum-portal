@@ -4,7 +4,7 @@ import { useInterval } from 'react-use';
 import useSWRImmutable from 'swr/immutable';
 import { useAccount, useConfig } from 'wagmi';
 import { create } from 'zustand';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { getCctpUtils } from '@/token-bridge-sdk/cctp';
 
@@ -361,14 +361,13 @@ const useCctpStore = create<CctpStore>((set, get) => ({
 
 export function useCctpState() {
   const { transfersIds, transfers, resetTransfers, setTransfers, updateTransfer } = useCctpStore(
-    (state) => ({
+    useShallow((state) => ({
       transfersIds: state.transfersIds,
       transfers: state.transfers,
       resetTransfers: state.resetTransfers,
       setTransfers: state.setTransfers,
       updateTransfer: state.updateTransfer,
-    }),
-    shallow,
+    })),
   );
 
   const { pendingIds, completedIds, depositIds, withdrawalIds } = useMemo(() => {
