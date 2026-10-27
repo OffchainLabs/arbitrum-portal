@@ -43,6 +43,12 @@ export type RouteOption =
       destinationToken?: Token;
     };
 
+// The client sorts `tokens` by balance and keeps `pinnedTokens` above them, in this order.
+export type PickerTokens = {
+  pinnedTokens: Token[];
+  tokens: Token[];
+};
+
 export type SelectedTokenAvailability = {
   sourceToken: Token;
   destinationToken: Token;

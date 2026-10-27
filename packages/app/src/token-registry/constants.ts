@@ -52,6 +52,10 @@ const USDC_ROBINHOOD = addr('0x80e0e24718dbfcad49ecaa6f1e6c89a190586ca8');
 const USDT_ETHEREUM = addr(CommonAddress.Ethereum.USDT);
 const USDT0_ARBITRUM_ONE = addr(CommonAddress.ArbitrumOne.USDT);
 
+const USDG_ETHEREUM = addr(CommonAddress.Ethereum.USDG);
+const USDG_ARBITRUM_ONE = addr('0x004b506865409877c9fa29bfb1eba929984b9bbc');
+const USDG_ROBINHOOD = addr(CommonAddress.RobinhoodChain.USDG);
+
 const PYUSD_ETHEREUM = addr(CommonAddress.Ethereum.PYUSD);
 const PYUSD_LIFI_ARBITRUM_ONE = addr(CommonAddress.ArbitrumOne.PYUSD);
 
@@ -107,10 +111,18 @@ export const batchDepositExcludedSourceTokens: Record<string, Address[]> = {
   ],
 };
 
-// Master disables canonical PYUSD because its token model cannot offer two destinations.
-// The registry models both, so it keeps the canonical route and defaults to LiFi PYUSD.
-export const transferDisabledExemptions: Partial<Record<number, Address[]>> = {
+// Master blocks canonical PYUSD, through the transfer-disabled list and the OFT deposit block,
+// because its token model cannot offer two destinations. The registry models both, so it keeps
+// the canonical route and defaults to LiFi PYUSD.
+export const canonicalBlockExemptions: Partial<Record<number, Address[]>> = {
   [ChainIds.ArbitrumOne]: [PYUSD_ETHEREUM],
+};
+
+// Both pickers list these tokens first, in this order, when the picker holds them.
+export const pinnedTokenAddresses: Partial<Record<number, Address[]>> = {
+  [ChainIds.Ethereum]: [NATIVE_TOKEN_ADDRESS, USDC_ETHEREUM, USDG_ETHEREUM],
+  [ChainIds.ArbitrumOne]: [NATIVE_TOKEN_ADDRESS, USDC_ARBITRUM_ONE, USDG_ARBITRUM_ONE],
+  [ChainIds.Robinhood]: [NATIVE_TOKEN_ADDRESS, USDC_ROBINHOOD, USDG_ROBINHOOD],
 };
 
 export const defaultDestinationOverrides: Record<string, Record<Address, Address>> = {
