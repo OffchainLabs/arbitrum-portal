@@ -16,28 +16,19 @@
 
 ## TL;DR
 
-The bridge stores each token as one parent-chain address paired with one child-chain address. That model cannot describe PYUSD, which reaches two different tokens on Arbitrum One. It also cannot describe USDC, where two Arbitrum One tokens withdraw to one Ethereum token. Today each of these cases is a hardcoded branch, and every new chain or provider adds more branches.
+This RFC moves token management to the backend. A `Token` is one token on one chain, with its own symbol and name. A `RouteOption` names the exact source token and destination token for one provider: canonical, LayerZero, or LiFi.
 
-This RFC moves token management to the backend and replaces the address pair with two types:
-
-- `Token` is one token on one chain, with its own symbol and name.
-- `RouteOption` names the exact source token and destination token for one provider: canonical, LayerZero, or LiFi.
+The backend aggregates the Arbitrum token lists, LiFi, and the configured routes into one registry. Three endpoints return its results: selection, source picker, and destination picker. The page no longer loads complete token lists. On load, it requests only the selection. It calls the source picker or destination picker endpoint only when the user opens that picker.
 
 The goal is that a new multi-route asset or chain pair needs a configuration change, not new bridge code. The PoC at `/token-registry-poc` implements the design for Ethereum, Arbitrum One, and Robinhood.
 
 The key decisions are these:
 
-- The backend builds tokens and routes from the Arbitrum token lists, LiFi, and the configured routes. It also picks the default destination, resolves token imports, and decides batch support and picker pins. It applies the transfer-disabled, withdraw-only, and OFT deposit blocks.
+- The backend picks the default destination, resolves token imports, and decides batch support and picker pins. It applies the transfer-disabled, withdraw-only, and OFT deposit blocks.
 - The frontend renders and searches the lists, sorts tokens by balance, and builds runtime routes from live quotes.
-- Three endpoints replace the client-side token lists: selection, source picker, and destination picker. The page loads 1.2 KB to 1.5 KB instead of 1,573 KB. Picker lists load when the user opens a picker.
+- The three endpoints replace the client-side token lists. The page loads 1.2 KB to 1.5 KB instead of 1,573 KB.
 - The backend caches token metadata per chain and routes per chain pair for one hour. Every entry stays under the 2 MiB cache limit. The largest entry, Ethereum tokens, uses 64% of the limit.
 - The bridge moves to the API in one step, with no compatibility layer. The migration then deletes the old token management.
-
-The design has three costs:
-
-- The first request for a cold pair waits about 4.8 seconds for upstream data. We like this cost least.
-- The source picker response is 1.33 MB raw and 301 KB gzipped.
-- A request reads three cache entries, and the entries expire separately.
 
 One question is still open: whether a short configured list can replace the `oftVersion()` fallback for the OFT deposit block. See [Open Questions](#9-open-questions).
 
