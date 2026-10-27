@@ -1,5 +1,5 @@
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import Fuse from 'fuse.js';
+import { type FuseResultMatch } from 'fuse.js';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -55,7 +55,7 @@ const TextWithMatchHighlight = ({
   matchDetails,
 }: {
   text: string;
-  matchDetails?: Fuse.FuseResultMatch;
+  matchDetails?: FuseResultMatch;
 }) => {
   if (!matchDetails) return <span>{text}</span>;
 
