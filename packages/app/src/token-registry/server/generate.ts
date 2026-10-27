@@ -4,6 +4,7 @@ import {
   batchDepositExcludedSourceTokens,
   blockedLifiSourceRoutes,
   blockedSourceRoutes,
+  canonicalBlockExemptions,
   getCuratedCoinKey,
   getDefaultDestinationOverride,
   hardcodedLifiRoutes,
@@ -11,6 +12,7 @@ import {
   isExcludedToken,
   isSupportedPair,
   layerZeroConfig,
+  pinnedTokenAddresses,
   supportedPairs,
 } from '../constants';
 import { normalizeToken } from '../normalize';
@@ -19,6 +21,7 @@ import {
   BatchDeposit,
   ChainPair,
   NATIVE_TOKEN_ADDRESS,
+  PickerTokens,
   ProviderId,
   RouteOption,
   SelectedTokenAvailability,
@@ -34,6 +37,14 @@ import {
   isCanonicalDeposit,
   isCanonicalTransferAllowed,
 } from './canonicalBridge';
+import {
+  LayerZeroMetadata,
+  findOftTokens,
+  getLayerZeroMetadata,
+  isImportedOftDepositBlocked,
+  isListedByLayerZero,
+  isOftDepositBlocked,
+} from './oftDeposits';
 import { resolveImport } from './resolveImport';
 
 type ProviderRoutes =
@@ -41,7 +52,7 @@ type ProviderRoutes =
   | { provider: 'layerzero'; routes: (typeof layerZeroConfig)[string] }
   | { provider: 'lifi'; routes: Record<Address, Address | null> };
 
-const REGISTRY_CACHE_VERSION = 2;
+const REGISTRY_CACHE_VERSION = 3;
 
 // Next skips data-cache entries over 2 MiB, so stay well below that.
 const CACHE_ENTRY_BUDGET = 1.5 * 1024 * 1024;
@@ -333,6 +344,8 @@ async function generateLifi(
 // with the number of pairs. The chain is implied by the cache key.
 type CachedChainToken = Omit<Token, 'id' | 'chainId'> & {
   coinKey?: string;
+  // Set when a canonical parent token that LayerZero does not list answers oftVersion().
+  isOft?: true;
 };
 
 type CachedPairRoutes = {
@@ -375,6 +388,35 @@ function getCanonicalBridgesForChain(chainId: number): CanonicalBridge[] {
   return [...byChildChainId.values()];
 }
 
+// The OFT check depends only on the parent token, so every pair on this chain reuses it.
+async function findUnlistedOftTokens({
+  chainId,
+  canonicalEntries,
+}: {
+  chainId: number;
+  canonicalEntries: CanonicalEntry[];
+}): Promise<Set<Address>> {
+  // Two child chains can share a parent token, so check each one once.
+  const parentAddresses = [
+    ...new Set(
+      canonicalEntries
+        .filter(({ parent }) => parent.chainId === chainId)
+        .map(({ parent }) => parent.address),
+    ),
+  ];
+  if (parentAddresses.length === 0) {
+    return new Set();
+  }
+
+  const metadata = await getLayerZeroMetadata();
+  return findOftTokens({
+    chainId,
+    addresses: parentAddresses.filter(
+      (address) => !isListedByLayerZero({ metadata, chainId, address }),
+    ),
+  });
+}
+
 async function buildChainTokens(chainId: number): Promise<CachedChainToken[]> {
   const [canonicalEntries, lifiTokens] = await Promise.all([
     Promise.all(
@@ -384,6 +426,10 @@ async function buildChainTokens(chainId: number): Promise<CachedChainToken[]> {
     ),
     fetchLifiChainTokens(chainId),
   ]);
+  const oftTokens = await findUnlistedOftTokens({
+    chainId,
+    canonicalEntries: canonicalEntries.flat(),
+  });
 
   const tokens: CachedChainToken[] = [
     ...hardcodedTokens.filter((token) => token.chainId === chainId),
@@ -422,7 +468,52 @@ async function buildChainTokens(chainId: number): Promise<CachedChainToken[]> {
       byAddress.set(token.address, { ...existing, coinKey: token.coinKey });
     }
   }
+  for (const address of oftTokens) {
+    const token = byAddress.get(address);
+    if (token) {
+      byAddress.set(address, { ...token, isOft: true });
+    }
+  }
   return [...byAddress.values()];
+}
+
+// Master blocks these deposits so that the token moves through its OFT instead.
+function removeBlockedOftDeposits({
+  pair,
+  routes,
+  metadata,
+  parentChainTokens,
+}: {
+  pair: ChainPair;
+  routes: Record<Address, Address>;
+  metadata: LayerZeroMetadata;
+  parentChainTokens: CachedChainToken[];
+}): Record<Address, Address> {
+  const oftTokens = new Set(
+    parentChainTokens.filter((token) => token.isOft).map((token) => token.address),
+  );
+  const exemptTokens = canonicalBlockExemptions[pair.destinationChainId] ?? [];
+  const filtered: Record<Address, Address> = {};
+  for (const [parentTokenAddress, childTokenAddress] of Object.entries(routes) as [
+    Address,
+    Address,
+  ][]) {
+    if (
+      parentTokenAddress === NATIVE_TOKEN_ADDRESS ||
+      exemptTokens.includes(parentTokenAddress) ||
+      !isOftDepositBlocked({
+        metadata,
+        parentChainId: pair.sourceChainId,
+        childChainId: pair.destinationChainId,
+        parentTokenAddress,
+        childTokenAddress,
+        isOftOnChain: oftTokens.has(parentTokenAddress),
+      })
+    ) {
+      filtered[parentTokenAddress] = childTokenAddress;
+    }
+  }
+  return filtered;
 }
 
 async function buildPairRoutes(
@@ -431,16 +522,27 @@ async function buildPairRoutes(
 ): Promise<CachedPairRoutes> {
   const providers: ProviderRoutes[] = [];
   const bridge = getCanonicalBridge(pair);
-  const [listTokens, lifiResult] = await Promise.all([
+  const chainTokensPromise = loadChainTokens();
+  const [listTokens, lifiResult, chainTokens, layerZeroMetadata] = await Promise.all([
     bridge ? fetchArbedTokenLists(bridge.tokenListUrls) : Promise.resolve([]),
-    loadChainTokens().then((chainTokens) => generateLifi(pair, chainTokens)),
+    chainTokensPromise.then((chainTokens) => generateLifi(pair, chainTokens)),
+    chainTokensPromise,
+    bridge && isCanonicalDeposit(pair, bridge) ? getLayerZeroMetadata() : Promise.resolve(null),
   ]);
 
   if (bridge) {
-    const canonicalRoutes = removeBlockedSourceRoutes(
+    const routes = removeBlockedSourceRoutes(
       pair,
       generateCanonical(getCanonicalEntries(listTokens, bridge), pair).routes,
     );
+    const canonicalRoutes = layerZeroMetadata
+      ? removeBlockedOftDeposits({
+          pair,
+          routes,
+          metadata: layerZeroMetadata,
+          parentChainTokens: chainTokens.source,
+        })
+      : routes;
     if (Object.keys(canonicalRoutes).length > 0) {
       providers.push({ provider: 'canonical', routes: canonicalRoutes });
     }
@@ -567,6 +669,18 @@ async function getPairRegistry(pair: ChainPair): Promise<PairRegistry> {
 
 function sortTokens(tokens: Token[]): Token[] {
   return [...tokens].sort((a, b) => a.symbol.localeCompare(b.symbol));
+}
+
+function toPickerTokens(chainId: number, tokens: Token[]): PickerTokens {
+  const byAddress = getTokenAddressMap(tokens);
+  const pinnedTokens = (pinnedTokenAddresses[chainId] ?? []).flatMap(
+    (address) => byAddress[address] ?? [],
+  );
+  const pinnedTokenIds = new Set(pinnedTokens.map((token) => token.id));
+  return {
+    pinnedTokens,
+    tokens: sortTokens(tokens.filter((token) => !pinnedTokenIds.has(token.id))),
+  };
 }
 
 function getSourceRouteAddresses(providers: ProviderRoutes[]): Address[] {
@@ -720,7 +834,7 @@ function getDestinationTokenOptions({
     }
   }
 
-  return sortTokens([...byId.values()]);
+  return [...byId.values()];
 }
 
 function getDefaultDestinationTokenForSource({
@@ -803,7 +917,7 @@ function getTransferableSourceTokens(registry: PairRegistry, pair: ChainPair): T
     transferableSourceTokens.push(sourceToken);
   }
 
-  return sortTokens(transferableSourceTokens);
+  return transferableSourceTokens;
 }
 
 function selectTokenAvailability({
@@ -918,7 +1032,19 @@ function getCachedImport({
 }): Promise<SelectedTokenAvailability | null> {
   return cached(
     `token-registry-import-${pairKey(pair)}-${sourceTokenAddress}-v${REGISTRY_CACHE_VERSION}`,
-    () => resolveImport({ bridge, pair, rawAddress: sourceTokenAddress }),
+    async () => {
+      const imported = await resolveImport({ bridge, pair, rawAddress: sourceTokenAddress });
+      const isBlocked =
+        imported &&
+        isCanonicalDeposit(pair, bridge) &&
+        (await isImportedOftDepositBlocked({
+          parentChainId: pair.sourceChainId,
+          childChainId: pair.destinationChainId,
+          parentTokenAddress: imported.sourceToken.address,
+          childTokenAddress: imported.destinationToken.address,
+        }));
+      return isBlocked ? null : imported;
+    },
   );
 }
 
@@ -1053,11 +1179,13 @@ function withBatchDeposit({
   };
 }
 
-export function getSourceTokens(pair: ChainPair): Promise<Token[] | null> {
+export function getSourceTokens(pair: ChainPair): Promise<PickerTokens | null> {
   if (!isSupportedPair(pair)) {
     return Promise.resolve(null);
   }
-  return getPairRegistry(pair).then((registry) => getTransferableSourceTokens(registry, pair));
+  return getPairRegistry(pair).then((registry) =>
+    toPickerTokens(pair.sourceChainId, getTransferableSourceTokens(registry, pair)),
+  );
 }
 
 export async function getDestinationTokensForSource({
@@ -1066,7 +1194,7 @@ export async function getDestinationTokensForSource({
 }: {
   pair: ChainPair;
   sourceTokenAddress: string;
-}): Promise<Token[] | null> {
+}): Promise<PickerTokens | null> {
   if (!isSupportedPair(pair)) {
     return null;
   }
@@ -1076,7 +1204,8 @@ export async function getDestinationTokensForSource({
     registry: await getPairRegistry(pair),
     sourceTokenAddress: normalizeAddress(sourceTokenAddress),
   });
-  return getIndexedDestinationTokenOptions({ pair, ...resolved });
+  const tokens = getIndexedDestinationTokenOptions({ pair, ...resolved });
+  return tokens ? toPickerTokens(pair.destinationChainId, tokens) : null;
 }
 
 export async function getSelectedTokenAvailability({

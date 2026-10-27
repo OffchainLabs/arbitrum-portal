@@ -10,7 +10,13 @@ import {
   getSelectedTokenAvailability,
   getSourceTokens,
 } from '../server/generate';
-import { NATIVE_TOKEN_ADDRESS, SelectedTokenAvailability, Token, toTokenId } from '../types';
+import {
+  NATIVE_TOKEN_ADDRESS,
+  PickerTokens,
+  SelectedTokenAvailability,
+  Token,
+  toTokenId,
+} from '../types';
 import { DAI_ARBITRUM, DAI_ETHEREUM } from './fixtures';
 
 const cacheState = vi.hoisted(() => ({
@@ -35,6 +41,22 @@ const resolveImportMock = vi.hoisted(() =>
 
 vi.mock('../server/resolveImport', () => ({
   resolveImport: (...args: unknown[]) => resolveImportMock(...args),
+}));
+
+// Tokens that answer oftVersion() onchain.
+const onchainOftTokens = vi.hoisted(() => new Set<string>());
+const multicallMock = vi.hoisted(() =>
+  vi.fn(async ({ contracts }: { contracts: { address: string }[] }) =>
+    contracts.map(({ address }) =>
+      onchainOftTokens.has(address)
+        ? { status: 'success', result: ['0x02e49c2c', 1n] }
+        : { status: 'failure', error: new Error('execution reverted') },
+    ),
+  ),
+);
+
+vi.mock('../server/publicClient', () => ({
+  getPublicClient: () => ({ multicall: multicallMock }),
 }));
 
 const PYUSD_ETHEREUM = '0x6c3ea9036406852006290770bedfcaba0e23a0e8' as Token['address'];
@@ -83,7 +105,15 @@ afterEach(() => {
   cacheState.builtKeys.length = 0;
   resolveImportMock.mockReset();
   resolveImportMock.mockResolvedValue(null);
+  onchainOftTokens.clear();
+  multicallMock.mockClear();
 });
+
+const emptyLayerZeroMetadata = { ethereum: { tokens: {} } };
+
+function pickerAddresses(picker: PickerTokens | null): string[] {
+  return [...(picker?.pinnedTokens ?? []), ...(picker?.tokens ?? [])].map((token) => token.address);
+}
 
 function jsonResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -91,9 +121,17 @@ function jsonResponse(body: unknown): Response {
   });
 }
 
-function mockRegistryFetch() {
+function mockRegistryFetch({
+  layerZeroMetadata = emptyLayerZeroMetadata,
+}: { layerZeroMetadata?: unknown } = {}) {
   const fetchMock = vi.fn(async (input: Parameters<typeof fetch>[0]) => {
     const url = new URL(input.toString());
+
+    if (url.hostname === 'metadata.layerzero-api.com') {
+      return layerZeroMetadata
+        ? jsonResponse(layerZeroMetadata)
+        : new Response(null, { status: 503 });
+    }
 
     if (url.hostname === 'tokenlist.arbitrum.io' && url.pathname.includes('4663_')) {
       return jsonResponse({
@@ -433,11 +471,12 @@ describe('getSelectedTokenAvailability', () => {
     });
 
     expect([...cacheState.builtKeys].sort()).toEqual([
-      'token-registry-chain-1-v2',
-      'token-registry-chain-42161-v2',
-      'token-registry-chain-4663-v2',
-      'token-registry-pair-1->42161-v2',
-      'token-registry-pair-1->4663-v2',
+      'layerzero-metadata',
+      'token-registry-chain-1-v3',
+      'token-registry-chain-42161-v3',
+      'token-registry-chain-4663-v3',
+      'token-registry-pair-1->42161-v3',
+      'token-registry-pair-1->4663-v3',
     ]);
     const ethereumLifiTokenFetches = fetchMock.mock.calls.filter(([input]) => {
       const url = new URL(input.toString());
@@ -688,7 +727,7 @@ describe('canonical imports', () => {
       sourceTokenAddress: UNBRIDGED_ETHEREUM,
     });
 
-    expect(destinationTokens?.map((token) => token.address)).toContain(UNBRIDGED_ARBITRUM);
+    expect(pickerAddresses(destinationTokens)).toContain(UNBRIDGED_ARBITRUM);
   });
 
   it('skips the import when the registry already has a canonical route', async () => {
@@ -760,7 +799,7 @@ describe('getDestinationTokensForSource', () => {
       pair: { sourceChainId: 1, destinationChainId: 42161 },
       sourceTokenAddress: USDC_ETHEREUM,
     });
-    const addresses = destinationTokens?.map((token) => token.address);
+    const addresses = pickerAddresses(destinationTokens);
 
     expect(addresses).toEqual(
       expect.arrayContaining([NATIVE_TOKEN_ADDRESS, DAI_ARBITRUM, USDC_E_ARBITRUM, USDC_ARBITRUM]),
@@ -778,8 +817,8 @@ describe('getSourceTokens', () => {
       destinationChainId: 42161,
     });
 
-    expect(sourceTokens?.some((token) => token.address === PYUSD_ETHEREUM)).toBe(true);
-    expect(sourceTokens?.some((token) => token.address === PEPE_ETHEREUM)).toBe(false);
+    expect(sourceTokens?.tokens.some((token) => token.address === PYUSD_ETHEREUM)).toBe(true);
+    expect(sourceTokens?.tokens.some((token) => token.address === PEPE_ETHEREUM)).toBe(false);
   });
 
   it('lists Robinhood one-chain and withdraw-only source tokens only in the withdraw direction', async () => {
@@ -794,8 +833,173 @@ describe('getSourceTokens', () => {
       destinationChainId: 4663,
     });
 
-    expect(withdrawalSourceTokens?.some((token) => token.address === SPCX_ROBINHOOD)).toBe(true);
-    expect(withdrawalSourceTokens?.some((token) => token.address === USDC_ROBINHOOD)).toBe(true);
-    expect(depositSourceTokens?.some((token) => token.address === USDC_ETHEREUM)).toBe(false);
+    const withdrawalAddresses = pickerAddresses(withdrawalSourceTokens);
+    const depositAddresses = pickerAddresses(depositSourceTokens);
+
+    expect(withdrawalAddresses).toContain(SPCX_ROBINHOOD);
+    expect(withdrawalAddresses).toContain(USDC_ROBINHOOD);
+    expect(depositAddresses).not.toContain(USDC_ETHEREUM);
+  });
+});
+
+describe('OFT deposit block', () => {
+  const OTHER_DAI_ARBITRUM = '0x3333333333333333333333333333333333333333';
+
+  async function getCanonicalDestination(
+    pair: { sourceChainId: number; destinationChainId: number },
+    sourceTokenAddress: string,
+  ) {
+    const selection = await getSelectedTokenAvailability({ pair, sourceTokenAddress });
+    return selection?.availableRoutes.find((route) => route.provider === 'canonical')
+      ?.destinationToken?.address;
+  }
+
+  it('blocks the deposit of a token that LayerZero does not list but answers oftVersion()', async () => {
+    mockRegistryFetch();
+    onchainOftTokens.add(DAI_ETHEREUM);
+
+    expect(
+      await getCanonicalDestination({ sourceChainId: 1, destinationChainId: 42161 }, DAI_ETHEREUM),
+    ).toBeUndefined();
+    expect(
+      await getCanonicalDestination({ sourceChainId: 42161, destinationChainId: 1 }, DAI_ARBITRUM),
+    ).toBe(DAI_ETHEREUM);
+  });
+
+  it('checks each Ethereum parent token onchain once for every pair', async () => {
+    mockRegistryFetch();
+
+    await getSelectedTokenAvailability({ pair: { sourceChainId: 1, destinationChainId: 42161 } });
+    await getSelectedTokenAvailability({ pair: { sourceChainId: 1, destinationChainId: 4663 } });
+
+    expect(multicallMock).toHaveBeenCalledTimes(1);
+    const [{ contracts }] = multicallMock.mock.calls[0] ?? [{ contracts: [] }];
+    expect(contracts.map(({ address }) => address)).toEqual(
+      expect.arrayContaining([DAI_ETHEREUM, PYUSD_ETHEREUM]),
+    );
+  });
+
+  it('blocks a listed OFT whose canonical child LayerZero does not know', async () => {
+    mockRegistryFetch({
+      layerZeroMetadata: {
+        ethereum: { tokens: { [DAI_ETHEREUM]: { type: 'OFT' } } },
+        arbitrum: {
+          tokens: {
+            [OTHER_DAI_ARBITRUM]: {
+              type: 'OFT',
+              peggedTo: { address: DAI_ETHEREUM, chainName: 'ethereum' },
+            },
+          },
+        },
+      },
+    });
+
+    expect(
+      await getCanonicalDestination({ sourceChainId: 1, destinationChainId: 42161 }, DAI_ETHEREUM),
+    ).toBeUndefined();
+    const [{ contracts }] = multicallMock.mock.calls[0] ?? [{ contracts: [] }];
+    expect(contracts.map(({ address }) => address)).not.toContain(DAI_ETHEREUM);
+  });
+
+  it('keeps a listed OFT whose canonical child LayerZero knows', async () => {
+    mockRegistryFetch({
+      layerZeroMetadata: {
+        ethereum: { tokens: { [DAI_ETHEREUM]: { type: 'OFT' } } },
+        arbitrum: {
+          tokens: {
+            [OTHER_DAI_ARBITRUM]: {
+              type: 'OFT',
+              peggedTo: { address: DAI_ETHEREUM, chainName: 'ethereum' },
+            },
+            [DAI_ARBITRUM]: { type: 'ERC20' },
+          },
+        },
+      },
+    });
+
+    expect(
+      await getCanonicalDestination({ sourceChainId: 1, destinationChainId: 42161 }, DAI_ETHEREUM),
+    ).toBe(DAI_ARBITRUM);
+  });
+
+  it('keeps the canonical PYUSD route that the registry exempts', async () => {
+    mockRegistryFetch({
+      layerZeroMetadata: {
+        ethereum: { tokens: { [PYUSD_ETHEREUM]: { type: 'OFT' } } },
+        arbitrum: {
+          tokens: {
+            [PYUSD_LIFI_ARBITRUM]: {
+              type: 'OFT',
+              peggedTo: { address: PYUSD_ETHEREUM, chainName: 'ethereum' },
+            },
+          },
+        },
+      },
+    });
+
+    expect(
+      await getCanonicalDestination(
+        { sourceChainId: 1, destinationChainId: 42161 },
+        PYUSD_ETHEREUM,
+      ),
+    ).toBe(PYUSD_CANONICAL_ARBITRUM);
+  });
+
+  it('fails a cold build when the LayerZero metadata is unavailable', async () => {
+    mockRegistryFetch({ layerZeroMetadata: null });
+
+    await expect(
+      getSelectedTokenAvailability({ pair: { sourceChainId: 1, destinationChainId: 42161 } }),
+    ).rejects.toThrow();
+  });
+
+  it('blocks an imported deposit of an OFT', async () => {
+    mockRegistryFetch();
+    onchainOftTokens.add(UNBRIDGED_ETHEREUM);
+    const sourceToken = token(1, UNBRIDGED_ETHEREUM, 'NEW');
+    const destinationToken = token(42161, UNBRIDGED_ARBITRUM, 'NEW');
+    resolveImportMock.mockResolvedValue({
+      sourceToken,
+      destinationToken,
+      availableRoutes: [{ provider: 'canonical', sourceToken, destinationToken }],
+    });
+
+    const selection = await getSelectedTokenAvailability({
+      pair: { sourceChainId: 1, destinationChainId: 42161 },
+      sourceTokenAddress: UNBRIDGED_ETHEREUM,
+    });
+
+    expect(resolveImportMock).toHaveBeenCalled();
+    expect(selection?.availableRoutes.map((route) => route.provider)).toEqual(['lifi']);
+  });
+});
+
+describe('picker pins', () => {
+  it('lists the native token and USDC first in the source picker', async () => {
+    mockRegistryFetch();
+
+    const sourceTokens = await getSourceTokens({ sourceChainId: 1, destinationChainId: 42161 });
+
+    expect(sourceTokens?.pinnedTokens.map((pinned) => pinned.address)).toEqual([
+      NATIVE_TOKEN_ADDRESS,
+      USDC_ETHEREUM,
+    ]);
+    expect(sourceTokens?.tokens.map((listed) => listed.address)).not.toContain(USDC_ETHEREUM);
+    const symbols = sourceTokens?.tokens.map((listed) => listed.symbol) ?? [];
+    expect(symbols).toEqual([...symbols].sort((a, b) => a.localeCompare(b)));
+  });
+
+  it('pins the destination chain tokens in the destination picker', async () => {
+    mockRegistryFetch();
+
+    const destinationTokens = await getDestinationTokensForSource({
+      pair: { sourceChainId: 1, destinationChainId: 42161 },
+      sourceTokenAddress: USDC_ETHEREUM,
+    });
+
+    expect(destinationTokens?.pinnedTokens.map((pinned) => pinned.address)).toEqual([
+      NATIVE_TOKEN_ADDRESS,
+      USDC_ARBITRUM,
+    ]);
   });
 });
