@@ -57,9 +57,6 @@
     // https://github.com/advisories/GHSA-m28w-2pqf-7qgj
     // webpack-dev-server denial of service via a malformed Host header
     //
-    // https://github.com/advisories/GHSA-v6wh-96g9-6wx3
-    // launch-editor leaks NTLMv2 hashes via unvalidated Windows UNC paths on the dev-server __open-in-editor endpoint (CVE-2026-53632)
-    //
     // https://github.com/advisories/GHSA-mx8g-39q3-5c79
     // webpack-dev-server HMR WebSocket interception via permissive user proxies leaks credentials (CVE-2026-9595)
     //
@@ -106,7 +103,6 @@
     "GHSA-79cf-xcqc-c78w",
     "GHSA-f5vj-f2hx-8m93",
     "GHSA-m28w-2pqf-7qgj",
-    "GHSA-v6wh-96g9-6wx3",
     "GHSA-mx8g-39q3-5c79",
     "GHSA-64mm-vxmg-q3vj",
     "GHSA-g84c-rxfj-3j2c",
@@ -167,17 +163,6 @@
     // from: arb-token-bridge-ui>@synthetixio/synpress>...>webpack-dev-server>selfsigned>node-forge
     "GHSA-86w9-cpqp-85rv",
     //
-    // https://github.com/advisories/GHSA-vfj7-8cjw-p6xm
-    // braces stack-exhaustion denial of service through deeply nested brace patterns (CVE-2026-93687)
-    // Reason to ignore: No patched version available (3.0.3 is the latest published version).
-    // braces only expands glob patterns we write ourselves: tailwindcss content globs, eslint and
-    // fast-glob file matching at build/lint time, and the unstorage file watcher in the WalletConnect
-    // chain. No untrusted input reaches it.
-    // from: @headlessui/tailwindcss>tailwindcss>micromatch>braces
-    // from: eslint-config-next>@next/eslint-plugin-next>fast-glob>micromatch>braces
-    // from: app>@reown/appkit>...>@walletconnect/keyvaluestorage>unstorage>chokidar>braces
-    "GHSA-vfj7-8cjw-p6xm",
-    //
     // https://github.com/advisories/GHSA-rj75-hqrm-r3gf
     // postcss-selector-parser quadratic-time parsing of flat selectors with repeated class or id tokens allows CPU exhaustion (CVE-2026-104844)
     // Reason to ignore: Only 7.1.6 is patched and tailwindcss@3 / postcss-nested@6 pin ^6.1.x, so the fix is a major
@@ -187,5 +172,17 @@
     // from: @headlessui/tailwindcss>tailwindcss>postcss-selector-parser
     // from: tailwindcss>postcss-nested>postcss-selector-parser
     "GHSA-rj75-hqrm-r3gf",
+    //
+    // https://github.com/advisories/GHSA-mrhx-c7xc-m3w5
+    // Zod can exhaust memory while validating oversized constrained collections
+    // Fixed for zod 4: pnpm-workspace.yaml overrides 'zod@>=4.0.0 <4.6.6' to 4.6.7.
+    // Reason to ignore: Only 4.6.6+ is patched, there is no zod 3 fix. @reown/appkit-wallet pins 3.22.4 and
+    // @coinbase/cdp-sdk requires ^3.25.76, both in their latest releases. The issue needs an array schema
+    // fed with a large untrusted array. Our only array schema (packages/scripts addOrbitChain) validates
+    // our own orbitChainsData.json in a GitHub Action.
+    // from: packages__app>@reown/appkit-adapter-wagmi>@reown/appkit>...>@reown/appkit-wallet>zod
+    // from: @base-org/account>@coinbase/cdp-sdk>zod
+    // from: packages__app>zod, packages__arb-token-bridge-ui>zod, packages__scripts>zod
+    "GHSA-mrhx-c7xc-m3w5",
   ],
 }
