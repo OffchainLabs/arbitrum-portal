@@ -1,11 +1,7 @@
-import { gql } from '@apollo/client';
 import { NextResponse } from 'next/server';
 
 import { getIndexerApiUrl } from '../../../../api-utils/ServerIndexerUtils';
-import {
-  type SubgraphSource,
-  getL2SubgraphClient,
-} from '../../../../api-utils/ServerSubgraphUtils';
+import { type SubgraphSource } from '../../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../../types/ChainId';
 import { logger } from '../../../../util/logger';
 import { isChildChainIndexed } from '../../../../util/txHistory/sources';
@@ -14,6 +10,12 @@ type IndexerStatus = Record<string, { id: string; block: { number: number } }>;
 
 /** Callers read this as "nothing is indexed here" and scan event logs instead. */
 const NO_INDEXED_BLOCK = 0;
+
+function isIndexerBackedChain(chainId: number): boolean {
+  return (
+    isChildChainIndexed(chainId) || chainId === ChainId.Ethereum || chainId === ChainId.Sepolia
+  );
+}
 
 // Throws rather than answering 0: for an indexed chain, 0 would send callers to a
 // full event-log scan. Each failure names its cause so a missing config entry
@@ -50,22 +52,6 @@ async function fetchIndexerBlockNumber(
   return blockNumber;
 }
 
-function getSubgraphClient(chainId: number) {
-  switch (chainId) {
-    case ChainId.ArbitrumOne:
-      return getL2SubgraphClient(ChainId.ArbitrumOne);
-
-    case ChainId.ArbitrumNova:
-      return getL2SubgraphClient(ChainId.ArbitrumNova);
-
-    case ChainId.ArbitrumSepolia:
-      return getL2SubgraphClient(ChainId.ArbitrumSepolia);
-
-    default:
-      return undefined;
-  }
-}
-
 function getIndexerConfigChainId(chainId: number): number | undefined {
   if (chainId === ChainId.Ethereum) return ChainId.ArbitrumOne;
   if (chainId === ChainId.Sepolia) return ChainId.ArbitrumSepolia;
@@ -81,53 +67,21 @@ export async function GET(
   const { chainId } = await params;
   const numericChainId = Number(chainId);
 
+  if (!isIndexerBackedChain(numericChainId)) {
+    return NextResponse.json({ data: NO_INDEXED_BLOCK }, { status: 200 });
+  }
+
   try {
     const indexerConfigChainId = getIndexerConfigChainId(numericChainId);
-    if (typeof indexerConfigChainId !== 'undefined') {
-      const indexerBlockNumber = await fetchIndexerBlockNumber(
-        numericChainId,
-        indexerConfigChainId,
-      );
-
-      return NextResponse.json(
-        {
-          meta: { source: 'arbitrum-indexer' },
-          data: indexerBlockNumber,
-        },
-        { status: 200 },
-      );
+    if (typeof indexerConfigChainId === 'undefined') {
+      throw new Error(`No indexer source mapped for chain ${numericChainId}`);
     }
-
-    const subgraph = getSubgraphClient(numericChainId);
-
-    if (!subgraph) {
-      return NextResponse.json({ data: NO_INDEXED_BLOCK }, { status: 200 });
-    }
-
-    const result: {
-      data: {
-        _meta: {
-          block: {
-            number: number;
-          };
-        };
-      };
-    } = await subgraph.client.query({
-      query: gql`
-        {
-          _meta {
-            block {
-              number
-            }
-          }
-        }
-      `,
-    });
+    const indexerBlockNumber = await fetchIndexerBlockNumber(numericChainId, indexerConfigChainId);
 
     return NextResponse.json(
       {
-        meta: { source: subgraph.source },
-        data: result.data._meta.block.number,
+        meta: { source: 'arbitrum-indexer' },
+        data: indexerBlockNumber,
       },
       { status: 200 },
     );
