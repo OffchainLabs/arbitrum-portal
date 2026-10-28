@@ -180,6 +180,15 @@ type AnalyticsEventMap = {
     sourceTokenAddress?: string;
     destinationTokenAddress?: string;
   };
+  'OFT Onchain Fallback Block': {
+    parentChainId: number;
+    childChainId: number;
+    tokenAddress: string;
+    isLayerZeroMetadataLoaded: boolean;
+  };
+  'USDG DRIP Card': {
+    action: 'shown' | 'dismissed' | 'learn_more_clicked';
+  };
 };
 
 type AnalyticsEvent = keyof AnalyticsEventMap;

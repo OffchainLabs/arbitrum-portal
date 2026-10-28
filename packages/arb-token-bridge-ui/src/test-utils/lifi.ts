@@ -166,3 +166,68 @@ export function createMockLifiBatchedTransaction(): LifiMergedTransaction {
     lifiRoute: createMockLifiRoute({ steps: [bridge, swap] }),
   });
 }
+
+export function createMockLifiPartialTransaction(): LifiMergedTransaction {
+  const sourceChainId: number = ChainId.RobinhoodChain;
+  const destinationChainId: number = ChainId.Ethereum;
+  const fromToken = {
+    address: '0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168',
+    chainId: sourceChainId,
+    decimals: 6,
+    name: 'USDG',
+    priceUSD: '1',
+    symbol: 'USDG',
+  };
+  const toToken = {
+    ...fromToken,
+    address: '0xe343167631d89B6Ffc58B88d6b7fB0228795491D',
+    chainId: destinationChainId,
+  };
+  const receivedToken = {
+    ...toToken,
+    address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    name: 'USD Coin',
+    symbol: 'USDC',
+  };
+  const step: RouteExtended['steps'][number] = {
+    id: 'partial-bridge',
+    type: 'lifi',
+    tool: 'symbiosis',
+    toolDetails: { key: 'symbiosis', name: 'Symbiosis', logoURI: '' },
+    action: {
+      fromChainId: fromToken.chainId,
+      toChainId: toToken.chainId,
+      fromAmount: '8125320242',
+      fromToken,
+      toToken,
+    },
+    estimate: {
+      tool: 'symbiosis',
+      fromAmount: '8125320242',
+      toAmount: '8126613689',
+      toAmountMin: '8118480435',
+      toAmountUSD: '8129.1852',
+      approvalAddress: fromToken.address,
+      executionDuration: 45,
+    },
+    includedSteps: [],
+    execution: {
+      startedAt: 1,
+      status: 'DONE',
+      toAmount: '16206962210',
+      toToken: receivedToken,
+      process: [{ type: 'RECEIVING_CHAIN', status: 'DONE', startedAt: 1, substatus: 'PARTIAL' }],
+    },
+  };
+  const { execution: _execution, includedSteps: _includedSteps, ...includedStep } = step;
+  step.includedSteps = [{ ...includedStep, type: 'cross' }];
+  return createMockLifiTransaction({
+    sourceChainId: fromToken.chainId,
+    destinationChainId: toToken.chainId,
+    status: WithdrawalStatus.CONFIRMED,
+    destinationStatus: WithdrawalStatus.CONFIRMED,
+    fromAmount: undefined,
+    toAmount: undefined,
+    lifiRoute: createMockLifiRoute({ steps: [step] }),
+  });
+}

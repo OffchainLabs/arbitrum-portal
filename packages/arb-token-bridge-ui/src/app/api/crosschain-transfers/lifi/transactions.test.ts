@@ -2,6 +2,7 @@ import type { FullStatusData, StatusResponse, Token } from '@lifi/types';
 import { describe, expect, it } from 'vitest';
 
 import { WithdrawalStatus } from '../../../../state/app/state';
+import { getLifiTransactionSnapshot } from '../../../../util/LifiRouteUtils';
 import { transformLifiHistoryTransaction, transformLifiHistoryTransactions } from './transactions';
 
 const wallet = '0x1111111111111111111111111111111111111111';
@@ -96,6 +97,58 @@ function createStatusResponse({
 }
 
 describe('transformLifiHistoryTransaction', () => {
+  it.each(['COMPLETED', 'PARTIAL'] as const)(
+    'stores the quote separately from received output for DONE / %s',
+    (substatus) => {
+      const statusResponse = {
+        ...createStatusResponse(),
+        substatus,
+        quote: {
+          action: { toToken: { ...arbUsdcToken, symbol: 'USDG' } },
+          estimate: { toAmount: '8126613689', toAmountUSD: '8129.1852' },
+        },
+      };
+      if (!('amount' in statusResponse.receiving))
+        throw new Error('Missing fixture received amount');
+      statusResponse.receiving.amount = '16206962210';
+      expect(transformLifiHistoryTransaction({ wallet, statusResponse })).toMatchObject({
+        status: WithdrawalStatus.CONFIRMED,
+        destinationStatus: WithdrawalStatus.CONFIRMED,
+        toAmount: { amount: '8126613689', token: { symbol: 'USDG' } },
+        receivedAmount: { amount: '16206962210', token: { symbol: 'USDC' } },
+      });
+    },
+  );
+
+  it('falls back to received output when an API quote is malformed', () => {
+    const statusResponse = { ...createStatusResponse(), quote: { action: null } };
+    if (!('amount' in statusResponse.receiving)) throw new Error('Missing fixture received amount');
+    statusResponse.receiving.amount = '980000';
+    const transaction = transformLifiHistoryTransaction({ wallet, statusResponse });
+    expect(transaction).toMatchObject({
+      toAmount: undefined,
+      receivedAmount: { amount: '980000' },
+    });
+    expect(transaction && getLifiTransactionSnapshot(transaction)?.toAmount.amount).toBe('980000');
+  });
+
+  it('does not treat a source swap output as the destination quote', () => {
+    const statusResponse = createStatusResponse();
+    statusResponse.sending.includedSteps = [
+      {
+        fromAmount: '1000000',
+        fromToken: usdcToken,
+        toAmount: '58100418',
+        toToken: { ...usdcToken, symbol: 'USDG' },
+        tool: 'uniswap',
+        toolDetails: { key: 'uniswap', name: 'Uniswap', logoURI: '' },
+      },
+    ];
+    const transaction = transformLifiHistoryTransaction({ wallet, statusResponse });
+    expect(transaction?.receivedAmount).toMatchObject({ amount: '990000', token: arbUsdcToken });
+    expect(transaction?.toAmount).toBeUndefined();
+  });
+
   it('maps completed LiFi history by initiation time', () => {
     const statusResponse = createStatusResponse();
 
@@ -220,7 +273,8 @@ describe('transformLifiHistoryTransaction', () => {
       feeCosts: [],
     };
 
-    expect(transformLifiHistoryTransaction({ wallet, statusResponse })).toMatchObject({
+    const transaction = transformLifiHistoryTransaction({ wallet, statusResponse });
+    expect(transaction).toMatchObject({
       txId: '0xa80d1317610b29f1a9d1f4cef8fd330aeb9606e8e65ed46d9bb2918454dc3712',
       status: WithdrawalStatus.CONFIRMED,
       destinationStatus: WithdrawalStatus.UNCONFIRMED,
@@ -229,17 +283,19 @@ describe('transformLifiHistoryTransaction', () => {
       isWithdrawal: false,
       sourceChainId: 1,
       destinationChainId: 42161,
-      toAmount: {
-        amount: '0',
-        amountUSD: '0',
-        token: {
-          address: '0x0000000000000000000000000000000000000000',
-          decimals: 0,
-          logoURI: '',
-          symbol: 'Unknown',
-        },
-      },
+      toAmount: undefined,
+      receivedAmount: undefined,
       destinationTxId: null,
+    });
+    expect(transaction && getLifiTransactionSnapshot(transaction)?.toAmount).toEqual({
+      amount: '0',
+      amountUSD: '0',
+      token: {
+        address: '0x0000000000000000000000000000000000000000',
+        decimals: 0,
+        logoURI: '',
+        symbol: 'Unknown',
+      },
     });
   });
 

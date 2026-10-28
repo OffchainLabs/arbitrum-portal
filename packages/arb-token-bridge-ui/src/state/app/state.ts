@@ -60,6 +60,7 @@ type MergedTransactionLifiData = {
   durationMs?: number;
   fromAmount?: AmountWithToken;
   toAmount?: AmountWithToken;
+  receivedAmount?: AmountWithToken;
   destinationTxId: string | null;
   lifiExplorerLink?: string;
   lifiRoute?: RouteExtended;
