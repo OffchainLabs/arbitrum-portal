@@ -16,7 +16,7 @@ import {
 } from './TokenUtils';
 import {
   getLayerZeroMetadata,
-  getLayerZeroOftInfo,
+  getLayerZeroOftInfoFromMetadata,
   isKnownLayerZeroToken,
 } from './layerZeroMetadata';
 
@@ -332,14 +332,16 @@ async function isOftTokenOnChain(parentChainErc20Address: string, parentChainId:
 const trackedOftFallbackBlocks = new Set<string>();
 
 // Measures how often the on-chain probe catches an OFT the LayerZero metadata misses.
-async function trackOftFallbackBlock({
+function trackOftFallbackBlock({
   parentChainErc20Address,
   parentChainId,
   childChainId,
+  isLayerZeroMetadataLoaded,
 }: {
   parentChainErc20Address: string;
   parentChainId: number;
   childChainId: number;
+  isLayerZeroMetadataLoaded: boolean;
 }) {
   const key = `${parentChainId}:${childChainId}:${parentChainErc20Address.toLowerCase()}`;
   if (trackedOftFallbackBlocks.has(key)) {
@@ -351,7 +353,7 @@ async function trackOftFallbackBlock({
     parentChainId,
     childChainId,
     tokenAddress: parentChainErc20Address.toLowerCase(),
-    isLayerZeroMetadataLoaded: (await getLayerZeroMetadata()) !== null,
+    isLayerZeroMetadataLoaded,
   });
 }
 
@@ -415,7 +417,8 @@ export async function isBlockedOftDeposit({
   parentChainId: number;
   childChainId: number;
 }) {
-  const { isOft, hasOftChildDeployment } = await getLayerZeroOftInfo({
+  const metadata = await getLayerZeroMetadata();
+  const { isOft, hasOftChildDeployment } = getLayerZeroOftInfoFromMetadata(metadata, {
     parentChainId,
     parentTokenAddress: parentChainErc20Address,
     childChainId,
@@ -425,7 +428,12 @@ export async function isBlockedOftDeposit({
   if (!isOft) {
     const isOftOnChain = await isOftTokenOnChain(parentChainErc20Address, parentChainId);
     if (isOftOnChain) {
-      void trackOftFallbackBlock({ parentChainErc20Address, parentChainId, childChainId });
+      trackOftFallbackBlock({
+        parentChainErc20Address,
+        parentChainId,
+        childChainId,
+        isLayerZeroMetadataLoaded: metadata !== null,
+      });
     }
     return isOftOnChain;
   }
