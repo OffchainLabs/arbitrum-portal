@@ -7,13 +7,18 @@ import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 import { ChainId } from '../types/ChainId';
 import { isNetwork } from '../util/networks';
 import { addressesEqual } from './AddressUtils';
+import { trackEvent } from './AnalyticsUtils';
 import { CommonAddress } from './CommonAddressUtils';
 import {
   getL2ERC20Address,
   isTokenArbitrumOneUSDCe,
   isTokenArbitrumSepoliaUSDCe,
 } from './TokenUtils';
-import { getLayerZeroOftInfo, isKnownLayerZeroToken } from './layerZeroMetadata';
+import {
+  getLayerZeroMetadata,
+  getLayerZeroOftInfoFromMetadata,
+  isKnownLayerZeroToken,
+} from './layerZeroMetadata';
 
 export type WithdrawOnlyToken = {
   symbol: string;
@@ -324,6 +329,34 @@ async function isOftTokenOnChain(parentChainErc20Address: string, parentChainId:
   }
 }
 
+const trackedOftFallbackBlocks = new Set<string>();
+
+// Measures how often the on-chain probe catches an OFT the LayerZero metadata misses.
+function trackOftFallbackBlock({
+  parentChainErc20Address,
+  parentChainId,
+  childChainId,
+  isLayerZeroMetadataLoaded,
+}: {
+  parentChainErc20Address: string;
+  parentChainId: number;
+  childChainId: number;
+  isLayerZeroMetadataLoaded: boolean;
+}) {
+  const key = `${parentChainId}:${childChainId}:${parentChainErc20Address.toLowerCase()}`;
+  if (trackedOftFallbackBlocks.has(key)) {
+    return;
+  }
+  trackedOftFallbackBlocks.add(key);
+
+  trackEvent('OFT Onchain Fallback Block', {
+    parentChainId,
+    childChainId,
+    tokenAddress: parentChainErc20Address.toLowerCase(),
+    isLayerZeroMetadataLoaded,
+  });
+}
+
 async function getCanonicalChildTokenAddress({
   parentChainErc20Address,
   parentChainId,
@@ -384,7 +417,8 @@ export async function isBlockedOftDeposit({
   parentChainId: number;
   childChainId: number;
 }) {
-  const { isOft, hasOftChildDeployment } = await getLayerZeroOftInfo({
+  const metadata = await getLayerZeroMetadata();
+  const { isOft, hasOftChildDeployment } = getLayerZeroOftInfoFromMetadata(metadata, {
     parentChainId,
     parentTokenAddress: parentChainErc20Address,
     childChainId,
@@ -392,7 +426,16 @@ export async function isBlockedOftDeposit({
 
   // Not listed in the LayerZero metadata — fall back to the on-chain probe.
   if (!isOft) {
-    return isOftTokenOnChain(parentChainErc20Address, parentChainId);
+    const isOftOnChain = await isOftTokenOnChain(parentChainErc20Address, parentChainId);
+    if (isOftOnChain) {
+      trackOftFallbackBlock({
+        parentChainErc20Address,
+        parentChainId,
+        childChainId,
+        isLayerZeroMetadataLoaded: metadata !== null,
+      });
+    }
+    return isOftOnChain;
   }
 
   const canonicalChildTokenAddress = await getCanonicalChildTokenAddress({
