@@ -1,6 +1,5 @@
-import { hasL2Subgraph } from '../SubgraphUtils';
-import { isChildChainIndexed } from '../txHistory/sources';
-import { getAPIBaseUrl, getCurrentExperimentsQueryParam, sanitizeQueryParams } from './../index';
+import { fetchBridgeHistory } from '../txHistory/fetchBridgeHistory';
+import { hasBridgeHistory } from '../txHistory/sources';
 
 export type WithdrawalFromSubgraph = {
   id: string;
@@ -54,8 +53,8 @@ export async function fetchWithdrawalsFromSubgraph({
   pageNumber?: number;
   searchString?: string;
 }): Promise<WithdrawalFromSubgraph[]> {
-  if (!hasL2Subgraph(Number(l2ChainId)) && !isChildChainIndexed(Number(l2ChainId))) {
-    throw new Error(`L2 subgraph not available for network: ${l2ChainId}`);
+  if (!hasBridgeHistory(Number(l2ChainId))) {
+    return [];
   }
 
   if (fromBlock >= toBlock) {
@@ -63,28 +62,8 @@ export async function fetchWithdrawalsFromSubgraph({
     return [];
   }
 
-  const urlParams = new URLSearchParams(
-    sanitizeQueryParams({
-      sender,
-      receiver,
-      fromBlock,
-      toBlock,
-      l2ChainId,
-      pageSize,
-      page: pageNumber,
-      search: searchString,
-      experiments: getCurrentExperimentsQueryParam(),
-    }),
-  );
-
-  if (pageSize === 0) return []; // don't query subgraph if nothing requested
-
-  const response = await fetch(`${getAPIBaseUrl()}/api/withdrawals?${urlParams}`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
+  return fetchBridgeHistory<WithdrawalFromSubgraph>({
+    route: 'withdrawals',
+    query: { sender, receiver, fromBlock, toBlock, l2ChainId, pageSize, pageNumber, searchString },
   });
-
-  const transactions: WithdrawalFromSubgraph[] = (await response.json()).data;
-
-  return transactions;
 }

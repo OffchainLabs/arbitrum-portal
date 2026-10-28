@@ -1,4 +1,4 @@
-export type CanonicalSource = 'indexer' | 'subgraph';
+import { ChainId } from '../../types/ChainId';
 
 /** `undefined` for anything that isn't a positive integer chain ID. */
 export function parseChainId(raw: string | null | undefined): number | undefined {
@@ -20,14 +20,29 @@ export function parseChainIds(raw: string | undefined): number[] {
   return Array.from(new Set(ids));
 }
 
-export const INDEXER_CHILD_CHAIN_IDS = parseChainIds(
+// The core chains have no other history source, so configuration may add
+// indexed chains but must never remove these required defaults.
+const DEFAULT_INDEXER_CHILD_CHAIN_IDS: readonly number[] = [
+  ChainId.ArbitrumOne,
+  ChainId.ArbitrumSepolia,
+];
+
+const configuredIndexerChildChainIds = parseChainIds(
   process.env.NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS,
+);
+
+export const INDEXER_CHILD_CHAIN_IDS = Array.from(
+  new Set([...DEFAULT_INDEXER_CHILD_CHAIN_IDS, ...configuredIndexerChildChainIds]),
 );
 
 export function isChildChainIndexed(childChainId: number): boolean {
   return INDEXER_CHILD_CHAIN_IDS.includes(childChainId);
 }
 
-export function getCanonicalSource(childChainId: number): CanonicalSource {
-  return isChildChainIndexed(childChainId) ? 'indexer' : 'subgraph';
+function hasBridgeSubgraph(childChainId: number): boolean {
+  return childChainId === ChainId.ArbitrumNova;
+}
+
+export function hasBridgeHistory(childChainId: number): boolean {
+  return isChildChainIndexed(childChainId) || hasBridgeSubgraph(childChainId);
 }

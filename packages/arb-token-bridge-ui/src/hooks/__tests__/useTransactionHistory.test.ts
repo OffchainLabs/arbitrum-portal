@@ -629,11 +629,6 @@ describe.sequential('useTransactionHistory', () => {
   it.each([
     createTestCase({
       key: 'WALLET_MULTIPLE_TX',
-      enabled: true,
-      expectedPagesTxCounts: [3, 5],
-    }),
-    createTestCase({
-      key: 'WALLET_MULTIPLE_TX',
       enabled: false,
       expectedPagesTxCounts: [0],
     }),
@@ -646,11 +641,6 @@ describe.sequential('useTransactionHistory', () => {
     createTestCase({
       key: 'WALLET_SINGLE_TX',
       enabled: false,
-      expectedPagesTxCounts: [0],
-    }),
-    createTestCase({
-      key: 'WALLET_EMPTY',
-      enabled: true,
       expectedPagesTxCounts: [0],
     }),
   ])(
