@@ -55,14 +55,22 @@ describe('hasBridgeHistory', { concurrent: false }, () => {
     const { isChildChainIndexed } = await importSourcesWith('');
 
     expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(true);
+    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
     expect(isChildChainIndexed(ChainId.ArbitrumSepolia)).toBe(true);
     expect(isChildChainIndexed(46630)).toBe(false);
   });
 
-  it('has history for Nova without it being configured', async () => {
-    const { hasBridgeHistory, isChildChainIndexed } = await importSourcesWith('');
+  it('serves Nova from the indexer under the pinned list', async () => {
+    vi.resetModules();
+    const { isChildChainIndexed } = await import('./sources');
 
-    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(false);
+    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
+  });
+
+  it('cannot remove Nova with a configured list', async () => {
+    const { hasBridgeHistory, isChildChainIndexed } = await importSourcesWith('42161');
+
+    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
     expect(hasBridgeHistory(ChainId.ArbitrumNova)).toBe(true);
   });
 });
