@@ -140,18 +140,25 @@
     // https://github.com/advisories/GHSA-vcc3-ghjq-m6fr
     // decode-uri-component denial of service via exponential decoding of malformed
     // percent-encoded input (CVE-2026-45822)
+    //
+    // https://github.com/advisories/GHSA-qr28-fpjm-wq7f
+    // decode-uri-component denial of service via quadratic replacement of percent-encoded
+    // runs in the fallback decoder (CVE-2026-118664); 0.5.0 fixed the above but not this
+    //
     // Fixed for our own query-string usage: pnpm-workspace.yaml overrides
-    // 'query-string@9>decode-uri-component' to 0.5.0, so the copy that parses
-    // browser URL query params in the app, bridge and portal is patched.
-    // Reason to ignore the paths below: the patch only ships as ESM (0.2.2 is the
-    // last CJS release and it is vulnerable), while query-string@5/7 in these chains
-    // `require()` it, so overriding them would break at runtime. No CJS fix exists.
+    // 'query-string@9>decode-uri-component' to 0.5.1, so the copy that parses
+    // browser URL query params in the app, bridge and portal is patched against both.
+    // Reason to ignore the paths below: the patches only ship as ESM (0.2.2 is the
+    // last CJS release and it is vulnerable to both), while query-string@5/7 in these
+    // chains `require()` it, so overriding them would break at runtime. No CJS fix exists.
     // @walletconnect/utils is reached only through @walletconnect/ethereum-provider,
     // which is pinned to 2.13.1; synpress is an E2E test devDependency.
     // from: app>wagmi>@wagmi/connectors>@walletconnect/ethereum-provider>...>@walletconnect/utils>query-string>decode-uri-component
     // from: arb-token-bridge-ui>@synthetixio/synpress>download>got>cacheable-request>normalize-url>query-string>decode-uri-component
     "GHSA-vcc3-ghjq-m6fr|*>@walletconnect/utils>query-string>decode-uri-component",
     "GHSA-vcc3-ghjq-m6fr|*>@synthetixio/synpress>*>query-string>decode-uri-component",
+    "GHSA-qr28-fpjm-wq7f|*>@walletconnect/utils>query-string>decode-uri-component",
+    "GHSA-qr28-fpjm-wq7f|*>@synthetixio/synpress>*>query-string>decode-uri-component",
     //
     // https://github.com/advisories/GHSA-86w9-cpqp-85rv
     // node-forge RSA PKCS#1 v1.5 signature verification accepts extra nested DigestAlgorithm elements (CVE-2026-85393)
