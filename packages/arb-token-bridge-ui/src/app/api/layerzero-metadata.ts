@@ -82,7 +82,7 @@ export function trimLayerZeroMetadata(metadata: unknown): Record<number, Trimmed
 
 // Cache in the data cache so upstream is hit at most once per `CACHE_SECONDS`
 // across the deployment. Failures throw (below) and aren't cached, so they retry.
-const getCachedLayerZeroMetadata = unstable_cache(
+export const getCachedLayerZeroMetadata = unstable_cache(
   async () => {
     const response = await fetch(LAYERZERO_METADATA_URL, { cache: 'no-store' });
 
