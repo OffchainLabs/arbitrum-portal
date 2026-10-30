@@ -574,55 +574,6 @@
       }
     },
     {
-      "chainId": 241320162,
-      "confirmPeriodBlocks": 302400,
-      "ethBridge": {
-        "bridge": "0xA9C3B7672C477EeDA999A3ab1c8Eec28DEEB7d41",
-        "inbox": "0x249D5D37502f26c5286De3096e0120FeAFa6772a",
-        "outbox": "0x5997b6350580178f0eaD414500eBA266b3C8d569",
-        "rollup": "0xB6B4C28278FbBF444Ff7B6dF8fEdB7Bc90f72924",
-        "sequencerInbox": "0x5107C4267F13D0e55eab45A3129DB04AE8BB1AF3"
-      },
-      "nativeToken": "0x63C6667798fdA65E2E29228C43fbfDa0Cd4634A8",
-      "explorerUrl": "https://xmtp-mainnet.explorer.alchemy.com/",
-      "rpcUrl": "https://xmtp-mainnet.g.alchemy.com/public",
-      "isCustom": true,
-      "isTestnet": false,
-      "name": "XMTP Mainnet",
-      "slug": "xmtp-mainnet",
-      "parentChainId": 8453,
-      "tokenBridge": {
-        "parentCustomGateway": "0x17ed0dB9e4F591A8807C2c7a35C59cADb6BCED11",
-        "parentErc20Gateway": "0x8adc6180F8913DF9FD09D75eb4977b8586095A12",
-        "parentGatewayRouter": "0xE2264A562bb69fe8E791c9Ea276270A8B6e6b3F4",
-        "parentMultiCall": "0xd58210a17a1487a624E17251E13726fEc11F13E8",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0x62563e22193EB53a6B06539cBb8c7497b74467B0",
-        "childErc20Gateway": "0xC47914b4a58cb1a9ba0A73EDDCA875B5e82F061b",
-        "childGatewayRouter": "0x8f0B3e879CdD6fD8dE8eD29B1131D9f2d31d0235",
-        "childMultiCall": "0x960CBcA44eb0699E58b1Ae41c8417243562B2065",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#ef4343",
-        "network": {
-          "name": "XMTP Mainnet",
-          "logo": "/images/XMTPMainnet_Logo.png"
-        },
-        "nativeTokenData": {
-          "name": "xUSD",
-          "symbol": "xUSD",
-          "logoUrl": "/images/XMTPMainnet_Logo.png"
-        },
-        "fastWithdrawalTime": 3600000,
-        "assertionIntervalSeconds": 3600
-      }
-    },
-    {
       "chainId": 869,
       "confirmPeriodBlocks": 302400,
       "ethBridge": {
@@ -1199,53 +1150,6 @@
       }
     },
     {
-      "chainId": 132766,
-      "confirmPeriodBlocks": 150,
-      "ethBridge": {
-        "bridge": "0xb18A9eF9005032eA3b564612F125E38CF742B493",
-        "inbox": "0x85aCea07726894d8f000DB0a588CEd3a944fF7F6",
-        "outbox": "0x7b6aB71DB9FbFdb44740D99AF936650245BC5B5D",
-        "rollup": "0x904B90D5a06205fBF6c7418917B3D538D9E2fFb5",
-        "sequencerInbox": "0x9F94d152a39B155bA3eB5129e56b6e7FD11f8B4d"
-      },
-      "nativeToken": "0x3e62fED35c97145e6B445704B8CE74B2544776A9",
-      "explorerUrl": "https://earnm-sepolia.explorer.alchemy.com/",
-      "rpcUrl": "https://earnm-sepolia.g.alchemy.com/public",
-      "isCustom": true,
-      "isTestnet": true,
-      "name": "Earnm Sepolia",
-      "slug": "earnm-sepolia",
-      "parentChainId": 421614,
-      "tokenBridge": {
-        "parentCustomGateway": "0xfDF72e462a0cC6ADF9c196218635E9523bcba52b",
-        "parentErc20Gateway": "0x6D4B3D6d33b4C6810aBd473A0C0b6ada3E771bF2",
-        "parentGatewayRouter": "0xB6c64C254e873157A6F34e068d8861e0F3bFaA05",
-        "parentMultiCall": "0xce1CAd780c529e66e3aa6D952a1ED9A6447791c1",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0xBBDF7BE864f87473350ddc27CA5c57bA5bfc6f7C",
-        "childErc20Gateway": "0x5cBFF06c424DfD335A566C6b6a1BA4cd9760c188",
-        "childGatewayRouter": "0x9502D3f0f60a8e93D1ed055fF638918858de96Fb",
-        "childMultiCall": "0x4C6acA0299e6aeeAAA837A680e5241dFf154ADbf",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#1fd82e",
-        "network": {
-          "name": "Earnm Sepolia",
-          "logo": "/images/EarnmSepolia_Logo.svg"
-        },
-        "nativeTokenData": {
-          "name": "Earnm",
-          "symbol": "EARNM",
-          "logoUrl": "/images/EarnmSepolia_NativeTokenLogo.jpg"
-        }
-      }
-    },
-    {
       "chainId": 1962,
       "confirmPeriodBlocks": 150,
       "ethBridge": {
@@ -1469,54 +1373,6 @@
           "symbol": "JASMY",
           "logoUrl": "/images/JASMYChain_Logo.png"
         }
-      }
-    },
-    {
-      "chainId": 351243127,
-      "confirmPeriodBlocks": 900,
-      "ethBridge": {
-        "bridge": "0xD05baD3cec5E67152178F731aae8025fC1F2DAEA",
-        "inbox": "0xA382f402Cb702484B424AC8e2B7fEE9B032C6b9d",
-        "outbox": "0xFFdE0Ef70824CdFa9cf12AD59e11e4137fbDe89b",
-        "rollup": "0xFE03FC0422F46f5C4169B8F33873B7955c3897a3",
-        "sequencerInbox": "0x66513AD1844E9dc1268bB8cC2cbcc1F6BBA74B77"
-      },
-      "nativeToken": "0x63C6667798fdA65E2E29228C43fbfDa0Cd4634A8",
-      "explorerUrl": "https://xmtp-ropsten.explorer.alchemy.com/",
-      "rpcUrl": "https://xmtp-ropsten.g.alchemy.com/public",
-      "isCustom": true,
-      "isTestnet": true,
-      "name": "XMTP Ropsten",
-      "slug": "xmtp-ropsten",
-      "parentChainId": 84532,
-      "tokenBridge": {
-        "parentCustomGateway": "0x04Ba99762bC1533aB79931C9e0Dc4C9AE684F34E",
-        "parentErc20Gateway": "0x57a13F0AEa726CAd42b78077C2E4Fb387b414557",
-        "parentGatewayRouter": "0x543b7e86b780A3aa1A06760E41459Fb1A8149F37",
-        "parentMultiCall": "0xE0753Df74d86D6B25aCd2d049389c7E52e2dd728",
-        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "parentWeth": "0x0000000000000000000000000000000000000000",
-        "parentWethGateway": "0x0000000000000000000000000000000000000000",
-        "childCustomGateway": "0x9Be7A91d9B6c93e1E366EC075e43Fa436c56802D",
-        "childErc20Gateway": "0x7bA100949292Fbff87099Dd79B595CC0dd9c515d",
-        "childGatewayRouter": "0x3bCF6527d00100B5bC66F45A41da216ba3b6d878",
-        "childMultiCall": "0x6292a462bd54e0F1DCBc56434516C1eb81062C3C",
-        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
-        "childWeth": "0x0000000000000000000000000000000000000000",
-        "childWethGateway": "0x0000000000000000000000000000000000000000"
-      },
-      "bridgeUiConfig": {
-        "color": "#ef4343",
-        "network": {
-          "name": "XMTP Ropsten",
-          "logo": "/images/XMTPRopsten_Logo.png"
-        },
-        "nativeTokenData": {
-          "name": "xUSD",
-          "symbol": "xUSD",
-          "logoUrl": "/images/XMTPRopsten_NativeTokenLogo.png"
-        },
-        "fastWithdrawalTime": 3600000
       }
     },
     {
