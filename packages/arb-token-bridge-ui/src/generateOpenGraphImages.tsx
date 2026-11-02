@@ -15,7 +15,7 @@ import { orbitMainnets, orbitTestnets } from './util/orbitChainsList';
 
 // this has to be called before import from "networks.ts"
 // to ensure that the environment variables are loaded
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env'), quiet: true });
 
 const dimensions = {
   width: 1200,
