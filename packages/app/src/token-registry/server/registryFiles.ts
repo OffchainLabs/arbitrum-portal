@@ -342,7 +342,11 @@ export function buildDestinationOptions({
   preferredAddress?: string;
   // Null skips the OFT deposit block.
   layerZeroMetadata: LayerZeroMetadata | null;
-}): { options: DestinationOption[]; defaultToken?: DestinationOption } {
+}): {
+  options: DestinationOption[];
+  defaultToken?: DestinationOption;
+  canonicalToken?: DestinationOption;
+} {
   const pair = { sourceChainId: sourceFile.chainId, destinationChainId: destinationFile.chainId };
   const key = pairKey(pair);
   const sourceToken = sourceFile.tokens.find((token) => token.address === sourceTokenAddress);
@@ -436,6 +440,7 @@ export function buildDestinationOptions({
       (a, b) => rank(a.address) - rank(b.address) || compareTokens(a, b),
     ),
     defaultToken: defaultAddress ? options.get(defaultAddress) : undefined,
+    canonicalToken: canonicalAddress ? options.get(canonicalAddress) : undefined,
   };
 }
 
@@ -444,11 +449,14 @@ async function getDestinationOptions({
   sourceTokenAddress,
   destinationChainId,
   preferredAddress,
+  importsListedTokens,
 }: {
   sourceChainId: number;
   sourceTokenAddress: string;
   destinationChainId: number;
   preferredAddress?: string;
+  // An import costs a few RPC calls per chain. False only imports tokens that no file has.
+  importsListedTokens: boolean;
 }): Promise<ReturnType<typeof buildDestinationOptions>> {
   const [registrySourceFile, registryDestinationFile, pairFile, top, layerZeroMetadata] =
     await Promise.all([
@@ -472,6 +480,7 @@ async function getDestinationOptions({
   if (
     bridge &&
     sourceTokenAddress !== NATIVE_TOKEN_ADDRESS &&
+    (importsListedTokens || !registrySourceToken) &&
     !(
       registrySourceToken &&
       getCanonicalDestinationAddress({
@@ -516,11 +525,14 @@ async function getDestinationOptions({
   return {
     options: result.options.map(markImported),
     defaultToken: result.defaultToken && markImported(result.defaultToken),
+    canonicalToken: result.canonicalToken && markImported(result.canonicalToken),
   };
 }
 
 // With a destination token the user picked, each chain defaults to that token, or to its
-// counterpart on the chain, when the source can reach it.
+// counterpart on the chain, when the source can reach it. The chains with a canonical route come
+// first. A token that the files have skips the imports here, which would cost a few RPC calls
+// per chain: the chain's own token list still imports it.
 export async function getDestinationChains({
   sourceChainId,
   sourceTokenAddress,
@@ -546,16 +558,25 @@ export async function getDestinationChains({
 
   const chains = await Promise.all(
     destinationChainIds.map(async (destinationChainId) => {
-      const { defaultToken } = await getDestinationOptions({
+      const { defaultToken, canonicalToken } = await getDestinationOptions({
         sourceChainId,
         sourceTokenAddress,
         destinationChainId,
         preferredAddress: getPreferredAddress(destinationChainId),
+        importsListedTokens: false,
       });
-      return defaultToken ? { chainId: destinationChainId, defaultToken } : null;
+      return defaultToken
+        ? {
+            chainId: destinationChainId,
+            defaultToken,
+            ...(canonicalToken ? { canonicalToken } : {}),
+          }
+        : null;
     }),
   );
-  return chains.filter((chain): chain is DestinationChain => chain !== null);
+  return chains
+    .filter((chain): chain is DestinationChain => chain !== null)
+    .sort((a, b) => Number(Boolean(b.canonicalToken)) - Number(Boolean(a.canonicalToken)));
 }
 
 export async function getDestinationTokens({
@@ -573,6 +594,7 @@ export async function getDestinationTokens({
     sourceChainId,
     sourceTokenAddress,
     destinationChainId,
+    importsListedTokens: true,
   });
   if (!query?.trim()) {
     return options.slice(0, DESTINATION_TOKENS_LIMIT);
