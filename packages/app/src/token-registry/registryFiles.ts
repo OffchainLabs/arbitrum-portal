@@ -64,4 +64,6 @@ export type DestinationChain = {
   // The same token as the source when the source can reach it, otherwise the canonical token,
   // otherwise the native token.
   defaultToken: DestinationOption;
+  // The token the canonical bridge delivers on this chain, when it has a route.
+  canonicalToken?: DestinationOption;
 };

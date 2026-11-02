@@ -274,7 +274,7 @@ function TokenPicker({
   allowAllChains: boolean;
   initialChainId: number | null;
   selectedToken: TopToken | null;
-  getChainTokens?: (chainId: number | null) => PickerToken[];
+  getChainTokens?: (chainId: number | null) => PickerToken[] | undefined;
   getListKey?: (chainId: number | null) => SwrKey | null;
   getSearchKey: (chainId: number | null, query: string) => SwrKey | null;
   onSelect: (token: PickerToken) => void;
@@ -356,7 +356,11 @@ function TokenPicker({
             {allowAllChains && !chainQuery && (
               <ChainButton
                 chainId={null}
-                tokenCount={chains.reduce((total, chain) => total + (chain.tokenCount ?? 0), 0)}
+                tokenCount={
+                  chains.some((chain) => chain.tokenCount !== undefined)
+                    ? chains.reduce((total, chain) => total + (chain.tokenCount ?? 0), 0)
+                    : undefined
+                }
                 isSelected={chainId === null}
                 onSelect={setChainId}
               />
@@ -493,6 +497,8 @@ export function TopTokensPoc() {
   // counterpart on the chain, until the user picks another one.
   const [destinationToken, setDestinationToken] = useState<DestinationOption | null>(null);
   const [openPicker, setOpenPicker] = useState<'source' | 'destination' | null>(null);
+  // Null opens the destination picker on all chains.
+  const [destinationPickerChainId, setDestinationPickerChainId] = useState<number | null>(null);
 
   const { data, error } = useSWR(
     [`${TOKEN_REGISTRY_URL}/top.json`, 'token-registry-top'] as SwrKey,
@@ -500,7 +506,7 @@ export function TopTokensPoc() {
     AGGRESSIVE_CACHE_OPTIONS,
   );
 
-  const { data: destinationChains, error: destinationChainsError } = useSWR(
+  const { data: destinationChainsResponse, error: destinationChainsError } = useSWR(
     sourceToken
       ? ([
           `/api/token-registry/files/destination-chains?${new URLSearchParams({
@@ -514,12 +520,29 @@ export function TopTokensPoc() {
               : {}),
           })}`,
           'token-registry-destination-chains',
-        ] as SwrKey)
+          getTokenKey(sourceToken),
+        ] as const)
       : null,
-    fetchJson<DestinationChain[]>,
+    async ([url, , sourceKey]: readonly [string, string, string]) => ({
+      sourceKey,
+      chains: await fetchJson<DestinationChain[]>([url, 'token-registry-destination-chains']),
+    }),
     // Keeps the chain chips on screen while a new pick reloads their defaults.
     { ...AGGRESSIVE_CACHE_OPTIONS, keepPreviousData: true },
   );
+  // keepPreviousData would show the previous source's chains while a new source loads.
+  const destinationChains =
+    sourceToken && destinationChainsResponse?.sourceKey === getTokenKey(sourceToken)
+      ? destinationChainsResponse.chains
+      : undefined;
+  // The picker's all-chains view: the canonical token of every chain first, then each chain's
+  // default when it is another token.
+  const allChainsDestinationTokens = destinationChains && [
+    ...destinationChains.flatMap((chain) => (chain.canonicalToken ? [chain.canonicalToken] : [])),
+    ...destinationChains.flatMap((chain) =>
+      chain.defaultToken.address === chain.canonicalToken?.address ? [] : [chain.defaultToken],
+    ),
+  ];
 
   const topTokens = data?.file.tokens ?? [];
   const tokenCountByChainId = new Map<number, number>();
@@ -537,9 +560,16 @@ export function TopTokensPoc() {
       ? destinationToken
       : activeDestinationChain?.defaultToken;
 
+  // Like Jumper, picking a source moves on to the destination.
   function handleSelectSource(token: PickerToken) {
     setSourceToken(token);
-    setOpenPicker(null);
+    setDestinationPickerChainId(null);
+    setOpenPicker('destination');
+  }
+
+  function openDestinationPicker() {
+    setDestinationPickerChainId(activeDestinationChain?.chainId ?? null);
+    setOpenPicker('destination');
   }
 
   function handleSelectDestinationChain(chainId: number) {
@@ -653,18 +683,21 @@ export function TopTokensPoc() {
                   <SelectedTokenButton
                     token={displayedDestinationToken}
                     placeholder="Select destination token"
-                    onClick={() => setOpenPicker('destination')}
+                    onClick={openDestinationPicker}
                   />
                 </>
               )}
               {openPicker === 'destination' && destinationChains && (
                 <TokenPicker
-                  key={getTokenKey(sourceToken)}
+                  key={`${getTokenKey(sourceToken)}-${destinationPickerChainId}`}
                   title="Select a destination token"
                   chains={destinationChains.map(({ chainId }) => ({ chainId }))}
-                  allowAllChains={false}
-                  initialChainId={activeDestinationChain?.chainId ?? null}
+                  allowAllChains
+                  initialChainId={destinationPickerChainId}
                   selectedToken={displayedDestinationToken ?? null}
+                  getChainTokens={(chainId) =>
+                    chainId === null ? allChainsDestinationTokens : undefined
+                  }
                   getListKey={(chainId) =>
                     getDestinationTokensKey({ sourceToken, destinationChainId: chainId })
                   }

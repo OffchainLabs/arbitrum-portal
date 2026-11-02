@@ -124,7 +124,7 @@ describe('searchChainFiles', () => {
 
 describe('buildDestinationOptions', () => {
   it('puts the canonical token first, then the same token, then LiFi tokens by volume', () => {
-    const { options, defaultToken } = buildDestinationOptions({
+    const { options, defaultToken, canonicalToken } = buildDestinationOptions({
       sourceFile: ethereum,
       destinationFile: arbitrumOne,
       pairFile: deposit,
@@ -139,6 +139,7 @@ describe('buildDestinationOptions', () => {
       [NATIVE_TOKEN_ADDRESS, ['lifi']],
     ]);
     expect(defaultToken?.address).toBe(USDC_ARBITRUM);
+    expect(canonicalToken?.address).toBe(USDC_E_ARBITRUM);
   });
 
   it('withdraws to the parent token and sends Ether to Ether', () => {
