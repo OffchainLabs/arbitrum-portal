@@ -52,7 +52,7 @@ type ProviderRoutes =
   | { provider: 'layerzero'; routes: (typeof layerZeroConfig)[string] }
   | { provider: 'lifi'; routes: Record<Address, Address | null> };
 
-const REGISTRY_CACHE_VERSION = 3;
+const REGISTRY_CACHE_VERSION = 4;
 
 // Next skips data-cache entries over 2 MiB, so stay well below that.
 const CACHE_ENTRY_BUDGET = 1.5 * 1024 * 1024;
@@ -277,8 +277,11 @@ type ChainTokens = {
   destination: CachedChainToken[];
 };
 
+// Only tokens that LiFi lists in /v1/tokens can take a LiFi route.
 function getCoinKeyMap(tokens: CachedChainToken[]): Map<Address, string | undefined> {
-  return new Map(tokens.map((token) => [token.address, token.coinKey]));
+  return new Map(
+    tokens.filter((token) => !token.isNotOnLifi).map((token) => [token.address, token.coinKey]),
+  );
 }
 
 // LiFi matches a source token to a destination token by coinKey. The chain entries already hold
@@ -346,6 +349,9 @@ type CachedChainToken = Omit<Token, 'id' | 'chainId'> & {
   coinKey?: string;
   // Set when a canonical parent token that LayerZero does not list answers oftVersion().
   isOft?: true;
+  // Set when LiFi's /v1/tokens does not list the token. Only the token lists know it, so it
+  // takes no LiFi route.
+  isNotOnLifi?: true;
 };
 
 type CachedPairRoutes = {
@@ -474,6 +480,12 @@ async function buildChainTokens(chainId: number): Promise<CachedChainToken[]> {
       byAddress.set(address, { ...token, isOft: true });
     }
   }
+  const lifiAddresses = new Set(lifiTokens.map((metadata) => metadata.address.toLowerCase()));
+  for (const [address, token] of byAddress) {
+    if (!lifiAddresses.has(address)) {
+      byAddress.set(address, { ...token, isNotOnLifi: true });
+    }
+  }
   return [...byAddress.values()];
 }
 
@@ -585,7 +597,7 @@ function getCachedPairRoutes(
 
 function getTokenMap(tokens: CachedChainToken[], chainId: number): Map<TokenId, Token> {
   const byId = new Map<TokenId, Token>();
-  for (const { coinKey: _coinKey, ...token } of tokens) {
+  for (const { coinKey: _coinKey, isOft: _isOft, isNotOnLifi: _isNotOnLifi, ...token } of tokens) {
     const id = toTokenId(chainId, token.address);
     byId.set(id, { id, chainId, ...token });
   }
