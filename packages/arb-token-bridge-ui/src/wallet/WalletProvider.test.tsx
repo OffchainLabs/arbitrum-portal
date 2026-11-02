@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChainId } from '../types/ChainId';
 import { useWalletContext } from './WalletContext';
 import { WalletProvider } from './WalletProvider';
-import { useSolanaWallet } from './solana';
 
 vi.mock('@reown/appkit/react', () => ({
   useAppKitAccount: vi.fn(),
@@ -163,7 +162,7 @@ describe.sequential('WalletProvider with Solana', () => {
   const sessions = { evm: true, solana: true };
   const useBothWallets = () => ({
     evm: useWalletContext('evm'),
-    solana: useSolanaWallet(),
+    solana: useWalletContext('solana'),
   });
   beforeEach(() => {
     sessions.evm = true;

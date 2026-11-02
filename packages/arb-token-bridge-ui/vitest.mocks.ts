@@ -7,3 +7,9 @@ vi.mock('next/font/local', () => ({
     },
   })),
 }));
+
+// Outside the Next router, usePathname has no context to read and returns null.
+vi.mock('next/navigation', async (importActual) => ({
+  ...(await importActual<typeof import('next/navigation')>()),
+  usePathname: vi.fn(() => '/'),
+}));
