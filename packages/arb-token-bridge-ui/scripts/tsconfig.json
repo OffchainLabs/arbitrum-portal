@@ -1,35 +1,21 @@
 {
-  // This is an alias to @tsconfig/node16: https://github.com/tsconfig/bases
-  "extends": "ts-node/node16/tsconfig.json",
-  // Most ts-node options can be specified here using their programmatic names.
-  "ts-node": {
-    // It is faster to skip typechecking.
-    // Remove if you want ts-node to do typechecking.
-    "transpileOnly": true,
-    "files": true,
-    "require": ["tsconfig-paths/register"],
-    "compilerOptions": {
-      // compilerOptions specified here will override those declared below,
-      // but *only* in ts-node.  Useful if you want ts-node and tsc to use
-      // different options with a single tsconfig.json.
-    }
-  },
+  // Used by tsx to run the scripts in this folder and src/generateOpenGraphImages.tsx
   "compilerOptions": {
-    // typescript options here
+    "target": "es2021",
+    "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "jsx": "react",
-    "baseUrl": "../../..",
     "paths": {
-      "@/app/*": ["./packages/portal/app/*"],
-      "@/common/*": ["./packages/portal/common/*"],
-      "@/components/*": ["./packages/portal/components/*"],
-      "@/hooks/*": ["./packages/portal/hooks/*"],
-      "@/bridge/*": ["./packages/arb-token-bridge-ui/src/*"],
-      "@/portal/*": ["./packages/portal/*"],
-      "@/token-bridge-sdk/*": ["./packages/arb-token-bridge-ui/src/token-bridge-sdk/*"],
-      "@/icons/*": ["./packages/app/public/icons/*"],
-      "@/images/*": ["./packages/app/public/images/*"],
-      "@/public/*": ["./packages/app/public/*"]
+      "@/app/*": ["../../../packages/portal/app/*"],
+      "@/common/*": ["../../../packages/portal/common/*"],
+      "@/components/*": ["../../../packages/portal/components/*"],
+      "@/hooks/*": ["../../../packages/portal/hooks/*"],
+      "@/bridge/*": ["../../../packages/arb-token-bridge-ui/src/*"],
+      "@/portal/*": ["../../../packages/portal/*"],
+      "@/token-bridge-sdk/*": ["../../../packages/arb-token-bridge-ui/src/token-bridge-sdk/*"],
+      "@/icons/*": ["../../../packages/app/public/icons/*"],
+      "@/images/*": ["../../../packages/app/public/images/*"],
+      "@/public/*": ["../../../packages/app/public/*"]
     }
   }
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { Slug } from 'packages/app/src/utils/bridgePageUtils';
 
+import { Slug } from '@/app/src/utils/bridgePageUtils';
 import { PathnameEnum } from '@/bridge/constants';
 
 import BridgePageWrapper from '../../BridgePageWrapper';
