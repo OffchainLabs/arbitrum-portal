@@ -331,11 +331,7 @@ export function TokenRegistryPoc() {
     sourceTokensFromServer,
   ]);
 
-  const {
-    data: serverSelection,
-    error: selectionError,
-    isLoading: isSelectionRequestLoading,
-  } = useSWR(
+  const { data: serverSelectionResponse, error: selectionError } = useSWR(
     [
       pair.sourceChainId,
       pair.destinationChainId,
@@ -343,28 +339,33 @@ export function TokenRegistryPoc() {
       selectedDestinationAddress,
       'token-registry-selection',
     ],
-    ([sourceChainId, destinationChainId, sourceToken, destinationToken]) =>
-      fetchJson<SelectedTokenAvailability>(
+    async ([sourceChainId, destinationChainId, sourceToken, destinationToken]) => ({
+      // keepPreviousData returns the previous response while the next one loads, and SWR reports
+      // no loading on the first render after a key change. The requested destination tells the
+      // two apart, so a stale response can't drop the destination the user just picked.
+      requestedDestinationAddress: destinationToken,
+      selection: await fetchJson<SelectedTokenAvailability>(
         getSelectionUrl({
           pair: { sourceChainId, destinationChainId },
           sourceTokenAddress: sourceToken,
           destinationTokenAddress: destinationToken,
         }),
       ),
+    }),
     { ...AGGRESSIVE_CACHE_OPTIONS, keepPreviousData: true },
   );
+  const serverSelection = serverSelectionResponse?.selection;
 
   const isServerSelectionForCurrentPairAndSource =
     serverSelection &&
     serverSelection.sourceToken.chainId === pair.sourceChainId &&
     serverSelection.sourceToken.address === selectedSourceAddress &&
     serverSelection.destinationToken.chainId === pair.destinationChainId;
+  // The server falls back to the default destination when the requested one is unreachable.
   const isServerSelectionForRequestedDestination =
-    !selectedDestinationAddress ||
-    serverSelection?.destinationToken.address === selectedDestinationAddress;
+    serverSelectionResponse?.requestedDestinationAddress === selectedDestinationAddress;
   const selection =
-    isServerSelectionForCurrentPairAndSource &&
-    (isServerSelectionForRequestedDestination || !isSelectionRequestLoading)
+    isServerSelectionForCurrentPairAndSource && isServerSelectionForRequestedDestination
       ? serverSelection
       : null;
   const isSelectionLoading = !selectionError && !selection;

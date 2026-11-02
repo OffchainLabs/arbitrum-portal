@@ -110,17 +110,18 @@ export function isOftDepositBlocked({
 }
 
 export async function isImportedOftDepositBlocked({
+  metadata,
   parentChainId,
   childChainId,
   parentTokenAddress,
   childTokenAddress,
 }: {
+  metadata: LayerZeroMetadata;
   parentChainId: number;
   childChainId: number;
   parentTokenAddress: Address;
   childTokenAddress: Address;
 }): Promise<boolean> {
-  const metadata = await getLayerZeroMetadata();
   const isOftOnChain =
     !isListedByLayerZero({ metadata, chainId: parentChainId, address: parentTokenAddress }) &&
     (await findOftTokens({ chainId: parentChainId, addresses: [parentTokenAddress] })).has(
