@@ -80,7 +80,10 @@ function buildCanonicalImportAvailability({
   };
 }
 
-async function readErc20Metadata(chainId: number, address: Address): Promise<Erc20Metadata | null> {
+export async function readErc20Metadata(
+  chainId: number,
+  address: Address,
+): Promise<Erc20Metadata | null> {
   const client = getPublicClient(chainId);
   try {
     const [symbol, name, decimals] = await Promise.all([
@@ -130,21 +133,34 @@ async function canDeposit(bridge: CanonicalBridge, parentAddress: Address): Prom
   }
 }
 
+async function readParentAddress(
+  bridge: CanonicalBridge,
+  childAddress: Address,
+): Promise<Address | null> {
+  try {
+    const result = await getPublicClient(bridge.childChainId).readContract({
+      address: childAddress,
+      abi: arbStandardTokenAbi,
+      functionName: 'l1Address',
+    });
+    return result.toLowerCase() as Address;
+  } catch {
+    return null;
+  }
+}
+
+// The reads of each chain only need the address, so they go out together: one round trip per
+// chain instead of one per read.
 async function resolveDeposit(
   bridge: CanonicalBridge,
   parentAddress: Address,
 ): Promise<SelectedTokenAvailability | null> {
-  const parentMetadata = await readErc20Metadata(bridge.parentChainId, parentAddress);
-  if (!parentMetadata) {
-    return null;
-  }
-
-  if (!(await canDeposit(bridge, parentAddress))) {
-    return null;
-  }
-
-  const childAddress = await deriveChildAddress(bridge, parentAddress);
-  if (!childAddress) {
+  const [parentMetadata, isDepositEnabled, childAddress] = await Promise.all([
+    readErc20Metadata(bridge.parentChainId, parentAddress),
+    canDeposit(bridge, parentAddress),
+    deriveChildAddress(bridge, parentAddress),
+  ]);
+  if (!parentMetadata || !isDepositEnabled || !childAddress) {
     return null;
   }
 
@@ -173,30 +189,23 @@ async function resolveWithdrawal(
   bridge: CanonicalBridge,
   childAddress: Address,
 ): Promise<SelectedTokenAvailability | null> {
-  const childMetadata = await readErc20Metadata(bridge.childChainId, childAddress);
-  if (!childMetadata) {
+  const [childMetadata, parentAddress] = await Promise.all([
+    readErc20Metadata(bridge.childChainId, childAddress),
+    readParentAddress(bridge, childAddress),
+  ]);
+  if (!childMetadata || !parentAddress) {
     return null;
   }
 
-  let parentAddress: Address;
-  try {
-    const result = await getPublicClient(bridge.childChainId).readContract({
-      address: childAddress,
-      abi: arbStandardTokenAbi,
-      functionName: 'l1Address',
-    });
-    parentAddress = result.toLowerCase() as Address;
-  } catch {
-    return null;
-  }
-
-  const derivedChild = await deriveChildAddress(bridge, parentAddress);
+  const [derivedChild, readParentMetadata] = await Promise.all([
+    deriveChildAddress(bridge, parentAddress),
+    readErc20Metadata(bridge.parentChainId, parentAddress),
+  ]);
   if (derivedChild !== childAddress) {
     return null;
   }
 
-  const parentMetadata =
-    (await readErc20Metadata(bridge.parentChainId, parentAddress)) ?? childMetadata;
+  const parentMetadata = readParentMetadata ?? childMetadata;
 
   const childToken = normalizeToken({
     chainId: bridge.childChainId,
@@ -231,12 +240,11 @@ async function resolveWithdrawalFromParent(
   bridge: CanonicalBridge,
   parentAddress: Address,
 ): Promise<SelectedTokenAvailability | null> {
-  if (!(await readErc20Metadata(bridge.parentChainId, parentAddress))) {
-    return null;
-  }
-
-  const childAddress = await deriveChildAddress(bridge, parentAddress);
-  if (!childAddress) {
+  const [parentMetadata, childAddress] = await Promise.all([
+    readErc20Metadata(bridge.parentChainId, parentAddress),
+    deriveChildAddress(bridge, parentAddress),
+  ]);
+  if (!parentMetadata || !childAddress) {
     return null;
   }
 
