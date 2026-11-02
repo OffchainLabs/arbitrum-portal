@@ -3,9 +3,9 @@
 import { type PropsWithChildren, useMemo } from 'react';
 
 import { WalletContext } from './WalletContext';
-import { useSolanaWallet } from './solana';
 import type { WalletContextValue } from './types';
 import { useEvmWallet } from './useEvmWallet';
+import { useSolanaWallet } from './useSolanaWallet';
 
 export function WalletProvider({ children }: PropsWithChildren) {
   const evm = useEvmWallet();

@@ -1,4 +1,3 @@
-import { PathnameContext } from 'next/dist/shared/lib/hooks-client-context.shared-runtime';
 import { type PropsWithChildren, useMemo, useState } from 'react';
 import {
   type PartialLocation,
@@ -33,15 +32,13 @@ export function createWalletTestWrapper({
   };
   return function Wrapper({ children }: PropsWithChildren) {
     return (
-      <PathnameContext.Provider value="/">
-        <QueryParamProvider adapter={Adapter} options={queryParamProviderOptions}>
-          {wallets ? (
-            <WalletContext.Provider value={wallets}>{children}</WalletContext.Provider>
-          ) : (
-            children
-          )}
-        </QueryParamProvider>
-      </PathnameContext.Provider>
+      <QueryParamProvider adapter={Adapter} options={queryParamProviderOptions}>
+        {wallets ? (
+          <WalletContext.Provider value={wallets}>{children}</WalletContext.Provider>
+        ) : (
+          children
+        )}
+      </QueryParamProvider>
     );
   };
 }
