@@ -8,6 +8,7 @@ import { Address, ChainPair } from '../types';
 const readContract = vi.fn();
 
 vi.mock('@/bridge/util/networks', () => ({
+  initializeBridgeNetworks: vi.fn(),
   rpcURLs: { 1: 'http://ethereum.test', 42161: 'http://arbitrum.test' },
 }));
 

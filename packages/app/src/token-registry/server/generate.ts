@@ -1033,7 +1033,7 @@ function hasCanonicalRoute(registry: PairRegistry, sourceTokenAddress: Address):
   );
 }
 
-function getCachedImport({
+export function getCachedImport({
   bridge,
   pair,
   sourceTokenAddress,
@@ -1045,11 +1045,16 @@ function getCachedImport({
   return cached(
     `token-registry-import-${pairKey(pair)}-${sourceTokenAddress}-v${REGISTRY_CACHE_VERSION}`,
     async () => {
-      const imported = await resolveImport({ bridge, pair, rawAddress: sourceTokenAddress });
+      // The OFT check's LayerZero metadata does not depend on the import, so it loads meanwhile.
+      const [imported, layerZeroMetadata] = await Promise.all([
+        resolveImport({ bridge, pair, rawAddress: sourceTokenAddress }),
+        isCanonicalDeposit(pair, bridge) ? getLayerZeroMetadata() : Promise.resolve(null),
+      ]);
       const isBlocked =
         imported &&
-        isCanonicalDeposit(pair, bridge) &&
+        layerZeroMetadata &&
         (await isImportedOftDepositBlocked({
+          metadata: layerZeroMetadata,
           parentChainId: pair.sourceChainId,
           childChainId: pair.destinationChainId,
           parentTokenAddress: imported.sourceToken.address,
