@@ -1,22 +1,27 @@
 'use client';
 
+import { useDebounce } from '@uidotdev/usehooks';
 import { useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import useSWR from 'swr';
 import { twMerge } from 'tailwind-merge';
 
-import { NATIVE_TOKEN_ADDRESS } from '@/app/src/token-registry/types';
+import {
+  DestinationChain,
+  DestinationOption,
+  TOKEN_REGISTRY_URL,
+  TopFile,
+  TopToken,
+} from '@/app/src/token-registry/registryFiles';
+import { NATIVE_TOKEN_ADDRESS, ProviderId } from '@/app/src/token-registry/types';
 import { formatCompactUsd } from '@/bridge/util/NumberUtils';
 import { getBridgeUiConfigForChain } from '@/bridge/util/bridgeUiConfig';
 
-// The token-list repo's registry job publishes top.json. The test folder holds the files of the
-// last test run.
-const TOKEN_REGISTRY_URL =
-  process.env.NEXT_PUBLIC_TOKEN_REGISTRY_URL ??
-  'https://tokenlist.arbitrum.io/TestFolder/TokenRegistry/v1';
-
 const ROW_HEIGHT = 56;
 const LIST_HEIGHT = 512;
+const SEARCH_DEBOUNCE_MS = 250;
+// Below this length, the source search only filters the top tokens already loaded.
+const MIN_REMOTE_SEARCH_LENGTH = 2;
 
 const AGGRESSIVE_CACHE_OPTIONS = {
   revalidateIfStale: false,
@@ -24,20 +29,21 @@ const AGGRESSIVE_CACHE_OPTIONS = {
   revalidateOnReconnect: false,
 } as const;
 
-type TopToken = {
-  chainId: number;
-  address: string;
-  symbol: string;
-  name: string;
-  decimals: number;
-  logoURI?: string;
-  volumeUSD24H?: number;
+const providerBadgeClasses: Record<ProviderId, string> = {
+  canonical: 'bg-sky-500/20 text-sky-300',
+  layerzero: 'bg-purple-500/20 text-purple-300',
+  lifi: 'bg-amber-500/20 text-amber-300',
 };
 
-type TopFile = {
-  generatedAt: string;
-  tokens: TopToken[];
+const providerLabels: Record<ProviderId, string> = {
+  canonical: 'Canonical',
+  layerzero: 'LayerZero',
+  lifi: 'LiFi',
 };
+
+type PickerToken = TopToken & { providers?: ProviderId[] };
+
+type SwrKey = [string, string];
 
 type RequestStats = {
   durationMs: number;
@@ -46,7 +52,7 @@ type RequestStats = {
   decodedBytes: number;
 };
 
-async function fetchTopTokens([url]: [string, string]): Promise<{
+async function fetchTopTokens([url]: SwrKey): Promise<{
   file: TopFile;
   stats: RequestStats;
 }> {
@@ -68,6 +74,14 @@ async function fetchTopTokens([url]: [string, string]): Promise<{
   };
 }
 
+async function fetchJson<T>([url]: SwrKey): Promise<T> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+  return response.json() as Promise<T>;
+}
+
 function formatBytes(bytes: number): string {
   return `${(bytes / 1024).toFixed(1)} KB`;
 }
@@ -84,20 +98,24 @@ function getTokenKey(token: TopToken): string {
   return `${token.chainId}:${token.address}`;
 }
 
-function filterTokens({
-  tokens,
-  chainId,
-  search,
-}: {
-  tokens: TopToken[];
-  chainId: number | null;
-  search: string;
-}): TopToken[] {
+function filterTokens<T extends TopToken>(tokens: T[], search: string): T[] {
   const query = search.trim().toLowerCase();
-  return tokens.filter(
-    (token) =>
-      (chainId === null || token.chainId === chainId) &&
-      (!query || `${token.symbol} ${token.name} ${token.address}`.toLowerCase().includes(query)),
+  if (!query) {
+    return tokens;
+  }
+  return tokens.filter((token) =>
+    `${token.symbol} ${token.name} ${token.address}`.toLowerCase().includes(query),
+  );
+}
+
+function ChainIcon({ chainId, className }: { chainId: number; className?: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={getBridgeUiConfigForChain(chainId).network.logo}
+      alt=""
+      className={twMerge('h-5 w-5 shrink-0 rounded-full', className)}
+    />
   );
 }
 
@@ -114,14 +132,58 @@ function TokenIcon({ token }: { token: TopToken }) {
   );
 }
 
+function TokenWithChainIcon({ token }: { token: TopToken }) {
+  return (
+    <span className="relative">
+      <TokenIcon token={token} />
+      <ChainIcon
+        chainId={token.chainId}
+        className="absolute -bottom-1 -right-1 h-4 w-4 ring-2 ring-black"
+      />
+    </span>
+  );
+}
+
+function ProviderBadges({ providers }: { providers?: ProviderId[] }) {
+  return (
+    <>
+      {providers?.map((provider) => (
+        <span
+          key={provider}
+          className={twMerge(
+            'rounded px-1.5 py-0.5 text-[10px] font-normal',
+            providerBadgeClasses[provider],
+          )}
+        >
+          {providerLabels[provider]}
+        </span>
+      ))}
+    </>
+  );
+}
+
+// Like Jumper's warning icon: no token list has the token.
+function UnverifiedBadge() {
+  return (
+    <span
+      className="rounded bg-red-500/20 px-1.5 py-0.5 text-[10px] font-normal text-red-300"
+      title="Imported from its address: no token list has this token"
+    >
+      Unverified
+    </span>
+  );
+}
+
 function TokenRow({
   token,
   isSelected,
+  showChain,
   onSelect,
 }: {
-  token: TopToken;
+  token: PickerToken;
   isSelected: boolean;
-  onSelect: (token: TopToken) => void;
+  showChain: boolean;
+  onSelect: (token: PickerToken) => void;
 }) {
   return (
     <button
@@ -134,11 +196,15 @@ function TokenRow({
     >
       <TokenIcon token={token} />
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold">
-          {token.symbol}{' '}
-          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-normal text-white/70">
-            {getChainName(token.chainId)}
-          </span>
+        <span className="flex items-center gap-1 text-sm font-semibold">
+          {token.symbol}
+          {showChain && (
+            <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-normal text-white/70">
+              {getChainName(token.chainId)}
+            </span>
+          )}
+          <ProviderBadges providers={token.providers} />
+          {token.isImported && <UnverifiedBadge />}
         </span>
         <span className="block truncate text-xs text-white/50">{token.name}</span>
       </span>
@@ -154,26 +220,99 @@ function TokenRow({
   );
 }
 
-export function TopTokensPoc() {
-  const [chainId, setChainId] = useState<number | null>(null);
-  const [search, setSearch] = useState('');
-  const [selectedToken, setSelectedToken] = useState<TopToken | null>(null);
+function ChainButton({
+  chainId,
+  tokenCount,
+  isSelected,
+  onSelect,
+}: {
+  chainId: number | null;
+  tokenCount?: number;
+  isSelected: boolean;
+  onSelect: (chainId: number | null) => void;
+}) {
+  return (
+    <button
+      onClick={() => onSelect(chainId)}
+      className={twMerge(
+        'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-white/5',
+        isSelected && 'bg-white/10',
+      )}
+    >
+      {chainId === null ? (
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px]">
+          ∗
+        </span>
+      ) : (
+        <ChainIcon chainId={chainId} />
+      )}
+      <span className="min-w-0 flex-1 truncate">
+        {chainId === null ? 'All chains' : getChainName(chainId)}
+      </span>
+      {tokenCount !== undefined && <span className="text-xs text-white/40">{tokenCount}</span>}
+    </button>
+  );
+}
 
-  const { data, error } = useSWR(
-    [`${TOKEN_REGISTRY_URL}/top.json`, 'token-registry-top'] as [string, string],
-    fetchTopTokens,
+// Like Jumper's picker: pick a token on any chain, or a chain first, then a token on it. The
+// tokens of a chain come from `getChainTokens`, or from the backend at `getListKey`. A search goes
+// to the backend at `getSearchKey`, which covers every token and not only the listed ones.
+function TokenPicker({
+  title,
+  chains,
+  allowAllChains,
+  initialChainId,
+  selectedToken,
+  getChainTokens,
+  getListKey,
+  getSearchKey,
+  onSelect,
+  onClose,
+}: {
+  title: string;
+  chains: { chainId: number; tokenCount?: number }[];
+  allowAllChains: boolean;
+  initialChainId: number | null;
+  selectedToken: TopToken | null;
+  getChainTokens?: (chainId: number | null) => PickerToken[];
+  getListKey?: (chainId: number | null) => SwrKey | null;
+  getSearchKey: (chainId: number | null, query: string) => SwrKey | null;
+  onSelect: (token: PickerToken) => void;
+  onClose: () => void;
+}) {
+  const [chainId, setChainId] = useState<number | null>(
+    initialChainId ?? (allowAllChains ? null : (chains[0]?.chainId ?? null)),
+  );
+  const [chainSearch, setChainSearch] = useState('');
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_MS);
+
+  const { data: listedTokens, isLoading: isListLoading } = useSWR(
+    getListKey?.(chainId) ?? null,
+    fetchJson<PickerToken[]>,
+    AGGRESSIVE_CACHE_OPTIONS,
+  );
+  const searchKey = getSearchKey(chainId, debouncedSearch.trim());
+  const { data: searchedTokens, isLoading: isSearchLoading } = useSWR(
+    searchKey,
+    fetchJson<PickerToken[]>,
     AGGRESSIVE_CACHE_OPTIONS,
   );
 
-  const tokens = data?.file.tokens ?? [];
-  const tokenCountByChainId = new Map<number, number>();
-  for (const token of tokens) {
-    tokenCountByChainId.set(token.chainId, (tokenCountByChainId.get(token.chainId) ?? 0) + 1);
-  }
-  const filteredTokens = filterTokens({ tokens, chainId, search });
+  // Until the backend answers, the picker filters the tokens it already has.
+  const chainTokens = getChainTokens?.(chainId) ?? listedTokens ?? [];
+  const isTyping = search !== debouncedSearch;
+  const tokens =
+    searchKey && !isTyping && searchedTokens ? searchedTokens : filterTokens(chainTokens, search);
+  const isLoading = isListLoading || (searchKey !== null && (isTyping || isSearchLoading));
+
+  const chainQuery = chainSearch.trim().toLowerCase();
+  const visibleChains = chains.filter(({ chainId: id }) =>
+    getChainName(id).toLowerCase().includes(chainQuery),
+  );
 
   const rowRenderer = ({ index, key, style }: ListRowProps) => {
-    const token = filteredTokens[index];
+    const token = tokens[index];
     if (!token) {
       return null;
     }
@@ -182,17 +321,243 @@ export function TopTokensPoc() {
         <TokenRow
           token={token}
           isSelected={selectedToken !== null && getTokenKey(selectedToken) === getTokenKey(token)}
-          onSelect={setSelectedToken}
+          showChain={chainId === null}
+          onSelect={onSelect}
         />
       </div>
     );
   };
 
   return (
+    <div className="mt-4 rounded-lg border border-white/20 bg-white/5 p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-white/60">{title}</h2>
+        <button
+          onClick={onClose}
+          className="rounded-md border border-white/20 px-2 py-0.5 text-sm hover:bg-white/10"
+          aria-label="Close"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="mt-3 grid gap-4 sm:grid-cols-[12rem_1fr]">
+        <div>
+          <input
+            value={chainSearch}
+            onChange={(event) => setChainSearch(event.target.value)}
+            placeholder="Search chains"
+            className="w-full rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm outline-none placeholder:text-white/40 focus:border-white/50"
+          />
+          <div
+            className="mt-2 flex flex-col gap-0.5 overflow-y-auto"
+            style={{ maxHeight: LIST_HEIGHT }}
+          >
+            {allowAllChains && !chainQuery && (
+              <ChainButton
+                chainId={null}
+                tokenCount={chains.reduce((total, chain) => total + (chain.tokenCount ?? 0), 0)}
+                isSelected={chainId === null}
+                onSelect={setChainId}
+              />
+            )}
+            {visibleChains.map((chain) => (
+              <ChainButton
+                key={chain.chainId}
+                chainId={chain.chainId}
+                tokenCount={chain.tokenCount}
+                isSelected={chainId === chain.chainId}
+                onSelect={setChainId}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={
+              chainId === null
+                ? 'Search all tokens on all chains'
+                : `Search all tokens on ${getChainName(chainId)}`
+            }
+            className="w-full rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm outline-none placeholder:text-white/40 focus:border-white/50"
+          />
+          <p className="mt-1 h-4 text-xs text-white/40">
+            {isLoading
+              ? 'Searching…'
+              : searchKey
+                ? `${tokens.length} results from every token`
+                : ''}
+          </p>
+          <div className="mt-1 rounded-md border border-white/10" style={{ height: LIST_HEIGHT }}>
+            {tokens.length === 0 ? (
+              <p className="p-3 text-sm text-white/50">
+                {isLoading ? 'Loading…' : 'No tokens match.'}
+              </p>
+            ) : (
+              <AutoSizer>
+                {({ height, width }) => (
+                  <List
+                    width={width}
+                    height={height}
+                    rowCount={tokens.length}
+                    rowHeight={ROW_HEIGHT}
+                    rowRenderer={rowRenderer}
+                  />
+                )}
+              </AutoSizer>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SelectedTokenButton({
+  token,
+  placeholder,
+  onClick,
+}: {
+  token: PickerToken | null | undefined;
+  placeholder: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="mt-2 flex w-full items-center gap-3 rounded-md border border-white/10 bg-white/5 px-3 py-3 text-left hover:bg-white/10"
+    >
+      {token ? (
+        <>
+          <TokenWithChainIcon token={token} />
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-1 text-sm font-semibold">
+              {token.symbol}
+              <ProviderBadges providers={token.providers} />
+              {token.isImported && <UnverifiedBadge />}
+            </span>
+            <span className="block text-xs text-white/50">on {getChainName(token.chainId)}</span>
+          </span>
+        </>
+      ) : (
+        <span className="text-sm text-white/60">{placeholder}</span>
+      )}
+    </button>
+  );
+}
+
+function getSourceSearchKey(chainId: number | null, query: string): SwrKey | null {
+  if (query.length < MIN_REMOTE_SEARCH_LENGTH) {
+    return null;
+  }
+  const params = new URLSearchParams({ q: query });
+  if (chainId !== null) {
+    params.set('chainId', String(chainId));
+  }
+  return [`/api/token-registry/files/search?${params}`, 'token-registry-search'];
+}
+
+function getDestinationTokensKey({
+  sourceToken,
+  destinationChainId,
+  query,
+}: {
+  sourceToken: TopToken;
+  destinationChainId: number | null;
+  query?: string;
+}): SwrKey | null {
+  if (destinationChainId === null) {
+    return null;
+  }
+  const params = new URLSearchParams({
+    sourceChainId: String(sourceToken.chainId),
+    sourceToken: sourceToken.address,
+    destinationChainId: String(destinationChainId),
+  });
+  if (query) {
+    params.set('q', query);
+  }
+  return [
+    `/api/token-registry/files/destination-tokens?${params}`,
+    'token-registry-destination-tokens',
+  ];
+}
+
+export function TopTokensPoc() {
+  const [sourceToken, setSourceToken] = useState<TopToken | null>(null);
+  const [destinationChainId, setDestinationChainId] = useState<number | null>(null);
+  // Set when the user picks a destination token. Each chain then defaults to that token, or to its
+  // counterpart on the chain, until the user picks another one.
+  const [destinationToken, setDestinationToken] = useState<DestinationOption | null>(null);
+  const [openPicker, setOpenPicker] = useState<'source' | 'destination' | null>(null);
+
+  const { data, error } = useSWR(
+    [`${TOKEN_REGISTRY_URL}/top.json`, 'token-registry-top'] as SwrKey,
+    fetchTopTokens,
+    AGGRESSIVE_CACHE_OPTIONS,
+  );
+
+  const { data: destinationChains, error: destinationChainsError } = useSWR(
+    sourceToken
+      ? ([
+          `/api/token-registry/files/destination-chains?${new URLSearchParams({
+            sourceChainId: String(sourceToken.chainId),
+            sourceToken: sourceToken.address,
+            ...(destinationToken
+              ? {
+                  preferredChainId: String(destinationToken.chainId),
+                  preferredToken: destinationToken.address,
+                }
+              : {}),
+          })}`,
+          'token-registry-destination-chains',
+        ] as SwrKey)
+      : null,
+    fetchJson<DestinationChain[]>,
+    // Keeps the chain chips on screen while a new pick reloads their defaults.
+    { ...AGGRESSIVE_CACHE_OPTIONS, keepPreviousData: true },
+  );
+
+  const topTokens = data?.file.tokens ?? [];
+  const tokenCountByChainId = new Map<number, number>();
+  for (const token of topTokens) {
+    tokenCountByChainId.set(token.chainId, (tokenCountByChainId.get(token.chainId) ?? 0) + 1);
+  }
+
+  // A new source or a new chain keeps the destination chain and token when the source can reach
+  // them: the server's default is the picked token's counterpart, or the source's.
+  const activeDestinationChain =
+    destinationChains?.find((chain) => chain.chainId === destinationChainId) ??
+    destinationChains?.[0];
+  const displayedDestinationToken =
+    destinationToken?.chainId === activeDestinationChain?.chainId
+      ? destinationToken
+      : activeDestinationChain?.defaultToken;
+
+  function handleSelectSource(token: PickerToken) {
+    setSourceToken(token);
+    setOpenPicker(null);
+  }
+
+  function handleSelectDestinationChain(chainId: number) {
+    setDestinationChainId(chainId);
+  }
+
+  function handleSelectDestination(token: PickerToken) {
+    setDestinationChainId(token.chainId);
+    setDestinationToken(token as DestinationOption);
+    setOpenPicker(null);
+  }
+
+  return (
     <div className="mx-auto max-w-3xl px-6 py-10">
       <h1 className="text-2xl font-semibold">Token Registry PoC: top tokens</h1>
       <p className="mt-2 text-sm text-white/60">
-        One request for the top 1,000 tokens across all chains, from {TOKEN_REGISTRY_URL}/top.json.
+        One request for the picker&apos;s tokens on every chain, from {TOKEN_REGISTRY_URL}/top.json.
+        Searches and destinations go through the backend, which reads every token.
       </p>
 
       {error && <p className="mt-6 text-red-400">Failed to load top.json: {String(error)}</p>}
@@ -203,7 +568,7 @@ export function TopTokensPoc() {
           <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-4">
             <div>
               <dt className="text-white/50">Tokens</dt>
-              <dd>{tokens.length}</dd>
+              <dd>{topTokens.length}</dd>
             </div>
             <div>
               <dt className="text-white/50">Request</dt>
@@ -224,56 +589,96 @@ export function TopTokensPoc() {
             </div>
           </dl>
 
-          <div className="mt-6 flex flex-wrap gap-2">
-            {[null, ...tokenCountByChainId.keys()].map((option) => (
-              <button
-                key={option ?? 'all'}
-                onClick={() => setChainId(option)}
-                className={twMerge(
-                  'rounded-full border border-white/20 px-3 py-1 text-xs hover:bg-white/10',
-                  option === chainId && 'border-white/60 bg-white/10',
-                )}
-              >
-                {option === null ? 'All chains' : getChainName(option)}{' '}
-                <span className="text-white/50">
-                  {option === null ? tokens.length : tokenCountByChainId.get(option)}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by symbol, name or address"
-            className="mt-4 w-full rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm outline-none placeholder:text-white/40 focus:border-white/50"
+          <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-white/60">From</h2>
+          <SelectedTokenButton
+            token={sourceToken}
+            placeholder="Select chain and token"
+            onClick={() => setOpenPicker('source')}
           />
-
-          {selectedToken && (
-            <p className="mt-4 text-sm">
-              Selected <span className="font-semibold">{selectedToken.symbol}</span> on{' '}
-              {getChainName(selectedToken.chainId)}{' '}
-              <span className="text-white/50">({selectedToken.address})</span>
-            </p>
+          {openPicker === 'source' && (
+            <TokenPicker
+              title="Select a source token"
+              chains={[...tokenCountByChainId].map(([chainId, tokenCount]) => ({
+                chainId,
+                tokenCount,
+              }))}
+              allowAllChains
+              initialChainId={sourceToken?.chainId ?? null}
+              selectedToken={sourceToken}
+              getChainTokens={(chainId) =>
+                chainId === null
+                  ? topTokens
+                  : topTokens.filter((token) => token.chainId === chainId)
+              }
+              getSearchKey={getSourceSearchKey}
+              onSelect={handleSelectSource}
+              onClose={() => setOpenPicker(null)}
+            />
           )}
 
-          <div className="mt-4 rounded-md border border-white/10" style={{ height: LIST_HEIGHT }}>
-            {filteredTokens.length === 0 ? (
-              <p className="p-3 text-sm text-white/50">No tokens match.</p>
-            ) : (
-              <AutoSizer>
-                {({ height, width }) => (
-                  <List
-                    width={width}
-                    height={height}
-                    rowCount={filteredTokens.length}
-                    rowHeight={ROW_HEIGHT}
-                    rowRenderer={rowRenderer}
+          {sourceToken && (
+            <>
+              <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-white/60">
+                To
+              </h2>
+              {destinationChainsError && (
+                <p className="mt-2 text-red-400">
+                  Failed to load the destinations: {String(destinationChainsError)}
+                </p>
+              )}
+              {!destinationChains && !destinationChainsError && (
+                <p className="mt-2 text-sm text-white/50">Loading destinations…</p>
+              )}
+              {destinationChains?.length === 0 && (
+                <p className="mt-2 text-sm text-white/50">No route from this token.</p>
+              )}
+              {destinationChains && destinationChains.length > 0 && (
+                <>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {destinationChains.map((chain) => (
+                      <button
+                        key={chain.chainId}
+                        onClick={() => handleSelectDestinationChain(chain.chainId)}
+                        className={twMerge(
+                          'flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1 text-xs hover:bg-white/10',
+                          chain.chainId === activeDestinationChain?.chainId &&
+                            'border-white/60 bg-white/10',
+                        )}
+                      >
+                        <ChainIcon chainId={chain.chainId} className="h-4 w-4" />
+                        {getChainName(chain.chainId)}
+                      </button>
+                    ))}
+                  </div>
+                  <SelectedTokenButton
+                    token={displayedDestinationToken}
+                    placeholder="Select destination token"
+                    onClick={() => setOpenPicker('destination')}
                   />
-                )}
-              </AutoSizer>
-            )}
-          </div>
+                </>
+              )}
+              {openPicker === 'destination' && destinationChains && (
+                <TokenPicker
+                  key={getTokenKey(sourceToken)}
+                  title="Select a destination token"
+                  chains={destinationChains.map(({ chainId }) => ({ chainId }))}
+                  allowAllChains={false}
+                  initialChainId={activeDestinationChain?.chainId ?? null}
+                  selectedToken={displayedDestinationToken ?? null}
+                  getListKey={(chainId) =>
+                    getDestinationTokensKey({ sourceToken, destinationChainId: chainId })
+                  }
+                  getSearchKey={(chainId, query) =>
+                    query
+                      ? getDestinationTokensKey({ sourceToken, destinationChainId: chainId, query })
+                      : null
+                  }
+                  onSelect={handleSelectDestination}
+                  onClose={() => setOpenPicker(null)}
+                />
+              )}
+            </>
+          )}
         </>
       )}
     </div>
