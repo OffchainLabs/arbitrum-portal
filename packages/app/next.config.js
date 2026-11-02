@@ -11,6 +11,8 @@ module.exports = {
   reactStrictMode: true,
   experimental: {
     externalDir: true,
+    // TypeScript 7 has no JS API: type check `next build` with the tsc CLI instead.
+    useTypeScriptCli: true,
   },
   turbopack: {
     root: path.resolve(__dirname, '../..'),
