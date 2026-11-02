@@ -278,12 +278,15 @@ function mockRegistryFetch({
               { chainId: 1, address: USDC_ETHEREUM },
               { chainId: 1, address: DAI_ETHEREUM },
               { chainId: 1, address: UNBRIDGED_ETHEREUM },
+              // In the connection and the token lists, but not in LiFi's /v1/tokens.
+              { chainId: 1, address: GHO_ETHEREUM },
             ],
             toTokens: [
               { chainId: 42161, address: USDC_ARBITRUM },
               { chainId: 42161, address: PYUSD_LIFI_ARBITRUM },
               { chainId: 42161, address: PEPE_ARBITRUM },
               { chainId: 42161, address: DAI_ARBITRUM },
+              { chainId: 42161, address: GHO_ARBITRUM },
             ],
           },
         ],
@@ -321,6 +324,13 @@ function mockRegistryFetch({
             address: UNBRIDGED_ETHEREUM,
             symbol: 'NEW',
             name: 'Never Bridged',
+            decimals: 18,
+          },
+          {
+            chainId,
+            address: DAI_ETHEREUM,
+            symbol: 'DAI',
+            name: 'Dai Stablecoin',
             decimals: 18,
           },
         ],
@@ -472,11 +482,11 @@ describe('getSelectedTokenAvailability', () => {
 
     expect([...cacheState.builtKeys].sort()).toEqual([
       'layerzero-metadata',
-      'token-registry-chain-1-v3',
-      'token-registry-chain-42161-v3',
-      'token-registry-chain-4663-v3',
-      'token-registry-pair-1->42161-v3',
-      'token-registry-pair-1->4663-v3',
+      'token-registry-chain-1-v4',
+      'token-registry-chain-42161-v4',
+      'token-registry-chain-4663-v4',
+      'token-registry-pair-1->42161-v4',
+      'token-registry-pair-1->4663-v4',
     ]);
     const ethereumLifiTokenFetches = fetchMock.mock.calls.filter(([input]) => {
       const url = new URL(input.toString());
@@ -1000,6 +1010,39 @@ describe('picker pins', () => {
     expect(destinationTokens?.pinnedTokens.map((pinned) => pinned.address)).toEqual([
       NATIVE_TOKEN_ADDRESS,
       USDC_ARBITRUM,
+    ]);
+  });
+});
+
+describe('LiFi token metadata', () => {
+  it('gives no LiFi route to a token that LiFi does not list in /v1/tokens', async () => {
+    mockRegistryFetch();
+
+    const deposit = await getSelectedTokenAvailability({
+      pair: { sourceChainId: 1, destinationChainId: 42161 },
+      sourceTokenAddress: GHO_ETHEREUM,
+    });
+    const destinationTokens = await getDestinationTokensForSource({
+      pair: { sourceChainId: 1, destinationChainId: 42161 },
+      sourceTokenAddress: USDC_ETHEREUM,
+    });
+
+    // GHO is withdraw-only, so without a LiFi route its deposit has no route at all.
+    expect(deposit).toBeNull();
+    expect(pickerAddresses(destinationTokens)).not.toContain(GHO_ARBITRUM);
+  });
+
+  it('keeps the LiFi route of a token that LiFi lists', async () => {
+    mockRegistryFetch();
+
+    const selection = await getSelectedTokenAvailability({
+      pair: { sourceChainId: 1, destinationChainId: 42161 },
+      sourceTokenAddress: DAI_ETHEREUM,
+    });
+
+    expect(selection?.availableRoutes.map((route) => route.provider)).toEqual([
+      'canonical',
+      'lifi',
     ]);
   });
 });
