@@ -160,15 +160,23 @@
     "GHSA-qr28-fpjm-wq7f|*>@walletconnect/utils>query-string>decode-uri-component",
     "GHSA-qr28-fpjm-wq7f|*>@synthetixio/synpress>*>query-string>decode-uri-component",
     //
-    // https://github.com/advisories/GHSA-86w9-cpqp-85rv
-    // node-forge RSA PKCS#1 v1.5 signature verification accepts extra nested DigestAlgorithm elements (CVE-2026-85393)
-    // Reason to ignore: No patched version available (1.4.0 is the latest published version and is
-    // already pinned via pnpm-workspace.yaml overrides). It is reached through listhen and through
-    // Synpress's webpack-dev-server > selfsigned chain; both use node-forge to generate self-signed
-    // certificates for development listeners, and application code does not verify RSA signatures with it.
-    // from: app>@reown/appkit>...>@walletconnect/keyvaluestorage>unstorage>listhen>node-forge
-    // from: arb-token-bridge-ui>@synthetixio/synpress>...>webpack-dev-server>selfsigned>node-forge
-    "GHSA-86w9-cpqp-85rv",
+    // https://github.com/advisories/GHSA-g3hv-75wg-m249
+    // minimatch denial of service via globparts amplification
+    // Reason to ignore: Only 11.0.1 is patched, a major bump none of the parents allow (they depend on ^3, ^9
+    // and ^10). Every copy runs in dev tooling (ESLint, typescript-eslint, glob for Tailwind 3's sucrase,
+    // test-exclude for test coverage) and only matches patterns from our own config, never user input.
+    // from: eslint>minimatch (3.1.5, also @eslint/*, eslint-plugin-import, eslint-plugin-jsx-a11y, eslint-plugin-react)
+    // from: sucrase>glob>minimatch, test-exclude>minimatch (9.0.7)
+    // from: @typescript-eslint/typescript-estree>minimatch (10.2.5)
+    "GHSA-g3hv-75wg-m249",
+    //
+    // https://github.com/advisories/GHSA-3g3m-2fjr-6pw4
+    // glob keeps walking the filesystem after an AbortSignal cancels the walk
+    // Reason to ignore: Only 14.0.2 is patched, a major bump sucrase and test-exclude don't allow (they depend
+    // on ^10). Neither passes an AbortSignal to glob, so the cancellation this advisory bypasses never happens.
+    // from: tailwindcss>sucrase>glob
+    // from: test-exclude>glob
+    "GHSA-3g3m-2fjr-6pw4",
     //
     // https://github.com/advisories/GHSA-rj75-hqrm-r3gf
     // postcss-selector-parser quadratic-time parsing of flat selectors with repeated class or id tokens allows CPU exhaustion (CVE-2026-104844)
