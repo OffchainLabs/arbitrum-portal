@@ -7,6 +7,7 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { rpcURLs } from '../../util/networks';
+import { useWalletContext } from '../../wallet/WalletContext';
 
 /** given our RPC url, sanitize it before logging to Sentry, to only pass the url and not the keys */
 function getBaseUrl(url: string | undefined): string | null {
@@ -28,11 +29,13 @@ export function useSyncConnectedChainToAnalytics() {
   const { parentChain, childChain } = useNetworksRelationship(networks);
   const { isConnected } = useAccount();
   const { walletInfo } = useWalletInfo('eip155');
+  const solanaWallet = useWalletContext('solana');
+  const solanaWalletName = solanaWallet.account.walletInfo?.name;
 
   useEffect(() => {
     if (isConnected) {
       const walletName = walletInfo?.name ?? 'Other';
-      trackEvent('Connect Wallet Click', { walletName });
+      trackEvent('Connect Wallet Click', { walletName, ecosystem: 'evm' });
 
       // Set wallet name tag only when we have a connected wallet
       Sentry.setTag('wallet.name', walletName);
@@ -42,6 +45,15 @@ export function useSyncConnectedChainToAnalytics() {
       Sentry.setTag('wallet.name', 'not_connected');
     }
   }, [isConnected, walletInfo?.name]);
+
+  useEffect(() => {
+    if (solanaWallet.isConnected) {
+      trackEvent('Connect Wallet Click', {
+        walletName: solanaWalletName ?? 'Other',
+        ecosystem: 'solana',
+      });
+    }
+  }, [solanaWallet.isConnected, solanaWalletName]);
 
   useEffect(() => {
     Sentry.setTag('network.parent_chain_id', parentChain.id);
