@@ -4,6 +4,7 @@ import { RegistryChainFile, TopFile } from '../registryFiles';
 import {
   buildDestinationOptions,
   searchChainFiles,
+  toHeldTokens,
   withImportedTokens,
 } from '../server/registryFiles';
 import { NATIVE_TOKEN_ADDRESS, Token, toTokenId } from '../types';
@@ -413,5 +414,28 @@ describe('withImportedTokens', () => {
       counterparts: { '42161': USDC_ARBITRUM },
     });
     expect(files.destinationFile.tokens).toHaveLength(ethereum.tokens.length);
+  });
+});
+
+describe('toHeldTokens', () => {
+  it('keeps the tokens with a balance, outside the top file too', () => {
+    const topFile: TopFile = {
+      generatedAt: '',
+      tokens: [
+        {
+          chainId: 1,
+          address: USDC_ETHEREUM,
+          symbol: 'USDC',
+          name: 'USD Coin',
+          decimals: 6,
+          volumeUSD24H: 10,
+        },
+      ],
+    };
+
+    expect(toHeldTokens({ chainFile: ethereum, balances: [0n, 5n, 7n], top: topFile })).toEqual([
+      expect.objectContaining({ address: USDC_ETHEREUM, balance: '5', volumeUSD24H: 10 }),
+      expect.objectContaining({ address: USDCX_ETHEREUM, balance: '7' }),
+    ]);
   });
 });
