@@ -1,6 +1,5 @@
 'use client';
 
-import { useAppKit } from '@reown/appkit/react';
 import { useDebounce } from '@uidotdev/usehooks';
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
@@ -506,28 +505,15 @@ function getDestinationTokensKey({
   ];
 }
 
-function WalletButton() {
-  const { address } = useAccount();
-  const { open } = useAppKit();
-
-  return (
-    <button
-      onClick={() =>
-        void open(address ? { view: 'Account' } : { view: 'Connect', namespace: 'eip155' })
-      }
-      className="shrink-0 rounded-md border border-white/20 px-3 py-1.5 text-sm hover:bg-white/10"
-    >
-      {address ? truncateAddress(address) : 'Connect wallet'}
-    </button>
-  );
-}
-
 // The wallet setup reads localStorage, so the page renders in the browser only, like the app
 // shell.
 const WalletProviders = dynamic(
   () => import('./WalletProviders').then((mod) => mod.WalletProviders),
   { ssr: false },
 );
+const WalletButton = dynamic(() => import('./WalletProviders').then((mod) => mod.WalletButton), {
+  ssr: false,
+});
 
 export function TopTokensPoc() {
   return (
