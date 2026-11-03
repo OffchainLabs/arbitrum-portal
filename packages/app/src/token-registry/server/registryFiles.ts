@@ -17,10 +17,12 @@ import {
   RegistryChainFile,
   RegistryFileToken,
   RegistryIndexFile,
-  RegistryPairFile,
   TOKEN_REGISTRY_URL,
+  TokenList,
   TopFile,
   TopToken,
+  getSearchScore,
+  searchTokens,
 } from '../registryFiles';
 import {
   Address,
@@ -63,17 +65,24 @@ const getIndexFile = () => fetchRegistryFile<RegistryIndexFile>('index.json');
 const getTopFile = () => fetchRegistryFile<TopFile>('top.json');
 const getChainFile = (chainId: number) =>
   fetchRegistryFile<RegistryChainFile>(`chains/${chainId}.json`);
-const getPairFile = (sourceChainId: number, destinationChainId: number) =>
-  fetchRegistryFile<RegistryPairFile>(`pairs/${sourceChainId}-${destinationChainId}.json`);
+
+// Each destination chain of a request reads the volumes of the same top file.
+const volumesByTopFile = new WeakMap<TopFile, Map<string, number>>();
 
 function getVolumes(top: TopFile): Map<string, number> {
-  return new Map(
+  const cached = volumesByTopFile.get(top);
+  if (cached) {
+    return cached;
+  }
+  const volumes = new Map(
     top.tokens.flatMap((token) =>
       token.volumeUSD24H === undefined
         ? []
         : [[`${token.chainId}:${token.address}`, token.volumeUSD24H] as const],
     ),
   );
+  volumesByTopFile.set(top, volumes);
+  return volumes;
 }
 
 function toTopToken(
@@ -93,26 +102,12 @@ function toTopToken(
   };
 }
 
-// Lower is better. An address only matches itself.
-function getSearchScore(token: RegistryFileToken, query: string): number | null {
-  if (isAddress(query)) {
-    return token.address === query ? 0 : null;
-  }
-  const symbol = token.symbol.toLowerCase();
-  if (symbol === query) {
-    return 0;
-  }
-  if (symbol.startsWith(query)) {
-    return 1;
-  }
-  if (symbol.includes(query)) {
-    return 2;
-  }
-  return token.name.toLowerCase().includes(query) ? 3 : null;
-}
-
+// localeCompare goes through Intl, which is slow on sorts of thousands of tokens.
 function compareTokens(a: TopToken, b: TopToken): number {
-  return (b.volumeUSD24H ?? 0) - (a.volumeUSD24H ?? 0) || a.symbol.localeCompare(b.symbol);
+  return (
+    (b.volumeUSD24H ?? 0) - (a.volumeUSD24H ?? 0) ||
+    (a.symbol < b.symbol ? -1 : a.symbol > b.symbol ? 1 : 0)
+  );
 }
 
 export function searchChainFiles({
@@ -154,22 +149,28 @@ export async function searchRegistryTokens({
 }: {
   query: string;
   chainId?: number;
-}): Promise<TopToken[]> {
+}): Promise<TokenList> {
   const index = await getIndexFile();
   const chainIds = chainId === undefined ? index.chains.map((chain) => chain.chainId) : [chainId];
   const [top, ...chainFiles] = await Promise.all([getTopFile(), ...chainIds.map(getChainFile)]);
-  const tokens = searchChainFiles({ chainFiles, top, query });
+  // One more than the limit tells whether the limit cut the results.
+  const matches = searchChainFiles({ chainFiles, top, query, limit: SEARCH_LIMIT + 1 });
+  const tokens = matches.slice(0, SEARCH_LIMIT);
+  const isComplete = matches.length <= SEARCH_LIMIT;
 
   const address = query.trim().toLowerCase();
   if (!isAddress(address) || tokens.some((token) => token.address === address)) {
-    return tokens;
+    return { tokens, isComplete };
   }
   const imported = await Promise.all(
     (chainId === undefined ? IMPORT_LOOKUP_CHAIN_IDS : [chainId]).map((lookupChainId) =>
       importToken({ chainId: lookupChainId, address }),
     ),
   );
-  return [...imported.filter((token): token is TopToken => token !== null), ...tokens];
+  return {
+    tokens: [...imported.filter((token): token is TopToken => token !== null), ...tokens],
+    isComplete,
+  };
 }
 
 function importToken({
@@ -321,32 +322,33 @@ function isCanonicalRouteAllowed({
   });
 }
 
-// The canonical token comes first, then LayerZero's, then the default destination, then the
-// others by volume. The default is the token the user picked, otherwise the pair's override,
-// otherwise the same token as the source, otherwise the canonical, LayerZero or native token.
-export function buildDestinationOptions({
+// The destinations of one chain before the default, which depends on the user's pick: the
+// canonical token first, then LayerZero's, then the others by volume.
+type ChainOptions = {
+  options: DestinationOption[];
+  canonicalAddress?: string;
+  layerZeroAddress?: string;
+  // The default without a pick: the pair's override, otherwise the same token as the source.
+  defaultCandidates: (string | undefined)[];
+};
+
+function buildChainOptions({
   sourceFile,
   destinationFile,
-  pairFile,
+  hasLifi,
   top,
   sourceTokenAddress,
-  preferredAddress,
   layerZeroMetadata,
 }: {
   sourceFile: RegistryChainFile;
   destinationFile: RegistryChainFile;
-  pairFile: RegistryPairFile;
+  // The bridge offers LiFi on the pair, and LiFi connects it.
+  hasLifi: boolean;
   top: TopFile;
   sourceTokenAddress: string;
-  // The token the user picked, or its counterpart on this chain.
-  preferredAddress?: string;
   // Null skips the OFT deposit block.
   layerZeroMetadata: LayerZeroMetadata | null;
-}): {
-  options: DestinationOption[];
-  defaultToken?: DestinationOption;
-  canonicalToken?: DestinationOption;
-} {
+}): ChainOptions {
   const pair = { sourceChainId: sourceFile.chainId, destinationChainId: destinationFile.chainId };
   const key = pairKey(pair);
   const sourceToken = sourceFile.tokens.find((token) => token.address === sourceTokenAddress);
@@ -355,7 +357,7 @@ export function buildDestinationOptions({
     isExcludedToken(pair.sourceChainId, sourceToken.address) ||
     blockedSourceRoutes[key]?.includes(sourceToken.address as Address)
   ) {
-    return { options: [] };
+    return { options: [], defaultCandidates: [] };
   }
 
   const volumes = getVolumes(top);
@@ -403,76 +405,130 @@ export function buildDestinationOptions({
     add(layerZeroAddress, 'layerzero');
   }
 
-  // LiFi swaps the source token into any token it lists on the destination chain.
+  // LiFi swaps the source token into any token it routes on the destination chain.
   const pairLifiRoutes = hardcodedLifiRoutes[key] ?? {};
   const isLifiSource =
     !blockedLifiSourceRoutes[key]?.includes(sourceToken.address as Address) &&
-    (pairFile.lifi?.fromTokens.includes(sourceToken.address) ||
-      sourceToken.address in pairLifiRoutes);
+    ((hasLifi && sourceToken.isLifi === true) || sourceToken.address in pairLifiRoutes);
   if (isLifiSource) {
     const hardcodedDestination = pairLifiRoutes[sourceToken.address as Address];
     if (hardcodedDestination) {
       add(hardcodedDestination, 'lifi');
     }
-    for (const address of pairFile.lifi?.toTokens ?? []) {
-      add(address, 'lifi');
+    if (hasLifi) {
+      for (const token of destinationFile.tokens) {
+        if (token.isLifi) {
+          add(token.address, 'lifi');
+        }
+      }
     }
   }
 
-  const defaultAddress = [
-    preferredAddress,
-    getDefaultDestinationOverride(pair, sourceToken.address as Address),
-    sourceToken.counterparts?.[destinationFile.chainId],
-    canonicalAddress,
-    layerZeroAddress,
-    NATIVE_TOKEN_ADDRESS,
-  ].find((address) => address !== undefined && options.has(address));
   const rank = (address: string) =>
-    address === canonicalAddress
-      ? 0
-      : address === layerZeroAddress
-        ? 1
-        : address === defaultAddress
-          ? 2
-          : 3;
+    address === canonicalAddress ? 0 : address === layerZeroAddress ? 1 : 2;
   return {
     options: [...options.values()].sort(
       (a, b) => rank(a.address) - rank(b.address) || compareTokens(a, b),
     ),
-    defaultToken: defaultAddress ? options.get(defaultAddress) : undefined,
-    canonicalToken: canonicalAddress ? options.get(canonicalAddress) : undefined,
+    canonicalAddress,
+    layerZeroAddress,
+    defaultCandidates: [
+      getDefaultDestinationOverride(pair, sourceToken.address as Address),
+      sourceToken.counterparts?.[destinationFile.chainId],
+    ],
   };
 }
 
-async function getDestinationOptions({
-  sourceChainId,
-  sourceTokenAddress,
-  destinationChainId,
+type DestinationOptions = {
+  options: DestinationOption[];
+  defaultToken?: DestinationOption;
+  canonicalToken?: DestinationOption;
+};
+
+// The default is the token the user picked, otherwise the pair's override, otherwise the same token
+// as the source, otherwise the canonical, LayerZero or native token. It comes right after the
+// canonical and LayerZero tokens.
+function withDefault(
+  { options, canonicalAddress, layerZeroAddress, defaultCandidates }: ChainOptions,
+  preferredAddress?: string,
+): DestinationOptions {
+  const find = (address: string | undefined) =>
+    address === undefined ? undefined : options.find((option) => option.address === address);
+  const defaultToken = [
+    preferredAddress,
+    ...defaultCandidates,
+    canonicalAddress,
+    layerZeroAddress,
+    NATIVE_TOKEN_ADDRESS,
+  ].reduce<DestinationOption | undefined>((found, address) => found ?? find(address), undefined);
+  const isPinned = (option: DestinationOption) =>
+    option.address === canonicalAddress || option.address === layerZeroAddress;
+  const pinned = options.filter(isPinned);
+  return {
+    options:
+      defaultToken && !isPinned(defaultToken)
+        ? [
+            ...pinned,
+            defaultToken,
+            ...options.filter((option) => !isPinned(option) && option !== defaultToken),
+          ]
+        : options,
+    defaultToken,
+    canonicalToken: find(canonicalAddress),
+  };
+}
+
+export function buildDestinationOptions({
   preferredAddress,
-  allowsImport,
-}: {
-  sourceChainId: number;
-  sourceTokenAddress: string;
-  destinationChainId: number;
+  ...params
+}: Parameters<typeof buildChainOptions>[0] & {
+  // The token the user picked, or its counterpart on this chain.
   preferredAddress?: string;
-  allowsImport: boolean;
-}): Promise<ReturnType<typeof buildDestinationOptions>> {
-  const [sourceFile, destinationFile, pairFile, top, layerZeroMetadata] = await Promise.all([
+}): DestinationOptions {
+  return withDefault(buildChainOptions(params), preferredAddress);
+}
+
+function getPair(index: RegistryIndexFile, sourceChainId: number, destinationChainId: number) {
+  return index.pairs.find(
+    (pair) =>
+      pair.sourceChainId === sourceChainId && pair.destinationChainId === destinationChainId,
+  );
+}
+
+// The files every destination chain of a request reads. A route handler does not share fetches,
+// so each fetch parses its file again.
+type SourceFiles = {
+  sourceFile: RegistryChainFile;
+  top: TopFile;
+  layerZeroMetadata: LayerZeroMetadata | null;
+};
+
+async function getSourceFiles(sourceChainId: number): Promise<SourceFiles> {
+  const [sourceFile, top, layerZeroMetadata] = await Promise.all([
     getChainFile(sourceChainId),
-    getChainFile(destinationChainId),
-    getPairFile(sourceChainId, destinationChainId),
     getTopFile(),
     getLayerZeroMetadata(),
   ]);
+  return { sourceFile, top, layerZeroMetadata };
+}
+
+async function getChainOptions({
+  sourceFiles: { sourceFile, top, layerZeroMetadata },
+  sourceTokenAddress,
+  destinationChainId,
+  hasLifi,
+  allowsImport,
+}: {
+  sourceFiles: SourceFiles;
+  sourceTokenAddress: string;
+  destinationChainId: number;
+  hasLifi: boolean;
+  allowsImport: boolean;
+}): Promise<ChainOptions> {
+  const sourceChainId = sourceFile.chainId;
+  const destinationFile = await getChainFile(destinationChainId);
   const build = (files: { sourceFile: RegistryChainFile; destinationFile: RegistryChainFile }) =>
-    buildDestinationOptions({
-      ...files,
-      pairFile,
-      top,
-      sourceTokenAddress,
-      preferredAddress,
-      layerZeroMetadata,
-    });
+    buildChainOptions({ ...files, hasLifi, top, sourceTokenAddress, layerZeroMetadata });
 
   const result = build({ sourceFile, destinationFile });
   const pair = { sourceChainId, destinationChainId };
@@ -486,16 +542,16 @@ async function getDestinationOptions({
     return result;
   }
 
-  // The files only give LiFi routes, or none, for example for a token that nobody has bridged to
-  // this chain yet. The import reads the chains to find the canonical route, caches the result for
-  // an hour and applies the OFT deposit block.
+  // The files only give LiFi routes, or none, for example for a token that nobody has bridged
+  // to this chain yet. The import reads the chains to find the canonical route, caches the
+  // result for an hour and applies the OFT deposit block.
   const imported = await getCachedImport({
     bridge,
     pair,
     sourceTokenAddress: sourceTokenAddress as Address,
   });
-  // A pasted address of the other chain resolves to another source token, which the user did not
-  // pick.
+  // A pasted address of the other chain resolves to another source token, which the user did
+  // not pick.
   if (imported?.sourceToken.address !== sourceTokenAddress) {
     return result;
   }
@@ -505,52 +561,37 @@ async function getDestinationOptions({
   if (destinationFile.tokens.some((token) => token.address === importedAddress)) {
     return importedResult;
   }
-  const markImported = (option: DestinationOption): DestinationOption =>
-    option.address === importedAddress ? { ...option, isImported: true } : option;
   return {
-    options: importedResult.options.map(markImported),
-    defaultToken: importedResult.defaultToken && markImported(importedResult.defaultToken),
-    canonicalToken: importedResult.canonicalToken && markImported(importedResult.canonicalToken),
+    ...importedResult,
+    options: importedResult.options.map((option) =>
+      option.address === importedAddress ? { ...option, isImported: true } : option,
+    ),
   };
 }
 
-type ChainDestinations = { chainId: number } & ReturnType<typeof buildDestinationOptions>;
+type ChainDestinations = { chainId: number } & ChainOptions;
 
 // The destinations of every chain the source reaches. Imports cost a few RPC calls per chain, so
 // they only run when the files give the token no destination at all.
-async function getAllDestinationOptions({
+async function getAllChainOptions({
   sourceChainId,
   sourceTokenAddress,
-  preferredToken,
 }: {
   sourceChainId: number;
   sourceTokenAddress: string;
-  preferredToken?: { chainId: number; address: string };
 }): Promise<ChainDestinations[]> {
-  const [index, preferredFile] = await Promise.all([
-    getIndexFile(),
-    preferredToken ? getChainFile(preferredToken.chainId) : undefined,
-  ]);
-  const preferredCounterparts =
-    preferredToken &&
-    preferredFile?.tokens.find((token) => token.address === preferredToken.address)?.counterparts;
-  const getPreferredAddress = (chainId: number) =>
-    chainId === preferredToken?.chainId ? preferredToken.address : preferredCounterparts?.[chainId];
-
-  const destinationChainIds = index.pairs
-    .filter((pair) => pair.sourceChainId === sourceChainId)
-    .map((pair) => pair.destinationChainId);
-
+  const [index, sourceFiles] = await Promise.all([getIndexFile(), getSourceFiles(sourceChainId)]);
+  const pairs = index.pairs.filter((pair) => pair.sourceChainId === sourceChainId);
   const getChains = async (allowsImport: boolean) =>
     (
       await Promise.all(
-        destinationChainIds.map(async (destinationChainId) => ({
-          chainId: destinationChainId,
-          ...(await getDestinationOptions({
-            sourceChainId,
+        pairs.map(async (pair) => ({
+          chainId: pair.destinationChainId,
+          ...(await getChainOptions({
+            sourceFiles,
             sourceTokenAddress,
-            destinationChainId,
-            preferredAddress: getPreferredAddress(destinationChainId),
+            destinationChainId: pair.destinationChainId,
+            hasLifi: pair.hasLifi === true,
             allowsImport,
           })),
         })),
@@ -564,33 +605,42 @@ async function getAllDestinationOptions({
 // With a destination token the user picked, each chain defaults to that token, or to its
 // counterpart on the chain, when the source can reach it. The chains with a canonical route come
 // first.
-export async function getDestinationChains(
-  params: Parameters<typeof getAllDestinationOptions>[0],
-): Promise<DestinationChain[]> {
-  return (await getAllDestinationOptions(params))
-    .flatMap(({ chainId, defaultToken, canonicalToken }) =>
-      defaultToken
-        ? [{ chainId, defaultToken, ...(canonicalToken ? { canonicalToken } : {}) }]
-        : [],
-    )
-    .sort((a, b) => Number(Boolean(b.canonicalToken)) - Number(Boolean(a.canonicalToken)));
-}
+export async function getDestinationChains({
+  sourceChainId,
+  sourceTokenAddress,
+  preferredToken,
+}: {
+  sourceChainId: number;
+  sourceTokenAddress: string;
+  preferredToken?: { chainId: number; address: string };
+}): Promise<DestinationChain[]> {
+  const [chains, preferredFile] = await Promise.all([
+    getAllChainOptions({ sourceChainId, sourceTokenAddress }),
+    preferredToken ? getChainFile(preferredToken.chainId) : undefined,
+  ]);
+  const preferredCounterparts =
+    preferredToken &&
+    preferredFile?.tokens.find((token) => token.address === preferredToken.address)?.counterparts;
+  const getPreferredAddress = (chainId: number) =>
+    chainId === preferredToken?.chainId ? preferredToken.address : preferredCounterparts?.[chainId];
 
-function searchOptions(options: DestinationOption[], query: string): DestinationOption[] {
-  const normalizedQuery = query.trim().toLowerCase();
-  return options
-    .flatMap((option) => {
-      const score = getSearchScore(option, normalizedQuery);
-      return score === null ? [] : [{ option, score }];
+  return chains
+    .flatMap((chain) => {
+      const { defaultToken, canonicalToken } = withDefault(
+        chain,
+        getPreferredAddress(chain.chainId),
+      );
+      return defaultToken
+        ? [{ chainId: chain.chainId, defaultToken, ...(canonicalToken ? { canonicalToken } : {}) }]
+        : [];
     })
-    .sort((a, b) => a.score - b.score)
-    .slice(0, SEARCH_LIMIT)
-    .map(({ option }) => option);
+    .sort((a, b) => Number(Boolean(b.canonicalToken)) - Number(Boolean(a.canonicalToken)));
 }
 
 // Without a destination chain, the tokens of every chain the source reaches, up to 1,000 per
 // chain like the source list: the canonical tokens first, then LayerZero's, then the others by
-// volume. A chain's default or the user's pick does not change this order.
+// volume. A chain's default or the user's pick does not change this order. The list is complete
+// when no chain was cut, and the picker then searches it without the server.
 export async function getDestinationTokens({
   sourceChainId,
   sourceTokenAddress,
@@ -601,25 +651,48 @@ export async function getDestinationTokens({
   sourceTokenAddress: string;
   destinationChainId?: number;
   query?: string;
-}): Promise<DestinationOption[]> {
+}): Promise<TokenList<DestinationOption>> {
   let options: DestinationOption[];
+  let isComplete: boolean;
   if (destinationChainId === undefined) {
+    const chains = await getAllChainOptions({ sourceChainId, sourceTokenAddress });
     const rank = (option: DestinationOption) =>
       option.providers.includes('canonical') ? 0 : option.providers.includes('layerzero') ? 1 : 2;
-    options = (await getAllDestinationOptions({ sourceChainId, sourceTokenAddress }))
-      .flatMap((chain) => chain.options.slice(0, DESTINATION_TOKENS_LIMIT))
+    // A search covers every token, past the 1,000 of each chain.
+    options = chains
+      .flatMap((chain) =>
+        query?.trim() ? chain.options : chain.options.slice(0, DESTINATION_TOKENS_LIMIT),
+      )
       .sort((a, b) => rank(a) - rank(b) || compareTokens(a, b));
+    isComplete = chains.every((chain) => chain.options.length <= DESTINATION_TOKENS_LIMIT);
   } else {
-    ({ options } = await getDestinationOptions({
-      sourceChainId,
-      sourceTokenAddress,
-      destinationChainId,
-      allowsImport: true,
-    }));
+    const [index, sourceFiles] = await Promise.all([getIndexFile(), getSourceFiles(sourceChainId)]);
+    const pair = getPair(index, sourceChainId, destinationChainId);
+    if (!pair) {
+      return { tokens: [], isComplete: true };
+    }
+    ({ options } = withDefault(
+      await getChainOptions({
+        sourceFiles,
+        sourceTokenAddress,
+        destinationChainId,
+        hasLifi: pair.hasLifi === true,
+        allowsImport: true,
+      }),
+    ));
+    isComplete = options.length <= DESTINATION_TOKENS_LIMIT;
   }
 
   if (query?.trim()) {
-    return searchOptions(options, query);
+    const matches = searchTokens(options, query);
+    return {
+      tokens: matches.slice(0, SEARCH_LIMIT),
+      isComplete: matches.length <= SEARCH_LIMIT,
+    };
   }
-  return destinationChainId === undefined ? options : options.slice(0, DESTINATION_TOKENS_LIMIT);
+  // Without a destination chain, each chain was already cut at the limit.
+  return {
+    tokens: destinationChainId === undefined ? options : options.slice(0, DESTINATION_TOKENS_LIMIT),
+    isComplete,
+  };
 }
