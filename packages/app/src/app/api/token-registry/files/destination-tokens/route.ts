@@ -9,7 +9,10 @@ export async function GET(request: NextRequest) {
   const tokens = await getDestinationTokens({
     sourceChainId: Number(searchParams.get('sourceChainId')),
     sourceTokenAddress: (searchParams.get('sourceToken') ?? '').toLowerCase(),
-    destinationChainId: Number(searchParams.get('destinationChainId')),
+    // Without one, the tokens of every destination chain.
+    destinationChainId: searchParams.get('destinationChainId')
+      ? Number(searchParams.get('destinationChainId'))
+      : undefined,
     query: searchParams.get('q') ?? undefined,
   });
 
