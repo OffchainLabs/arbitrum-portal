@@ -1,3 +1,10 @@
+import {
+  BaseError,
+  ContractFunctionExecutionError,
+  ContractFunctionRevertedError,
+  HttpRequestError,
+  TimeoutError,
+} from 'viem';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { isExcludedToken } from '../constants';
@@ -189,5 +196,41 @@ describe('resolveImport (withdrawal)', () => {
         destinationToken: resolution?.destinationToken,
       },
     ]);
+  });
+});
+
+describe('resolveImport (failed requests)', () => {
+  // viem wraps every readContract error in a ContractFunctionExecutionError.
+  function contractError(cause: BaseError) {
+    return new ContractFunctionExecutionError(cause, {
+      abi: [],
+      functionName: 'symbol',
+    });
+  }
+
+  it('throws when the RPC rejects the request, so the import is not cached', async () => {
+    readContract.mockRejectedValue(
+      contractError(new HttpRequestError({ url: 'http://ethereum.test', status: 403 })),
+    );
+
+    await expect(importToken(depositPair, PARENT)).rejects.toThrow(ContractFunctionExecutionError);
+  });
+
+  it('throws when the RPC times out', async () => {
+    readContract.mockRejectedValue(
+      contractError(new TimeoutError({ body: {}, url: 'http://ethereum.test' })),
+    );
+
+    await expect(importToken(withdrawalPair, CHILD)).rejects.toThrow(
+      ContractFunctionExecutionError,
+    );
+  });
+
+  it('returns null when the contract reverts', async () => {
+    readContract.mockRejectedValue(
+      contractError(new ContractFunctionRevertedError({ abi: [], functionName: 'symbol' })),
+    );
+
+    expect(await importToken(depositPair, PARENT)).toBeNull();
   });
 });

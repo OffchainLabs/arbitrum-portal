@@ -1,4 +1,4 @@
-import { createPublicClient, http } from 'viem';
+import { PublicClient, createPublicClient, http } from 'viem';
 
 import { PORTAL_DOMAIN } from '@/bridge/constants';
 import { initializeBridgeNetworks, rpcURLs } from '@/bridge/util/networks';
@@ -14,7 +14,14 @@ function getRequestOrigin(): string | undefined {
   return process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined;
 }
 
-export function getPublicClient(chainId: number) {
+const clients = new Map<number, PublicClient>();
+
+export function getPublicClient(chainId: number): PublicClient {
+  const existing = clients.get(chainId);
+  if (existing) {
+    return existing;
+  }
+
   // Registers the Orbit chains' RPC URLs.
   initializeBridgeNetworks();
   const url = rpcURLs[chainId];
@@ -22,7 +29,14 @@ export function getPublicClient(chainId: number) {
     throw new Error(`No RPC URL configured for chain ${chainId}`);
   }
   const origin = getRequestOrigin();
-  return createPublicClient({
-    transport: http(url, origin ? { fetchOptions: { headers: { Origin: origin } } } : undefined),
+  const client = createPublicClient({
+    // An import reads a chain several times at once. A JSON-RPC batch sends those reads in one
+    // HTTP request, and each read still gets its own result or error.
+    transport: http(url, {
+      batch: true,
+      ...(origin ? { fetchOptions: { headers: { Origin: origin } } } : {}),
+    }),
   });
+  clients.set(chainId, client);
+  return client;
 }
