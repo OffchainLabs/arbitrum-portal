@@ -62,6 +62,11 @@ export type DestinationOption = TopToken & { providers: ProviderId[] };
 // that matches, so the picker can search it without the server.
 export type TokenList<T extends TopToken = TopToken> = { tokens: T[]; isComplete: boolean };
 
+// What the balances endpoint returns: the tokens the wallet holds, with the balance in the token's
+// smallest unit. failedChainIds lists the chains whose RPC call failed.
+export type HeldToken = TopToken & { balance: string };
+export type HeldTokens = { tokens: HeldToken[]; failedChainIds: number[] };
+
 export type DestinationChain = {
   chainId: number;
   // The same token as the source when the source can reach it, otherwise the canonical token,

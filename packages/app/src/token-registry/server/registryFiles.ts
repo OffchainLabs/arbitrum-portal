@@ -14,6 +14,8 @@ import {
 import {
   DestinationChain,
   DestinationOption,
+  HeldToken,
+  HeldTokens,
   RegistryChainFile,
   RegistryFileToken,
   RegistryIndexFile,
@@ -33,6 +35,7 @@ import {
   Token,
   pairKey,
 } from '../types';
+import { readBalances } from './balanceReader';
 import { getCanonicalBridge, isCanonicalTransferAllowed } from './canonicalBridge';
 import { getCachedImport } from './generate';
 import {
@@ -141,6 +144,50 @@ export function searchChainFiles({
     .sort((a, b) => a.score - b.score || compareTokens(a.token, b.token))
     .slice(0, limit)
     .map(({ token }) => token);
+}
+
+// The tokens of the chain file with a balance, in the order of the file.
+export function toHeldTokens({
+  chainFile,
+  balances,
+  top,
+}: {
+  chainFile: RegistryChainFile;
+  balances: readonly bigint[];
+  top: TopFile;
+}): HeldToken[] {
+  const volumes = getVolumes(top);
+  return chainFile.tokens.flatMap((token, index) => {
+    const balance = balances[index];
+    return balance === undefined || balance === 0n
+      ? []
+      : [{ ...toTopToken(chainFile.chainId, token, volumes), balance: balance.toString() }];
+  });
+}
+
+// One eth_call per chain reads the balance of every token in its file, top 1,000 or not.
+export async function getHeldTokens(account: Address): Promise<HeldTokens> {
+  const [index, top] = await Promise.all([getIndexFile(), getTopFile()]);
+  const results = await Promise.all(
+    index.chains.map(async ({ chainId }) => {
+      try {
+        const chainFile = await getChainFile(chainId);
+        const balances = await readBalances({
+          chainId,
+          account,
+          tokens: chainFile.tokens.map((token) => token.address as Address),
+        });
+        return { chainId, tokens: toHeldTokens({ chainFile, balances, top }) };
+      } catch {
+        // An RPC that fails or refuses the state override hides that chain's balances only.
+        return { chainId, tokens: null };
+      }
+    }),
+  );
+
+  const tokens = results.flatMap((result) => result.tokens ?? []);
+  const failedChainIds = results.flatMap((result) => (result.tokens ? [] : [result.chainId]));
+  return { tokens: tokens.sort(compareTokens), failedChainIds };
 }
 
 export async function searchRegistryTokens({
