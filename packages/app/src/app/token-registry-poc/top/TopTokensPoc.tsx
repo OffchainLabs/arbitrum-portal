@@ -1,14 +1,19 @@
 'use client';
 
+import { useAppKit } from '@reown/appkit/react';
 import { useDebounce } from '@uidotdev/usehooks';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import useSWR from 'swr';
 import { twMerge } from 'tailwind-merge';
+import { formatUnits } from 'viem';
+import { useAccount } from 'wagmi';
 
 import {
   DestinationChain,
   DestinationOption,
+  HeldTokens,
   TOKEN_REGISTRY_URL,
   TokenList,
   TopFile,
@@ -16,7 +21,7 @@ import {
   searchTokens,
 } from '@/app/src/token-registry/registryFiles';
 import { NATIVE_TOKEN_ADDRESS, ProviderId } from '@/app/src/token-registry/types';
-import { formatCompactUsd } from '@/bridge/util/NumberUtils';
+import { formatAmount, formatCompactUsd } from '@/bridge/util/NumberUtils';
 import { getBridgeUiConfigForChain } from '@/bridge/util/bridgeUiConfig';
 
 const ROW_HEIGHT = 56;
@@ -173,11 +178,13 @@ function UnverifiedBadge() {
 
 function TokenRow({
   token,
+  balance,
   isSelected,
   showChain,
   onSelect,
 }: {
   token: PickerToken;
+  balance?: string;
   isSelected: boolean;
   showChain: boolean;
   onSelect: (token: PickerToken) => void;
@@ -206,6 +213,11 @@ function TokenRow({
         <span className="block truncate text-xs text-white/50">{token.name}</span>
       </span>
       <span className="text-right text-xs text-white/40">
+        {balance !== undefined && (
+          <span className="block font-semibold text-white">
+            {formatAmount(Number(formatUnits(BigInt(balance), token.decimals)))}
+          </span>
+        )}
         <span className="block">
           {token.volumeUSD24H === undefined ? '—' : formatCompactUsd(token.volumeUSD24H)}
         </span>
@@ -261,6 +273,7 @@ function TokenPicker({
   allowAllChains,
   initialChainId,
   selectedToken,
+  balances,
   getChainTokens,
   getListKey,
   getSearchKey,
@@ -272,6 +285,8 @@ function TokenPicker({
   allowAllChains: boolean;
   initialChainId: number | null;
   selectedToken: TopToken | null;
+  // The wallet's balances by token key.
+  balances: Map<string, string>;
   getChainTokens?: (chainId: number | null) => PickerToken[] | undefined;
   getListKey?: (chainId: number | null) => SwrKey | null;
   getSearchKey: (chainId: number | null, query: string) => SwrKey | null;
@@ -320,6 +335,7 @@ function TokenPicker({
       <div key={key} style={style}>
         <TokenRow
           token={token}
+          balance={balances.get(getTokenKey(token))}
           isSelected={selectedToken !== null && getTokenKey(selectedToken) === getTokenKey(token)}
           showChain={chainId === null}
           onSelect={onSelect}
@@ -490,7 +506,39 @@ function getDestinationTokensKey({
   ];
 }
 
+function WalletButton() {
+  const { address } = useAccount();
+  const { open } = useAppKit();
+
+  return (
+    <button
+      onClick={() =>
+        void open(address ? { view: 'Account' } : { view: 'Connect', namespace: 'eip155' })
+      }
+      className="shrink-0 rounded-md border border-white/20 px-3 py-1.5 text-sm hover:bg-white/10"
+    >
+      {address ? truncateAddress(address) : 'Connect wallet'}
+    </button>
+  );
+}
+
+// The wallet setup reads localStorage, so the page renders in the browser only, like the app
+// shell.
+const WalletProviders = dynamic(
+  () => import('./WalletProviders').then((mod) => mod.WalletProviders),
+  { ssr: false },
+);
+
 export function TopTokensPoc() {
+  return (
+    <WalletProviders>
+      <TopTokensPocContent />
+    </WalletProviders>
+  );
+}
+
+function TopTokensPocContent() {
+  const { address } = useAccount();
   const [sourceToken, setSourceToken] = useState<TopToken | null>(null);
   const [destinationChainId, setDestinationChainId] = useState<number | null>(null);
   // Set when the user picks a destination token. Each chain then defaults to that token, or to its
@@ -540,9 +588,32 @@ export function TopTokensPoc() {
     chain.canonicalToken ? [chain.canonicalToken] : [],
   );
 
+  // Per wallet and never cached by the server, unlike the token lists.
+  const { data: heldTokens, error: heldTokensError } = useSWR(
+    address
+      ? ([
+          `/api/token-registry/files/balances?${new URLSearchParams({ address })}`,
+          'token-registry-balances',
+        ] as SwrKey)
+      : null,
+    fetchJson<HeldTokens>,
+    AGGRESSIVE_CACHE_OPTIONS,
+  );
+  const balances = new Map(
+    (heldTokens?.tokens ?? []).map((token) => [getTokenKey(token), token.balance]),
+  );
+
   const topTokens = data?.file.tokens ?? [];
+  // The held tokens first, including those outside the top 1,000, then the other top tokens.
+  function getSourceTokens(chainId: number | null): PickerToken[] {
+    const isOnChain = (token: TopToken) => chainId === null || token.chainId === chainId;
+    return [
+      ...(heldTokens?.tokens ?? []).filter(isOnChain),
+      ...topTokens.filter((token) => isOnChain(token) && !balances.has(getTokenKey(token))),
+    ];
+  }
   const tokenCountByChainId = new Map<number, number>();
-  for (const token of topTokens) {
+  for (const token of getSourceTokens(null)) {
     tokenCountByChainId.set(token.chainId, (tokenCountByChainId.get(token.chainId) ?? 0) + 1);
   }
 
@@ -580,11 +651,28 @@ export function TopTokensPoc() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="text-2xl font-semibold">Token Registry PoC: top tokens</h1>
+      <div className="flex items-start justify-between gap-4">
+        <h1 className="text-2xl font-semibold">Token Registry PoC: top tokens</h1>
+        <WalletButton />
+      </div>
       <p className="mt-2 text-sm text-white/60">
         One request for the picker&apos;s tokens on every chain, from {TOKEN_REGISTRY_URL}/top.json.
-        Searches and destinations go through the backend, which reads every token.
+        Searches and destinations go through the backend, which reads every token. A connected
+        wallet&apos;s balances come from a separate request, so the token lists stay cached for
+        every user.
       </p>
+      {address && (
+        <p className="mt-2 text-sm text-white/60">
+          {heldTokensError
+            ? `Failed to load the balances: ${String(heldTokensError)}`
+            : !heldTokens
+              ? 'Loading balances…'
+              : `${heldTokens.tokens.length} tokens with a balance` +
+                (heldTokens.failedChainIds.length > 0
+                  ? `. No balances from ${heldTokens.failedChainIds.map(getChainName).join(', ')}`
+                  : '')}
+        </p>
+      )}
 
       {error && <p className="mt-6 text-red-400">Failed to load top.json: {String(error)}</p>}
       {!data && !error && <p className="mt-6 text-sm text-white/50">Loading top tokens…</p>}
@@ -631,11 +719,8 @@ export function TopTokensPoc() {
               allowAllChains
               initialChainId={sourceToken?.chainId ?? null}
               selectedToken={sourceToken}
-              getChainTokens={(chainId) =>
-                chainId === null
-                  ? topTokens
-                  : topTokens.filter((token) => token.chainId === chainId)
-              }
+              balances={balances}
+              getChainTokens={getSourceTokens}
               getSearchKey={getSourceSearchKey}
               onSelect={handleSelectSource}
               onClose={() => setOpenPicker(null)}
@@ -691,6 +776,7 @@ export function TopTokensPoc() {
                   allowAllChains
                   initialChainId={destinationPickerChainId}
                   selectedToken={displayedDestinationToken ?? null}
+                  balances={balances}
                   getChainTokens={(chainId) =>
                     chainId === null ? allChainsCanonicalTokens : undefined
                   }
