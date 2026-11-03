@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { RegistryChainFile, RegistryPairFile, TopFile } from '../registryFiles';
+import { RegistryChainFile, TopFile } from '../registryFiles';
 import {
   buildDestinationOptions,
   searchChainFiles,
@@ -78,13 +78,34 @@ const top: TopFile = {
   ],
 };
 
-const deposit: RegistryPairFile = {
-  sourceChainId: 1,
-  destinationChainId: 42161,
-  lifi: {
-    fromTokens: [NATIVE_TOKEN_ADDRESS, USDC_ETHEREUM],
-    toTokens: [NATIVE_TOKEN_ADDRESS, USDC_ARBITRUM, WBTC_ARBITRUM],
-  },
+type LifiTokens = { fromTokens: string[]; toTokens: string[] };
+
+// The files flag the tokens LiFi routes, and the index the pairs it connects.
+function withLifi({
+  sourceFile,
+  destinationFile,
+  lifi,
+}: {
+  sourceFile: RegistryChainFile;
+  destinationFile: RegistryChainFile;
+  lifi?: LifiTokens;
+}) {
+  const flag = (file: RegistryChainFile, addresses: string[]): RegistryChainFile => ({
+    ...file,
+    tokens: file.tokens.map((token) =>
+      addresses.includes(token.address) ? { ...token, isLifi: true } : token,
+    ),
+  });
+  return {
+    sourceFile: flag(sourceFile, lifi?.fromTokens ?? []),
+    destinationFile: flag(destinationFile, lifi?.toTokens ?? []),
+    hasLifi: lifi !== undefined,
+  };
+}
+
+const depositLifi: LifiTokens = {
+  fromTokens: [NATIVE_TOKEN_ADDRESS, USDC_ETHEREUM],
+  toTokens: [NATIVE_TOKEN_ADDRESS, USDC_ARBITRUM, WBTC_ARBITRUM],
 };
 
 const keys = (tokens: { chainId: number; address: string }[]) =>
@@ -125,9 +146,7 @@ describe('searchChainFiles', () => {
 describe('buildDestinationOptions', () => {
   it('puts the canonical token first, then the same token, then LiFi tokens by volume', () => {
     const { options, defaultToken, canonicalToken } = buildDestinationOptions({
-      sourceFile: ethereum,
-      destinationFile: arbitrumOne,
-      pairFile: deposit,
+      ...withLifi({ sourceFile: ethereum, destinationFile: arbitrumOne, lifi: depositLifi }),
       top,
       sourceTokenAddress: USDC_ETHEREUM,
       layerZeroMetadata: null,
@@ -142,13 +161,25 @@ describe('buildDestinationOptions', () => {
     expect(canonicalToken?.address).toBe(USDC_E_ARBITRUM);
   });
 
+  it('ignores the LiFi flags on a pair that LiFi does not connect', () => {
+    const { options } = buildDestinationOptions({
+      ...withLifi({ sourceFile: ethereum, destinationFile: arbitrumOne, lifi: depositLifi }),
+      hasLifi: false,
+      top,
+      sourceTokenAddress: USDC_ETHEREUM,
+      layerZeroMetadata: null,
+    });
+    expect(options.map((option) => [option.address, option.providers])).toEqual([
+      [USDC_E_ARBITRUM, ['canonical']],
+    ]);
+  });
+
   it('withdraws to the parent token and sends Ether to Ether', () => {
-    const withdrawal: RegistryPairFile = { sourceChainId: 42161, destinationChainId: 1 };
     const build = (sourceTokenAddress: string) =>
       buildDestinationOptions({
         sourceFile: arbitrumOne,
         destinationFile: ethereum,
-        pairFile: withdrawal,
+        hasLifi: false,
         top,
         sourceTokenAddress,
         layerZeroMetadata: null,
@@ -195,17 +226,11 @@ describe('buildDestinationOptions policy', () => {
   }: {
     sourceFile: RegistryChainFile;
     destinationFile: RegistryChainFile;
-    lifi?: RegistryPairFile['lifi'];
+    lifi?: LifiTokens;
     sourceTokenAddress: string;
   }) =>
     buildDestinationOptions({
-      sourceFile,
-      destinationFile,
-      pairFile: {
-        sourceChainId: sourceFile.chainId,
-        destinationChainId: destinationFile.chainId,
-        lifi,
-      },
+      ...withLifi({ sourceFile, destinationFile, lifi }),
       top,
       sourceTokenAddress,
       layerZeroMetadata: null,
@@ -281,16 +306,14 @@ describe('buildDestinationOptions policy', () => {
 
   it('defaults to the picked token over the override', () => {
     const { defaultToken } = buildDestinationOptions({
-      sourceFile: ethereumTokens,
-      destinationFile: chainFile(42161, 1, [
-        token(PYUSD_CANONICAL_ARBITRUM, 'PYUSD', PYUSD_ETHEREUM),
-        token(PYUSD_ARBITRUM, 'PYUSD'),
-      ]),
-      pairFile: {
-        sourceChainId: 1,
-        destinationChainId: 42161,
+      ...withLifi({
+        sourceFile: ethereumTokens,
+        destinationFile: chainFile(42161, 1, [
+          token(PYUSD_CANONICAL_ARBITRUM, 'PYUSD', PYUSD_ETHEREUM),
+          token(PYUSD_ARBITRUM, 'PYUSD'),
+        ]),
         lifi: { fromTokens: [PYUSD_ETHEREUM], toTokens: [PYUSD_ARBITRUM] },
-      },
+      }),
       top,
       sourceTokenAddress: PYUSD_ETHEREUM,
       preferredAddress: PYUSD_CANONICAL_ARBITRUM,
@@ -301,13 +324,11 @@ describe('buildDestinationOptions policy', () => {
 
   it('ignores a picked token that the source cannot reach', () => {
     const { defaultToken } = buildDestinationOptions({
-      sourceFile: ethereumTokens,
-      destinationFile: chainFile(42161, 1, [token(PYUSD_ARBITRUM, 'PYUSD')]),
-      pairFile: {
-        sourceChainId: 1,
-        destinationChainId: 42161,
+      ...withLifi({
+        sourceFile: ethereumTokens,
+        destinationFile: chainFile(42161, 1, [token(PYUSD_ARBITRUM, 'PYUSD')]),
         lifi: { fromTokens: [PYUSD_ETHEREUM], toTokens: [PYUSD_ARBITRUM] },
-      },
+      }),
       top,
       sourceTokenAddress: PYUSD_ETHEREUM,
       preferredAddress: USDT0_ARBITRUM,
@@ -361,7 +382,7 @@ describe('withImportedTokens', () => {
     });
     const { options, defaultToken } = buildDestinationOptions({
       ...files,
-      pairFile: { sourceChainId: 1, destinationChainId: 42161 },
+      hasLifi: false,
       top,
       sourceTokenAddress: IMPORTED_ETHEREUM,
       layerZeroMetadata: null,
