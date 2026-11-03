@@ -10,6 +10,7 @@ import {
   ChainIds,
   chainNames,
   isSupportedPair,
+  pinnedTokenAddresses,
   supportedPairs,
 } from '@/app/src/token-registry/constants';
 import {
@@ -18,6 +19,7 @@ import {
   NATIVE_TOKEN_ADDRESS,
   PickerTokens,
   ProviderId,
+  RouteOption,
   SelectedTokenAvailability,
   Token,
   TokenId,
@@ -79,18 +81,6 @@ function getSelectionUrl({
   }?sourceToken=${encodeURIComponent(sourceTokenAddress)}${destinationTokenQuery}`;
 }
 
-function getDestinationTokensUrl({
-  pair,
-  sourceTokenAddress,
-}: {
-  pair: ChainPair;
-  sourceTokenAddress: Address;
-}): string {
-  return `/api/token-registry/destination-tokens/${pair.sourceChainId}/${
-    pair.destinationChainId
-  }?sourceToken=${encodeURIComponent(sourceTokenAddress)}`;
-}
-
 function truncateAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
@@ -105,6 +95,41 @@ function filterTokenList(tokens: Token[], search?: string): Token[] {
     return tokens;
   }
   return tokens.filter((token) => getTokenSearchText(token).includes(term));
+}
+
+// The source token's routes deliver their own destination tokens, and a LiFi route adds the pair's
+// swap list, which comes pinned and sorted. Only the route tokens that list lacks need placing, so
+// most picks reuse the list as it is.
+function getDestinationTokenOptions({
+  chainId,
+  routes,
+  swapTokens,
+}: {
+  chainId: number;
+  routes: RouteOption[];
+  swapTokens?: PickerTokens;
+}): Token[] {
+  const listedTokens = swapTokens ? [...swapTokens.pinnedTokens, ...swapTokens.tokens] : [];
+  const listedTokenIds = new Set(listedTokens.map((token) => token.id));
+  const missingTokens = new Map<TokenId, Token>();
+  for (const { destinationToken } of routes) {
+    if (destinationToken && !listedTokenIds.has(destinationToken.id)) {
+      missingTokens.set(destinationToken.id, destinationToken);
+    }
+  }
+  if (missingTokens.size === 0) {
+    return listedTokens;
+  }
+
+  // Pinned tokens first, in pin order, then by symbol, as the server orders its lists.
+  const pinnedAddresses = pinnedTokenAddresses[chainId] ?? [];
+  const rank = (token: Token) => {
+    const index = pinnedAddresses.indexOf(token.address);
+    return index === -1 ? pinnedAddresses.length : index;
+  };
+  return [...listedTokens, ...missingTokens.values()].sort(
+    (a, b) => rank(a) - rank(b) || a.symbol.localeCompare(b.symbol),
+  );
 }
 
 function parseAddress(value: string | null): Address | null {
@@ -379,32 +404,39 @@ export function TokenRegistryPoc() {
     (route) => route.provider === 'lifi',
   );
 
-  const { data: destinationTokenOptionsFromServer, error: destinationTokensError } = useSWR(
-    !isDestinationPickerOpen || !selectedToken
-      ? null
-      : [
-          pair.sourceChainId,
-          pair.destinationChainId,
-          selectedToken.address,
-          'token-registry-destination-tokens',
-        ],
-    ([sourceChainId, destinationChainId, sourceTokenAddress]) =>
+  const selectedHasSwapRoute =
+    selection?.availableRoutes.some((route) => route.provider === 'lifi') ?? false;
+  const { data: swapDestinationTokens, error: swapDestinationTokensError } = useSWR(
+    isDestinationPickerOpen && selectedHasSwapRoute
+      ? [pair.sourceChainId, pair.destinationChainId, 'token-registry-swap-destination-tokens']
+      : null,
+    ([sourceChainId, destinationChainId]) =>
       fetchJson<PickerTokens>(
-        getDestinationTokensUrl({
-          pair: { sourceChainId, destinationChainId },
-          sourceTokenAddress: sourceTokenAddress as Address,
-        }),
+        `/api/token-registry/swap-destination-tokens/${sourceChainId}/${destinationChainId}`,
       ),
     AGGRESSIVE_CACHE_OPTIONS,
   );
 
-  const destinationTokenOptions = destinationTokenOptionsFromServer
-    ? [
-        ...destinationTokenOptionsFromServer.pinnedTokens,
-        ...destinationTokenOptionsFromServer.tokens,
-      ]
-    : [];
-  const destinationTokens = filterTokenList(destinationTokenOptions, destinationSearch);
+  // The swap list holds thousands of tokens, so the merge runs once per selection, not on every
+  // search keystroke.
+  const destinationTokenOptions = useMemo(
+    () =>
+      isDestinationPickerOpen && selection && (!selectedHasSwapRoute || swapDestinationTokens)
+        ? getDestinationTokenOptions({
+            chainId: pair.destinationChainId,
+            routes: selection.availableRoutes,
+            swapTokens: selectedHasSwapRoute ? swapDestinationTokens : undefined,
+          })
+        : null,
+    [
+      isDestinationPickerOpen,
+      pair.destinationChainId,
+      selectedHasSwapRoute,
+      selection,
+      swapDestinationTokens,
+    ],
+  );
+  const destinationTokens = filterTokenList(destinationTokenOptions ?? [], destinationSearch);
 
   const replaceSelectionUrl = useCallback(
     ({
@@ -466,10 +498,10 @@ export function TokenRegistryPoc() {
   const error =
     (selection ? undefined : selectionError) ??
     (isSourcePickerOpen ? sourceTokensError : undefined) ??
-    (isDestinationPickerOpen ? destinationTokensError : undefined);
+    (isDestinationPickerOpen ? swapDestinationTokensError : undefined);
   const isSourcePickerLoading = isSourcePickerOpen && !sourceTokensError && !sourceTokensFromServer;
   const isDestinationPickerLoading =
-    isDestinationPickerOpen && !destinationTokensError && !destinationTokenOptionsFromServer;
+    isDestinationPickerOpen && !swapDestinationTokensError && !destinationTokenOptions;
 
   function flipDirection() {
     const nextPair = {
@@ -757,7 +789,7 @@ export function TokenRegistryPoc() {
                   <p className="text-sm text-white/50">Loading destination tokens…</p>
                 )}
 
-                {!isDestinationPickerLoading && destinationTokenOptionsFromServer && (
+                {!isDestinationPickerLoading && destinationTokenOptions && (
                   <>
                     <h2 className="text-sm font-semibold uppercase tracking-wide text-white/60">
                       {destinationTokenOptions.length} destination token

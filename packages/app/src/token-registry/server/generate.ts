@@ -1,4 +1,5 @@
 import { unstable_cache } from 'next/cache';
+import { isAddress } from 'viem';
 
 import {
   batchDepositExcludedSourceTokens,
@@ -383,6 +384,34 @@ function cached<T>(key: string, build: () => Promise<T>): Promise<T> {
   )();
 }
 
+// Each unstable_cache call reads the data cache, over the network on Vercel, and parses the entry.
+// A warm instance keeps what it builds from the entries for a few minutes instead. A deploy starts
+// with an empty cache.
+const MEMORY_CACHE_MS = 5 * 60 * 1_000;
+
+const memoryCache = new Map<string, { expiresAt: number; value: Promise<unknown> }>();
+
+function inMemory<T>(key: string, build: () => Promise<T>): Promise<T> {
+  const hit = memoryCache.get(key);
+  if (hit && hit.expiresAt > Date.now()) {
+    return hit.value as Promise<T>;
+  }
+
+  const value = build();
+  memoryCache.set(key, { expiresAt: Date.now() + MEMORY_CACHE_MS, value });
+  // A failed build is dropped, so the next request retries it.
+  value.catch(() => {
+    if (memoryCache.get(key)?.value === value) {
+      memoryCache.delete(key);
+    }
+  });
+  return value;
+}
+
+export function clearMemoryCache(): void {
+  memoryCache.clear();
+}
+
 function getCanonicalBridgesForChain(chainId: number): CanonicalBridge[] {
   const byChildChainId = new Map<number, CanonicalBridge>();
   for (const pair of supportedPairs) {
@@ -647,9 +676,13 @@ function withCanonicalPolicy(pair: ChainPair, providers: ProviderRoutes[]): Prov
   });
 }
 
+function getPairRegistry(pair: ChainPair): Promise<PairRegistry> {
+  return inMemory(`pair-registry-${pairKey(pair)}`, () => buildPairRegistry(pair));
+}
+
 // The entries expire separately, so a route can name a token that its chain entry does not
 // have yet. materializeRoutes skips those routes.
-async function getPairRegistry(pair: ChainPair): Promise<PairRegistry> {
+async function buildPairRegistry(pair: ChainPair): Promise<PairRegistry> {
   const sourceChainTokens = getCachedChainTokens(pair.sourceChainId);
   const destinationChainTokens = getCachedChainTokens(pair.destinationChainId);
   const [routes, sourceTokenEntries, destinationTokenEntries] = await Promise.all([
@@ -1045,10 +1078,19 @@ export function getCachedImport({
   return cached(
     `token-registry-import-${pairKey(pair)}-${sourceTokenAddress}-v${REGISTRY_CACHE_VERSION}`,
     async () => {
-      // The OFT check's LayerZero metadata does not depend on the import, so it loads meanwhile.
+      const isDeposit = isCanonicalDeposit(pair, bridge);
+      // A deposit's OFT check reads the parent token, which is the source token unless the user
+      // pasted its child address. Its oftVersion() read goes out with the import's reads, and the
+      // LayerZero metadata loads meanwhile.
+      const pendingOftCheck =
+        isDeposit && isAddress(sourceTokenAddress)
+          ? findOftTokens({ chainId: pair.sourceChainId, addresses: [sourceTokenAddress] })
+          : undefined;
+      // Nothing awaits the read when the import fails or resolves another parent token.
+      pendingOftCheck?.catch(() => {});
       const [imported, layerZeroMetadata] = await Promise.all([
         resolveImport({ bridge, pair, rawAddress: sourceTokenAddress }),
-        isCanonicalDeposit(pair, bridge) ? getLayerZeroMetadata() : Promise.resolve(null),
+        isDeposit ? getLayerZeroMetadata() : Promise.resolve(null),
       ]);
       const isBlocked =
         imported &&
@@ -1059,6 +1101,8 @@ export function getCachedImport({
           childChainId: pair.destinationChainId,
           parentTokenAddress: imported.sourceToken.address,
           childTokenAddress: imported.destinationToken.address,
+          pendingOftCheck:
+            imported.sourceToken.address === sourceTokenAddress ? pendingOftCheck : undefined,
         }));
       return isBlocked ? null : imported;
     },
@@ -1200,8 +1244,29 @@ export function getSourceTokens(pair: ChainPair): Promise<PickerTokens | null> {
   if (!isSupportedPair(pair)) {
     return Promise.resolve(null);
   }
-  return getPairRegistry(pair).then((registry) =>
-    toPickerTokens(pair.sourceChainId, getTransferableSourceTokens(registry, pair)),
+  // The list only depends on the pair, and building it checks every source token's routes.
+  return inMemory(`source-tokens-${pairKey(pair)}`, () =>
+    getPairRegistry(pair).then((registry) =>
+      toPickerTokens(pair.sourceChainId, getTransferableSourceTokens(registry, pair)),
+    ),
+  );
+}
+
+// LiFi swaps into the same destination tokens from every source token with a LiFi route, so the
+// pair sends this list once. A source token adds the tokens its routes deliver.
+export function getSwapDestinationTokens(pair: ChainPair): Promise<PickerTokens | null> {
+  if (!isSupportedPair(pair)) {
+    return Promise.resolve(null);
+  }
+  return inMemory(`swap-destination-tokens-${pairKey(pair)}`, () =>
+    getPairRegistry(pair).then((registry) => {
+      const tokens = new Map(registry.lifiDestinationTokens);
+      const nativeToken = registry.destinationTokensByAddress[NATIVE_TOKEN_ADDRESS];
+      if (nativeToken) {
+        tokens.set(nativeToken.id, nativeToken);
+      }
+      return toPickerTokens(pair.destinationChainId, [...tokens.values()]);
+    }),
   );
 }
 
