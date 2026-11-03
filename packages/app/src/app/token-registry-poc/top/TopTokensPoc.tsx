@@ -255,7 +255,8 @@ function ChainButton({
 }
 
 // Like Jumper's picker: pick a token on any chain, or a chain first, then a token on it. The
-// tokens of a chain come from `getChainTokens`, or from the backend at `getListKey`. A search goes
+// tokens of a chain come from the backend at `getListKey`, or from `getChainTokens`, which also
+// fills the list until the backend answers. A search goes
 // to the backend at `getSearchKey`, which covers every token and not only the listed ones.
 function TokenPicker({
   title,
@@ -300,7 +301,7 @@ function TokenPicker({
   );
 
   // Until the backend answers, the picker filters the tokens it already has.
-  const chainTokens = getChainTokens?.(chainId) ?? listedTokens ?? [];
+  const chainTokens = listedTokens ?? getChainTokens?.(chainId) ?? [];
   const isTyping = search !== debouncedSearch;
   const tokens =
     searchKey && !isTyping && searchedTokens ? searchedTokens : filterTokens(chainTokens, search);
@@ -472,14 +473,12 @@ function getDestinationTokensKey({
   sourceToken: TopToken;
   destinationChainId: number | null;
   query?: string;
-}): SwrKey | null {
-  if (destinationChainId === null) {
-    return null;
-  }
+}): SwrKey {
+  // Without a destination chain, the tokens of every chain the source reaches.
   const params = new URLSearchParams({
     sourceChainId: String(sourceToken.chainId),
     sourceToken: sourceToken.address,
-    destinationChainId: String(destinationChainId),
+    ...(destinationChainId === null ? {} : { destinationChainId: String(destinationChainId) }),
   });
   if (query) {
     params.set('q', query);
@@ -535,14 +534,10 @@ export function TopTokensPoc() {
     sourceToken && destinationChainsResponse?.sourceKey === getTokenKey(sourceToken)
       ? destinationChainsResponse.chains
       : undefined;
-  // The picker's all-chains view: the canonical token of every chain first, then each chain's
-  // default when it is another token.
-  const allChainsDestinationTokens = destinationChains && [
-    ...destinationChains.flatMap((chain) => (chain.canonicalToken ? [chain.canonicalToken] : [])),
-    ...destinationChains.flatMap((chain) =>
-      chain.defaultToken.address === chain.canonicalToken?.address ? [] : [chain.defaultToken],
-    ),
-  ];
+  // Fills the picker's all-chains view with the canonical tokens until the full list loads.
+  const allChainsCanonicalTokens = destinationChains?.flatMap((chain) =>
+    chain.canonicalToken ? [chain.canonicalToken] : [],
+  );
 
   const topTokens = data?.file.tokens ?? [];
   const tokenCountByChainId = new Map<number, number>();
@@ -696,7 +691,7 @@ export function TopTokensPoc() {
                   initialChainId={destinationPickerChainId}
                   selectedToken={displayedDestinationToken ?? null}
                   getChainTokens={(chainId) =>
-                    chainId === null ? allChainsDestinationTokens : undefined
+                    chainId === null ? allChainsCanonicalTokens : undefined
                   }
                   getListKey={(chainId) =>
                     getDestinationTokensKey({ sourceToken, destinationChainId: chainId })
