@@ -449,91 +449,76 @@ async function getDestinationOptions({
   sourceTokenAddress,
   destinationChainId,
   preferredAddress,
-  importsListedTokens,
+  allowsImport,
 }: {
   sourceChainId: number;
   sourceTokenAddress: string;
   destinationChainId: number;
   preferredAddress?: string;
-  // An import costs a few RPC calls per chain. False only imports tokens that no file has.
-  importsListedTokens: boolean;
+  allowsImport: boolean;
 }): Promise<ReturnType<typeof buildDestinationOptions>> {
-  const [registrySourceFile, registryDestinationFile, pairFile, top, layerZeroMetadata] =
-    await Promise.all([
-      getChainFile(sourceChainId),
-      getChainFile(destinationChainId),
-      getPairFile(sourceChainId, destinationChainId),
-      getTopFile(),
-      getLayerZeroMetadata(),
-    ]);
-  let files = { sourceFile: registrySourceFile, destinationFile: registryDestinationFile };
-  let importedAddress: string | undefined;
+  const [sourceFile, destinationFile, pairFile, top, layerZeroMetadata] = await Promise.all([
+    getChainFile(sourceChainId),
+    getChainFile(destinationChainId),
+    getPairFile(sourceChainId, destinationChainId),
+    getTopFile(),
+    getLayerZeroMetadata(),
+  ]);
+  const build = (files: { sourceFile: RegistryChainFile; destinationFile: RegistryChainFile }) =>
+    buildDestinationOptions({
+      ...files,
+      pairFile,
+      top,
+      sourceTokenAddress,
+      preferredAddress,
+      layerZeroMetadata,
+    });
 
-  // Without a canonical route in the files, an import looks for one, as in the per-pair registry:
-  // the token lists may not know a token that LiFi lists, or any file may miss it. The import
-  // reads the chains, caches the result for an hour and applies the OFT deposit block.
+  const result = build({ sourceFile, destinationFile });
   const pair = { sourceChainId, destinationChainId };
   const bridge = getCanonicalBridge(pair, { allowCustomGasToken: true });
-  const registrySourceToken = registrySourceFile.tokens.find(
-    (token) => token.address === sourceTokenAddress,
-  );
   if (
-    bridge &&
-    sourceTokenAddress !== NATIVE_TOKEN_ADDRESS &&
-    (importsListedTokens || !registrySourceToken) &&
-    !(
-      registrySourceToken &&
-      getCanonicalDestinationAddress({
-        sourceFile: registrySourceFile,
-        destinationFile: registryDestinationFile,
-        sourceToken: registrySourceToken,
-      })
-    )
+    !allowsImport ||
+    result.options.some((option) => option.providers.some((provider) => provider !== 'lifi')) ||
+    !bridge ||
+    sourceTokenAddress === NATIVE_TOKEN_ADDRESS
   ) {
-    const imported = await getCachedImport({
-      bridge,
-      pair,
-      sourceTokenAddress: sourceTokenAddress as Address,
-    });
-    // A pasted address of the other chain resolves to another source token, which the user did
-    // not pick.
-    if (imported?.sourceToken.address === sourceTokenAddress) {
-      files = withImportedTokens({ ...files, imported });
-      if (
-        !registryDestinationFile.tokens.some(
-          (token) => token.address === imported.destinationToken.address,
-        )
-      ) {
-        importedAddress = imported.destinationToken.address;
-      }
-    }
+    return result;
   }
 
-  const result = buildDestinationOptions({
-    ...files,
-    pairFile,
-    top,
-    sourceTokenAddress,
-    preferredAddress,
-    layerZeroMetadata,
+  // The files only give LiFi routes, or none, for example for a token that nobody has bridged to
+  // this chain yet. The import reads the chains to find the canonical route, caches the result for
+  // an hour and applies the OFT deposit block.
+  const imported = await getCachedImport({
+    bridge,
+    pair,
+    sourceTokenAddress: sourceTokenAddress as Address,
   });
-  if (!importedAddress) {
+  // A pasted address of the other chain resolves to another source token, which the user did not
+  // pick.
+  if (imported?.sourceToken.address !== sourceTokenAddress) {
     return result;
+  }
+
+  const importedResult = build(withImportedTokens({ sourceFile, destinationFile, imported }));
+  const importedAddress = imported.destinationToken.address;
+  if (destinationFile.tokens.some((token) => token.address === importedAddress)) {
+    return importedResult;
   }
   const markImported = (option: DestinationOption): DestinationOption =>
     option.address === importedAddress ? { ...option, isImported: true } : option;
   return {
-    options: result.options.map(markImported),
-    defaultToken: result.defaultToken && markImported(result.defaultToken),
-    canonicalToken: result.canonicalToken && markImported(result.canonicalToken),
+    options: importedResult.options.map(markImported),
+    defaultToken: importedResult.defaultToken && markImported(importedResult.defaultToken),
+    canonicalToken: importedResult.canonicalToken && markImported(importedResult.canonicalToken),
   };
 }
 
-// With a destination token the user picked, each chain defaults to that token, or to its
-// counterpart on the chain, when the source can reach it. The chains with a canonical route come
-// first. A token that the files have skips the imports here, which would cost a few RPC calls
-// per chain: the chain's own token list still imports it.
-export async function getDestinationChains({
+type ChainDestinations = { chainId: number } & ReturnType<typeof buildDestinationOptions>;
+
+// The destinations of every chain the source reaches. Imports cost a few RPC calls per chain, so
+// they only run when the files give the token no destination at all.
+async function getAllDestinationOptions({
   sourceChainId,
   sourceTokenAddress,
   preferredToken,
@@ -541,7 +526,7 @@ export async function getDestinationChains({
   sourceChainId: number;
   sourceTokenAddress: string;
   preferredToken?: { chainId: number; address: string };
-}): Promise<DestinationChain[]> {
+}): Promise<ChainDestinations[]> {
   const [index, preferredFile] = await Promise.all([
     getIndexFile(),
     preferredToken ? getChainFile(preferredToken.chainId) : undefined,
@@ -556,50 +541,42 @@ export async function getDestinationChains({
     .filter((pair) => pair.sourceChainId === sourceChainId)
     .map((pair) => pair.destinationChainId);
 
-  const chains = await Promise.all(
-    destinationChainIds.map(async (destinationChainId) => {
-      const { defaultToken, canonicalToken } = await getDestinationOptions({
-        sourceChainId,
-        sourceTokenAddress,
-        destinationChainId,
-        preferredAddress: getPreferredAddress(destinationChainId),
-        importsListedTokens: false,
-      });
-      return defaultToken
-        ? {
-            chainId: destinationChainId,
-            defaultToken,
-            ...(canonicalToken ? { canonicalToken } : {}),
-          }
-        : null;
-    }),
-  );
-  return chains
-    .filter((chain): chain is DestinationChain => chain !== null)
+  const getChains = async (allowsImport: boolean) =>
+    (
+      await Promise.all(
+        destinationChainIds.map(async (destinationChainId) => ({
+          chainId: destinationChainId,
+          ...(await getDestinationOptions({
+            sourceChainId,
+            sourceTokenAddress,
+            destinationChainId,
+            preferredAddress: getPreferredAddress(destinationChainId),
+            allowsImport,
+          })),
+        })),
+      )
+    ).filter((chain) => chain.options.length > 0);
+
+  const chainsFromFiles = await getChains(false);
+  return chainsFromFiles.length > 0 ? chainsFromFiles : getChains(true);
+}
+
+// With a destination token the user picked, each chain defaults to that token, or to its
+// counterpart on the chain, when the source can reach it. The chains with a canonical route come
+// first.
+export async function getDestinationChains(
+  params: Parameters<typeof getAllDestinationOptions>[0],
+): Promise<DestinationChain[]> {
+  return (await getAllDestinationOptions(params))
+    .flatMap(({ chainId, defaultToken, canonicalToken }) =>
+      defaultToken
+        ? [{ chainId, defaultToken, ...(canonicalToken ? { canonicalToken } : {}) }]
+        : [],
+    )
     .sort((a, b) => Number(Boolean(b.canonicalToken)) - Number(Boolean(a.canonicalToken)));
 }
 
-export async function getDestinationTokens({
-  sourceChainId,
-  sourceTokenAddress,
-  destinationChainId,
-  query,
-}: {
-  sourceChainId: number;
-  sourceTokenAddress: string;
-  destinationChainId: number;
-  query?: string;
-}): Promise<DestinationOption[]> {
-  const { options } = await getDestinationOptions({
-    sourceChainId,
-    sourceTokenAddress,
-    destinationChainId,
-    importsListedTokens: true,
-  });
-  if (!query?.trim()) {
-    return options.slice(0, DESTINATION_TOKENS_LIMIT);
-  }
-
+function searchOptions(options: DestinationOption[], query: string): DestinationOption[] {
   const normalizedQuery = query.trim().toLowerCase();
   return options
     .flatMap((option) => {
@@ -609,4 +586,40 @@ export async function getDestinationTokens({
     .sort((a, b) => a.score - b.score)
     .slice(0, SEARCH_LIMIT)
     .map(({ option }) => option);
+}
+
+// Without a destination chain, the tokens of every chain the source reaches, up to 1,000 per
+// chain like the source list: the canonical tokens first, then LayerZero's, then the others by
+// volume. A chain's default or the user's pick does not change this order.
+export async function getDestinationTokens({
+  sourceChainId,
+  sourceTokenAddress,
+  destinationChainId,
+  query,
+}: {
+  sourceChainId: number;
+  sourceTokenAddress: string;
+  destinationChainId?: number;
+  query?: string;
+}): Promise<DestinationOption[]> {
+  let options: DestinationOption[];
+  if (destinationChainId === undefined) {
+    const rank = (option: DestinationOption) =>
+      option.providers.includes('canonical') ? 0 : option.providers.includes('layerzero') ? 1 : 2;
+    options = (await getAllDestinationOptions({ sourceChainId, sourceTokenAddress }))
+      .flatMap((chain) => chain.options.slice(0, DESTINATION_TOKENS_LIMIT))
+      .sort((a, b) => rank(a) - rank(b) || compareTokens(a, b));
+  } else {
+    ({ options } = await getDestinationOptions({
+      sourceChainId,
+      sourceTokenAddress,
+      destinationChainId,
+      allowsImport: true,
+    }));
+  }
+
+  if (query?.trim()) {
+    return searchOptions(options, query);
+  }
+  return destinationChainId === undefined ? options : options.slice(0, DESTINATION_TOKENS_LIMIT);
 }
