@@ -10,8 +10,10 @@ import {
   DestinationChain,
   DestinationOption,
   TOKEN_REGISTRY_URL,
+  TokenList,
   TopFile,
   TopToken,
+  searchTokens,
 } from '@/app/src/token-registry/registryFiles';
 import { NATIVE_TOKEN_ADDRESS, ProviderId } from '@/app/src/token-registry/types';
 import { formatCompactUsd } from '@/bridge/util/NumberUtils';
@@ -98,14 +100,9 @@ function getTokenKey(token: TopToken): string {
   return `${token.chainId}:${token.address}`;
 }
 
+// The same ranking as the server's search.
 function filterTokens<T extends TopToken>(tokens: T[], search: string): T[] {
-  const query = search.trim().toLowerCase();
-  if (!query) {
-    return tokens;
-  }
-  return tokens.filter((token) =>
-    `${token.symbol} ${token.name} ${token.address}`.toLowerCase().includes(query),
-  );
+  return search.trim() ? searchTokens(tokens, search) : tokens;
 }
 
 function ChainIcon({ chainId, className }: { chainId: number; className?: string }) {
@@ -256,8 +253,8 @@ function ChainButton({
 
 // Like Jumper's picker: pick a token on any chain, or a chain first, then a token on it. The
 // tokens of a chain come from the backend at `getListKey`, or from `getChainTokens`, which also
-// fills the list until the backend answers. A search goes
-// to the backend at `getSearchKey`, which covers every token and not only the listed ones.
+// fills the list until the backend answers. A search goes to the backend at `getSearchKey`, which
+// covers every token and not only the listed ones, unless the backend's list is complete.
 function TokenPicker({
   title,
   chains,
@@ -288,20 +285,22 @@ function TokenPicker({
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_MS);
 
-  const { data: listedTokens, isLoading: isListLoading } = useSWR(
+  const { data: list, isLoading: isListLoading } = useSWR(
     getListKey?.(chainId) ?? null,
-    fetchJson<PickerToken[]>,
+    fetchJson<TokenList<PickerToken>>,
     AGGRESSIVE_CACHE_OPTIONS,
   );
-  const searchKey = getSearchKey(chainId, debouncedSearch.trim());
-  const { data: searchedTokens, isLoading: isSearchLoading } = useSWR(
+  // A complete list has every token the search could find.
+  const searchKey = list?.isComplete ? null : getSearchKey(chainId, debouncedSearch.trim());
+  const { data: searchResults, isLoading: isSearchLoading } = useSWR(
     searchKey,
-    fetchJson<PickerToken[]>,
+    fetchJson<TokenList<PickerToken>>,
     AGGRESSIVE_CACHE_OPTIONS,
   );
+  const searchedTokens = searchResults?.tokens;
 
   // Until the backend answers, the picker filters the tokens it already has.
-  const chainTokens = listedTokens ?? getChainTokens?.(chainId) ?? [];
+  const chainTokens = list?.tokens ?? getChainTokens?.(chainId) ?? [];
   const isTyping = search !== debouncedSearch;
   const tokens =
     searchKey && !isTyping && searchedTokens ? searchedTokens : filterTokens(chainTokens, search);
@@ -394,7 +393,9 @@ function TokenPicker({
               ? 'Searching…'
               : searchKey
                 ? `${tokens.length} results from every token`
-                : ''}
+                : search.trim() && list?.isComplete
+                  ? `${tokens.length} results`
+                  : ''}
           </p>
           <div className="mt-1 rounded-md border border-white/10" style={{ height: LIST_HEIGHT }}>
             {tokens.length === 0 ? (
