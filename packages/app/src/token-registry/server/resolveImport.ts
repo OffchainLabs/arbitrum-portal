@@ -1,4 +1,4 @@
-import { isAddress } from 'viem';
+import { BaseError, HttpRequestError, LimitExceededRpcError, TimeoutError, isAddress } from 'viem';
 
 import { normalizeToken } from '../normalize';
 import { Address, ChainPair, RouteOption, SelectedTokenAvailability } from '../types';
@@ -60,6 +60,24 @@ const arbStandardTokenAbi = [
 
 type Erc20Metadata = { symbol: string; name: string; decimals: number };
 
+// A revert, an address without code or an answer that does not decode is the token's answer, and
+// the import caches it. A failed request is not: it throws, so no cache keeps it and the next
+// request reads the chain again. A revert without data can come back as a plain RPC error, so
+// only transport failures count as failed requests.
+function throwIfRequestFailed(error: unknown): void {
+  if (
+    error instanceof BaseError &&
+    error.walk(
+      (cause) =>
+        cause instanceof HttpRequestError ||
+        cause instanceof TimeoutError ||
+        cause instanceof LimitExceededRpcError,
+    )
+  ) {
+    throw error;
+  }
+}
+
 function buildCanonicalImportAvailability({
   sourceToken,
   destinationToken,
@@ -96,7 +114,8 @@ export async function readErc20Metadata(
       }),
     ]);
     return { symbol, name, decimals };
-  } catch {
+  } catch (error) {
+    throwIfRequestFailed(error);
     return null;
   }
 }
@@ -113,7 +132,8 @@ async function deriveChildAddress(
       args: [parentAddress],
     });
     return child.toLowerCase() as Address;
-  } catch {
+  } catch (error) {
+    throwIfRequestFailed(error);
     return null;
   }
 }
@@ -128,7 +148,8 @@ async function canDeposit(bridge: CanonicalBridge, parentAddress: Address): Prom
       args: [parentAddress],
     });
     return gateway.toLowerCase() !== DISABLED_GATEWAY;
-  } catch {
+  } catch (error) {
+    throwIfRequestFailed(error);
     return false;
   }
 }
@@ -144,7 +165,8 @@ async function readParentAddress(
       functionName: 'l1Address',
     });
     return result.toLowerCase() as Address;
-  } catch {
+  } catch (error) {
+    throwIfRequestFailed(error);
     return null;
   }
 }

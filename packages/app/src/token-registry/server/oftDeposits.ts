@@ -115,18 +115,22 @@ export async function isImportedOftDepositBlocked({
   childChainId,
   parentTokenAddress,
   childTokenAddress,
+  pendingOftCheck,
 }: {
   metadata: LayerZeroMetadata;
   parentChainId: number;
   childChainId: number;
   parentTokenAddress: Address;
   childTokenAddress: Address;
+  // The parent token's oftVersion() read, when the caller started it early.
+  pendingOftCheck?: Promise<Set<Address>>;
 }): Promise<boolean> {
   const isOftOnChain =
     !isListedByLayerZero({ metadata, chainId: parentChainId, address: parentTokenAddress }) &&
-    (await findOftTokens({ chainId: parentChainId, addresses: [parentTokenAddress] })).has(
-      parentTokenAddress,
-    );
+    (
+      await (pendingOftCheck ??
+        findOftTokens({ chainId: parentChainId, addresses: [parentTokenAddress] }))
+    ).has(parentTokenAddress);
 
   return isOftDepositBlocked({
     metadata,

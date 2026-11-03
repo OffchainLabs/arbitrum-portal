@@ -5,10 +5,12 @@ import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 import { getCuratedCoinKey, getDefaultDestinationOverride, isExcludedToken } from '../constants';
 import {
   CanonicalEntry,
+  clearMemoryCache,
   generateCanonical,
   getDestinationTokensForSource,
   getSelectedTokenAvailability,
   getSourceTokens,
+  getSwapDestinationTokens,
 } from '../server/generate';
 import {
   NATIVE_TOKEN_ADDRESS,
@@ -102,6 +104,7 @@ const entries: CanonicalEntry[] = [
 afterEach(() => {
   vi.unstubAllGlobals();
   cacheState.entries.clear();
+  clearMemoryCache();
   cacheState.builtKeys.length = 0;
   resolveImportMock.mockReset();
   resolveImportMock.mockResolvedValue(null);
@@ -740,6 +743,25 @@ describe('canonical imports', () => {
     expect(pickerAddresses(destinationTokens)).toContain(UNBRIDGED_ARBITRUM);
   });
 
+  it('gives the page the same destination tokens as the per-source list', async () => {
+    mockRegistryFetch();
+    const pair = { sourceChainId: 1, destinationChainId: 42161 };
+
+    const [perSource, swapTokens, selection] = await Promise.all([
+      getDestinationTokensForSource({ pair, sourceTokenAddress: PYUSD_ETHEREUM }),
+      getSwapDestinationTokens(pair),
+      getSelectedTokenAvailability({ pair, sourceTokenAddress: PYUSD_ETHEREUM }),
+    ]);
+    const routeAddresses = (selection?.availableRoutes ?? []).flatMap((route) =>
+      route.destinationToken ? [route.destinationToken.address] : [],
+    );
+
+    expect(selection?.availableRoutes.some((route) => route.provider === 'lifi')).toBe(true);
+    expect(new Set([...pickerAddresses(swapTokens), ...routeAddresses])).toEqual(
+      new Set(pickerAddresses(perSource)),
+    );
+  });
+
   it('skips the import when the registry already has a canonical route', async () => {
     mockRegistryFetch();
 
@@ -981,6 +1003,37 @@ describe('OFT deposit block', () => {
 
     expect(resolveImportMock).toHaveBeenCalled();
     expect(selection?.availableRoutes.map((route) => route.provider)).toEqual(['lifi']);
+  });
+
+  it("reads an imported deposit's oftVersion() once, alongside the import", async () => {
+    mockRegistryFetch();
+    const sourceToken = token(1, UNBRIDGED_ETHEREUM, 'NEW');
+    const destinationToken = token(42161, UNBRIDGED_ARBITRUM, 'NEW');
+    let finishImport: (value: SelectedTokenAvailability) => void = () => {};
+    resolveImportMock.mockReturnValue(
+      new Promise((resolve) => {
+        finishImport = resolve;
+      }),
+    );
+    const countImportedTokenReads = () =>
+      multicallMock.mock.calls.filter(([{ contracts }]) =>
+        contracts.some((contract) => contract.address === UNBRIDGED_ETHEREUM),
+      ).length;
+
+    const selection = getSelectedTokenAvailability({
+      pair: { sourceChainId: 1, destinationChainId: 42161 },
+      sourceTokenAddress: UNBRIDGED_ETHEREUM,
+    });
+    await vi.waitFor(() => expect(resolveImportMock).toHaveBeenCalled());
+    expect(countImportedTokenReads()).toBe(1);
+
+    finishImport({
+      sourceToken,
+      destinationToken,
+      availableRoutes: [{ provider: 'canonical', sourceToken, destinationToken }],
+    });
+    await selection;
+    expect(countImportedTokenReads()).toBe(1);
   });
 });
 
