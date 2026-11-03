@@ -62,7 +62,10 @@ import { getNetworkName, isNetwork } from '../../util/networks';
 import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
 import { useWalletContext } from '../../wallet/WalletContext';
-import { getNativeTokenAddress } from '../../wallet/ecosystems/getEcosystemConfig';
+import {
+  getEcosystemConfig,
+  getNativeTokenAddress,
+} from '../../wallet/ecosystems/getEcosystemConfig';
 import { getSigners } from '../../wallet/getSigners';
 import { useRefreshTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { useWallets } from '../../wallet/hooks/useWallets';
@@ -1315,7 +1318,9 @@ export function TransferPanel() {
       type: isDepositMode ? 'Deposit' : 'Withdrawal',
       selectedRoute,
       tokenSymbol: selectedToken?.symbol,
-      assetType: selectedToken ? 'ERC-20' : 'ETH',
+      assetType: selectedToken
+        ? 'ERC-20'
+        : getEcosystemConfig(networks.sourceChain.id).nativeAssetType,
       accountType: getAnalyticsAccountType(accountType),
       network: childChain.name,
       amount: Number(amount),
@@ -1332,6 +1337,7 @@ export function TransferPanel() {
     accountType,
     selectedToken,
     isCustomDestinationTransfer,
+    networks.sourceChain.id,
     selectedRoute,
   ]);
 

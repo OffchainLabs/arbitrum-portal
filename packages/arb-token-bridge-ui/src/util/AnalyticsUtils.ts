@@ -4,13 +4,14 @@ import { RouteType } from '../components/TransferPanel/hooks/useRouteStore';
 import { ChainId } from '../types/ChainId';
 import { type EcosystemConfig } from '../wallet/ecosystems';
 import { getEcosystemConfig, getNativeTokenAddress } from '../wallet/ecosystems/getEcosystemConfig';
+import type { WalletEcosystem } from '../wallet/types';
 import type { AccountType as WalletAccountType } from './AccountUtils';
 import { addressesEqual } from './AddressUtils';
 import { isProductionEnvironment } from './CommonUtils';
 import { FastBridgeNames, SpecialTokenSymbol } from './fastBridges';
 
 type AccountType = 'EOA' | 'Delegated EOA' | 'Smart Contract';
-type AssetType = 'ETH' | 'ERC-20';
+type AssetType = EcosystemConfig['nativeAssetType'] | 'ERC-20';
 type TransferDirection = 'Deposit' | 'Withdrawal';
 type FastBridgeName = `${FastBridgeNames}`;
 type TokenPickerSide = 'source' | 'destination';
@@ -52,7 +53,7 @@ type AnalyticsEventMap = {
     network: string;
     amount: number;
   };
-  'Connect Wallet Click': { walletName: string };
+  'Connect Wallet Click': { walletName: string; ecosystem: WalletEcosystem };
   'Trust Wallet Update Confirmation': { confirmed: boolean };
   'Fast Bridge Click': {
     bridge: FastBridgeName;
