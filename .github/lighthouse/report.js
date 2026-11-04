@@ -337,7 +337,7 @@ function formatModules({ pr, base }) {
 }
 
 function formatReason(reason) {
-  return reason.replace(/\s+/g, ' ').replace(/\|/g, '\\|');
+  return reason.replace(/\s+/g, ' ').replace(/[\\|]/g, '\\$&');
 }
 
 // The metrics whose audit failed in some runs, which are left out of the comparison
