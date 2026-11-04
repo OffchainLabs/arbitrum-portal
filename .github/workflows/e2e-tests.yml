@@ -29,14 +29,10 @@ jobs:
       - id: set-matrix
         run: echo "e2eFiles=$(node .github/workflows/formatSpecfiles.js ${{ inputs.test_type }} | jq . --compact-output)" >> $GITHUB_OUTPUT
 
-  build:
-    name: 'Build'
-    uses: ./.github/workflows/build.yml
-    secrets: inherit
-
   test-e2e:
     name: 'Test E2E - ${{ matrix.test.name }} ${{ matrix.test.typeName }}'
-    needs: [build, load-e2e-files]
+    # Called by test.yml after its build job, so the build artifacts already exist
+    needs: [load-e2e-files]
     runs-on: ubuntu-8
     strategy:
       fail-fast: false
@@ -45,8 +41,8 @@ jobs:
 
     # The testnode runs as a service container; its ports are published to the
     # host runner so the (non-container) job and the app reach it on localhost.
-    # The job stays on the host runner so the build-artifacts cache (saved by the
-    # build job, also on the host) restores reliably.
+    # The job stays on the host runner so the build artifacts (built by the
+    # build job, also on the host) restore reliably.
     services:
       testnode:
         image: ghcr.io/offchainlabs/arbitrum-testnode-ci:v0.2.2-nc3.2-${{ matrix.test.tag }}
@@ -146,21 +142,3 @@ jobs:
             ./packages/arb-token-bridge-ui/playwright-report
           if-no-files-found: 'ignore'
         continue-on-error: true
-
-  clean-up:
-    name: 'Clean Up'
-    runs-on: ubuntu-8
-    needs: [test-e2e]
-    if: always()
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install gh-actions-cache
-        run: gh extension install actions/gh-actions-cache
-      - name: Delete build artifacts
-        run: |
-          if gh actions-cache list | grep build-artifacts-${{ github.run_id }}-${{ github.run_attempt }}
-          then
-            gh actions-cache delete build-artifacts-${{ github.run_id }}-${{ github.run_attempt }} --confirm
-          fi
-        shell: bash
