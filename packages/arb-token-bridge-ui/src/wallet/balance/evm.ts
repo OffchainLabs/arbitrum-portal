@@ -48,9 +48,11 @@ export async function fetchEvmBalance({
 
   tokenData?.forEach((token, index) => {
     const tokenAddress = erc20TokenAddresses[index];
+    const balance = token?.balance;
 
-    if (tokenAddress !== undefined) {
-      balances[tokenAddress] = token?.balance?.toBigInt() ?? 0n;
+    // A failed balanceOf leaves the balance unknown rather than zero
+    if (tokenAddress !== undefined && balance !== undefined) {
+      balances[tokenAddress] = balance.toBigInt();
     }
   });
 

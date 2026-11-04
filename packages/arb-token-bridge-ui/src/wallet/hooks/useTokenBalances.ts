@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 
-import { addressesEqual, isValidAddressForChain } from '../../util/AddressUtils';
+import { addressesEqual, isValidAddressForChain, normalizeAddress } from '../../util/AddressUtils';
 import { fetchBalances } from '../balance/fetchBalances';
 
 const BALANCE_REFRESH_INTERVAL = 15_000;
@@ -17,7 +17,8 @@ export function useTokenBalances({
 }) {
   return useSWR(
     walletAddress && isValidAddressForChain(walletAddress, chainId) && tokenAddresses.length > 0
-      ? ([chainId, walletAddress, tokenAddresses, 'token-balances'] as const)
+      ? // Lowercases EVM addresses so checksum casing shares one cache entry, and keeps Solana casing
+        ([chainId, normalizeAddress(walletAddress), tokenAddresses, 'token-balances'] as const)
       : null,
     ([currentChainId, currentWalletAddress, currentTokenAddresses]) =>
       fetchBalances({
@@ -25,7 +26,12 @@ export function useTokenBalances({
         walletAddress: currentWalletAddress,
         tokenAddresses: currentTokenAddresses,
       }),
-    { refreshInterval: BALANCE_REFRESH_INTERVAL },
+    {
+      refreshInterval: BALANCE_REFRESH_INTERVAL,
+      shouldRetryOnError: true,
+      errorRetryCount: 2,
+      errorRetryInterval: 3_000,
+    },
   );
 }
 

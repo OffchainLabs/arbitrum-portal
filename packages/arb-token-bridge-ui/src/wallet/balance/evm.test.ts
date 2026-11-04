@@ -33,7 +33,7 @@ describe.sequential('fetchEvmBalance', () => {
     getTokenData.mockResolvedValue([{ balance: BigNumber.from(7) }, undefined]);
   });
 
-  it('fetches native and ERC-20 balances in one operation', async () => {
+  it('fetches native and ERC-20 balances in one operation, leaving failed balanceOf calls out', async () => {
     const balances = await fetchEvmBalance({
       chainId: 1,
       walletAddress,
@@ -43,7 +43,6 @@ describe.sequential('fetchEvmBalance', () => {
     expect(balances).toEqual({
       [zeroAddress]: 42n,
       [tokenAddress]: 7n,
-      [missingTokenAddress]: 0n,
     });
     expect(getBalance).toHaveBeenCalledWith(walletAddress);
     expect(getTokenData).toHaveBeenCalledWith([tokenAddress, missingTokenAddress], {
