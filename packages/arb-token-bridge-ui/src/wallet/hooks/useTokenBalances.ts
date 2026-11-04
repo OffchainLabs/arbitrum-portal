@@ -48,7 +48,7 @@ export function useTokenBalances({
   // `keepPreviousData` returns the previous key's balances while the next key loads, and keeps them
   // if it fails. Only a token list change should reuse them, not a disconnect or another wallet or chain.
   const isCurrentWallet =
-    !!key && result.data?.chainId === chainId && result.data.walletAddress === walletAddress;
+    !!key && result.data?.chainId === key[0] && result.data.walletAddress === key[1];
   return { ...result, data: isCurrentWallet ? result.data?.balances : undefined };
 }
 
