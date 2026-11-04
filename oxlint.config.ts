@@ -114,6 +114,7 @@ export default defineConfig({
     'react/no-unescaped-entities': 'error',
     'react/preserve-manual-memoization': 'error',
     'react/refs': 'error',
+    'react/require-render-return': 'error',
     'react/rules-of-hooks': 'error',
     'react/set-state-in-render': 'error',
     'react/static-components': 'error',
