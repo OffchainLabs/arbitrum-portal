@@ -290,8 +290,9 @@ export function TransactionHistorySearchBar() {
                 ? 'Transaction history transaction hash input'
                 : 'Transaction history wallet address input'
             }
-            // focus-visible:outline-0 beats the global white input outline; the form shows focus
-            className="h-full w-full bg-transparent text-sm font-light tracking-[-0.28px] outline-hidden focus-visible:outline-0 placeholder:text-white/50"
+            // the form shows focus; important because the global `input:focus-visible` outline in
+            // app.css is unlayered and beats Tailwind's utilities layer
+            className="h-full w-full bg-transparent text-sm font-light tracking-[-0.28px] outline-hidden focus-visible:outline-0! placeholder:text-white/50"
             // stop password managers from autofilling
             data-1p-ignore
             data-lpignore="true"
