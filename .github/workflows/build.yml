@@ -36,9 +36,11 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            ./packages/app/build
+            ./packages/app/build/*
+            !./packages/app/build/cache
             ./packages/app/public/__auto-generated-*
           key: build-artifacts-${{ github.run_id }}
+          lookup-only: true
 
       - name: Install node_modules
         if: steps.cache.outputs.cache-hit != 'true'
@@ -65,6 +67,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
-            ./packages/app/build
+            ./packages/app/build/*
+            !./packages/app/build/cache
             ./packages/app/public/__auto-generated-*
           key: build-artifacts-${{ github.run_id }}

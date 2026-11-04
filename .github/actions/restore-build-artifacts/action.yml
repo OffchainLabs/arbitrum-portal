@@ -8,7 +8,8 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: |
-          ./packages/app/build
+          ./packages/app/build/*
+          !./packages/app/build/cache
           ./packages/app/public/__auto-generated-*
         key: build-artifacts-${{ github.run_id }}
         fail-on-cache-miss: true
