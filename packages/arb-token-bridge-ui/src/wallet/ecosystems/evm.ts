@@ -8,5 +8,6 @@ export const evmEcosystem: EcosystemConfig = {
     isValid: (address) => isAddress(address),
     // EVM addresses are case-insensitive: lowercasing drops the checksum casing
     normalize: (address) => address.toLowerCase(),
+    isCaseSensitive: false,
   },
 };
