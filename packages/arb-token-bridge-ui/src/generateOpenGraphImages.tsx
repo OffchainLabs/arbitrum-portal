@@ -68,7 +68,10 @@ const configs: ChainCombination[] = [
 ];
 
 // Pairs with a single direction, e.g. Base only reaches Arbitrum One through LiFi
-const oneWayConfigs: ChainCombination[] = [[ChainId.Base, ChainId.ArbitrumOne]];
+const oneWayConfigs: ChainCombination[] = [
+  [ChainId.Base, ChainId.ArbitrumOne],
+  [ChainId.ArbitrumNova, ChainId.ArbitrumOne],
+];
 
 const imagesDirectory = '../app/public/images/__auto-generated/open-graph';
 // The bridge page only links to images listed here, and falls back to the default image otherwise
