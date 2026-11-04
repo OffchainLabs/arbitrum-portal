@@ -4,6 +4,7 @@ import { SearchParamsProps } from '@/app/src/types';
 import { PORTAL_DOMAIN, PathnameEnum } from '@/bridge/constants';
 import { ChainKeyQueryParam, getChainForChainKeyQueryParam } from '@/bridge/types/ChainQueryParam';
 import { isNetwork } from '@/bridge/util/networks';
+import openGraphImages from '@/public/images/__auto-generated/open-graph/images.json';
 
 import BridgePageWrapper from './BridgePageWrapper';
 
@@ -46,7 +47,10 @@ export async function generateMetadata(props: SearchParamsProps): Promise<Metada
     metaImagePath = `${destinationChainInfo.id}.jpg`;
   }
 
-  const imageUrl = `${siteDomain}/images/__auto-generated/open-graph/${metaImagePath}`;
+  // A pair without a generated image, e.g. a newly added route, gets the default bridge image
+  const imageUrl = openGraphImages.includes(metaImagePath)
+    ? `${siteDomain}/images/__auto-generated/open-graph/${metaImagePath}`
+    : `${siteDomain}/og-image.jpg`;
 
   return {
     title: siteTitle,

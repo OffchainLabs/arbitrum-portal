@@ -52,6 +52,7 @@ const chainToLogo: { [key: Chain]: string } = {
   [ChainId.ArbitrumNova]: 'https://l2beat.com/icons/nova.png',
   [ChainId.Sepolia]: 'https://l2beat.com/icons/ethereum.png',
   [ChainId.ArbitrumSepolia]: 'https://l2beat.com/icons/arbitrum.png',
+  [ChainId.Base]: 'https://l2beat.com/icons/base.png',
 };
 
 const configs: ChainCombination[] = [
@@ -65,6 +66,16 @@ const configs: ChainCombination[] = [
     (chain) => [chain.parentChainId, chain.chainId] as ChainCombination,
   ),
 ];
+
+// Pairs with a single direction, e.g. Base only reaches Arbitrum One through LiFi
+const oneWayConfigs: ChainCombination[] = [
+  [ChainId.Base, ChainId.ArbitrumOne],
+  [ChainId.ArbitrumNova, ChainId.ArbitrumOne],
+];
+
+const imagesDirectory = '../app/public/images/__auto-generated/open-graph';
+// The bridge page only links to images listed here, and falls back to the default image otherwise
+const imagesListPath = `${imagesDirectory}/images.json`;
 
 function ChainWrapper({ chain, direction }: { chain: Chain; direction: 'From' | 'To' }) {
   const chainConfig = getBridgeUiConfigForChain(chain);
@@ -314,7 +325,7 @@ async function generateSvg(chainsOrOrbitChain: Chain | { from: Chain; to: Chain 
   const file = isOrbitChain
     ? `${chainsOrOrbitChain}.jpg`
     : `${chainsOrOrbitChain.from}-to-${chainsOrOrbitChain.to}.jpg`;
-  const filePath = `../app/public/images/__auto-generated/open-graph/${file}`;
+  const filePath = `${imagesDirectory}/${file}`;
 
   await sharp(Buffer.from(svg)).jpeg({ quality: 90, mozjpeg: true }).toFile(filePath);
 
@@ -353,6 +364,20 @@ async function generate(argv: Args) {
     }
     /* eslint-enable no-await-in-loop */
   }
+
+  if (argv.core) {
+    for (const [from, to] of oneWayConfigs) {
+      // eslint-disable-next-line no-await-in-loop
+      await generateSvg({ from, to });
+    }
+  }
+
+  const images = fs
+    .readdirSync(imagesDirectory)
+    .filter((file) => file.endsWith('.jpg'))
+    .sort();
+  fs.writeFileSync(imagesListPath, `${JSON.stringify(images, null, 2)}\n`);
+  console.log(`Listed ${images.length} images in ${imagesListPath}`);
 }
 
 yargs(hideBin(process.argv))
