@@ -83,7 +83,7 @@ describe.sequential('useTokenBalances', () => {
     expect(result.current.data).toBeUndefined();
     expect(result.current.error).toBeUndefined();
   });
-  it('shares identical requests across token consumers', async () => {
+  it('shares identical requests across token consumers and EVM address casings', async () => {
     const fetchBalance = vi.fn(async ({ tokenAddresses }: { tokenAddresses: string[] }) =>
       Object.fromEntries(tokenAddresses.map((address, index) => [address, BigInt(index + 1)])),
     );
@@ -101,7 +101,7 @@ describe.sequential('useTokenBalances', () => {
         }),
         second: useObservedTokenBalances({
           chainId: ChainId.Ethereum,
-          walletAddress: account,
+          walletAddress: account.toLowerCase(),
           tokenAddresses: ['token-a'],
         }),
       }),
@@ -115,7 +115,7 @@ describe.sequential('useTokenBalances', () => {
     expect(fetchBalance).toHaveBeenCalledTimes(1);
     expect(fetchBalance).toHaveBeenLastCalledWith({
       chainId: ChainId.Ethereum,
-      walletAddress: account,
+      walletAddress: account.toLowerCase(),
       tokenAddresses: ['token-a'],
     });
   });
