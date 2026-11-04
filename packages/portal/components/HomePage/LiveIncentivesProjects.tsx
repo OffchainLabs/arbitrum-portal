@@ -61,7 +61,8 @@ export function LiveIncentivesProjects() {
         className={twMerge(
           'relative w-[calc(100%+0.75rem)] transition-opacity duration-300',
           isReady ? '' : 'opacity-0',
-          isDraggable && '[&_.flickity-button]:hidden',
+          // important: the unlayered `.flickity-prev-next-button` display in flickity.css beats utilities
+          isDraggable && '[&_.flickity-button]:hidden!',
         )}
         flickityRef={setupFlickityRef}
       >
