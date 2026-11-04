@@ -4,8 +4,12 @@ import { BigNumber, constants } from 'ethers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { shallow } from 'zustand/shallow';
 
+import { isLifiTransferResumable } from '../components/TransactionHistory/helpers';
 import { DepositStatus, LifiMergedTransaction, WithdrawalStatus } from '../state/app/state';
-import { createMockLifiPartialTransaction } from '../test-utils/lifi';
+import {
+  createMockLifiBatchedTransaction,
+  createMockLifiPartialTransaction,
+} from '../test-utils/lifi';
 import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
 import { AssetType } from './arbTokenBridge.types';
 import {
@@ -183,6 +187,59 @@ describe.sequential('useLifiMergedTransactionCacheStore', () => {
     expect(loaded?.toAmount).toEqual(tx.toAmount);
     expect(loaded?.lifiRouteSteps).toEqual(tx.lifiRouteSteps);
     expect(loaded?.receivedAmount).toBeUndefined();
+  });
+
+  it.each([
+    { processStatus: 'STARTED', stepStatus: 'PENDING' },
+    { processStatus: 'ACTION_REQUIRED', stepStatus: 'ACTION_REQUIRED' },
+  ] as const)(
+    'fails a $processStatus process left without a transaction so the route can be resumed',
+    async ({ processStatus, stepStatus }) => {
+      const tx = createMockLifiBatchedTransaction();
+      const swap = tx.lifiRoute?.steps[1];
+      if (!swap?.execution) throw new Error('Missing fixture swap');
+      swap.execution.status = stepStatus;
+      swap.execution.process = [
+        { type: 'TOKEN_ALLOWANCE', status: 'DONE', startedAt: 2 },
+        { type: 'SWAP', status: processStatus, startedAt: 3 },
+      ];
+      expect(isLifiTransferResumable(tx)).toBe(false);
+      const wallet = '0x1111111111111111111111111111111111111111';
+      localStorageMock.setItem(
+        'lifi-merged-transaction-cache',
+        JSON.stringify({ state: { transactions: { [wallet]: [tx] } }, version: 3 }),
+      );
+
+      await useLifiMergedTransactionCacheStore.persist.rehydrate();
+
+      const loaded = useLifiMergedTransactionCacheStore.getState().transactions[wallet]?.[0];
+      if (!loaded) throw new Error('Missing hydrated transaction');
+      expect(loaded.lifiRoute?.steps[0]?.execution?.status).toBe('DONE');
+      expect(loaded.lifiRoute?.steps[1]?.execution?.status).toBe('FAILED');
+      expect(
+        loaded.lifiRoute?.steps[1]?.execution?.process.map((process) => process.status),
+      ).toEqual(['DONE', 'FAILED']);
+      expect(isLifiTransferResumable(loaded)).toBe(true);
+    },
+  );
+
+  it('keeps a pending batch id across a reload so it can still be polled', async () => {
+    const tx = createMockLifiBatchedTransaction();
+    const swap = tx.lifiRoute?.steps[1];
+    const swapProcess = swap?.execution?.process[1];
+    if (!swap?.execution || !swapProcess) throw new Error('Missing fixture swap');
+    swapProcess.status = 'STARTED';
+    const wallet = '0x1111111111111111111111111111111111111111';
+    localStorageMock.setItem(
+      'lifi-merged-transaction-cache',
+      JSON.stringify({ state: { transactions: { [wallet]: [tx] } }, version: 3 }),
+    );
+
+    await useLifiMergedTransactionCacheStore.persist.rehydrate();
+
+    expect(
+      useLifiMergedTransactionCacheStore.getState().transactions[wallet]?.[0]?.lifiRoute,
+    ).toEqual(tx.lifiRoute);
   });
 
   it('should return undefined by default', async () => {
