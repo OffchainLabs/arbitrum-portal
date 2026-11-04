@@ -22,5 +22,6 @@ export const solanaEcosystem: EcosystemConfig = {
     isValid: (address, options) => isEnabledOrIgnored(options) && isValidSolanaAddress(address),
     // base58 is case-sensitive
     normalize: (address) => address,
+    isCaseSensitive: true,
   },
 };

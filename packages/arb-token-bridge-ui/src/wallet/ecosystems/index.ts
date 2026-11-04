@@ -15,6 +15,8 @@ export type EcosystemConfig = {
     /** False while the ecosystem is disabled, unless `ignoreFeatureFlag` is set */
     isValid: (address: string, options?: ValidationOptions) => boolean;
     normalize: (address: string) => string;
+    /** Whether two addresses that differ only in case are different accounts */
+    isCaseSensitive: boolean;
   };
 };
 

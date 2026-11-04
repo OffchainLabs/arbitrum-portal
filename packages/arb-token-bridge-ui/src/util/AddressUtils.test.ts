@@ -169,6 +169,16 @@ describe('addressesEqual', () => {
     expect(addressesEqual(address, caseVariant)).toBe(false);
   });
 
+  it('does not match a Solana address with a case variant in an unknown format', () => {
+    const solanaAddress = 'ezyrycstztig5ug7fe97wqvy141z56wtr5cod6x7tj8';
+    // `I` and `O` are not base58, so this side matches no format
+    const unknownFormat = solanaAddress.toUpperCase();
+    expect(isValidSolanaAddress(solanaAddress)).toBe(true);
+    expect(isValidAddress(unknownFormat, { ignoreFeatureFlag: true })).toBe(false);
+    expect(addressesEqual(unknownFormat, solanaAddress)).toBe(false);
+    expect(addressesEqual(solanaAddress, unknownFormat)).toBe(false);
+  });
+
   it('compares unknown formats case-insensitively', () => {
     expect(addressesEqual('ETH', 'eth')).toBe(true);
     expect(addressesEqual(undefined, undefined)).toBe(true);

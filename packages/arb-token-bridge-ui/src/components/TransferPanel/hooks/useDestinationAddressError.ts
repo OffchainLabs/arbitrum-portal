@@ -27,10 +27,11 @@ export async function getDestinationAddressError({
     return null;
   }
   const { address: addressAdapter } = ecosystems[destinationEcosystem];
-  const parsedDestinationAddress = addressAdapter.normalize(destinationAddress);
-  if (!addressAdapter.isValid(parsedDestinationAddress)) {
+  // Validate before normalizing, so a mistyped EVM checksum is still rejected
+  if (!addressAdapter.isValid(destinationAddress)) {
     return DestinationAddressErrors.INVALID_ADDRESS;
   }
+  const parsedDestinationAddress = addressAdapter.normalize(destinationAddress);
   if (await addressIsDenylisted(parsedDestinationAddress)) {
     return DestinationAddressErrors.DENYLISTED_ADDRESS;
   }
