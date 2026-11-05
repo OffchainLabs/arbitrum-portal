@@ -174,7 +174,7 @@ export const CustomDestinationAddressInput = () => {
           className="arb-hover flex w-fit items-center text-sm font-medium text-white/50"
           href={`${getExplorerUrl(
             isDepositMode ? childChain.id : parentChain.id,
-          )}/address/${localDestinationAddress}`}
+          )}/address/${encodeURIComponent(localDestinationAddress)}`}
         >
           <ArrowDownTrayIcon height={12} strokeWidth={3} className="mr-1 -rotate-90" />
           View account in explorer
