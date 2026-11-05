@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createWalletTestWrapper } from '@/bridge/test-utils/wallet-test-wrapper';
 import { ChainId } from '@/bridge/types/ChainId';
+import type { SolanaAddress } from '@/bridge/util/AddressUtils';
 import { defaultWalletContextValue } from '@/bridge/wallet/WalletContext';
 import type { WalletContextValue } from '@/bridge/wallet/types';
 
@@ -35,7 +36,7 @@ vi.mock('@/bridge/components/common/SafeImage', () => ({
 }));
 
 const evmAddress = '0x1234567890123456789012345678901234567890';
-const solanaAddress = 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5';
+const solanaAddress = 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5' as SolanaAddress;
 
 function createWallets() {
   const wallets: WalletContextValue = {

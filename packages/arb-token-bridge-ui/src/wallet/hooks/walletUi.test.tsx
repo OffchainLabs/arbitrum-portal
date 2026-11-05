@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NetworkWalletButton } from '../../components/TransferPanel/NetworkWalletButton';
 import { createWalletTestWrapper } from '../../test-utils/wallet-test-wrapper';
 import { ChainId } from '../../types/ChainId';
+import type { SolanaAddress } from '../../util/AddressUtils';
 import { defaultWalletContextValue } from '../WalletContext';
 import type { WalletContextValue } from '../types';
 import { useWalletModal } from './useWalletModal';
@@ -26,7 +27,7 @@ vi.mock('../ecosystems/solana', async (importOriginal) => {
   return actual;
 });
 
-const solanaAddress = 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5';
+const solanaAddress = 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5' as SolanaAddress;
 const evmAddress = '0x1111111111111111111111111111111111111111';
 beforeEach(() => vi.clearAllMocks());
 afterEach(cleanup);
