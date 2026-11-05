@@ -9,6 +9,7 @@ import { defaultState } from '../../state/app/state';
 import { createBridgeTestWrapper } from '../../test-utils/bridge-test-wrapper';
 import { createMockLifiRoute } from '../../test-utils/lifi';
 import { ChainId } from '../../types/ChainId';
+import type { SolanaAddress } from '../../util/AddressUtils';
 import { defaultWalletContextValue } from '../../wallet/WalletContext';
 import { SOLANA_NATIVE_TOKEN_ADDRESS } from '../../wallet/ecosystems/solana';
 import type { WalletContextValue } from '../../wallet/types';
@@ -16,7 +17,7 @@ import { TransferPanel } from './TransferPanel';
 import { useRouteStore } from './hooks/useRouteStore';
 
 const evmAddress = '0x0000000000000000000000000000000000000001';
-const solanaAddress = 'So11111111111111111111111111111111111111112';
+const solanaAddress = 'So11111111111111111111111111111111111111112' as SolanaAddress;
 const starter = vi.hoisted(() => ({
   requiresNativeCurrencyApproval: vi.fn(),
   transfer: vi.fn(),
