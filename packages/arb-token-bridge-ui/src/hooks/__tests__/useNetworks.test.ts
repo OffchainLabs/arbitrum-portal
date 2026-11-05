@@ -5,6 +5,7 @@ import { MockInstance, afterAll, afterEach, beforeAll, describe, expect, it, vi 
 import { createWalletTestWrapper } from '../../test-utils/wallet-test-wrapper';
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { ChainId } from '../../types/ChainId';
+import type { SolanaAddress } from '../../util/AddressUtils';
 import { customChainLocalStorageKey, isNetwork } from '../../util/networks';
 import { defaultWalletContextValue } from '../../wallet/WalletContext';
 import { useWallets } from '../../wallet/hooks/useWallets';
@@ -849,7 +850,7 @@ describe('useNetworks', () => {
         ...defaultWalletContextValue.solana,
         account: {
           ...defaultWalletContextValue.solana.account,
-          address: 'So11111111111111111111111111111111111111112',
+          address: 'So11111111111111111111111111111111111111112' as SolanaAddress,
         },
       },
     };
