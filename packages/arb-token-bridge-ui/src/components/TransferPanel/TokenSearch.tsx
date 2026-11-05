@@ -258,6 +258,15 @@ function TokensPanel({
     },
     [bridgeTokens, isOrbitChain, tokensFromLists, tokensFromUser, usdcToken],
   );
+  // Native USDC is on no list, so add it where it is the source token:
+  // withdrawals from Arbitrum One or Arbitrum Sepolia, and deposits from them to Orbit chains
+  const isSourceArbitrumOne = isDepositMode ? isParentChainArbitrumOne : isArbitrumOne;
+  const isSourceArbitrumSepolia = isDepositMode ? isParentChainArbitrumSepolia : isArbitrumSepolia;
+  const sourceNativeUsdcAddress = isSourceArbitrumOne
+    ? CommonAddress.ArbitrumOne.USDC
+    : isSourceArbitrumSepolia
+      ? CommonAddress.ArbitrumSepolia.USDC
+      : undefined;
   const childNativeCurrencyAddress = nativeCurrency.isCustom ? nativeCurrency.address : undefined;
   const sourceTokenAddresses = useMemo(
     () =>
@@ -265,10 +274,10 @@ function TokensPanel({
         new Set(
           [
             NATIVE_CURRENCY_IDENTIFIER,
-            CommonAddress.ArbitrumOne.USDC,
-            CommonAddress.ArbitrumSepolia.USDC,
+            ...(sourceNativeUsdcAddress ? [sourceNativeUsdcAddress] : []),
             ...Object.keys(tokensFromUser),
-            ...Object.keys(tokensFromLists),
+            // Enabled lists only. Search also finds tokens from disabled lists, which get a balance once imported
+            ...Object.keys(bridgeTokens ?? {}),
           ]
             .map((address) =>
               resolveTokenAddress({
@@ -283,11 +292,12 @@ function TokensPanel({
         ),
       ),
     [
+      bridgeTokens,
       childNativeCurrencyAddress,
       getToken,
       networks.destinationChain.id,
       networks.sourceChain.id,
-      tokensFromLists,
+      sourceNativeUsdcAddress,
       tokensFromUser,
     ],
   );
@@ -330,22 +340,8 @@ function TokensPanel({
       destinationChainId: networks.destinationChain.id,
     });
 
-    if (!isDepositMode) {
-      // L2 to L1 withdrawals
-      if (isArbitrumOne) {
-        tokenAddresses.push(CommonAddress.ArbitrumOne.USDC);
-      }
-      if (isArbitrumSepolia) {
-        tokenAddresses.push(CommonAddress.ArbitrumSepolia.USDC);
-      }
-    } else {
-      // L2 to L3 deposits
-      if (isParentChainArbitrumOne) {
-        tokenAddresses.push(CommonAddress.ArbitrumOne.USDC);
-      }
-      if (isParentChainArbitrumSepolia) {
-        tokenAddresses.push(CommonAddress.ArbitrumSepolia.USDC);
-      }
+    if (sourceNativeUsdcAddress) {
+      tokenAddresses.push(sourceNativeUsdcAddress);
     }
 
     /**
@@ -540,10 +536,7 @@ function TokensPanel({
     networks.sourceChain.id,
     networks.destinationChain.id,
     nativeCurrency,
-    isArbitrumOne,
-    isArbitrumSepolia,
-    isParentChainArbitrumOne,
-    isParentChainArbitrumSepolia,
+    sourceNativeUsdcAddress,
     isOrbitChain,
     childChain.id,
     getBalance,
