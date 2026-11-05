@@ -102,5 +102,15 @@ describe.sequential('Solana network selection', () => {
         }).destinationChainId,
       ).not.toBe(ChainId.Solana);
     }
+    // Solana's destinations can't send back to Solana, so a missing or unknown source falls back
+    for (const sourceChainId of [undefined, 123_456]) {
+      expect(
+        sanitizeQueryParams({
+          sourceChainId,
+          destinationChainId: ChainId.Solana,
+          includeLifiEnabledChainPairs: true,
+        }),
+      ).toEqual({ sourceChainId: ChainId.Ethereum, destinationChainId: ChainId.ArbitrumOne });
+    }
   });
 });

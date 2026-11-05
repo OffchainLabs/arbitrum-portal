@@ -389,10 +389,17 @@ export function sanitizeQueryParams({
       disableTransfersToNonArbitrumChains && isNetwork(destinationChainId).isNonArbitrumNetwork;
 
     // case 2: the destination chain id is supported and valid, but it doesn't have a source chain partner, eg. sourceChain=undefined and destinationChain=base
-    const [defaultSourceChainId] = getDestinationChainIds(destinationChainId, {
+    // Chains reachable from the destination are only valid sources when the route goes both ways, e.g. Solana is source-only
+    const destinationChainIdsOptions = {
       disableTransfersToNonArbitrumChains,
       includeLifiEnabledChainPairs,
-    });
+    };
+    const defaultSourceChainId = getDestinationChainIds(
+      destinationChainId,
+      destinationChainIdsOptions,
+    ).find((chainId) =>
+      getDestinationChainIds(chainId, destinationChainIdsOptions).includes(destinationChainId),
+    );
 
     // in both cases, we default to eth<>arbitrum-one pair
     if (typeof defaultSourceChainId === 'undefined' || isInvalidDestinationChainId) {
