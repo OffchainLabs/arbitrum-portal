@@ -4,7 +4,7 @@ import useSWRImmutable from 'swr/immutable';
 
 import { nativeCurrencyEther } from '../services/evm/nativeCurrency';
 import { fetchNativeCurrency } from '../services/nativeCurrency';
-import { type Address, addressesEqual, normalizeAddress } from '../util/AddressUtils';
+import { addressesEqual, normalizeAddress } from '../util/AddressUtils';
 import { getChainMetadata } from '../util/networkMetadata';
 import { isNetwork } from '../util/networks';
 import { getNativeTokenAddress } from '../wallet/ecosystems/getEcosystemConfig';
@@ -71,7 +71,7 @@ export type TransferNativeCurrency = NativeCurrency & {
   /** Chain shown in "Native token on …", undefined when both chains use a custom gas token */
   nativeTokenChainId: number | undefined;
   /** Key of the native token price in the token lists, undefined for the ETH price */
-  priceAddress: Address | undefined;
+  priceAddress: string | undefined;
 };
 
 /**
