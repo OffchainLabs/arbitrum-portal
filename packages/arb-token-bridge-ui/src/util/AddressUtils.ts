@@ -7,7 +7,8 @@ import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { logger } from './logger';
 
 export type EvmAddress = `0x${string}`;
-export type SolanaAddress = string;
+// Branded so a raw string needs validation, or a cast, before it counts as an address
+export type SolanaAddress = string & { readonly __brand: 'SolanaAddress' };
 export type Address = EvmAddress | SolanaAddress;
 
 export { addressesEqual } from './AddressEquality';
@@ -32,7 +33,10 @@ export function normalizeAddress(address: string | undefined): string | undefine
   return adapter ? adapter.normalize(address) : address;
 }
 
-export function isValidAddress(address: string | undefined, options?: ValidationOptions): boolean {
+export function isValidAddress(
+  address: string | undefined,
+  options?: ValidationOptions,
+): address is Address {
   return Boolean(
     address &&
       Object.values(ecosystems).some((ecosystem) => ecosystem.address.isValid(address, options)),

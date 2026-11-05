@@ -1,8 +1,9 @@
 import bs58 from 'bs58';
 
 import type { EcosystemConfig, ValidationOptions } from '.';
+import type { SolanaAddress } from '../../util/AddressUtils';
 
-export function isValidSolanaAddress(address: string | undefined): boolean {
+export function isValidSolanaAddress(address: string | undefined): address is SolanaAddress {
   if (!address || address.startsWith('0x')) return false;
   try {
     return bs58.decode(address).length === 32;
