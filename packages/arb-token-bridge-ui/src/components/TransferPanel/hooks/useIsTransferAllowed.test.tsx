@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { defaultState } from '../../../state/app/state';
 import { createBridgeTestWrapper } from '../../../test-utils/bridge-test-wrapper';
 import { ChainId } from '../../../types/ChainId';
+import type { SolanaAddress } from '../../../util/AddressUtils';
 import { defaultWalletContextValue } from '../../../wallet/WalletContext';
 import type { WalletContextValue } from '../../../wallet/types';
 import { useIsTransferAllowed } from './useIsTransferAllowed';
@@ -41,7 +42,7 @@ const wallets: WalletContextValue = {
       ecosystem: 'solana',
       status: 'connected',
       chainId: ChainId.Solana,
-      address: 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5',
+      address: 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5' as SolanaAddress,
     },
     signer: defaultWalletContextValue.solana.signer,
   },
