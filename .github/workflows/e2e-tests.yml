@@ -41,8 +41,6 @@ jobs:
 
     # The testnode runs as a service container; its ports are published to the
     # host runner so the (non-container) job and the app reach it on localhost.
-    # The job stays on the host runner so the build artifacts (built by the
-    # build job, also on the host) restore reliably.
     services:
       testnode:
         image: ghcr.io/offchainlabs/arbitrum-testnode-ci:v0.2.2-nc3.2-${{ matrix.test.tag }}

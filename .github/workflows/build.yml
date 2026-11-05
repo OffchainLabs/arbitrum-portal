@@ -53,7 +53,7 @@ jobs:
       # count toward the repo's 10GB cache limit. `build/cache` is Next's compiler cache, which
       # `next start` doesn't read
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-artifacts
           path: |
@@ -62,6 +62,7 @@ jobs:
             ./packages/app/public/__auto-generated-*
           include-hidden-files: true
           if-no-files-found: error
-          retention-days: 1
+          # "Re-run failed jobs" doesn't rerun this job, so the artifact must outlive the run
+          retention-days: 7
           # Re-running every job of a run builds and uploads again
           overwrite: true
