@@ -1,7 +1,7 @@
 # PRs can only restore caches saved on their own ref or on master.
-# Saving node_modules on master lets every PR with the same lockfile reuse one cache entry,
+# Saving node_modules and Chrome on master lets every PR reuse one cache entry for each,
 # instead of each PR saving its own copy and pushing the repo past its 10GB cache limit.
-name: Cache node_modules
+name: Cache dependencies
 
 on:
   push:
@@ -37,3 +37,6 @@ jobs:
         with:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Install Chrome for Testing
+        uses: ./.github/actions/install-chrome
