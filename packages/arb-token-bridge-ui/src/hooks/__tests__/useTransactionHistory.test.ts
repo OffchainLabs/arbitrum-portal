@@ -24,7 +24,7 @@ import {
   createMockLifiPartialTransaction,
   createMockLifiTransaction,
 } from '../../test-utils/lifi';
-import type { EvmAddress } from '../../util/AddressUtils';
+import type { EvmAddress, SolanaAddress } from '../../util/AddressUtils';
 import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
 import {
   getPendingLifiRouteBatchIds,
@@ -1468,8 +1468,8 @@ describe('signature deduplication', () => {
   });
 });
 
-const solanaFirstAddress = bs58.encode(new Uint8Array(32).fill(1));
-const solanaSecondAddress = bs58.encode(new Uint8Array(32).fill(2));
+const solanaFirstAddress = bs58.encode(new Uint8Array(32).fill(1)) as SolanaAddress;
+const solanaSecondAddress = bs58.encode(new Uint8Array(32).fill(2)) as SolanaAddress;
 
 function solanaTransactions(address: string, count: number, createdAt: number) {
   return Array.from({ length: count }, (_, index) =>
@@ -1484,7 +1484,7 @@ function solanaTransactions(address: string, count: number, createdAt: number) {
   );
 }
 
-function createSolanaWalletWrapper(address: string) {
+function createSolanaWalletWrapper(address: SolanaAddress) {
   return createBridgeTestWrapper({
     query: { sourceChain: 1, destinationChain: 42161 },
     wallets: {

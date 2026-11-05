@@ -11,6 +11,7 @@ import {
   WithdrawalStatus,
 } from '../../state/app/state';
 import { ChainId } from '../../types/ChainId';
+import type { EvmAddress, SolanaAddress } from '../../util/AddressUtils';
 import { AssetType } from '../arbTokenBridge.types';
 import { useAddPendingTransactions } from '../useTransactionHistory';
 
@@ -82,7 +83,7 @@ describe('useAddPendingTransactions', () => {
     const { result } = renderHook(
       () => ({
         writer: useAddPendingTransactions(checksummedAddress),
-        reader: useAddPendingTransactions(checksummedAddress.toLowerCase()),
+        reader: useAddPendingTransactions(checksummedAddress.toLowerCase() as EvmAddress),
       }),
       { wrapper: Wrapper },
     );
@@ -95,7 +96,7 @@ describe('useAddPendingTransactions', () => {
   });
 
   it('records and updates a Solana transfer in the wallet cache', () => {
-    const solanaAddress = 'So11111111111111111111111111111111111111112';
+    const solanaAddress = 'So11111111111111111111111111111111111111112' as SolanaAddress;
     const pendingTransfer: LifiMergedTransaction = {
       ...baseTx,
       sender: solanaAddress,
