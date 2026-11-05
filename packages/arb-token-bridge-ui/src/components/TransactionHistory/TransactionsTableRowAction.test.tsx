@@ -398,7 +398,7 @@ describe.sequential('TransactionsTableRowAction', () => {
   });
 
   it('shows resume for a Solana LiFi transaction sent by the connected Solana wallet', () => {
-    const solanaAddress = 'So11111111111111111111111111111111111111112';
+    const solanaAddress = 'So11111111111111111111111111111111111111112' as SolanaAddress;
     wallets = connectedWallets({ evm: evmAddress, solana: solanaAddress });
 
     renderAction({
