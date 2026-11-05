@@ -4,7 +4,6 @@ import useSWR from 'swr';
 import type { LifiParams, PreferredLifiRoutes } from '@/bridge/app/api/crosschain-transfers/lifi';
 
 import { getAPIBaseUrl } from '../util';
-import type { Address } from '../util/AddressUtils';
 import { parseAddressForChain } from '../util/AddressUtils';
 
 export type UseLifiCrossTransfersRouteParams = Pick<
@@ -12,8 +11,9 @@ export type UseLifiCrossTransfersRouteParams = Pick<
   'fromAmount' | 'fromToken' | 'toToken' | 'slippage' | 'denyBridges' | 'denyExchanges'
 > & {
   enabled?: boolean;
-  fromAddress?: Address;
-  toAddress: Address | undefined;
+  // Plain strings: the hook checks each address against its chain before fetching
+  fromAddress?: string;
+  toAddress: string | undefined;
   fromChainId: number;
   toChainId: number;
 };
