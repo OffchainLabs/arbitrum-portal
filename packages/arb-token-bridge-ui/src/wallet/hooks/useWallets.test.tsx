@@ -2,6 +2,7 @@ import { cleanup, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createWalletTestWrapper } from '../../test-utils/wallet-test-wrapper';
+import type { SolanaAddress } from '../../util/AddressUtils';
 import { defaultWalletContextValue, useWalletContext } from '../WalletContext';
 import type { EvmWalletHandle, SolanaWalletHandle } from '../types';
 import { useWalletForChain, useWallets } from './useWallets';
@@ -21,7 +22,7 @@ const solana: SolanaWalletHandle = {
   ecosystem: 'solana',
   account: {
     ecosystem: 'solana',
-    address: 'So11111111111111111111111111111111111111112',
+    address: 'So11111111111111111111111111111111111111112' as SolanaAddress,
     status: 'connected',
   },
   isConnected: true,
