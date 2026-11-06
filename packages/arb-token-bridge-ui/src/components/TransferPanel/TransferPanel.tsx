@@ -26,7 +26,6 @@ import {
   getPendingLifiRouteBatchIds,
 } from '@/bridge/util/LifiTransactionStatus';
 import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
-import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
 import { DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
 import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
@@ -63,7 +62,7 @@ import { logger } from '../../util/logger';
 import { getNetworkName, isNetwork } from '../../util/networks';
 import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
-import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { useWalletContext } from '../../wallet/WalletContext';
 import { getSigners } from '../../wallet/getSigners';
 import { useRefreshTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { useWallets } from '../../wallet/hooks/useWallets';
@@ -98,7 +97,6 @@ import { useIsTransferAllowed } from './hooks/useIsTransferAllowed';
 import { getSelectedRouteContext, isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
 
-const signerUndefinedError = 'Signer is undefined';
 const transferNotAllowedError = 'Transfer not allowed';
 
 const networkConnectionWarningToast = () =>
@@ -172,7 +170,7 @@ export function TransferPanel() {
 
   const isTrustWalletConnection = useIsTrustWalletConnection();
 
-  const { current: signer } = useLatest(useEthersSigner({ chainId: networks.sourceChain.id }));
+  const { signer: evmSigner } = useWalletContext('evm');
   const wagmiConfig = useConfig();
 
   const { setTransferring } = useAppContextActions();
@@ -485,7 +483,8 @@ export function TransferPanel() {
 
       case 'tx_ethers': {
         try {
-          const tx = await signer!.sendTransaction(step.payload.txRequest);
+          const signer = await evmSigner.getEthersSigner(latestNetworks.current.sourceChain.id);
+          const tx = await signer.sendTransaction(step.payload.txRequest);
           const txReceipt = await tx.wait();
 
           return { data: txReceipt };
@@ -518,9 +517,7 @@ export function TransferPanel() {
     if (!walletAddress) {
       throw new Error(`walletAddress is undefined`);
     }
-    if (!signer) {
-      throw new Error(signerUndefinedError);
-    }
+    const signer = await evmSigner.getEthersSigner(latestNetworks.current.sourceChain.id);
     if (!isTransferAllowed.current) {
       throw new Error(transferNotAllowedError);
     }
@@ -673,8 +670,11 @@ export function TransferPanel() {
         return;
       }
 
-      const { sourceChainProvider } = networks;
-      const lifiTransferStarter = new LifiTransferStarter({ lifiRoute: context });
+      const lifiTransferStarter = BridgeTransferStarterFactory.create({
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+        lifiRoute: context,
+      });
 
       if (isSmartContractWallet) {
         showDelayedSmartContractTxRequest();
@@ -827,7 +827,7 @@ export function TransferPanel() {
 
       if (!isSmartContractWallet) {
         refreshBalancesAfterConfirmation(
-          sourceChainProvider.waitForTransaction(transfer.sourceChainTransaction.hash),
+          transfer.sourceChainTransaction.wait(),
           'lifi_source_confirmation',
         );
       }
@@ -853,9 +853,7 @@ export function TransferPanel() {
     if (!selectedToken) {
       return;
     }
-    if (!signer) {
-      throw new Error(signerUndefinedError);
-    }
+    const signer = await evmSigner.getEthersSigner(latestNetworks.current.sourceChain.id);
     if (!isTransferAllowed.current) {
       throw new Error(transferNotAllowedError);
     }
@@ -995,9 +993,7 @@ export function TransferPanel() {
       throw new Error(transferNotAllowedError);
     }
 
-    if (!signer) {
-      throw new Error(signerUndefinedError);
-    }
+    const signer = await evmSigner.getEthersSigner(latestNetworks.current.sourceChain.id);
 
     const childChainName = getNetworkName(childChain.id);
 

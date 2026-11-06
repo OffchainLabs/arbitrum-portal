@@ -26,7 +26,7 @@ import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { fetchCCTPDeposits, fetchCCTPWithdrawals } from '../util/cctp/fetchCCTP';
 import { getL1BlockTime, getNetworkName, isNetwork } from '../util/networks';
 import { normalizeTimestamp } from '../util/normalizeTimestamp';
-import { useEthersSigner } from '../util/wagmi/useEthersSigner';
+import { useWalletContext } from '../wallet/WalletContext';
 import { DepositStatus, MergedTransaction, WithdrawalStatus } from './app/state';
 
 // see https://developers.circle.com/stablecoin/docs/cctp-technical-reference#block-confirmations-for-attestations
@@ -547,10 +547,15 @@ export function useClaimCctp(tx: MergedTransaction) {
   const { accountType } = useAccountType();
   const wagmiConfig = useConfig();
 
-  const signer = useEthersSigner({ chainId: tx.destinationChainId });
+  const { signer: evmSigner } = useWalletContext('evm');
 
   const claim = useCallback(async () => {
-    if (!tx.cctpData?.attestationHash || !tx.cctpData.messageBytes || !signer) {
+    if (!tx.cctpData?.attestationHash || !tx.cctpData.messageBytes) {
+      return;
+    }
+    // Nothing to claim with until the wallet is connected on the destination chain
+    const signer = await evmSigner.getEthersSigner(tx.destinationChainId).catch(() => undefined);
+    if (!signer) {
       return;
     }
 
@@ -602,7 +607,7 @@ export function useClaimCctp(tx: MergedTransaction) {
     } finally {
       setIsClaiming(false);
     }
-  }, [accountType, receiveMessage, signer, tx, updatePendingTransaction, waitForAttestation]);
+  }, [accountType, receiveMessage, evmSigner, tx, updatePendingTransaction, waitForAttestation]);
 
   return {
     isClaiming,

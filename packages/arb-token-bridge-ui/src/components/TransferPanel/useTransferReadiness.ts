@@ -21,6 +21,7 @@ import {
 import { formatAmount } from '../../util/NumberUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
 import { getNativeTokenAddress } from '../../wallet/ecosystems/getEcosystemConfig';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextState } from '../App/AppContext';
 import { useNativeCurrencyBalances } from './TransferPanelMain/useNativeCurrencyBalances';
 import { useAmountBigNumber } from './hooks/useAmountBigNumber';
@@ -233,6 +234,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
     layout: { isTransferring },
   } = useAppContextState();
   const [networks] = useNetworks();
+  const { sourceWallet } = useWallets();
   const { childChain, isDepositMode } = useNetworksRelationship(networks);
   const { selectedRoute, selectedRouteContext } = useRouteStore(
     (state) => ({
@@ -324,6 +326,10 @@ export function useTransferReadiness(): UseTransferReadinessResult {
               : getNovaEthDepositCapErrorMessage(),
         },
       });
+    }
+
+    if (!sourceWallet.isConnected) {
+      return notReady();
     }
 
     if (!selectedRoute) {
@@ -726,6 +732,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       }
     }
   }, [
+    sourceWallet.isConnected,
     gasSummary,
     selectedRoute,
     eligibleRouteTypes,

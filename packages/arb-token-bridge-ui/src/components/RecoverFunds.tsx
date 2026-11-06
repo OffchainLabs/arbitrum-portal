@@ -13,7 +13,6 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { BigNumber, Signer, constants } from 'ethers';
 import { isAddress, parseEther } from 'ethers/lib/utils';
 import { useEffect, useMemo, useState } from 'react';
-import { useLatest } from 'react-use';
 import { Column, Table, TableCellDataGetter, TableCellRenderer } from 'react-virtualized';
 import useSWRImmutable from 'swr/immutable';
 import { twMerge } from 'tailwind-merge';
@@ -38,7 +37,7 @@ import { formatAmount } from '../util/NumberUtils';
 import { isUserRejectedError } from '../util/isUserRejectedError';
 import { getNetworkName, getSupportedChainIds, isNetwork } from '../util/networks';
 import { getInboxAddressFromOrbitChainId } from '../util/orbitChainsList';
-import { useEthersSigner } from '../util/wagmi/useEthersSigner';
+import { useWalletContext } from '../wallet/WalletContext';
 import { TokenLogoFallback } from './TransferPanel/TokenInfo';
 import { Button } from './common/Button';
 import { Dialog, UseDialogProps } from './common/Dialog';
@@ -362,8 +361,7 @@ const ActionColumn: TableCellRenderer = ({ rowData }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [destinationAddress, setDestinationAddress] = useState<string | undefined>(undefined);
   const { handleError } = useError();
-  const signer = useEthersSigner();
-  const { current: latestSigner } = useLatest(signer);
+  const { signer: evmSigner } = useWalletContext('evm');
   const childChainProvider = getProviderForChainId(chainId);
   const [{ sourceChain }] = useNetworks();
   const { isTestnet } = isNetwork(sourceChain.id);
@@ -463,12 +461,13 @@ const ActionColumn: TableCellRenderer = ({ rowData }) => {
         variant="primary"
         className="ml-auto mr-3 w-min rounded bg-green-400 p-2 text-xs text-black"
         onClick={async () => {
-          if (!latestSigner || !destinationAddress) {
+          const signer = await evmSigner.getEthersSigner().catch(() => undefined);
+          if (!signer || !destinationAddress) {
             return;
           }
 
           const parentChainId = getArbitrumNetwork(chainId).parentChainId;
-          let currentChainId = latestSigner.provider.network.chainId;
+          let currentChainId = signer.provider.network.chainId;
           while (currentChainId !== parentChainId) {
             // eslint-disable-next-line no-await-in-loop
             currentChainId = (await switchChainAsync({ chainId: parentChainId })).id;
@@ -483,7 +482,7 @@ const ActionColumn: TableCellRenderer = ({ rowData }) => {
               destinationAddress,
               parentProvider: parentChainProvider,
               inboxAddress: inboxAddress as string,
-              signer: latestSigner,
+              signer: await evmSigner.getEthersSigner(parentChainId),
             });
             addTransaction({
               walletAddress: address,
