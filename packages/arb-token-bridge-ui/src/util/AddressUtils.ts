@@ -4,6 +4,7 @@ import { getAPIBaseUrl } from '.';
 import { getProviderForChainId } from '../token-bridge-sdk/utils';
 import { type ValidationOptions, ecosystems } from '../wallet/ecosystems';
 import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
+import type { WalletEcosystem } from '../wallet/types';
 import { logger } from './logger';
 
 export type EvmAddress = `0x${string}`;
@@ -40,6 +41,14 @@ export function isValidAddress(
   return Boolean(
     address &&
       Object.values(ecosystems).some((ecosystem) => ecosystem.address.isValid(address, options)),
+  );
+}
+
+/** The ecosystem whose address format matches, or `undefined` for an unknown format */
+export function findAddressEcosystem(address: string | undefined): WalletEcosystem | undefined {
+  if (!address) return undefined;
+  return (Object.keys(ecosystems) as WalletEcosystem[]).find((ecosystem) =>
+    ecosystems[ecosystem].address.isValid(address),
   );
 }
 
