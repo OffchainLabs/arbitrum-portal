@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
 
 import { useAccountType } from '../../hooks/useAccountType';
 import { DisabledFeatures, useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useDisabledFeatures } from '../../hooks/useDisabledFeatures';
 import { sanitizeQueryParams } from '../../hooks/useNetworks';
+import { useWallets } from '../../wallet/hooks/useWallets';
 
 export function useSyncConnectedChainToQueryParams() {
-  const { chain } = useAccount();
-  const { accountType } = useAccountType(undefined, chain?.id);
+  // A smart contract wallet can only send from its own chain. Only the source wallet sends,
+  // so a Safe connected as the destination of a Solana route doesn't move the source chain.
+  const {
+    sourceWallet: {
+      account: { address: sourceWalletAddress, chainId: sourceWalletChainId },
+    },
+  } = useWallets();
+  const { accountType } = useAccountType(sourceWalletAddress, sourceWalletChainId);
   const [shouldSync, setShouldSync] = useState(false);
   const [didSync, setDidSync] = useState(false);
   const { isFeatureDisabled } = useDisabledFeatures();
@@ -19,30 +25,33 @@ export function useSyncConnectedChainToQueryParams() {
     DisabledFeatures.TRANSFERS_TO_NON_ARBITRUM_CHAINS,
   );
 
-  const setSourceChainToConnectedChain = useCallback(() => {
-    if (!chain) {
-      return;
-    }
+  const setSourceChainToConnectedChain = useCallback(
+    (connectedChainId: number) => {
+      const { sourceChainId: sourceChain, destinationChainId: destinationChain } =
+        sanitizeQueryParams({
+          sourceChainId: connectedChainId,
+          destinationChainId: undefined,
+          disableTransfersToNonArbitrumChains,
+        });
 
-    const { sourceChainId: sourceChain, destinationChainId: destinationChain } =
-      sanitizeQueryParams({
-        sourceChainId: chain.id,
-        destinationChainId: undefined,
-        disableTransfersToNonArbitrumChains,
-      });
-
-    setQueryParams({ sourceChain, destinationChain });
-  }, [chain, setQueryParams, disableTransfersToNonArbitrumChains]);
+      setQueryParams({ sourceChain, destinationChain });
+    },
+    [setQueryParams, disableTransfersToNonArbitrumChains],
+  );
 
   useEffect(() => {
-    if (!chain || sourceChain === undefined || accountType !== 'smart-contract-wallet') {
+    if (
+      !sourceWalletChainId ||
+      sourceChain === undefined ||
+      accountType !== 'smart-contract-wallet'
+    ) {
       return;
     }
 
-    if (sourceChain !== chain.id) {
-      setSourceChainToConnectedChain();
+    if (sourceChain !== sourceWalletChainId) {
+      setSourceChainToConnectedChain(sourceWalletChainId);
     }
-  }, [accountType, chain, setSourceChainToConnectedChain, sourceChain]);
+  }, [accountType, sourceWalletChainId, setSourceChainToConnectedChain, sourceChain]);
 
   useEffect(() => {
     if (shouldSync) {
@@ -57,9 +66,9 @@ export function useSyncConnectedChainToQueryParams() {
 
   useEffect(() => {
     // When the chain is connected and we should sync, and we haven't synced yet, sync the connected chain to the query params
-    if (chain && shouldSync && !didSync) {
-      setSourceChainToConnectedChain();
+    if (sourceWalletChainId && shouldSync && !didSync) {
+      setSourceChainToConnectedChain(sourceWalletChainId);
       setDidSync(true);
     }
-  }, [chain, shouldSync, didSync, setSourceChainToConnectedChain]);
+  }, [sourceWalletChainId, shouldSync, didSync, setSourceChainToConnectedChain]);
 }

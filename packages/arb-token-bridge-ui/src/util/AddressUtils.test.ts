@@ -6,6 +6,7 @@ import { ecosystems } from '../wallet/ecosystems';
 import { isValidSolanaAddress } from '../wallet/ecosystems/solana';
 import { addressesEqual } from './AddressEquality';
 import {
+  findAddressEcosystem,
   isValidAddress,
   isValidAddressForChain,
   isValidTransactionId,
@@ -139,6 +140,18 @@ describe('parseAddressForChain', () => {
     [undefined, ChainId.ArbitrumOne],
   ])('rejects %s on chain %s', (address, chainId) => {
     expect(parseAddressForChain(address, chainId)).toBeUndefined();
+  });
+});
+
+describe('findAddressEcosystem', () => {
+  it.each([
+    ['0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33', 'evm'],
+    ['Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5', 'solana'],
+    ['not an address', undefined],
+    ['', undefined],
+    [undefined, undefined],
+  ])('finds the ecosystem of %s', (address, ecosystem) => {
+    expect(findAddressEcosystem(address)).toBe(ecosystem);
   });
 });
 
