@@ -75,6 +75,7 @@ import { useDialog } from '../common/Dialog';
 import { DialogData, DialogType, DialogWrapper, useDialog2 } from '../common/Dialog2';
 import { ExternalLink } from '../common/ExternalLink';
 import { errorToast, warningToast } from '../common/atoms/Toast';
+import { benchProfiler } from '../common/benchProfiler';
 import { ConnectWalletButton } from './ConnectWalletButton';
 import { MoveFundsButton } from './MoveFundsButton';
 import { ReceiveFundsHeader } from './ReceiveFundsHeader';
@@ -1438,11 +1439,11 @@ export function TransferPanel() {
           'bg-gray-1 mb-7 flex flex-col border-0 rounded gap-4 p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)]',
         )}
       >
-        <TransferPanelMain />
+        {benchProfiler('TransferPanelMain', <TransferPanelMain />)}
 
         <ReceiveFundsHeader />
 
-        <Routes />
+        {benchProfiler('Routes', <Routes />)}
 
         <ToSConfirmationCheckbox />
 
