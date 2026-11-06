@@ -1,0 +1,28 @@
+name: Install node_modules
+description: Restore node_modules from cache, install what's missing, and save it on master only
+
+# A PR can only restore caches saved on its own ref, its base branch or master, so a PR that changes
+# the lockfile can't reuse the cache of the PR below it in a stack. Saving one copy per PR filled the
+# repo's 10GB cache limit. Instead, PRs fall back to master's node_modules and install the difference.
+runs:
+  using: composite
+  steps:
+    - name: Restore node_modules
+      id: cache
+      uses: actions/cache/restore@v6
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: ${{ runner.os }}-pnpm-
+
+    - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Save node_modules
+      if: steps.cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/master'
+      uses: actions/cache/save@v6
+      with:
+        path: '**/node_modules'
+        key: ${{ steps.cache.outputs.cache-primary-key }}
