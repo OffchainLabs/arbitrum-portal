@@ -6,7 +6,6 @@ import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import useSWRInfinite from 'swr/infinite';
-import { isHash } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
 import { create } from 'zustand';
 
@@ -38,6 +37,7 @@ import {
   addressesEqual,
   findFirstBlockWithNonce,
   getNonce,
+  isValidTransactionId,
   normalizeAddress,
   normalizeTransactionId,
 } from '../util/AddressUtils';
@@ -944,9 +944,9 @@ function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
   const { sanitizedTxHash: txHash } = useTxHashSearchState();
 
   const { data, error, isLoading, mutate } = useSWRImmutable(
-    typeof txHash !== 'undefined' && isHash(txHash)
+    typeof txHash !== 'undefined' && isValidTransactionId(txHash)
       ? ([
-          txHash.toLowerCase(),
+          normalizeTransactionId(txHash),
           isTestnetMode,
           getChainFilterKey(chainFilter),
           'txHashSearch',

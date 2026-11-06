@@ -1,4 +1,5 @@
 import type { FullStatusData, StatusResponse, Token } from '@lifi/types';
+import bs58 from 'bs58';
 import { NextRequest } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -14,6 +15,7 @@ import {
 
 const lifiMocks = vi.hoisted(() => ({
   createConfig: vi.fn(),
+  getStatus: vi.fn(),
   getTransactionHistory: vi.fn().mockResolvedValue({ transfers: [] }),
 }));
 
@@ -374,5 +376,56 @@ describe.sequential('GET', () => {
     );
 
     expect(response.status).toBe(400);
+  });
+});
+
+describe.sequential('GET by transaction ID', () => {
+  const signature = bs58.encode(Uint8Array.from({ length: 64 }, (_, index) => index + 1));
+  const requestUrl = (query: string) =>
+    new NextRequest(`http://localhost/api/crosschain-transfers/lifi/transactions?${query}`);
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('looks up a Solana signature and keeps its case', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    const status = createStatusResponse({ sourceChainId: ChainId.Solana });
+    status.sending.txHash = signature;
+    lifiMocks.getStatus.mockResolvedValue(status);
+
+    const response = await GET(requestUrl(`wallet=${solanaWallet}&txHash=${signature}`));
+
+    expect(response.status).toBe(200);
+    expect(lifiMocks.getStatus).toHaveBeenCalledWith({ txHash: signature });
+    expect(await response.json()).toMatchObject({
+      data: [{ txId: signature, sourceChainId: ChainId.Solana }],
+    });
+  });
+
+  it('rejects signatures while Solana is disabled, and malformed IDs', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(false);
+    expect((await GET(requestUrl(`txHash=${signature}`))).status).toBe(400);
+
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    expect((await GET(requestUrl('txHash=request-id'))).status).toBe(400);
+  });
+
+  it('leaves EVM transaction hashes to the wallet history', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    lifiMocks.getStatus.mockClear();
+    const evmHash = `0x${'a'.repeat(64)}`;
+    expect((await GET(requestUrl(`txHash=${evmHash}`))).status).toBe(400);
+    expect(lifiMocks.getStatus).not.toHaveBeenCalled();
+  });
+
+  it('returns an error response when the LiFi status lookup fails', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    lifiMocks.getStatus.mockRejectedValue(new Error('LiFi unavailable'));
+
+    const response = await GET(requestUrl(`txHash=${signature}`));
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ message: 'LiFi unavailable', data: null });
   });
 });
