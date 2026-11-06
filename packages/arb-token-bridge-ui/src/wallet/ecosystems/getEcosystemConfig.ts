@@ -5,3 +5,7 @@ import { getWalletEcosystem } from '../getWalletEcosystem';
 export function getEcosystemConfig(chainId: number): EcosystemConfig {
   return ecosystems[getWalletEcosystem(chainId)];
 }
+
+export function getNativeTokenAddress(chainId: number): string {
+  return getEcosystemConfig(chainId).nativeTokenAddress;
+}

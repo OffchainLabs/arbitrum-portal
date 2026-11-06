@@ -20,6 +20,11 @@ export type EcosystemConfig = {
   };
   /** Address that stands for the native currency in balance requests and LiFi quotes */
   nativeTokenAddress: string;
+  /**
+   * Every chain of the ecosystem reaches Arbitrum only through LiFi: no parent/child token addresses
+   * and no canonical bridge
+   */
+  isLifiOnly: boolean;
 };
 
 export const ecosystems: Record<WalletEcosystem, EcosystemConfig> = {
