@@ -30,6 +30,7 @@ function isEnabledOrIgnored({ ignoreFeatureFlag = false }: ValidationOptions = {
 
 export const solanaEcosystem: EcosystemConfig = {
   isEnabled: () => process.env.NEXT_PUBLIC_FEATURE_FLAG_SOLANA_ENABLED === 'true',
+  name: 'Solana',
   address: {
     isValid: (address, options) => isEnabledOrIgnored(options) && isValidSolanaAddress(address),
     // base58 is case-sensitive
@@ -44,8 +45,11 @@ export const solanaEcosystem: EcosystemConfig = {
   nativeTokenAddress: SOLANA_NATIVE_TOKEN_ADDRESS,
   isLifiOnly: true,
   hasGasPrice: false,
+  // AppKit identifies Solana networks by their genesis hash
+  isAppKitNetworkIdChainId: false,
   hasTokenApprovals: false,
   // Solscan
   explorerAccountPath: 'account',
   chains: [solanaChain],
+  namespace: 'solana',
 };
