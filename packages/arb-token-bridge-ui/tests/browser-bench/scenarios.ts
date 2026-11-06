@@ -110,9 +110,10 @@ export const scenarios: Scenario[] = [
       { selector: '[aria-label="From: Arbitrum One"]' },
       { selector: '[aria-label="To: Ethereum"]' },
     ],
+    // The warm-up checks right after the click, and a slow runner takes over a second to switch
     verify: async (page) => {
-      await page.locator('[aria-label="From: Arbitrum One"]').waitFor({ timeout: 1000 });
-      await page.locator('[aria-label="To: Ethereum"]').waitFor({ timeout: 1000 });
+      await page.locator('[aria-label="From: Arbitrum One"]').waitFor({ timeout: 10_000 });
+      await page.locator('[aria-label="To: Ethereum"]').waitFor({ timeout: 10_000 });
     },
   },
 ];
