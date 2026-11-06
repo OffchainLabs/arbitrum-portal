@@ -24,7 +24,7 @@ export function UsdgSuggestionBanner() {
       className="relative flex flex-wrap items-center gap-[5px] rounded border p-[15px] text-sm tracking-[-0.28px] text-white pr-6"
     >
       <div className="flex min-w-0 flex-1 items-start gap-[5px]">
-        <InformationCircleIcon className="mt-[1px] h-5 w-5 shrink-0" />
+        <InformationCircleIcon className="mt-px h-5 w-5 shrink-0" />
         <p>
           USDG is Robinhood Chain&apos;s native stablecoin. Most Robinhood apps use USDG
           {destinationSymbol ? `, not ${destinationSymbol}` : ''}.

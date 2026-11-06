@@ -59,9 +59,10 @@ export function LiveIncentivesProjects() {
         options={carouselOptions}
         static
         className={twMerge(
-          'relative w-[calc(100%_+_0.75rem)] transition-opacity duration-300',
+          'relative w-[calc(100%+0.75rem)] transition-opacity duration-300',
           isReady ? '' : 'opacity-0',
-          isDraggable && '[&_.flickity-button]:hidden',
+          // important: the unlayered `.flickity-prev-next-button` display in flickity.css beats utilities
+          isDraggable && '[&_.flickity-button]:hidden!',
         )}
         flickityRef={setupFlickityRef}
       >
@@ -71,7 +72,7 @@ export function LiveIncentivesProjects() {
             key={project.slug}
             analyticsSource={'Homepage Trending Projects'}
             displayMode="spotlight"
-            className="lg:max-w-[calc(33%_-_0.5rem)] max-w-[296px] ml-3"
+            className="lg:max-w-[calc(33%-0.5rem)] max-w-[296px] ml-3"
             lazyload={false}
           />
         ))}

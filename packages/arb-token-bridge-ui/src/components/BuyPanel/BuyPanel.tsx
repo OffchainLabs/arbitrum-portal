@@ -93,7 +93,7 @@ export const BuyPanelNetworkSelectionContainer = React.memo(
         actionButtonProps={{ hidden: true }}
         isFooterHidden={true}
         className={twMerge(
-          'h-screen overflow-hidden md:h-[calc(100vh_-_220px)] md:max-h-[900px] md:max-w-[500px]',
+          'h-screen overflow-hidden md:h-[calc(100vh-220px)] md:max-h-[900px] md:max-w-[500px]',
           embedMode && 'md:h-full',
         )}
       >
@@ -177,7 +177,7 @@ const BalanceWrapper = memo(function BalanceWrapper() {
               height={20}
               src={nativeCurrency.logoUrl}
               alt={nativeCurrency.symbol}
-              className="!ml-2 block"
+              className="ml-2! block"
               fallback={<TokenLogoFallback className="h-4 w-4" />}
             />
             <span>

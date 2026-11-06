@@ -19,7 +19,7 @@ export function LinkoutOnrampPanel({ serviceSlug }: { serviceSlug: string }) {
   return (
     <div
       className={twMerge(
-        'relative bg-white/10 rounded-md border border-white/30 px-5 pt-14  pb-6 text-white -mx-4 md:mx-0 w-[calc(100%_+_40px)] md:w-full',
+        'relative bg-white/10 rounded-md border border-white/30 px-5 pt-14  pb-6 text-white -mx-4 md:mx-0 w-[calc(100%+40px)] md:w-full',
         embedMode && 'mx-auto max-w-[540px]',
       )}
     >

@@ -141,7 +141,7 @@ const ItemContent = ({
         className={twMerge(
           'flex w-full flex-row gap-2',
           isSpotlightMode
-            ? 'z-10 h-full w-full flex-col justify-end gap-3 bg-gradient-to-t from-black/70 to-black/20 p-4 bg-[size:200%] transition-all duration-300 group-hover:bg-bottom bg-top'
+            ? 'z-10 h-full w-full flex-col justify-end gap-3 bg-linear-to-t from-black/70 to-black/20 p-4 bg-size-[200%] transition-all duration-300 group-hover:bg-bottom bg-top'
             : '',
           isPreviewMode ? 'items-center gap-4' : '',
           isCompactMode ? 'gap-3' : '',
@@ -154,7 +154,7 @@ const ItemContent = ({
           <div
             className={twMerge(
               'relative inline-block max-w-[70px] overflow-hidden rounded-md',
-              isSpotlightMode ? 'h-[45px] w-[45px]' : 'bg-white p-[1px]',
+              isSpotlightMode ? 'h-[45px] w-[45px]' : 'bg-white p-px',
               isCompactMode ? 'h-[40px] w-[40px]' : '',
             )}
           >
@@ -171,7 +171,7 @@ const ItemContent = ({
             {project.meta.isArbitrumNative && (
               <span
                 className={twMerge(
-                  'mt-[1px] flex cursor-help flex-wrap whitespace-break-spaces rounded-md rounded-t-none bg-ocl-blue px-0 py-[5px] text-[10px]',
+                  'mt-px flex cursor-help flex-wrap whitespace-break-spaces rounded-md rounded-t-none bg-ocl-blue px-0 py-[5px] text-[10px]',
                 )}
                 style={{
                   width: isCompactMode ? '40px' : isSpotlightMode ? '45px' : '60px',
@@ -248,7 +248,7 @@ const ItemContent = ({
                 )}
               >
                 {!meta.isLive && !isPreviewMode && !isCompactMode && (
-                  <span className="inline-flex items-start justify-start gap-2 break-words rounded bg-orange px-1.5 py-0.5 text-xs font-normal text-dark-lime">
+                  <span className="inline-flex items-start justify-start gap-2 wrap-break-word rounded bg-orange px-1.5 py-0.5 text-xs font-normal text-dark-lime">
                     Coming Soon
                   </span>
                 )}
@@ -256,7 +256,7 @@ const ItemContent = ({
                   <span
                     key={subcategory.id}
                     className={twMerge(
-                      'inline-flex items-start justify-start gap-2 truncate break-words rounded-sm bg-black px-1.5 py-0.5 text-xs font-normal text-white/60',
+                      'inline-flex items-start justify-start gap-2 truncate wrap-break-word rounded-sm bg-black px-1.5 py-0.5 text-xs font-normal text-white/60',
                       isCompactMode ? 'bg-white/25 text-white' : '',
                     )}
                   >
@@ -301,7 +301,7 @@ const ItemBoxLayout = ({
         isPreviewMode && 'h-fit min-h-[100px]',
         isCompactMode && 'h-fit min-h-[50px] bg-transparent',
         projectHasLiveIncentives &&
-          'bg-live-incentives-gradient before:absolute before:rounded-md before:top-[1px] before:left-[1px] before:w-[calc(100%_-_2px)] before:h-[calc(100%_-_2px)] before:bg-default-black hover:before:bg-default-black-hover',
+          'bg-live-incentives-gradient before:absolute before:rounded-md before:top-px before:left-px before:w-[calc(100%-2px)] before:h-[calc(100%-2px)] before:bg-default-black hover:before:bg-default-black-hover',
         className,
       )}
     >

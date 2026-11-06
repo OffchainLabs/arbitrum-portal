@@ -73,7 +73,7 @@ export function SwitchNetworksButton(props: React.ButtonHTMLAttributes<HTMLButto
   const disabled = isLoadingAccountType || isNetworkSwapBlocked;
 
   return (
-    <div className="z-[1] flex h-4 w-full items-center justify-center lg:h-2">
+    <div className="z-1 flex h-4 w-full items-center justify-center lg:h-2">
       <Button
         type="button"
         variant="tertiary"

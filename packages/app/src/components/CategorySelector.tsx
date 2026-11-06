@@ -44,19 +44,19 @@ export function CategorySelector({ config, selectedId, title }: CategorySelector
                 key={option.id}
                 onClick={option.onClick}
               >
-                <div className="absolute left-0 top-0 z-10 h-full w-full bg-gradient-to-t from-black/60 from-[25%] to-transparent" />
+                <div className="absolute left-0 top-0 z-10 h-full w-full bg-linear-to-t from-black/60 from-25% to-transparent" />
                 <Image
                   src={option.imageUrl}
                   fill
                   alt={option.label}
                   className={twMerge(
-                    'object-contain skew-x-[23deg] scale-[2.3] opacity-30 grayscale group-hover:grayscale-0',
+                    'object-contain skew-x-23 scale-[2.3] opacity-30 grayscale group-hover:grayscale-0',
                     isSelected && 'opacity-70 grayscale-0',
                   )}
                 />
                 <div
                   className={twMerge(
-                    'z-20 skew-x-[23deg] lg:px-2 p-0 text-sm opacity-80 lg:text-base',
+                    'z-20 skew-x-23 lg:px-2 p-0 text-sm opacity-80 lg:text-base',
                     isFirst && 'lg:ml-[20px] ml-[30px]',
                     isSelected && 'font-bold opacity-100',
                   )}

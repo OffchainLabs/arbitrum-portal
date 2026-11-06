@@ -7,7 +7,7 @@ export const HeroBanner = () => (
       backgroundImage: `url('/images/hero-build.webp')`,
     }}
   >
-    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent lg:hidden" />
+    <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent lg:hidden" />
 
     <div className="z-20 flex shrink-0 flex-col gap-2 lg:max-w-sm lg:gap-6">
       <h1 className="text-4xl">Build & Monitor</h1>

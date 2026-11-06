@@ -40,7 +40,7 @@ export const BuildSection = () => {
 
       {/* Launch your own project */}
       <Card
-        className="flex flex-col gap-4 bg-default-black bg-left-top bg-no-repeat pt-[80px]"
+        className="flex flex-col gap-4 bg-default-black bg-top-left bg-no-repeat pt-[80px]"
         style={{
           backgroundImage: `url('/images/banner-build.webp')`,
           backgroundSize: 'auto 60px',
@@ -97,7 +97,7 @@ export const BuildSection = () => {
       </Card>
 
       <Card
-        className="flex flex-col gap-4 bg-default-black bg-left-top bg-no-repeat lg:flex-row"
+        className="flex flex-col gap-4 bg-default-black bg-top-left bg-no-repeat lg:flex-row"
         style={{
           backgroundImage: `url('/images/banner-grants.webp')`,
         }}
