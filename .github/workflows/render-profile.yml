@@ -1,0 +1,112 @@
+name: Render Profile
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    branches: ['master']
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render-profile:
+    name: Profile renders
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install node_modules
+        uses: OffchainLabs/actions/node-modules/install@main
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Checkout base
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: Install base node_modules
+        working-directory: base
+        run: pnpm install --frozen-lockfile
+
+      # Profiles master's code with the PR's scenario and generated responses, so both runs do the
+      # same thing
+      - name: Copy the profile to base
+        run: |
+          find base/packages -name '*.profile.tsx' -not -path '*/node_modules/*' -delete
+          find packages -name '*.profile.tsx' -not -path '*/node_modules/*' -exec cp --parents {} base/ \;
+          cp --parents \
+            packages/arb-token-bridge-ui/vitest.profile.config.ts \
+            packages/arb-token-bridge-ui/vitest.profile.setup.ts \
+            packages/arb-token-bridge-ui/src/test-utils/integration-test-wrapper.tsx \
+            packages/arb-token-bridge-ui/src/test-utils/renderProfile*.ts \
+            packages/arb-token-bridge-ui/src/test-utils/renderProfiler.ts \
+            base/
+
+      # Counts and their causes come from one run of React's development build on each side. Times
+      # come from 10 rounds of the profiling build, each running master and the PR in random order,
+      # so a slow moment of the runner affects both. Master's runs fail if it lacks something the
+      # profile needs, then the report has nothing to compare. Dependencies master doesn't have,
+      # like msw, resolve from the PR's node_modules.
+      - name: Profile master and the PR
+        run: |
+          profile() {
+            local directory=base
+            if [ "$1" = pr ]; then directory=.; fi
+            (cd "$directory/packages/arb-token-bridge-ui" &&
+              RENDER_PROFILE_BUILD="$2" \
+              RENDER_PROFILE_DIRECTORY="$GITHUB_WORKSPACE/render-profile/$1/$3" \
+              pnpm exec vitest --config vitest.profile.config.ts --run)
+          }
+          profile_master=true
+          profile master development counts || profile_master=false
+          profile pr development counts
+          for round in $(seq -w 1 10); do
+            sides="master pr"
+            if [ $((RANDOM % 2)) = 1 ]; then sides="pr master"; fi
+            for side in $sides; do
+              if [ "$side" = pr ]; then
+                profile pr profiling "round-$round"
+              elif [ "$profile_master" = true ]; then
+                profile master profiling "round-$round" || profile_master=false
+              fi
+            done
+          done
+
+      - name: Upload the render profiles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-profile
+          path: render-profile
+          if-no-files-found: warn
+
+      # Fails when an interaction renders more than on master
+      - name: Report results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const report = require('./.github/render-profile/report.js')
+            await report({ github, context, core })
