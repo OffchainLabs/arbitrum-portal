@@ -188,7 +188,7 @@ export function NetworkContainer({
           borderColor: theme.networkThemeOverrideColor,
         }}
       >
-        <div className="absolute left-0 top-0 h-full w-full bg-[-2px_0] bg-no-repeat bg-origin-content p-4 opacity-50" />
+        <div className="absolute top-0 left-0 h-full w-full bg-[-2px_0] bg-no-repeat bg-origin-content p-4 opacity-50" />
         <div className="relative space-y-5 bg-contain bg-no-repeat p-4 sm:flex-row">{children}</div>
       </div>
     </div>

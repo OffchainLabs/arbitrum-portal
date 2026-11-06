@@ -154,7 +154,7 @@ export function NavSearch() {
               ref={inputRef}
               type="text"
               name="portal-search"
-              className="h-6 w-full bg-transparent text-sm text-white placeholder-white/50 outline-hidden focus:outline-hidden focus:ring-0 focus:ring-offset-0 shadow-none"
+              className="h-6 w-full bg-transparent text-sm text-white placeholder-white/50 shadow-none outline-hidden focus:ring-0 focus:ring-offset-0 focus:outline-hidden"
               placeholder="Search categories, projects, chains, and more"
               value={searchString}
               onChange={handleInputChange}
@@ -166,7 +166,7 @@ export function NavSearch() {
               <button
                 type="button"
                 onClick={handleClear}
-                className="shrink-0 text-white transition-opacity cursor-pointer bg-white/5 rounded-sm p-1 hover:bg-white/10"
+                className="shrink-0 cursor-pointer rounded-sm bg-white/5 p-1 text-white transition-opacity hover:bg-white/10"
                 aria-label="Clear search"
               >
                 <XMarkIcon className="h-3 w-3" />
@@ -179,7 +179,7 @@ export function NavSearch() {
       {showSearchResultsPopup && isExpanded && (
         <div
           data-search-popup
-          className="absolute left-0 top-full z-100000 mt-2 w-full md:w-full lg:w-[400px]"
+          className="absolute top-full left-0 z-100000 mt-2 w-full md:w-full lg:w-[400px]"
         >
           <SearchResultsPopup
             searchString={searchString}

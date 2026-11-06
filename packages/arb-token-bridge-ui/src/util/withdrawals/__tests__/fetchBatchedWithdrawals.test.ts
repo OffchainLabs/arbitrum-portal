@@ -62,22 +62,19 @@ describe.sequential('fetchWithdrawalsInBatches single call', () => {
   });
 });
 
-describe.sequential(
-  'fetchWithdrawalsInBatches throw error when toBlock lower than fromBlock',
-  () => {
-    it('throws an error', async () => {
-      await expect(
-        fetchWithdrawalsInBatches({
-          parentChainId: 1,
-          ...getQueryCoveringClassicAndNitroWithResults(),
-          batchSizeBlocks: 1,
-          fromBlock: 2,
-          toBlock: 1,
-        }),
-      ).rejects.toThrow('toBlock (1) cannot be lower than fromBlock (2)');
-    });
-  },
-);
+describe.sequential('fetchWithdrawalsInBatches throw error when toBlock lower than fromBlock', () => {
+  it('throws an error', async () => {
+    await expect(
+      fetchWithdrawalsInBatches({
+        parentChainId: 1,
+        ...getQueryCoveringClassicAndNitroWithResults(),
+        batchSizeBlocks: 1,
+        fromBlock: 2,
+        toBlock: 1,
+      }),
+    ).rejects.toThrow('toBlock (1) cannot be lower than fromBlock (2)');
+  });
+});
 
 describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orbit chains', () => {
   // Register JASMY/T-REX as Orbit chains for isNetwork().isOrbitChain checks

@@ -74,7 +74,7 @@ export const EcosystemEssentials = () => {
                   key={slug}
                   analyticsSource={'Homepage Ecosystem Essentials'}
                   displayMode="spotlight"
-                  className="max-w-[300px] lg:max-w-none w-full max-h-[200px]"
+                  className="max-h-[200px] w-full max-w-[300px] lg:max-w-none"
                   showProjectPreview={false}
                 />
               ))}

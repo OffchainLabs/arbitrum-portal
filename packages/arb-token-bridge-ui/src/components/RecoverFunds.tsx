@@ -296,18 +296,18 @@ export function RecoverFunds() {
   return (
     <>
       <DialogWrapper {...dialogProps} />
-      <NoteBox className="m-auto max-w-[600px] mx-4 w-full">
+      <NoteBox className="m-auto mx-4 w-full max-w-[600px]">
         <div className="flex items-center">
           <p>
             We detected some funds on{' '}
             <Tooltip content={getAliasedAddress(address)}>
-              <span className="inline cursor-help underline arb-hover">
+              <span className="arb-hover inline cursor-help underline">
                 {shortenAddress(getAliasedAddress(address))}
               </span>
             </Tooltip>{' '}
             alias of currently connected address (
             <Tooltip content={address}>
-              <span className="inline cursor-help underline arb-hover">
+              <span className="arb-hover inline cursor-help underline">
                 {shortenAddress(address)}
               </span>
             </Tooltip>
@@ -459,7 +459,7 @@ const ActionColumn: TableCellRenderer = ({ rowData }) => {
       <Button
         aria-label={`Recover funds`}
         variant="primary"
-        className="ml-auto mr-3 w-min rounded bg-green-400 p-2 text-xs text-black"
+        className="mr-3 ml-auto w-min rounded bg-green-400 p-2 text-xs text-black"
         onClick={async () => {
           if (!latestSigner || !destinationAddress) {
             return;
