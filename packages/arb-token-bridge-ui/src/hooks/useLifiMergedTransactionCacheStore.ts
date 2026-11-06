@@ -7,7 +7,10 @@ import type { AmountWithToken } from '../app/api/crosschain-transfers/types';
 import { isSameTransaction } from '../components/TransactionHistory/helpers';
 import { LifiMergedTransaction, WithdrawalStatus } from '../state/app/state';
 import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
-import { isLifiRouteComplete } from '../util/LifiTransactionStatus';
+import {
+  isLifiRouteComplete,
+  rejectInterruptedLifiRouteProcesses,
+} from '../util/LifiTransactionStatus';
 
 interface LifiMergedTransactionCacheState {
   transactions: Record<string, LifiMergedTransaction[]>;
@@ -194,6 +197,12 @@ export function migrateLifiCacheStateToVersion3(
   }
 }
 
+function rejectInterruptedLifiTransaction(tx: LifiMergedTransaction): LifiMergedTransaction {
+  return tx.lifiRoute
+    ? { ...tx, lifiRoute: rejectInterruptedLifiRouteProcesses(tx.lifiRoute) }
+    : tx;
+}
+
 const persistOptions: PersistOptions<LifiMergedTransactionCacheState, Version3State> = {
   name: 'lifi-merged-transaction-cache',
   version: LIFI_CACHE_VERSION,
@@ -205,6 +214,24 @@ const persistOptions: PersistOptions<LifiMergedTransactionCacheState, Version3St
       persistedState,
       sourceVersion,
     ) as LifiMergedTransactionCacheState,
+  // Runs on every load, after any migration. Hydration happens when the store is created, before this
+  // tab can execute a route, so a stored process that hasn't sent its transaction was interrupted.
+  merge: (persistedState, currentState) => {
+    const { transactions } = (persistedState ?? {}) as Partial<Version3State>;
+    if (!transactions) {
+      return currentState;
+    }
+
+    return {
+      ...currentState,
+      transactions: Object.fromEntries(
+        Object.entries(transactions).map(([address, addressTransactions]) => [
+          address,
+          addressTransactions.map(rejectInterruptedLifiTransaction),
+        ]),
+      ),
+    };
+  },
 };
 
 function updateTransactions(
