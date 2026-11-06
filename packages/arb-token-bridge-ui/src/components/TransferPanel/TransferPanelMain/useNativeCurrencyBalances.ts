@@ -17,7 +17,7 @@ export function useNativeCurrencyBalances(): {
   destinationGasBalance: BigNumber | null;
 } {
   const [networks] = useNetworks();
-  const { childChainProvider } = useNetworksRelationship(networks);
+  const { childChain } = useNetworksRelationship(networks);
   const [{ destinationAddress }] = useArbQueryParams();
   const {
     sourceWallet: {
@@ -27,7 +27,7 @@ export function useNativeCurrencyBalances(): {
       account: { address: destinationWalletAccountAddress },
     },
   } = useWallets();
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const sourceGasTokenAddress = getNativeTokenAddress(networks.sourceChain.id);
   const destinationGasTokenAddress = getNativeTokenAddress(networks.destinationChain.id);
   const childNativeCurrencyAddress = nativeCurrency.isCustom ? nativeCurrency.address : undefined;
