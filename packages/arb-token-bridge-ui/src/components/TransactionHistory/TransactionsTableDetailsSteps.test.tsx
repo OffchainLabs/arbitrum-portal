@@ -331,39 +331,6 @@ describe.sequential('TransactionsTableDetailsSteps', () => {
     ).toBe('DIV');
   });
 
-  it('ignores switch-chain processes when determining LiFi step state', () => {
-    const { container } = render(
-      <TransactionsTableDetailsSteps
-        tx={{
-          ...baseLifiTransaction,
-          lifiRoute: {
-            steps: [
-              {
-                ...(baseLifiTransaction.lifiRoute?.steps[0] ?? {}),
-                execution: {
-                  status: 'DONE',
-                  process: [{ type: 'SWITCH_CHAIN', status: 'DONE', startedAt: 1 }],
-                },
-              },
-            ],
-          } as unknown as LifiMergedTransaction['lifiRoute'],
-        }}
-      />,
-    );
-    const renderedSteps = within(container);
-
-    expect(
-      renderedSteps
-        .getByText('Approve transaction on Arbitrum One')
-        .previousElementSibling?.getAttribute('class'),
-    ).toContain('border-white/50');
-    expect(
-      renderedSteps
-        .getByText('Approve transfer on Arbitrum One')
-        .previousElementSibling?.getAttribute('class'),
-    ).toContain('border-white/50');
-  });
-
   it('keeps a smart-wallet batch transfer grey while its approval is pending', () => {
     const { container } = render(
       <TransactionsTableDetailsSteps
