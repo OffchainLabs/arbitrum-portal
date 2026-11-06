@@ -197,6 +197,8 @@ describe.sequential('useLifiMergedTransactionCacheStore', () => {
   it.each([
     { processStatus: 'STARTED', stepStatus: 'PENDING' },
     { processStatus: 'ACTION_REQUIRED', stepStatus: 'ACTION_REQUIRED' },
+    { processStatus: 'MESSAGE_REQUIRED', stepStatus: 'ACTION_REQUIRED' },
+    { processStatus: 'RESET_REQUIRED', stepStatus: 'ACTION_REQUIRED' },
   ] as const)(
     'fails a $processStatus process left without a transaction so the route can be resumed',
     async ({ processStatus, stepStatus }) => {
@@ -212,7 +214,7 @@ describe.sequential('useLifiMergedTransactionCacheStore', () => {
       const wallet = '0x1111111111111111111111111111111111111111';
       localStorageMock.setItem(
         'lifi-merged-transaction-cache',
-        JSON.stringify({ state: { transactions: { [wallet]: [tx] } }, version: 3 }),
+        JSON.stringify({ state: { transactions: { [wallet]: [tx] } }, version: 4 }),
       );
 
       await useLifiMergedTransactionCacheStore.persist.rehydrate();
