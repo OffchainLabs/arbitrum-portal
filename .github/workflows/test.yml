@@ -62,7 +62,13 @@ jobs:
           package-manager-cache: false
 
       - name: Install node_modules
-        uses: ./.github/actions/install-node-modules
+        # TODO: back to @main once OffchainLabs/actions#46 merges
+        uses: OffchainLabs/actions/node-modules/install@ad07ad618c95e22537c3bfc9d8bfaa6a60e16d0d
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
@@ -90,7 +96,13 @@ jobs:
           package-manager-cache: false
 
       - name: Install node_modules
-        uses: ./.github/actions/install-node-modules
+        # TODO: back to @main once OffchainLabs/actions#46 merges
+        uses: OffchainLabs/actions/node-modules/install@ad07ad618c95e22537c3bfc9d8bfaa6a60e16d0d
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
@@ -115,7 +127,13 @@ jobs:
           package-manager-cache: false
 
       - name: Install node_modules
-        uses: ./.github/actions/install-node-modules
+        # TODO: back to @main once OffchainLabs/actions#46 merges
+        uses: OffchainLabs/actions/node-modules/install@ad07ad618c95e22537c3bfc9d8bfaa6a60e16d0d
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Run audit
         run: pnpm audit:ci
@@ -139,7 +157,13 @@ jobs:
           package-manager-cache: false
 
       - name: Install node_modules
-        uses: ./.github/actions/install-node-modules
+        # TODO: back to @main once OffchainLabs/actions#46 merges
+        uses: OffchainLabs/actions/node-modules/install@ad07ad618c95e22537c3bfc9d8bfaa6a60e16d0d
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
