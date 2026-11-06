@@ -53,7 +53,7 @@ jobs:
 
       - name: Install node_modules
         # TODO: back to @main once OffchainLabs/actions#46 merges
-        uses: OffchainLabs/actions/node-modules/install@ad07ad618c95e22537c3bfc9d8bfaa6a60e16d0d
+        uses: OffchainLabs/actions/node-modules/install@7d748b2b44a530fe448f68e5754d8ff69e7d07f9
         with:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
