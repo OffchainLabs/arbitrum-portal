@@ -1,3 +1,4 @@
+import type { ContractStorage, ERC20BridgeToken } from '../hooks/arbTokenBridge.types';
 import type { NativeCurrency } from '../hooks/useNativeCurrency';
 import { getProviderForChainId } from '../token-bridge-sdk/utils';
 import { fetchEvmNativeCurrency } from './evm/nativeCurrency';
@@ -13,4 +14,16 @@ export async function fetchNativeCurrency({
     provider: getProviderForChainId(chainId),
     parentChainIdFromQueryParam,
   });
+}
+
+export function getNativeCurrencyPrice({
+  priceAddress,
+  tokensFromLists,
+  ethPrice,
+}: {
+  priceAddress: string | undefined;
+  tokensFromLists: ContractStorage<ERC20BridgeToken>;
+  ethPrice: number;
+}): number | undefined {
+  return priceAddress ? tokensFromLists[priceAddress]?.priceUSD : ethPrice;
 }
