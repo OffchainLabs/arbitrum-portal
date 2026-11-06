@@ -1,7 +1,8 @@
 'use client';
 
+import type FlickityInstance from 'flickity';
 import { useCallback, useRef, useState } from 'react';
-import Flickity, { FlickityOptions } from 'react-flickity-component';
+import Flickity from 'react-flickity-component';
 import { twMerge } from 'tailwind-merge';
 
 import { isEarnEnabled } from '@/bridge/util/featureFlag';
@@ -9,7 +10,7 @@ import { isEarnEnabled } from '@/bridge/util/featureFlag';
 import { EarnBanner } from './EarnBanner';
 import { UsdgBanner } from './UsdgBanner';
 
-const carouselOptions: FlickityOptions = {
+const carouselOptions: FlickityInstance.Options = {
   draggable: true,
   wrapAround: true,
   autoPlay: 5000,
@@ -20,10 +21,10 @@ const carouselOptions: FlickityOptions = {
 
 export function HomeBannerCarousel() {
   const [isReady, setIsReady] = useState(false);
-  const flickityRef = useRef<Flickity | null>(null);
+  const flickityRef = useRef<FlickityInstance | null>(null);
 
   const setupFlickityRef = useCallback(
-    (carouselRef: Flickity | null) => {
+    (carouselRef: FlickityInstance | null) => {
       flickityRef.current = carouselRef;
 
       if (!flickityRef.current) return;

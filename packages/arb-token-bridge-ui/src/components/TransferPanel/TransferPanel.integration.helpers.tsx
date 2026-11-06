@@ -23,12 +23,7 @@ vi.mock('../../hooks/TransferPanel/useGasEstimates', () => ({
 }));
 
 export type ChainQuerySlug =
-  | 'ethereum'
-  | 'arbitrum-one'
-  | 'arbitrum-nova'
-  | 'base'
-  | 'apechain'
-  | 'robinhood-chain';
+  'ethereum' | 'arbitrum-one' | 'arbitrum-nova' | 'base' | 'apechain' | 'robinhood-chain';
 const INTEGRATION_ASSERT_TIMEOUT_MS = 2_000;
 const POLL_INTERVAL_MS = 50;
 const TOKEN_BUTTON_ASSERT_TIMEOUT_MS = 6_000;
