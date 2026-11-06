@@ -4,6 +4,7 @@ import { getAPIBaseUrl } from '.';
 import { getProviderForChainId } from '../token-bridge-sdk/utils';
 import { type ValidationOptions, ecosystems } from '../wallet/ecosystems';
 import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
+import type { WalletEcosystem } from '../wallet/types';
 import { logger } from './logger';
 
 export type EvmAddress = `0x${string}`;
@@ -41,6 +42,28 @@ export function isValidAddress(
     address &&
       Object.values(ecosystems).some((ecosystem) => ecosystem.address.isValid(address, options)),
   );
+}
+
+/** The ecosystem whose address format matches, or `undefined` for an unknown format */
+export function findAddressEcosystem(address: string | undefined): WalletEcosystem | undefined {
+  if (!address) return undefined;
+  return (Object.keys(ecosystems) as WalletEcosystem[]).find((ecosystem) =>
+    ecosystems[ecosystem].address.isValid(address),
+  );
+}
+
+export function isValidTransactionId(transactionId: string, options?: ValidationOptions): boolean {
+  return Object.values(ecosystems).some((ecosystem) =>
+    ecosystem.transactionId.isValid(transactionId, options),
+  );
+}
+
+/** Normalizes with the matching ecosystem; unknown formats are returned unchanged. */
+export function normalizeTransactionId(transactionId: string): string {
+  const adapter = Object.values(ecosystems)
+    .map((ecosystem) => ecosystem.transactionId)
+    .find((adapter) => adapter.isValid(transactionId));
+  return adapter ? adapter.normalize(transactionId) : transactionId;
 }
 
 function getAddressAdapter(chainId: number) {
