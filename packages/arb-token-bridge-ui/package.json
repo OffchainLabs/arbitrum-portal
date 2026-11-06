@@ -60,12 +60,12 @@
     "test:unit:watch": "vitest --config vitest.config.ts --watch",
     "test:integration": "vitest --config vitest.integration.config.ts --run",
     "test:integration:watch": "vitest --config vitest.integration.config.ts --watch",
-    "generateDenylist": "ts-node --project ./scripts/tsconfig.json ./scripts/generateDenylist.ts",
-    "generateOpenGraphImages": "ts-node --project ./scripts/tsconfig.json ./src/generateOpenGraphImages.tsx generate",
+    "generateDenylist": "tsx --tsconfig ./scripts/tsconfig.json ./scripts/generateDenylist.ts",
+    "generateOpenGraphImages": "tsx --tsconfig ./scripts/tsconfig.json ./src/generateOpenGraphImages.tsx generate",
     "generateOpenGraphImages:core": "pnpm run generateOpenGraphImages --core",
     "generateOpenGraphImages:orbit": "pnpm run generateOpenGraphImages --orbit",
-    "generateCoreChainsToMonitor": "ts-node --project ./scripts/tsconfig.json ./scripts/generateCoreChainsToMonitor.ts",
-    "generateOrbitChainsToMonitor": "ts-node --project ./scripts/tsconfig.json ./scripts/generateOrbitChainsToMonitor.ts"
+    "generateCoreChainsToMonitor": "tsx --tsconfig ./scripts/tsconfig.json ./scripts/generateCoreChainsToMonitor.ts",
+    "generateOrbitChainsToMonitor": "tsx --tsconfig ./scripts/tsconfig.json ./scripts/generateOrbitChainsToMonitor.ts"
   },
   "browserslist": {
     "production": [
@@ -101,7 +101,7 @@
     "start-server-and-test": "^3.0.13",
     "supports-color": "^8.1.1",
     "tailwindcss": "^4.3.3",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.23.15",
     "vite": "^7.3.7",
     "vitest": "^4.1.12",
     "yargs": "^18.2.0"
