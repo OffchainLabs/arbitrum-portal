@@ -17,6 +17,7 @@ import { MergedTransaction } from '../../state/app/state';
 import { parseSWRResponse } from '../../state/cctpState';
 import { ChainId } from '../../types/ChainId';
 import { ecosystems } from '../../wallet/ecosystems';
+import { findWalletEcosystem } from '../../wallet/getWalletEcosystem';
 import { isValidTransactionId } from '../AddressUtils';
 import { fetchCCTPDeposits, fetchCCTPWithdrawals } from '../cctp/fetchCCTP';
 import { fetchDeposits } from '../deposits/fetchDeposits';
@@ -175,8 +176,12 @@ export async function fetchTransactionsByTxHash({
   }
 
   const limit = pLimit(10);
+  // Only EVM chains have a receipt for an EVM hash, e.g. Solana LiFi routes are in the probe set too
+  const evmProbeChainIds = probeChainIds.filter(
+    (chainId) => findWalletEcosystem(chainId) === 'evm',
+  );
   const probeResults = await Promise.all(
-    probeChainIds.map((chainId) => limit(() => getReceiptForChain({ txHash, chainId }))),
+    evmProbeChainIds.map((chainId) => limit(() => getReceiptForChain({ txHash, chainId }))),
   );
 
   const receipts = probeResults.filter(
