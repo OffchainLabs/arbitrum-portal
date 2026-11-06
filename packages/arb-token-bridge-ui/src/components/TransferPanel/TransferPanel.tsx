@@ -28,7 +28,6 @@ import {
 import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
-import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
 import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { useAccountType } from '../../hooks/useAccountType';
@@ -65,6 +64,7 @@ import { getNetworkName, isNetwork } from '../../util/networks';
 import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { getSigners } from '../../wallet/getSigners';
 import { useRefreshTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextActions } from '../App/AppContext';
@@ -140,15 +140,14 @@ export function TransferPanel() {
       warningTokens,
     },
   } = useAppState();
+  const { sourceWallet, destinationWallet } = useWallets();
   const {
-    sourceWallet: {
-      account: { address: walletAddress, chainId: sourceWalletChainId },
-      isConnected,
-    },
-    destinationWallet: {
-      account: { address: destinationWalletAddress },
-    },
-  } = useWallets();
+    account: { address: walletAddress, chainId: sourceWalletChainId },
+    isConnected,
+  } = sourceWallet;
+  const {
+    account: { address: destinationWalletAddress },
+  } = destinationWallet;
   const [selectedToken, setSelectedToken] = useSelectedToken();
   const hasTrackedBridgePageLoad = useRef(false);
   const { switchChainAsync } = useSwitchNetworkWithConfig({
@@ -674,27 +673,8 @@ export function TransferPanel() {
         return;
       }
 
-      const { sourceChainProvider, destinationChainProvider } = networks;
-
-      const tokenOverrides = getTokenOverride({
-        fromToken: selectedToken?.address,
-        sourceChainId: networks.sourceChain.id,
-        destinationChainId: networks.destinationChain.id,
-      });
-
-      const destinationChainErc20Address =
-        tokenOverrides.destination?.address ||
-        (isDepositMode ? selectedToken?.l2Address : selectedToken?.address);
-      const sourceChainErc20Address =
-        tokenOverrides.source?.address ||
-        (isDepositMode ? selectedToken?.address : selectedToken?.l2Address);
-      const lifiTransferStarter = new LifiTransferStarter({
-        destinationChainProvider,
-        sourceChainProvider,
-        destinationChainErc20Address,
-        sourceChainErc20Address,
-        lifiRoute: context,
-      });
+      const { sourceChainProvider } = networks;
+      const lifiTransferStarter = new LifiTransferStarter({ lifiRoute: context });
 
       if (isSmartContractWallet) {
         showDelayedSmartContractTxRequest();
@@ -781,7 +761,7 @@ export function TransferPanel() {
       const transfer = await lifiTransferStarter.transfer({
         amount: amountBigNumber,
         destinationAddress,
-        wagmiConfig,
+        signers: getSigners(sourceWallet, destinationWallet),
         switchChainAsync,
         onApprovalRequest: (approvalRequest) =>
           confirmDialog('approve_lifi_token', { lifiApproval: { approvalRequest } }),
@@ -845,12 +825,9 @@ export function TransferPanel() {
         isSwap: isSwapTransfer,
       });
 
-      const sourceChainTransaction = transfer.sourceChainTransaction;
       if (!isSmartContractWallet) {
         refreshBalancesAfterConfirmation(
-          'wait' in sourceChainTransaction
-            ? sourceChainTransaction.wait()
-            : transfer.sourceChainProvider.waitForTransaction(sourceChainTransaction.hash),
+          sourceChainProvider.waitForTransaction(transfer.sourceChainTransaction.hash),
           'lifi_source_confirmation',
         );
       }

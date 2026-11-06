@@ -1,11 +1,17 @@
 'use client';
 
+import type { Provider as SolanaWalletProvider } from '@reown/appkit-adapter-solana/react';
 import { useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react';
 import { useCallback, useMemo } from 'react';
 
 import { ChainId } from '../types/ChainId';
 import type { SolanaAddress } from '../util/AddressUtils';
+import { appKit } from '../util/wagmi/setup';
+import { createSolanaSigner } from './solana/signer';
 import type { SolanaWalletHandle } from './types';
+
+// Reads the provider when LiFi calls it, so a route signs with the wallet connected at that point
+const signer = createSolanaSigner(() => appKit.getProvider<SolanaWalletProvider>('solana'));
 
 export function useSolanaWallet(): SolanaWalletHandle {
   const { address, status, isConnected } = useAppKitAccount({ namespace: 'solana' });
@@ -30,6 +36,7 @@ export function useSolanaWallet(): SolanaWalletHandle {
       isConnected,
       needsNetworkSigningWarning: false,
       disconnect: disconnectSolana,
+      signer,
     }),
     [address, status, walletInfo, isConnected, disconnectSolana],
   );
