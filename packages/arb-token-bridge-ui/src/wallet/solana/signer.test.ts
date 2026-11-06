@@ -34,7 +34,7 @@ describe('createSolanaSigner', () => {
     },
   );
 
-  it('reads the provider when called, so a wallet switch is picked up', () => {
+  it('reads the provider when called, so a wallet connected after the signer was created is picked up', () => {
     const wallet: { provider?: SolanaWalletProvider } = {};
     const signer = createSolanaSigner(() => wallet.provider);
 
@@ -42,5 +42,21 @@ describe('createSolanaSigner', () => {
     wallet.provider = { publicKey } as SolanaWalletProvider;
 
     expect(signer.getAddress()).toBe(publicKey.toBase58());
+  });
+
+  it('signs with the current wallet after a wallet switch', async () => {
+    const transaction = {} as VersionedTransaction;
+    const switchedPublicKey = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+    const firstProvider = { publicKey, signTransaction: vi.fn() };
+    const switchedProvider = { publicKey: switchedPublicKey, signTransaction: vi.fn() };
+    const wallet = { provider: firstProvider as unknown as SolanaWalletProvider };
+    const adapter = await createSolanaSigner(() => wallet.provider).getWalletAdapter();
+
+    wallet.provider = switchedProvider as unknown as SolanaWalletProvider;
+    await adapter.signTransaction(transaction);
+
+    expect(adapter.publicKey).toBe(switchedPublicKey);
+    expect(switchedProvider.signTransaction).toHaveBeenCalledWith(transaction);
+    expect(firstProvider.signTransaction).not.toHaveBeenCalled();
   });
 });

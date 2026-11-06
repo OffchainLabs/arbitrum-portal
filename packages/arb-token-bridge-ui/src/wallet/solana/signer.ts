@@ -7,16 +7,26 @@ import type { SolanaSigner, SolanaWalletAdapter } from '../types';
 export function createSolanaSigner(
   getProvider: () => SolanaWalletProvider | undefined,
 ): SolanaSigner {
+  const getConnectedProvider = () => {
+    const provider = getProvider();
+    if (!provider?.publicKey) {
+      throw new Error('Connect a Solana wallet to continue.');
+    }
+    return { provider, publicKey: provider.publicKey };
+  };
+
   return {
     getAddress: () => getProvider()?.publicKey?.toBase58(),
     getWalletAdapter: async () => {
-      const provider = getProvider();
-      if (!provider?.publicKey) {
-        throw new Error('Connect a Solana wallet to continue.');
-      }
+      getConnectedProvider();
+      // LiFi keeps the adapter for a whole step, so read the wallet on each access.
+      // After a wallet switch, LiFi's address check fails instead of signing with the old wallet.
       const adapter: Pick<SolanaWalletAdapter, 'publicKey' | 'signTransaction'> = {
-        publicKey: provider.publicKey,
-        signTransaction: (transaction) => provider.signTransaction(transaction),
+        get publicKey() {
+          return getConnectedProvider().publicKey;
+        },
+        signTransaction: (transaction) =>
+          getConnectedProvider().provider.signTransaction(transaction),
       };
       return adapter as SolanaWalletAdapter;
     },
