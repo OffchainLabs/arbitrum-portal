@@ -37,6 +37,8 @@ jobs:
         with:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Install Chrome for Testing
         uses: ./.github/actions/install-chrome
