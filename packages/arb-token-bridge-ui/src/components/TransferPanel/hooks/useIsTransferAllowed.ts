@@ -4,6 +4,7 @@ import { useAccount } from 'wagmi';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useAppState } from '../../../state';
 import { useDestinationAddressError } from './useDestinationAddressError';
+import { isLifiRoute, useRouteStore } from './useRouteStore';
 
 export function useIsTransferAllowed() {
   const {
@@ -14,16 +15,19 @@ export function useIsTransferAllowed() {
   } = useAppState();
   // do not use `useChainId` because it won't detect chains outside of our wagmi config
   const { address: walletAddress, isConnected, chain } = useAccount();
+  const selectedRoute = useRouteStore((state) => state.selectedRoute);
   const [networks] = useNetworks();
   const { destinationAddressError } = useDestinationAddressError();
 
   return useMemo(() => {
     const isConnectedToTheWrongChain = chain?.id !== networks.sourceChain.id;
+    // LiFi routes don't use the bridge SDK
+    const requiresBridgeSdk = !isLifiRoute(selectedRoute);
 
-    if (!arbTokenBridgeLoaded) {
+    if (requiresBridgeSdk && !arbTokenBridgeLoaded) {
       return false;
     }
-    if (!eth) {
+    if (requiresBridgeSdk && !eth) {
       return false;
     }
     if (!isConnected) {
@@ -46,6 +50,7 @@ export function useIsTransferAllowed() {
     isConnected,
     eth,
     networks.sourceChain.id,
+    selectedRoute,
     walletAddress,
   ]);
 }
