@@ -69,7 +69,11 @@ jobs:
         working-directory: base
         run: pnpm install --frozen-lockfile && pnpm build
 
-      # Use the pinned Chrome for Testing, so results don't shift with runner image updates
+      # Use the pinned Chrome for Testing, so results don't shift with runner image updates.
+      # `postinstall` skips it on CI
+      - name: Install Chrome for Testing
+        uses: ./.github/actions/install-chrome
+
       - name: Locate Chrome for Testing
         run: |
           chrome_version=$(node -p "require('./package.json').config.chromeVersion")
