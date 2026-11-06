@@ -8,12 +8,15 @@ import { ChainId } from '../../../types/ChainId';
 import { useIsTransferAllowed } from './useIsTransferAllowed';
 import { type RouteType, useRouteStore } from './useRouteStore';
 
-vi.mock('wagmi', async () => ({
-  ...(await vi.importActual('wagmi')),
-  useAccount: () => ({
-    address: '0x1111111111111111111111111111111111111111',
-    isConnected: true,
-    chain: { id: ChainId.Ethereum },
+vi.mock('../../../wallet/hooks/useWallets', () => ({
+  useWallets: () => ({
+    sourceWallet: {
+      isConnected: true,
+      account: {
+        address: '0x1111111111111111111111111111111111111111',
+        chainId: ChainId.Ethereum,
+      },
+    },
   }),
 }));
 
