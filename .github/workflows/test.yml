@@ -159,9 +159,7 @@ jobs:
       - name: Check formatting with Prettier
         run: pnpm prettier:check
 
-      - name: Check formatting with ESLint
-        env:
-          NODE_OPTIONS: '--max_old_space_size=4096'
+      - name: Type-check and lint
         run: pnpm lint
 
   e2e-tests:
