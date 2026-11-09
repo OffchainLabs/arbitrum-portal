@@ -18,6 +18,8 @@ export type EcosystemConfig = {
     /** Whether two addresses that differ only in case are different accounts */
     isCaseSensitive: boolean;
   };
+  /** Address that stands for the native currency in balance requests and LiFi quotes */
+  nativeTokenAddress: string;
 };
 
 export const ecosystems: Record<WalletEcosystem, EcosystemConfig> = {
