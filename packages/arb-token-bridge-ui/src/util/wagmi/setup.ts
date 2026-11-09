@@ -120,6 +120,7 @@ function getConnectors(): CreateConnectorFn[] {
     connectors.push(
       zeroDevWalletConnect({
         projectId: walletConnectProjectId,
+        solana: true,
         metadata,
       }),
     );

@@ -13,7 +13,7 @@
     "@moonpay/moonpay-node": "^0.2.12",
     "@moonpay/moonpay-react": "^1.10.5",
     "@offchainlabs/cobalt": "^0.5.1",
-    "@zerodev/wallet-react-ui": "file:../../.zd-tarballs/zerodev-wallet-react-ui-0.0.11.tgz",
+    "@zerodev/wallet-react-ui": "file:../../.zd-tarballs/zerodev-wallet-react-ui-0.0.15.tgz",
     "@rehooks/local-storage": "^2.4.5",
     "@sentry/react": "^9.13.0",
     "@tanstack/react-query": "^5.63.0",
