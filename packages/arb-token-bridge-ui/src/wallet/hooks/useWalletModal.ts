@@ -1,22 +1,22 @@
-import { useAppKit } from '@reown/appkit/react';
 import { useCallback } from 'react';
-
-import { useNetworks } from '../../hooks/useNetworks';
-import { appKit } from '../../util/wagmi/setup';
+import { useConnect, useConnectors } from 'wagmi';
 
 export function useWalletModal() {
-  const { open } = useAppKit();
-  const [networks] = useNetworks();
+  const { connect } = useConnect();
+  const connectors = useConnectors();
 
-  const openConnectModal = useCallback(async () => {
-    if (appKit && networks.sourceChain) {
-      const caipNetwork = appKit.getCaipNetwork('eip155', networks.sourceChain.id);
-      if (caipNetwork) {
-        appKit.setCaipNetwork(caipNetwork);
-      }
+  const openConnectModal = useCallback(() => {
+    // The documented ZD kit entry point: connecting the 'zerodev-wallet'
+    // connector surfaces the kit's connect UI when no session exists and
+    // resolves once the user finishes. Picking an external wallet inside the
+    // UI connects that wallet instead and settles this mutation as
+    // 'Auth flow dismissed' — expected, wagmi ends up connected either way.
+    const zeroDevConnector = connectors.find((c) => c.id === 'zerodev-wallet');
+
+    if (zeroDevConnector) {
+      connect({ connector: zeroDevConnector });
     }
-    await open({ view: 'Connect', namespace: 'eip155' });
-  }, [networks.sourceChain, open]);
+  }, [connect, connectors]);
 
   return {
     openConnectModal,
