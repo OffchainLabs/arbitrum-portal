@@ -88,9 +88,14 @@ export function useDialog2(): UseDialogResult {
   // Whether the dialog is currently open
   const [openedDialogType, setOpenedDialogType] = useState<DialogType | null>(null);
   const [dialogData, setDialogData] = useState<DialogData | undefined>();
+  // Counts opens, so reopening the same dialog type still gives it a new `onClose`
+  const [openCount, setOpenCount] = useState(0);
+  const openCountRef = useRef(0);
 
   const openDialog: OpenDialogFunction = useCallback(
     (dialogType: DialogType, data?: DialogData) => {
+      openCountRef.current += 1;
+      setOpenCount(openCountRef.current);
       setOpenedDialogType(dialogType);
       setDialogData(data);
 
@@ -103,14 +108,23 @@ export function useDialog2(): UseDialogResult {
     [],
   );
 
-  const closeDialog = useCallback((confirmed: boolean, onCloseData?: unknown) => {
-    if (typeof resolveRef.current !== 'undefined') {
-      resolveRef.current?.([confirmed, onCloseData]);
-    }
+  const closeDialog = useCallback(
+    (confirmed: boolean, onCloseData?: unknown) => {
+      // `Dialog` calls `onClose` 200ms after a close, once its exit animation ends.
+      // Ignore that call if the dialog was opened again in the meantime.
+      if (openCount !== openCountRef.current) {
+        return;
+      }
 
-    setOpenedDialogType(null);
-    setDialogData(undefined);
-  }, []);
+      if (typeof resolveRef.current !== 'undefined') {
+        resolveRef.current?.([confirmed, onCloseData]);
+      }
+
+      setOpenedDialogType(null);
+      setDialogData(undefined);
+    },
+    [openCount],
+  );
 
   return [{ openedDialogType, dialogData, onClose: closeDialog }, openDialog];
 }
