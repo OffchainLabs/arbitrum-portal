@@ -83,6 +83,8 @@ jobs:
         with:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: ${{ github.ref == 'refs/heads/master' }}
 
       # Master is built in its own directory and measured with the PR's scenarios
       - name: Checkout base
