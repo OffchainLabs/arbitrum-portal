@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { type SubgraphSource, getCctpSubgraphClient } from '../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../types/ChainId';
-import { Address } from '../../../util/AddressUtils';
+import { EvmAddress } from '../../../util/AddressUtils';
 
 export enum ChainDomain {
   Ethereum = 0,
@@ -13,26 +13,26 @@ export enum ChainDomain {
 export type MessageReceived = {
   blockNumber: string;
   blockTimestamp: string;
-  caller: Address;
+  caller: EvmAddress;
   id: string;
   messageBody: string;
   nonce: string;
-  sender: Address;
+  sender: EvmAddress;
   sourceDomain: `${ChainDomain}`;
-  transactionHash: Address;
+  transactionHash: EvmAddress;
 };
 
 export type MessageSent = {
-  attestationHash: Address;
+  attestationHash: EvmAddress;
   blockNumber: string;
   blockTimestamp: string;
   id: string;
   message: string;
   nonce: string;
-  sender: Address;
-  recipient: Address;
+  sender: EvmAddress;
+  recipient: EvmAddress;
   sourceDomain: `${ChainDomain}`;
-  transactionHash: Address;
+  transactionHash: EvmAddress;
   amount: string;
 };
 
@@ -69,7 +69,7 @@ export async function GET(
 ): Promise<NextResponse<Response>> {
   try {
     const { searchParams } = new URL(request.url);
-    const walletAddress = searchParams.get('walletAddress') as Address;
+    const walletAddress = searchParams.get('walletAddress') as EvmAddress;
     const l1ChainIdString = searchParams.get('l1ChainId') || '1';
     const pageNumber = searchParams.get('pageNumber') || '0';
     const pageSize = searchParams.get('pageSize') || '10';
