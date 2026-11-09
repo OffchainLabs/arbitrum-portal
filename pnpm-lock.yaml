@@ -10,9 +10,9 @@ overrides:
   '@walletconnect/ethereum-provider': 2.26.0
   '@walletconnect/keyvaluestorage>unstorage': 1.17.6
   json-canonicalize: 2.0.0
-  '@zerodev/react-ui': file:./.zd-tarballs/zerodev-react-ui-0.0.7.tgz
-  '@zerodev/wallet-core': file:./.zd-tarballs/zerodev-wallet-core-0.0.5.tgz
-  '@zerodev/wallet-react': file:./.zd-tarballs/zerodev-wallet-react-0.0.7.tgz
+  '@zerodev/react-ui': file:./.zd-tarballs/zerodev-react-ui-0.0.9.tgz
+  '@zerodev/wallet-core': file:./.zd-tarballs/zerodev-wallet-core-0.0.7.tgz
+  '@zerodev/wallet-react': file:./.zd-tarballs/zerodev-wallet-react-0.0.10.tgz
   '@babel/runtime': 7.26.10
   form-data: 4.0.6
   axios: 1.20.0
@@ -169,8 +169,8 @@ importers:
         specifier: ^2.22.1
         version: 2.22.1(@tanstack/query-core@5.104.5)(@types/react@19.3.0)(immer@10.2.0)(react@19.3.1)(typescript@5.9.3)(use-sync-external-store@1.4.0)(viem@2.57.16)
       '@zerodev/wallet-react-ui':
-        specifier: file:../../.zd-tarballs/zerodev-wallet-react-ui-0.0.11.tgz
-        version: file:.zd-tarballs/zerodev-wallet-react-ui-0.0.11.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/wallet-core@0.0.5)(@zerodev/wallet-react@0.0.7)(bufferutil@4.0.9)(debug@4.4.3)(fastestsmallesttextencoderdecoder@1.0.22)(immer@10.2.0)(radix-ui@1.8.1)(react-dom@19.3.1)(react@19.3.1)(supports-color@8.1.1)(typescript@5.9.3)(use-sync-external-store@1.4.0)(utf-8-validate@6.0.6)(viem@2.57.16)(wagmi@2.19.5)(ws@8.21.0)(zod@3.25.76)
+        specifier: file:../../.zd-tarballs/zerodev-wallet-react-ui-0.0.15.tgz
+        version: file:.zd-tarballs/zerodev-wallet-react-ui-0.0.15.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/wallet-core@0.0.7)(@zerodev/wallet-react@0.0.10)(bufferutil@4.0.9)(debug@4.4.3)(fastestsmallesttextencoderdecoder@1.0.22)(immer@10.2.0)(radix-ui@1.8.1)(react-dom@19.3.1)(react@19.3.1)(supports-color@8.1.1)(typescript@5.9.3)(use-sync-external-store@1.4.0)(utf-8-validate@6.0.6)(viem@2.57.16)(wagmi@2.19.5)(ws@8.21.0)(zod@3.25.76)
       axios:
         specifier: 1.20.0
         version: 1.20.0(debug@4.4.3)(supports-color@8.1.1)
@@ -302,8 +302,8 @@ importers:
         specifier: ^9.3.3
         version: 9.3.3
       '@zerodev/wallet-react-ui':
-        specifier: file:../../.zd-tarballs/zerodev-wallet-react-ui-0.0.11.tgz
-        version: file:.zd-tarballs/zerodev-wallet-react-ui-0.0.11.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/wallet-core@0.0.5)(@zerodev/wallet-react@0.0.7)(bufferutil@4.0.9)(debug@4.4.3)(fastestsmallesttextencoderdecoder@1.0.22)(immer@10.2.0)(radix-ui@1.8.1)(react-dom@19.3.1)(react@19.3.1)(supports-color@8.1.1)(typescript@5.9.3)(use-sync-external-store@1.6.0)(utf-8-validate@6.0.6)(viem@2.57.16)(wagmi@2.19.5)(ws@8.21.0)(zod@3.25.76)
+        specifier: file:../../.zd-tarballs/zerodev-wallet-react-ui-0.0.15.tgz
+        version: file:.zd-tarballs/zerodev-wallet-react-ui-0.0.15.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/wallet-core@0.0.7)(@zerodev/wallet-react@0.0.10)(bufferutil@4.0.9)(debug@4.4.3)(fastestsmallesttextencoderdecoder@1.0.22)(immer@10.2.0)(radix-ui@1.8.1)(react-dom@19.3.1)(react@19.3.1)(supports-color@8.1.1)(typescript@5.9.3)(use-sync-external-store@1.6.0)(utf-8-validate@6.0.6)(viem@2.57.16)(wagmi@2.19.5)(ws@8.21.0)(zod@3.25.76)
       apollo-link-timeout:
         specifier: ^5.1.0
         version: 5.1.0(@apollo/client@3.14.1)
@@ -3272,6 +3272,10 @@ packages:
     peerDependencies:
       '@solana/web3.js': ^1.98.0
 
+  '@solana/wallet-standard-chains@1.1.1':
+    resolution: {integrity: sha512-Us3TgL4eMVoVWhuC4UrePlYnpWN+lwteCBlhZDUhFZBJ5UMGh94mYPXno3Ho7+iHPYRtuCi/ePvPcYBqCGuBOw==}
+    engines: {node: '>=16'}
+
   '@solana/wallet-standard-chains@1.1.2':
     resolution: {integrity: sha512-EZobEGclDBAFplpJC5F3d/s8Xnlqc5isNKuPrd5o9ZPZ7tWN84O0e68yIZ8MAOj9V7ieRadNiHtql7uIXCTyXg==}
     engines: {node: '>=22'}
@@ -3984,9 +3988,9 @@ packages:
       '@zerodev/sdk': ^5.4.13
       viem: ^2.28.0
 
-  '@zerodev/react-ui@file:.zd-tarballs/zerodev-react-ui-0.0.7.tgz':
-    resolution: {integrity: sha512-5PFbzRcktbpPFiriU9GF5QBH08yhAxEevcLapS8aeFXweLWGhYbGqMjgBYjqpr+ADgrNizP4WPP6nx+MFMG75A==, tarball: file:.zd-tarballs/zerodev-react-ui-0.0.7.tgz}
-    version: 0.0.7
+  '@zerodev/react-ui@file:.zd-tarballs/zerodev-react-ui-0.0.9.tgz':
+    resolution: {integrity: sha512-xYOPdEWPWyCBgEu2izEDet+kYTHKUO8zTVXvnbS7ATgpkS+RrmuvTI8cy54v2UsIjjTNx/Fv5frlvfQnFfjKIQ==, tarball: file:.zd-tarballs/zerodev-react-ui-0.0.9.tgz}
+    version: 0.0.9
     peerDependencies:
       radix-ui: ^1.4.0
       react: ^18.0.0 || ^19.0.0
@@ -3996,9 +4000,9 @@ packages:
     peerDependencies:
       viem: ^2.28.0
 
-  '@zerodev/wallet-core@file:.zd-tarballs/zerodev-wallet-core-0.0.5.tgz':
-    resolution: {integrity: sha512-Au6/ztUhTYJEhnd0FrEZAbhdqaB33/J5MrJOuXfFVX1UC1KBOIVUTdiA28+772tXHl9WGtmNwSQl3nVQpMV3pQ==, tarball: file:.zd-tarballs/zerodev-wallet-core-0.0.5.tgz}
-    version: 0.0.5
+  '@zerodev/wallet-core@file:.zd-tarballs/zerodev-wallet-core-0.0.7.tgz':
+    resolution: {integrity: sha512-By6Hh5WSpeb/g+SeMuKGl/w1ZXuLBLqtjDbVvjjA8Jtm1ftUBGmuLuASGMkKm2yV6iMh506Oo21GBeADeEGR/Q==, tarball: file:.zd-tarballs/zerodev-wallet-core-0.0.7.tgz}
+    version: 0.0.7
     peerDependencies:
       '@react-native-async-storage/async-storage': '>=2.0.0'
       '@turnkey/api-key-stamper': '>=0.6.0'
@@ -4024,28 +4028,28 @@ packages:
       uuid:
         optional: true
 
-  '@zerodev/wallet-react-ui@file:.zd-tarballs/zerodev-wallet-react-ui-0.0.11.tgz':
-    resolution: {integrity: sha512-sVPqUd6QW1qZo3eZZvHl7AoOD7Cw/HjkkAFPTTtAdzs4dQeFb2mN0wDAy4XvvBAxE+mgq/ocKiUxkCmEww7ZxQ==, tarball: file:.zd-tarballs/zerodev-wallet-react-ui-0.0.11.tgz}
-    version: 0.0.11
+  '@zerodev/wallet-react-ui@file:.zd-tarballs/zerodev-wallet-react-ui-0.0.15.tgz':
+    resolution: {integrity: sha512-JM0hcVHxxHUL1fwjheeTLtG3V1GjB21nNBOP43toNma17Oj96LM/JYDPX37Qnq8RJpAkKIQVrqnUu65S4cE7Aw==, tarball: file:.zd-tarballs/zerodev-wallet-react-ui-0.0.15.tgz}
+    version: 0.0.15
     peerDependencies:
       '@tanstack/react-query': ^5.0.0
       '@wagmi/core': ^2.22.0 || ^3.0.0
-      '@zerodev/wallet-core': 0.0.5
-      '@zerodev/wallet-react': 0.0.7
+      '@zerodev/wallet-core': 0.0.7
+      '@zerodev/wallet-react': 0.0.10
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
       viem: ^2.47.18
       wagmi: ^2.19.0 || ^3.0.0
 
-  '@zerodev/wallet-react@file:.zd-tarballs/zerodev-wallet-react-0.0.7.tgz':
-    resolution: {integrity: sha512-Y2dVcRqDjXutvc86WJjKxuLCxssOkWF0FnMcMZQ//lUaJrGNgx4lO/H77KHBNiMD+bZdM7v1TPNOAqhNGwzukg==, tarball: file:.zd-tarballs/zerodev-wallet-react-0.0.7.tgz}
-    version: 0.0.7
+  '@zerodev/wallet-react@file:.zd-tarballs/zerodev-wallet-react-0.0.10.tgz':
+    resolution: {integrity: sha512-7HrCFFvVNp298vZzYAE3fre3ZU2h5iem8wlaYyZq8j1Wr13OKPAFhIHePB4VvmfHFrG6Cxd0nkUwmINMJqFYVw==, tarball: file:.zd-tarballs/zerodev-wallet-react-0.0.10.tgz}
+    version: 0.0.10
     peerDependencies:
       '@tanstack/react-query': ^5.0.0
       '@wagmi/core': ^2.22.0 || ^3.0.0
       '@zerodev/ecdsa-validator': ^5.4.9
       '@zerodev/sdk': 5.5.4
-      '@zerodev/wallet-core': 0.0.5
+      '@zerodev/wallet-core': 0.0.7
       expo-linking: '>=7.0.0'
       expo-web-browser: '>=14.0.0'
       react: ^18.0.0 || ^19.0.0
@@ -13311,6 +13315,10 @@ snapshots:
       '@wallet-standard/features': 1.1.0
       eventemitter3: 5.0.4
 
+  '@solana/wallet-standard-chains@1.1.1':
+    dependencies:
+      '@wallet-standard/base': 1.1.0
+
   '@solana/wallet-standard-chains@1.1.2':
     dependencies:
       '@wallet-standard/base': 1.1.0
@@ -14656,7 +14664,7 @@ snapshots:
       '@zerodev/sdk': 5.5.4(viem@2.57.16)
       viem: 2.57.16(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)
 
-  '@zerodev/react-ui@file:.zd-tarballs/zerodev-react-ui-0.0.7.tgz(radix-ui@1.8.1)(react@19.3.1)':
+  '@zerodev/react-ui@file:.zd-tarballs/zerodev-react-ui-0.0.9.tgz(radix-ui@1.8.1)(react@19.3.1)':
     dependencies:
       clsx: 2.1.1
       radix-ui: 1.8.1(@types/react-dom@19.3.0)(@types/react@19.3.0)(react-dom@19.3.1)(react@19.3.1)
@@ -14669,7 +14677,7 @@ snapshots:
       semver: 7.8.5
       viem: 2.57.16(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)
 
-  '@zerodev/wallet-core@file:.zd-tarballs/zerodev-wallet-core-0.0.5.tgz(@turnkey/api-key-stamper@0.6.5)(@turnkey/crypto@2.8.14)(uuid@14.0.0)(viem@2.57.16)':
+  '@zerodev/wallet-core@file:.zd-tarballs/zerodev-wallet-core-0.0.7.tgz(@turnkey/api-key-stamper@0.6.5)(@turnkey/crypto@2.8.14)(uuid@14.0.0)(viem@2.57.16)':
     dependencies:
       '@noble/ciphers': 2.4.0
       '@noble/curves': 2.4.0
@@ -14687,14 +14695,21 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@zerodev/wallet-react-ui@file:.zd-tarballs/zerodev-wallet-react-ui-0.0.11.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/wallet-core@0.0.5)(@zerodev/wallet-react@0.0.7)(bufferutil@4.0.9)(debug@4.4.3)(fastestsmallesttextencoderdecoder@1.0.22)(immer@10.2.0)(radix-ui@1.8.1)(react-dom@19.3.1)(react@19.3.1)(supports-color@8.1.1)(typescript@5.9.3)(use-sync-external-store@1.4.0)(utf-8-validate@6.0.6)(viem@2.57.16)(wagmi@2.19.5)(ws@8.21.0)(zod@3.25.76)':
+  '@zerodev/wallet-react-ui@file:.zd-tarballs/zerodev-wallet-react-ui-0.0.15.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/wallet-core@0.0.7)(@zerodev/wallet-react@0.0.10)(bufferutil@4.0.9)(debug@4.4.3)(fastestsmallesttextencoderdecoder@1.0.22)(immer@10.2.0)(radix-ui@1.8.1)(react-dom@19.3.1)(react@19.3.1)(supports-color@8.1.1)(typescript@5.9.3)(use-sync-external-store@1.4.0)(utf-8-validate@6.0.6)(viem@2.57.16)(wagmi@2.19.5)(ws@8.21.0)(zod@3.25.76)':
     dependencies:
+      '@scure/base': 1.2.6
+      '@solana/wallet-standard-chains': 1.1.1
+      '@solana/wallet-standard-features': 1.3.0
       '@tanstack/react-query': 5.104.5(@types/react@19.3.0)(react@19.3.1)
       '@wagmi/core': 2.22.1(@tanstack/query-core@5.104.5)(@types/react@19.3.0)(immer@10.2.0)(react@19.3.1)(typescript@5.9.3)(use-sync-external-store@1.4.0)(viem@2.57.16)
+      '@wallet-standard/app': 1.1.0
+      '@wallet-standard/base': 1.1.0
+      '@wallet-standard/features': 1.1.0
       '@walletconnect/ethereum-provider': 2.26.0(@types/react@19.3.0)(bufferutil@4.0.9)(debug@4.4.3)(fastestsmallesttextencoderdecoder@1.0.22)(immer@10.2.0)(react@19.3.1)(supports-color@8.1.1)(typescript@5.9.3)(use-sync-external-store@1.4.0)(utf-8-validate@6.0.6)(ws@8.21.0)(zod@3.25.76)
-      '@zerodev/react-ui': file:.zd-tarballs/zerodev-react-ui-0.0.7.tgz(radix-ui@1.8.1)(react@19.3.1)
-      '@zerodev/wallet-core': file:.zd-tarballs/zerodev-wallet-core-0.0.5.tgz(@turnkey/api-key-stamper@0.6.5)(@turnkey/crypto@2.8.14)(uuid@14.0.0)(viem@2.57.16)
-      '@zerodev/wallet-react': file:.zd-tarballs/zerodev-wallet-react-0.0.7.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/ecdsa-validator@5.4.9)(@zerodev/sdk@5.5.4)(@zerodev/wallet-core@0.0.5)(immer@10.2.0)(react@19.3.1)(typescript@5.9.3)(use-sync-external-store@1.4.0)(uuid@14.0.0)(viem@2.57.16)(wagmi@2.19.5)(zod@3.25.76)
+      '@walletconnect/universal-provider': 2.26.0(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      '@zerodev/react-ui': file:.zd-tarballs/zerodev-react-ui-0.0.9.tgz(radix-ui@1.8.1)(react@19.3.1)
+      '@zerodev/wallet-core': file:.zd-tarballs/zerodev-wallet-core-0.0.7.tgz(@turnkey/api-key-stamper@0.6.5)(@turnkey/crypto@2.8.14)(uuid@14.0.0)(viem@2.57.16)
+      '@zerodev/wallet-react': file:.zd-tarballs/zerodev-wallet-react-0.0.10.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/ecdsa-validator@5.4.9)(@zerodev/sdk@5.5.4)(@zerodev/wallet-core@0.0.7)(immer@10.2.0)(react@19.3.1)(typescript@5.9.3)(use-sync-external-store@1.4.0)(uuid@14.0.0)(viem@2.57.16)(wagmi@2.19.5)(zod@3.25.76)
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
       viem: 2.57.16(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)
@@ -14735,14 +14750,21 @@ snapshots:
       - ws
       - zod
 
-  '@zerodev/wallet-react-ui@file:.zd-tarballs/zerodev-wallet-react-ui-0.0.11.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/wallet-core@0.0.5)(@zerodev/wallet-react@0.0.7)(bufferutil@4.0.9)(debug@4.4.3)(fastestsmallesttextencoderdecoder@1.0.22)(immer@10.2.0)(radix-ui@1.8.1)(react-dom@19.3.1)(react@19.3.1)(supports-color@8.1.1)(typescript@5.9.3)(use-sync-external-store@1.6.0)(utf-8-validate@6.0.6)(viem@2.57.16)(wagmi@2.19.5)(ws@8.21.0)(zod@3.25.76)':
+  '@zerodev/wallet-react-ui@file:.zd-tarballs/zerodev-wallet-react-ui-0.0.15.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/wallet-core@0.0.7)(@zerodev/wallet-react@0.0.10)(bufferutil@4.0.9)(debug@4.4.3)(fastestsmallesttextencoderdecoder@1.0.22)(immer@10.2.0)(radix-ui@1.8.1)(react-dom@19.3.1)(react@19.3.1)(supports-color@8.1.1)(typescript@5.9.3)(use-sync-external-store@1.6.0)(utf-8-validate@6.0.6)(viem@2.57.16)(wagmi@2.19.5)(ws@8.21.0)(zod@3.25.76)':
     dependencies:
+      '@scure/base': 1.2.6
+      '@solana/wallet-standard-chains': 1.1.1
+      '@solana/wallet-standard-features': 1.3.0
       '@tanstack/react-query': 5.104.5(@types/react@19.3.0)(react@19.3.1)
       '@wagmi/core': 2.22.1(@tanstack/query-core@5.104.5)(@types/react@19.3.0)(immer@10.2.0)(react@19.3.1)(typescript@5.9.3)(use-sync-external-store@1.6.0)(viem@2.57.16)
+      '@wallet-standard/app': 1.1.0
+      '@wallet-standard/base': 1.1.0
+      '@wallet-standard/features': 1.1.0
       '@walletconnect/ethereum-provider': 2.26.0(@types/react@19.3.0)(bufferutil@4.0.9)(debug@4.4.3)(fastestsmallesttextencoderdecoder@1.0.22)(immer@10.2.0)(react@19.3.1)(supports-color@8.1.1)(typescript@5.9.3)(use-sync-external-store@1.6.0)(utf-8-validate@6.0.6)(ws@8.21.0)(zod@3.25.76)
-      '@zerodev/react-ui': file:.zd-tarballs/zerodev-react-ui-0.0.7.tgz(radix-ui@1.8.1)(react@19.3.1)
-      '@zerodev/wallet-core': file:.zd-tarballs/zerodev-wallet-core-0.0.5.tgz(@turnkey/api-key-stamper@0.6.5)(@turnkey/crypto@2.8.14)(uuid@14.0.0)(viem@2.57.16)
-      '@zerodev/wallet-react': file:.zd-tarballs/zerodev-wallet-react-0.0.7.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/ecdsa-validator@5.4.9)(@zerodev/sdk@5.5.4)(@zerodev/wallet-core@0.0.5)(immer@10.2.0)(react@19.3.1)(typescript@5.9.3)(use-sync-external-store@1.6.0)(uuid@14.0.0)(viem@2.57.16)(wagmi@2.19.5)(zod@3.25.76)
+      '@walletconnect/universal-provider': 2.26.0(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      '@zerodev/react-ui': file:.zd-tarballs/zerodev-react-ui-0.0.9.tgz(radix-ui@1.8.1)(react@19.3.1)
+      '@zerodev/wallet-core': file:.zd-tarballs/zerodev-wallet-core-0.0.7.tgz(@turnkey/api-key-stamper@0.6.5)(@turnkey/crypto@2.8.14)(uuid@14.0.0)(viem@2.57.16)
+      '@zerodev/wallet-react': file:.zd-tarballs/zerodev-wallet-react-0.0.10.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/ecdsa-validator@5.4.9)(@zerodev/sdk@5.5.4)(@zerodev/wallet-core@0.0.7)(immer@10.2.0)(react@19.3.1)(typescript@5.9.3)(use-sync-external-store@1.6.0)(uuid@14.0.0)(viem@2.57.16)(wagmi@2.19.5)(zod@3.25.76)
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
       viem: 2.57.16(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)
@@ -14783,13 +14805,13 @@ snapshots:
       - ws
       - zod
 
-  '@zerodev/wallet-react@file:.zd-tarballs/zerodev-wallet-react-0.0.7.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/ecdsa-validator@5.4.9)(@zerodev/sdk@5.5.4)(@zerodev/wallet-core@0.0.5)(immer@10.2.0)(react@19.3.1)(typescript@5.9.3)(use-sync-external-store@1.4.0)(uuid@14.0.0)(viem@2.57.16)(wagmi@2.19.5)(zod@3.25.76)':
+  '@zerodev/wallet-react@file:.zd-tarballs/zerodev-wallet-react-0.0.10.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/ecdsa-validator@5.4.9)(@zerodev/sdk@5.5.4)(@zerodev/wallet-core@0.0.7)(immer@10.2.0)(react@19.3.1)(typescript@5.9.3)(use-sync-external-store@1.4.0)(uuid@14.0.0)(viem@2.57.16)(wagmi@2.19.5)(zod@3.25.76)':
     dependencies:
       '@tanstack/react-query': 5.104.5(@types/react@19.3.0)(react@19.3.1)
       '@wagmi/core': 2.22.1(@tanstack/query-core@5.104.5)(@types/react@19.3.0)(immer@10.2.0)(react@19.3.1)(typescript@5.9.3)(use-sync-external-store@1.4.0)(viem@2.57.16)
       '@zerodev/ecdsa-validator': 5.4.9(@zerodev/sdk@5.5.4)(viem@2.57.16)
       '@zerodev/sdk': 5.5.4(viem@2.57.16)
-      '@zerodev/wallet-core': file:.zd-tarballs/zerodev-wallet-core-0.0.5.tgz(@turnkey/api-key-stamper@0.6.5)(@turnkey/crypto@2.8.14)(uuid@14.0.0)(viem@2.57.16)
+      '@zerodev/wallet-core': file:.zd-tarballs/zerodev-wallet-core-0.0.7.tgz(@turnkey/api-key-stamper@0.6.5)(@turnkey/crypto@2.8.14)(uuid@14.0.0)(viem@2.57.16)
       ox: 0.14.59(typescript@5.9.3)(zod@3.25.76)
       react: 19.3.1
       viem: 2.57.16(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)
@@ -14804,13 +14826,13 @@ snapshots:
       - use-sync-external-store
       - zod
 
-  '@zerodev/wallet-react@file:.zd-tarballs/zerodev-wallet-react-0.0.7.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/ecdsa-validator@5.4.9)(@zerodev/sdk@5.5.4)(@zerodev/wallet-core@0.0.5)(immer@10.2.0)(react@19.3.1)(typescript@5.9.3)(use-sync-external-store@1.6.0)(uuid@14.0.0)(viem@2.57.16)(wagmi@2.19.5)(zod@3.25.76)':
+  '@zerodev/wallet-react@file:.zd-tarballs/zerodev-wallet-react-0.0.10.tgz(@tanstack/react-query@5.104.5)(@types/react@19.3.0)(@wagmi/core@2.22.1)(@zerodev/ecdsa-validator@5.4.9)(@zerodev/sdk@5.5.4)(@zerodev/wallet-core@0.0.7)(immer@10.2.0)(react@19.3.1)(typescript@5.9.3)(use-sync-external-store@1.6.0)(uuid@14.0.0)(viem@2.57.16)(wagmi@2.19.5)(zod@3.25.76)':
     dependencies:
       '@tanstack/react-query': 5.104.5(@types/react@19.3.0)(react@19.3.1)
       '@wagmi/core': 2.22.1(@tanstack/query-core@5.104.5)(@types/react@19.3.0)(immer@10.2.0)(react@19.3.1)(typescript@5.9.3)(use-sync-external-store@1.6.0)(viem@2.57.16)
       '@zerodev/ecdsa-validator': 5.4.9(@zerodev/sdk@5.5.4)(viem@2.57.16)
       '@zerodev/sdk': 5.5.4(viem@2.57.16)
-      '@zerodev/wallet-core': file:.zd-tarballs/zerodev-wallet-core-0.0.5.tgz(@turnkey/api-key-stamper@0.6.5)(@turnkey/crypto@2.8.14)(uuid@14.0.0)(viem@2.57.16)
+      '@zerodev/wallet-core': file:.zd-tarballs/zerodev-wallet-core-0.0.7.tgz(@turnkey/api-key-stamper@0.6.5)(@turnkey/crypto@2.8.14)(uuid@14.0.0)(viem@2.57.16)
       ox: 0.14.59(typescript@5.9.3)(zod@3.25.76)
       react: 19.3.1
       viem: 2.57.16(bufferutil@4.0.9)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)

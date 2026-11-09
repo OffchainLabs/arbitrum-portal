@@ -130,7 +130,7 @@ const wagmiAdapter = new WagmiAdapter({
     }),
     // The kit only pairs through its own WalletConnect connector; a raw
     // walletConnect() from wagmi/connectors would be ignored by its UI.
-    ...(projectId ? [zeroDevWalletConnect({ projectId, metadata })] : []),
+    ...(projectId ? [zeroDevWalletConnect({ projectId, solana: true, metadata })] : []),
   ],
 });
 

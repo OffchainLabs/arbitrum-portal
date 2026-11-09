@@ -24,7 +24,7 @@
     "@uidotdev/usehooks": "^2.4.1",
     "@uniswap/token-lists": "^1.0.0-beta.34",
     "@unstoppabledomains/resolution": "^9.3.3",
-    "@zerodev/wallet-react-ui": "file:../../.zd-tarballs/zerodev-wallet-react-ui-0.0.11.tgz",
+    "@zerodev/wallet-react-ui": "file:../../.zd-tarballs/zerodev-wallet-react-ui-0.0.15.tgz",
     "apollo-link-timeout": "^5.1.0",
     "axios": "^1.20.0",
     "boring-avatars": "^2.0.4",

@@ -26,9 +26,9 @@ export function ConnectWalletDialog() {
           logo={<img src="/logo.png" alt="Arbitrum" style={{ height: 32, width: 32 }} />}
           renderSignUp={() => (
             <SignUp>
-              <SignUp.Wallet walletId="metamask" />
-              <SignUp.InstalledWallets excludeWalletIds={['metamask']} />
+              <SignUp.InstalledWallets namespaces={['eip155', 'solana']} />
               <SignUp.WalletConnect />
+              <SignUp.SolanaWalletConnect />
               <SignUp.Divider />
               <SignUp.MoreWallets />
             </SignUp>
