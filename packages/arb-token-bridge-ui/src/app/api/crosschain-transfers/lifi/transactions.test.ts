@@ -1,3 +1,4 @@
+import { HTTPError, SDKError } from '@lifi/sdk';
 import type { FullStatusData, StatusResponse, Token } from '@lifi/types';
 import bs58 from 'bs58';
 import { NextRequest } from 'next/server';
@@ -19,7 +20,10 @@ const lifiMocks = vi.hoisted(() => ({
   getTransactionHistory: vi.fn().mockResolvedValue({ transfers: [] }),
 }));
 
-vi.mock('@lifi/sdk', () => lifiMocks);
+vi.mock('@lifi/sdk', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@lifi/sdk')>()),
+  ...lifiMocks,
+}));
 
 const wallet = '0x1111111111111111111111111111111111111111';
 const solanaWallet = 'So11111111111111111111111111111111111111112';
@@ -403,6 +407,31 @@ describe.sequential('GET by transaction ID', () => {
     });
   });
 
+  it('ignores a transfer made through another integrator', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    const status = createStatusResponse({ sourceChainId: ChainId.Solana });
+    status.sending.txHash = signature;
+    status.metadata.integrator = 'jumper.exchange';
+    lifiMocks.getStatus.mockResolvedValue(status);
+
+    const response = await GET(requestUrl(`txHash=${signature}`));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ data: [] });
+  });
+
+  it('keeps a transfer made through the embedded bridge', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    const status = createStatusResponse({ sourceChainId: ChainId.Solana });
+    status.sending.txHash = signature;
+    status.metadata.integrator = 'widget_prod';
+    lifiMocks.getStatus.mockResolvedValue(status);
+
+    const response = await GET(requestUrl(`txHash=${signature}`));
+
+    expect(await response.json()).toMatchObject({ data: [{ txId: signature }] });
+  });
+
   it('rejects signatures while Solana is disabled, and malformed IDs', async () => {
     vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(false);
     expect((await GET(requestUrl(`txHash=${signature}`))).status).toBe(400);
@@ -417,6 +446,19 @@ describe.sequential('GET by transaction ID', () => {
     const evmHash = `0x${'a'.repeat(64)}`;
     expect((await GET(requestUrl(`txHash=${evmHash}`))).status).toBe(400);
     expect(lifiMocks.getStatus).not.toHaveBeenCalled();
+  });
+
+  it('returns no transfer when LiFi does not know the signature', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    const url = 'https://li.quest/v1/status';
+    lifiMocks.getStatus.mockRejectedValue(
+      new SDKError(new HTTPError(new Response(null, { status: 404 }), url, { url })),
+    );
+
+    const response = await GET(requestUrl(`txHash=${signature}`));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ data: [] });
   });
 
   it('returns an error response when the LiFi status lookup fails', async () => {

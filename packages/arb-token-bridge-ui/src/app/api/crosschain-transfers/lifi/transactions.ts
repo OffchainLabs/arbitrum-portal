@@ -1,4 +1,4 @@
-import { createConfig, getStatus, getTransactionHistory } from '@lifi/sdk';
+import { LiFiErrorCode, SDKError, createConfig, getStatus, getTransactionHistory } from '@lifi/sdk';
 import type { ExtendedTransactionInfo, StatusResponse } from '@lifi/types';
 import { constants, utils } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
@@ -264,11 +264,21 @@ async function getLifiTransactionById(
 
   try {
     const statusResponse = await getStatus({ txHash });
+    // `getStatus` returns transfers from any integrator, so drop the ones not made in the bridge
+    const integrator =
+      'metadata' in statusResponse ? statusResponse.metadata.integrator : undefined;
+    if (integrator && !Object.values<string>(LIFI_INTEGRATOR_IDS).includes(integrator)) {
+      return NextResponse.json({ data: [] }, { headers: NO_STORE_HEADERS });
+    }
     return NextResponse.json(
       { data: transformLifiHistoryTransactions({ wallet: '', statusResponses: [statusResponse] }) },
       { headers: NO_STORE_HEADERS },
     );
   } catch (error: unknown) {
+    // LiFi answers 404 when it has no transfer for this ID
+    if (error instanceof SDKError && error.code === LiFiErrorCode.NotFound) {
+      return NextResponse.json({ data: [] }, { headers: NO_STORE_HEADERS });
+    }
     return NextResponse.json(
       {
         message: error instanceof Error ? error.message : 'Failed to fetch LiFi transaction',
