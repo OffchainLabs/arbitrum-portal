@@ -155,13 +155,24 @@ describe('findAddressEcosystem', () => {
   });
 });
 
-describe('address boundaries', () => {
+// The tests share the `bs58.decode` spy
+describe.sequential('address boundaries', () => {
   it('never decodes hex addresses with base58', () => {
     const decode = vi.spyOn(bs58, 'decode');
     const hex = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
     normalizeAddress(hex);
     isValidAddressForChain(hex, ChainId.Solana);
     expect(decode).not.toHaveBeenCalled();
+    decode.mockRestore();
+  });
+
+  it('rejects long strings without decoding them with base58', () => {
+    const decode = vi.spyOn(bs58, 'decode');
+    const long = '1'.repeat(10_000);
+
+    expect(isValidAddress(long)).toBe(false);
+    expect(isValidTransactionId(long)).toBe(false);
+    expect(decode).not.toHaveBeenCalledWith(long);
     decode.mockRestore();
   });
 });
