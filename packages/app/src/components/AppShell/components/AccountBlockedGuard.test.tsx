@@ -6,15 +6,10 @@ import { AccountBlockedGuard } from './AccountBlockedGuard';
 
 const blockedAddress = '0x01e2919679362dfbc9ee1644ba9c6da6d6245bb1';
 
-const useAccountMock = vi.fn();
 const useAccountIsBlockedMock = vi.fn();
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/bridge',
-}));
-
-vi.mock('wagmi', () => ({
-  useAccount: () => useAccountMock(),
 }));
 
 vi.mock('@/bridge/hooks/useAccountIsBlocked', () => ({
@@ -22,32 +17,30 @@ vi.mock('@/bridge/hooks/useAccountIsBlocked', () => ({
 }));
 
 describe('AccountBlockedGuard', () => {
-  it('returns nothing when wallet is disconnected', () => {
-    useAccountMock.mockReturnValue({ address: undefined });
-    useAccountIsBlockedMock.mockReturnValue({ isBlocked: true });
+  it('renders children when no wallet is blocked', () => {
+    useAccountIsBlockedMock.mockReturnValue({ isBlocked: false, blockedAddress: undefined });
 
-    const { container } = render(<AccountBlockedGuard />);
+    render(<AccountBlockedGuard>app content</AccountBlockedGuard>);
 
-    expect(container.firstChild).toBe(null);
-  });
-
-  it('returns nothing when wallet is not blocked', () => {
-    useAccountMock.mockReturnValue({ address: '0xabc' });
-    useAccountIsBlockedMock.mockReturnValue({ isBlocked: false });
-
-    const { container } = render(<AccountBlockedGuard />);
-
-    expect(container.firstChild).toBe(null);
+    expect(screen.getByText('app content')).not.toBeNull();
   });
 
   it('renders blocked dialog when wallet is blocked', () => {
-    useAccountMock.mockReturnValue({ address: blockedAddress });
-    useAccountIsBlockedMock.mockReturnValue({ isBlocked: true });
+    useAccountIsBlockedMock.mockReturnValue({ isBlocked: true, blockedAddress });
 
     render(<AccountBlockedGuard>hidden app content</AccountBlockedGuard>);
 
     expect(screen.getByText('This wallet address is blocked')).not.toBeNull();
     expect(screen.getByText(blockedAddress)).not.toBeNull();
     expect(screen.queryByText('hidden app content')).toBeNull();
+  });
+
+  it('shows a Solana address with its case', () => {
+    const solanaAddress = 'So11111111111111111111111111111111111111112';
+    useAccountIsBlockedMock.mockReturnValue({ isBlocked: true, blockedAddress: solanaAddress });
+
+    render(<AccountBlockedGuard />);
+
+    expect(screen.getByText(solanaAddress)).not.toBeNull();
   });
 });
