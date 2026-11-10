@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLatest } from 'react-use';
 import { twMerge } from 'tailwind-merge';
 import { BaseError } from 'viem';
-import { useAccount, useConfig } from 'wagmi';
+import { useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
 import { useShowUsdgDripCardAfterSubmit } from '@/app-components/UsdgDripCard/useUsdgDripCard';
@@ -66,6 +66,7 @@ import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
 import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
 import { useRefreshTokenBalances } from '../../wallet/hooks/useTokenBalances';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextActions } from '../App/AppContext';
 import { highlightTransactionHistoryDisclaimer } from '../TransactionHistory/TransactionHistoryDisclaimer';
 import { addDepositToCache } from '../TransactionHistory/helpers';
@@ -139,14 +140,21 @@ export function TransferPanel() {
       warningTokens,
     },
   } = useAppState();
-  const { address: walletAddress, chain, isConnected } = useAccount();
+  const {
+    sourceWallet: {
+      account: { address: walletAddress, chainId: sourceWalletChainId },
+      isConnected,
+    },
+    destinationWallet: {
+      account: { address: destinationWalletAddress },
+    },
+  } = useWallets();
   const [selectedToken, setSelectedToken] = useSelectedToken();
   const hasTrackedBridgePageLoad = useRef(false);
   const { switchChainAsync } = useSwitchNetworkWithConfig({
     isSwitchingNetworkBeforeTx: true,
   });
-  // do not use `useChainId` because it won't detect chains outside of our wagmi config
-  const latestChain = useLatest(chain);
+  const latestChainId = useLatest(sourceWalletChainId);
   const [networks, setNetworks] = useNetworks();
   const latestNetworks = useLatest(networks);
   const { data: tokensFromLists } = useTokensFromLists();
@@ -223,7 +231,7 @@ export function TransferPanel() {
       refreshes.push(refreshTokenBalances({ chainId: networks.sourceChain.id, walletAddress }));
     }
 
-    const recipientAddress = destinationAddress || walletAddress;
+    const recipientAddress = destinationAddress || destinationWalletAddress;
     if (recipientAddress) {
       refreshes.push(
         refreshTokenBalances({
@@ -601,7 +609,7 @@ export function TransferPanel() {
         uniqueId: null,
         value: amount,
         depositStatus: DepositStatus.CCTP_DEFAULT_STATE,
-        destination: destinationAddress ?? walletAddress,
+        destination: destinationAddress ?? destinationWalletAddress,
         sender: walletAddress,
         isCctp: true,
         tokenAddress: getUsdcTokenAddressFromSourceChainId(sourceChain.id),
@@ -1351,7 +1359,7 @@ export function TransferPanel() {
 
   const moveFundsButtonOnClick = async () => {
     const isConnectedToTheWrongChain =
-      latestChain.current?.id !== latestNetworks.current.sourceChain.id;
+      latestChainId.current !== latestNetworks.current.sourceChain.id;
 
     const sourceChainId = latestNetworks.current.sourceChain.id;
     const childChainName = getNetworkName(childChain.id);

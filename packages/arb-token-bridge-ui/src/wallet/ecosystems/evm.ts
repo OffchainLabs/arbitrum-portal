@@ -11,4 +11,5 @@ export const evmEcosystem: EcosystemConfig = {
     isCaseSensitive: false,
   },
   nativeTokenAddress: zeroAddress,
+  isLifiOnly: false,
 };

@@ -29,6 +29,7 @@ export function useEvmWallet(): EvmWalletHandle {
         walletInfo: walletInfo && { name: walletInfo.name, icon: walletInfo.icon },
       },
       isConnected,
+      needsNetworkSigningWarning: (walletInfo?.name ?? '').toLowerCase().includes('trust wallet'),
       disconnect: disconnectEvm,
     }),
     [address, chainId, status, walletInfo, isConnected, disconnectEvm],
