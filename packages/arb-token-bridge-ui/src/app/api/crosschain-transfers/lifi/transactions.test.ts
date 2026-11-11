@@ -450,9 +450,10 @@ describe.sequential('GET by transaction ID', () => {
 
   it('returns no transfer when LiFi does not know the signature', async () => {
     vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
-    const url = 'https://li.quest/v1/status';
     lifiMocks.getStatus.mockRejectedValue(
-      new SDKError(new HTTPError(new Response(null, { status: 404 }), url, { url })),
+      new SDKError(
+        new HTTPError(new Response(null, { status: 404 }), 'https://li.quest/v1/status', {}),
+      ),
     );
 
     const response = await GET(requestUrl(`txHash=${signature}`));
