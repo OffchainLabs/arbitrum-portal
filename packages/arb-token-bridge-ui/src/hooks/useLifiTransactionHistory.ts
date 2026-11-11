@@ -8,8 +8,16 @@ import { useError } from './useError';
 export async function fetchLifiTransactionHistory(
   walletAddress: string,
 ): Promise<LifiMergedTransaction[]> {
+  return fetchLifiHistory(new URLSearchParams({ wallet: walletAddress }));
+}
+
+export async function fetchLifiTransactionById(txHash: string): Promise<LifiMergedTransaction[]> {
+  return fetchLifiHistory(new URLSearchParams({ txHash }));
+}
+
+async function fetchLifiHistory(query: URLSearchParams): Promise<LifiMergedTransaction[]> {
   const response = await fetch(
-    `${getAPIBaseUrl()}/api/crosschain-transfers/lifi/transactions?wallet=${walletAddress}`,
+    `${getAPIBaseUrl()}/api/crosschain-transfers/lifi/transactions?${query}`,
   );
   const body = (await response.json()) as LifiTransactionHistoryResponse;
 
