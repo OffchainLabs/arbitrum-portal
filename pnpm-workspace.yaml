@@ -2,7 +2,7 @@ packages:
   - 'packages/*'
 
 overrides:
-  'node-forge': 1.4.1
+  'node-forge': 1.4.3
   '@types/node-forge': 1.3.14
   '@walletconnect/ethereum-provider': 2.13.1
   '@octokit/core>@octokit/request-error': 5.1.1
@@ -69,6 +69,7 @@ overrides:
   '@babel/core': 7.29.6
   'socket.io-parser': 4.2.7
   'browserslist': 4.28.8
+  'bitcoinjs-lib': 7.0.5
   'postcss-selector-parser': 6.1.4
   # Scoped to query-string@9 only: 0.5.x is ESM-only, and the CJS query-string@5/7
   # copies (synpress, WalletConnect) `require()` it. See audit-ci.jsonc.
