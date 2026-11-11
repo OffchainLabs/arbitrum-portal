@@ -1,4 +1,4 @@
-import { isAddress, zeroAddress } from 'viem';
+import { isAddress, isHash, zeroAddress } from 'viem';
 
 import type { EcosystemConfig } from '.';
 
@@ -10,6 +10,11 @@ export const evmEcosystem: EcosystemConfig = {
     normalize: (address) => address.toLowerCase(),
     isCaseSensitive: false,
   },
+  transactionId: {
+    isValid: (transactionId) => isHash(transactionId),
+    normalize: (transactionId) => transactionId.toLowerCase(),
+  },
   nativeTokenAddress: zeroAddress,
   isLifiOnly: false,
+  hasTokenApprovals: true,
 };

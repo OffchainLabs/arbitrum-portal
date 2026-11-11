@@ -6,9 +6,12 @@ import { ecosystems } from '../wallet/ecosystems';
 import { isValidSolanaAddress } from '../wallet/ecosystems/solana';
 import { addressesEqual } from './AddressEquality';
 import {
+  findAddressEcosystem,
   isValidAddress,
   isValidAddressForChain,
+  isValidTransactionId,
   normalizeAddress,
+  normalizeTransactionId,
   parseAddressForChain,
 } from './AddressUtils';
 
@@ -140,13 +143,36 @@ describe('parseAddressForChain', () => {
   });
 });
 
-describe('address boundaries', () => {
+describe('findAddressEcosystem', () => {
+  it.each([
+    ['0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33', 'evm'],
+    ['Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5', 'solana'],
+    ['not an address', undefined],
+    ['', undefined],
+    [undefined, undefined],
+  ])('finds the ecosystem of %s', (address, ecosystem) => {
+    expect(findAddressEcosystem(address)).toBe(ecosystem);
+  });
+});
+
+// The tests share the `bs58.decode` spy
+describe.sequential('address boundaries', () => {
   it('never decodes hex addresses with base58', () => {
     const decode = vi.spyOn(bs58, 'decode');
     const hex = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
     normalizeAddress(hex);
     isValidAddressForChain(hex, ChainId.Solana);
     expect(decode).not.toHaveBeenCalled();
+    decode.mockRestore();
+  });
+
+  it('rejects long strings without decoding them with base58', () => {
+    const decode = vi.spyOn(bs58, 'decode');
+    const long = '1'.repeat(10_000);
+
+    expect(isValidAddress(long)).toBe(false);
+    expect(isValidTransactionId(long)).toBe(false);
+    expect(decode).not.toHaveBeenCalledWith(long);
     decode.mockRestore();
   });
 });
@@ -200,5 +226,31 @@ describe('Solana feature flag', () => {
     } finally {
       isEnabled.mockRestore();
     }
+  });
+
+  it('rejects Solana signatures while Solana is disabled, unless the flag is ignored', () => {
+    const signature = bs58.encode(Uint8Array.from({ length: 64 }, (_, index) => index + 1));
+    const isEnabled = vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(false);
+    try {
+      expect(isValidTransactionId(signature)).toBe(false);
+      expect(isValidTransactionId(signature, { ignoreFeatureFlag: true })).toBe(true);
+    } finally {
+      isEnabled.mockRestore();
+    }
+  });
+});
+
+describe('transaction IDs', () => {
+  it('validates a 64-byte signature and preserves its case', () => {
+    const signature = bs58.encode(Uint8Array.from({ length: 64 }, (_, index) => index + 1));
+    expect(isValidTransactionId(signature)).toBe(true);
+    expect(normalizeTransactionId(signature)).toBe(signature);
+    expect(isValidTransactionId(bs58.encode(new Uint8Array(32)))).toBe(false);
+    expect(isValidTransactionId('wallet-request-id')).toBe(false);
+  });
+  it('retains EVM hash case normalization', () => {
+    const hash = `0x${'AB'.repeat(32)}`;
+    expect(isValidTransactionId(hash)).toBe(true);
+    expect(normalizeTransactionId(hash)).toBe(hash.toLowerCase());
   });
 });

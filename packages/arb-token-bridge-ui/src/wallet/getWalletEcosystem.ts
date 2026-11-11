@@ -14,3 +14,12 @@ export function getWalletEcosystem(chainId: number): WalletEcosystem {
 
   return 'evm';
 }
+
+/** Like `getWalletEcosystem`, for chains the bridge may not know, such as those of old history rows */
+export function findWalletEcosystem(chainId: number): WalletEcosystem | undefined {
+  try {
+    return getWalletEcosystem(chainId);
+  } catch {
+    return undefined;
+  }
+}

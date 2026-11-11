@@ -1,7 +1,6 @@
 import { getProviderForChainId } from '../token-bridge-sdk/utils';
-import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
 import type { WalletEcosystem } from '../wallet/types';
-import { isValidAddressForChain } from './AddressUtils';
+import { findAddressEcosystem, isValidAddressForChain } from './AddressUtils';
 
 export type AccountType =
   | 'externally-owned-account'
@@ -19,7 +18,8 @@ const accountTypeProbes: Record<
 };
 
 export async function getAccountType(params: AccountTypeParams): Promise<AccountType | undefined> {
-  return accountTypeProbes[getWalletEcosystem(params.chainId)](params);
+  const ecosystem = findAddressEcosystem(params.address);
+  return ecosystem ? accountTypeProbes[ecosystem](params) : undefined;
 }
 
 async function getEvmAccountType({
