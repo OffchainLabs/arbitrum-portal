@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
 import type { AmountWithToken, Token } from '../../app/api/crosschain-transfers/types';
-import { TOS_LOCALSTORAGE_KEY, ether } from '../../constants';
+import { TOS_LOCALSTORAGE_KEY } from '../../constants';
 import { UseGasSummaryResult, useGasSummary } from '../../hooks/TransferPanel/useGasSummary';
 import { useAccountType } from '../../hooks/useAccountType';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
@@ -469,7 +469,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
       return notReady({
         errorMessages: {
           inputAmount1: getInsufficientFundsErrorMessage({
-            asset: ether.symbol,
+            asset: networks.sourceChain.nativeCurrency.symbol,
             chain: networks.sourceChain.name,
           }),
         },
@@ -593,7 +593,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
                   inputAmount1:
                     estimatedL1GasFees > ethBalanceFloat
                       ? getInsufficientFundsForGasFeesErrorMessage({
-                          asset: ether.symbol,
+                          asset: networks.sourceChain.nativeCurrency.symbol,
                           chain: networks.sourceChain.name,
                           balance: formatAmount(ethBalanceFloat),
                           requiredBalance: formatAmount(estimatedL1GasFees),
@@ -648,7 +648,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
               errorMessages: {
                 inputAmount1: notEnoughEthForGasFees
                   ? getInsufficientFundsForGasFeesErrorMessage({
-                      asset: ether.symbol,
+                      asset: networks.sourceChain.nativeCurrency.symbol,
                       chain: networks.sourceChain.name,
                       balance: formatAmount(ethBalanceFloat),
                       requiredBalance: formatAmount(estimatedL1GasFees + estimatedL2GasFees),
@@ -677,7 +677,7 @@ export function useTransferReadiness(): UseTransferReadinessResult {
             return notReady({
               errorMessages: {
                 inputAmount1: getInsufficientFundsForGasFeesErrorMessage({
-                  asset: ether.symbol,
+                  asset: networks.sourceChain.nativeCurrency.symbol,
                   chain: networks.sourceChain.name,
                   balance: formatAmount(ethBalanceFloat),
                   requiredBalance: formatAmount(estimatedL1GasFees),
