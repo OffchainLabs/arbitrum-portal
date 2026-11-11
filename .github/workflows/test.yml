@@ -15,42 +15,25 @@ on:
 
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#concurrency
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # A push to a draft PR can start its run after the PR is marked ready, with `draft` still true.
+  # Separate groups for draft and ready runs stop that run from cancelling the ready one
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.pull_request.draft }}
   cancel-in-progress: true
 
 jobs:
   check-files:
     name: Check files
     runs-on: ubuntu-4
-    permissions:
-      contents: read
-      pull-requests: read
     outputs:
       run_tests: ${{ steps.check-files.outputs.run_tests }}
-      is_draft: ${{ steps.draft.outputs.is_draft }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/check-files
         id: check-files
 
-      # The event's `draft` is the PR's state when the event happened. A push to a draft PR can
-      # start its run after the PR is marked ready, and cancel the run of `ready_for_review`
-      - name: Check draft state
-        id: draft
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          is_draft=false
-          if [ -n "$PR_NUMBER" ]; then
-            is_draft=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)
-          fi
-          echo "is_draft=$is_draft" >> "$GITHUB_OUTPUT"
-
   build:
     name: 'Build'
     needs: [check-files]
-    if: needs.check-files.outputs.is_draft == 'false'
     uses: ./.github/workflows/build.yml
     secrets: inherit
 
@@ -58,7 +41,7 @@ jobs:
     name: 'Test UI Unit'
     runs-on: ubuntu-4
     needs: [build, check-files]
-    if: needs.check-files.outputs.run_tests == 'true' && needs.check-files.outputs.is_draft == 'false'
+    if: needs.check-files.outputs.run_tests == 'true' && github.event.pull_request.draft == false
     env: &app_env
       NEXT_PUBLIC_RPC_PROVIDER: alchemy
       NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
@@ -98,7 +81,7 @@ jobs:
     name: 'Test UI Integration'
     runs-on: ubuntu-4
     needs: [build, check-files]
-    if: needs.check-files.outputs.run_tests == 'true' && needs.check-files.outputs.is_draft == 'false'
+    if: needs.check-files.outputs.run_tests == 'true' && github.event.pull_request.draft == false
     env: *app_env
     steps:
       - name: Checkout
@@ -154,9 +137,9 @@ jobs:
       - name: Run audit
         run: pnpm audit:ci
 
+  # Runs on draft PRs too, without waiting for the build
   check-formatting:
     name: 'Check Formatting'
-    needs: [build, check-files]
     runs-on: ubuntu-4
     env: *app_env
     steps:
@@ -180,8 +163,9 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-
           save: ${{ github.ref == 'refs/heads/master' }}
 
-      - name: Restore build artifacts
-        uses: ./.github/actions/restore-build-artifacts
+      # `tsc` reads the portal data
+      - name: Fetch portal data
+        run: pnpm --filter portal fetch:data
 
       - name: Check formatting with Prettier
         run: pnpm prettier:check
@@ -194,7 +178,7 @@ jobs:
   e2e-tests:
     name: 'E2E Tests'
     needs: [build, check-files]
-    if: needs.check-files.outputs.run_tests == 'true' && needs.check-files.outputs.is_draft == 'false'
+    if: needs.check-files.outputs.run_tests == 'true' && github.event.pull_request.draft == false
     uses: ./.github/workflows/e2e-tests.yml
     with:
       test_type: 'regular'
