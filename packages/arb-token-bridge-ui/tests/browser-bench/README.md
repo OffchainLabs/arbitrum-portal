@@ -87,7 +87,7 @@ lists.
 
 - Requests outside the app's pages and assets get generated responses, including the app's own
   `/api` routes and JSON-RPC calls. Other requests, like token logos, fail like network errors.
-  The report lists them.
+  The results uploaded with the run list them, and the report leaves them out.
 - Timers of 2 seconds or more never fire, so polling can't land in a measurement. The scenarios
   don't depend on any.
 - CSS transitions and animations last 0 seconds, and `prefers-reduced-motion` is set.
