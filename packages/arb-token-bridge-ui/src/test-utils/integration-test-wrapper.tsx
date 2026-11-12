@@ -34,6 +34,7 @@ const integrationWalletContextValue: WalletContextValue = {
     },
     isConnected: true,
     disconnect: async () => {},
+    signer: defaultWalletContextValue.evm.signer,
   },
 };
 
