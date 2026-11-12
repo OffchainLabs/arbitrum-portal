@@ -1,5 +1,5 @@
 import { useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react';
-import { getAccount, getConnectorClient, getWalletClient } from '@wagmi/core';
+import { BaseError, getAccount, getConnectorClient, getWalletClient } from '@wagmi/core';
 import { useCallback, useMemo } from 'react';
 import { isAddress } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
@@ -26,8 +26,17 @@ export function useEvmWallet(): EvmWalletHandle {
     () => ({
       getAddress: () => getAccount(wagmiConfig).address,
       getWalletClient: (chainId) => getWalletClient(wagmiConfig, { chainId }),
-      getEthersSigner: async (chainId) =>
-        clientToSigner(await getConnectorClient(wagmiConfig, { chainId })),
+      getEthersSigner: async (chainId) => {
+        try {
+          return clientToSigner(await getConnectorClient(wagmiConfig, { chainId }));
+        } catch (error) {
+          // wagmi's message adds the docs URL and its version, which would show in error toasts
+          if (error instanceof BaseError) {
+            throw new Error(error.shortMessage, { cause: error });
+          }
+          throw error;
+        }
+      },
     }),
     [wagmiConfig],
   );

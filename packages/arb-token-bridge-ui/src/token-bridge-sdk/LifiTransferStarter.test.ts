@@ -8,6 +8,7 @@ import type { LifiCrosschainTransfersRoute } from '../app/api/crosschain-transfe
 import type { RouteCost } from '../app/api/crosschain-transfers/types';
 import { createMockLifiRoute } from '../test-utils/lifi';
 import { createMockSigners } from '../test-utils/signers';
+import { ChainId } from '../types/ChainId';
 import {
   getExecutedLifiRouteTxHash,
   getLifiRouteStatusRequest,
@@ -722,6 +723,31 @@ describe('LifiTransferStarter source transaction', () => {
 
       expect(provider).toHaveBeenCalledWith(lifiRoute.fromChainId);
       expect(waitForTransaction).toHaveBeenCalledWith(routeTxHash);
+    } finally {
+      provider.mockRestore();
+    }
+  });
+
+  it('does not wait through an EVM provider for a Solana source transaction', async () => {
+    // LiFi returns the Solana signature once the transaction is confirmed
+    const signature =
+      '5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW';
+    const provider = vi.spyOn(providers, 'getProviderForChainId');
+    try {
+      const lifiRoute = { ...createLifiTransferRoute(), fromChainId: ChainId.Solana };
+      const executeRoute = vi.fn(async () => ({
+        txHash: signature,
+        route: lifiRoute.protocolData.route,
+      }));
+
+      const transfer = await new LifiTransferStarter({ lifiRoute }).transfer(
+        createTransferProps(vi.fn()),
+        { executeRoute },
+      );
+
+      expect(transfer.sourceChainTransaction.hash).toBe(signature);
+      await expect(transfer.sourceChainTransaction.wait()).resolves.toBeUndefined();
+      expect(provider).not.toHaveBeenCalled();
     } finally {
       provider.mockRestore();
     }

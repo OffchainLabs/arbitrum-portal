@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import { getConnectorClient } from '@wagmi/core';
+import { ConnectorChainMismatchError, getConnectorClient } from '@wagmi/core';
 import { describe, expect, it, vi } from 'vitest';
 
 import { clientToSigner } from '../util/wagmi/clientToSigner';
@@ -13,7 +13,8 @@ vi.mock('@reown/appkit/react', () => ({
   useWalletInfo: () => ({ walletInfo: undefined }),
 }));
 vi.mock('wagmi', () => ({ useAccount: () => ({}), useConfig: () => wagmiConfig }));
-vi.mock('@wagmi/core', () => ({
+vi.mock('@wagmi/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@wagmi/core')>()),
   getAccount: vi.fn(),
   getConnectorClient: vi.fn(),
   getWalletClient: vi.fn(),
@@ -42,5 +43,17 @@ describe.sequential('useEvmWallet', () => {
     await expect(result.current.signer.getEthersSigner(10)).rejects.toThrow(
       'Connector not connected.',
     );
+  });
+
+  it('rejects with the short message of a wagmi error', async () => {
+    const error = new ConnectorChainMismatchError({ connectionChainId: 1, connectorChainId: 10 });
+    vi.mocked(getConnectorClient).mockRejectedValue(error);
+
+    const { result } = renderHook(useEvmWallet);
+
+    await expect(result.current.signer.getEthersSigner(1)).rejects.toThrow(
+      new Error(error.shortMessage),
+    );
+    expect(error.message).toContain('Version: @wagmi/core');
   });
 });
