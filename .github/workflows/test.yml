@@ -15,9 +15,9 @@ on:
 
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#concurrency
 concurrency:
-  # A push to a draft PR can start its run after the PR is marked ready, with `draft` still true.
-  # Separate groups for draft and ready runs stop that run from cancelling the ready one
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.pull_request.draft }}
+  # Draft and ready runs use separate groups. A run for a push made while the PR was a draft
+  # can start after the PR is marked ready, and would otherwise cancel the ready run.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.pull_request.draft && 'draft' || 'ready' }}
   cancel-in-progress: true
 
 jobs:
