@@ -73,7 +73,7 @@ vi.mock('../../../hooks/useNetworks', () => ({
 
 vi.mock('../../../hooks/useNetworksRelationship', () => ({
   useNetworksRelationship: () => ({
-    childChainProvider: {},
+    childChain: { id: ChainId.ArbitrumOne },
     isDepositMode: true,
   }),
 }));

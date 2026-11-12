@@ -12,12 +12,18 @@ export function useTokenBalances({
   tokenAddresses,
   refreshInterval = BALANCE_REFRESH_INTERVAL,
   keepPreviousData = false,
+  revalidateOnFocus = refreshInterval > 0,
+  errorRetryCount = 2,
+  errorRetryInterval = 3_000,
 }: {
   chainId: number;
   walletAddress?: string;
   tokenAddresses: string[];
   refreshInterval?: number;
   keepPreviousData?: boolean;
+  revalidateOnFocus?: boolean;
+  errorRetryCount?: number;
+  errorRetryInterval?: number;
 }) {
   const key =
     walletAddress && isValidAddressForChain(walletAddress, chainId) && tokenAddresses.length > 0
@@ -37,11 +43,11 @@ export function useTokenBalances({
     }),
     {
       refreshInterval,
-      revalidateOnFocus: refreshInterval > 0,
+      revalidateOnFocus,
       keepPreviousData,
       shouldRetryOnError: true,
-      errorRetryCount: 2,
-      errorRetryInterval: 3_000,
+      errorRetryCount,
+      errorRetryInterval,
     },
   );
 

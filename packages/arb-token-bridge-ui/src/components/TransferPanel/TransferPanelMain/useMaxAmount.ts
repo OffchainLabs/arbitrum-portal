@@ -48,8 +48,8 @@ export function useMaxAmount() {
   const [selectedToken] = useSelectedToken();
   const selectedTokenBalances = useSelectedTokenBalances();
   const [networks] = useNetworks();
-  const { childChainProvider, isDepositMode } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { childChain, isDepositMode } = useNetworksRelationship(networks);
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const nativeCurrencyDecimalsOnSourceChain = useSourceChainNativeCurrencyDecimals();
   const selectedRouteContext = useRouteStore((state) => getSelectedRouteContext(state), shallow);
 

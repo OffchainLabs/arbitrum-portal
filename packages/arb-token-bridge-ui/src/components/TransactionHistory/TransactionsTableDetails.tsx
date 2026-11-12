@@ -3,9 +3,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Fragment, useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
-import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useTransactionHistory } from '../../hooks/useTransactionHistory';
-import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { TransactionDetailsContent } from './TransactionDetailsContent';
 import { useTxDetailsStore } from './TransactionHistory';
 import {
@@ -42,10 +40,7 @@ export const TransactionsTableDetails = () => {
     );
   }, [transactions, txFromStore]);
 
-  const childProvider = getProviderForChainId(tx?.childChainId ?? 0);
-  const nativeCurrency = useNativeCurrency({ provider: childProvider });
-
-  if (!tx || (!sanitizedAddress && !isTxHashSearch) || !nativeCurrency) {
+  if (!tx || (!sanitizedAddress && !isTxHashSearch)) {
     return null;
   }
 

@@ -20,8 +20,8 @@ export function useBalanceOnSourceChain(token: ERC20BridgeToken | null): BigNumb
       account: { address: sourceWalletAddress },
     },
   } = useWallets();
-  const { childChainProvider } = useNetworksRelationship(networks);
-  const childNativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { childChain } = useNetworksRelationship(networks);
+  const childNativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const tokenAddress = resolveTokenAddress({
     token,
     side: 'source',

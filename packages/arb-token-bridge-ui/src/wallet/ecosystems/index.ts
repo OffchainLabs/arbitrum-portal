@@ -30,6 +30,8 @@ export type EcosystemConfig = {
    * and no canonical bridge
    */
   isLifiOnly: boolean;
+  /** Chains price gas with an EVM gas price, as returned by `eth_gasPrice` */
+  hasGasPrice: boolean;
   /** Tokens need an allowance before a transfer can move them, as with ERC-20 approvals */
   hasTokenApprovals: boolean;
 };
