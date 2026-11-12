@@ -59,7 +59,6 @@ function readResults(directory, build) {
       samples: parts.reduce((total, part) => total + part.meta.samples, 0),
     },
     samples: parts.flatMap((part) => part.samples),
-    unhandledRequests: [...new Set(parts.flatMap((part) => part.unhandledRequests))].sort(),
     errors: parts.flatMap((part) => part.errors),
   };
 }
@@ -234,15 +233,7 @@ function formatReport({ production, profiling, runUrl }) {
   const regressions = sections.flatMap(({ scenario, rows: scenarioRows }) =>
     scenarioRows.filter((row) => row.status === 'worse').map((row) => `${scenario} · ${row.label}`),
   );
-  const warnings = [
-    ...production.errors,
-    ...(profiling?.errors ?? []),
-    ...(production.unhandledRequests.length > 0
-      ? [
-          `These requests have no generated response and failed like a network error: ${production.unhandledRequests.map((r) => `\`${r}\``).join(', ')}`,
-        ]
-      : []),
-  ];
+  const warnings = [...production.errors, ...(profiling?.errors ?? [])];
 
   return {
     regressions,
