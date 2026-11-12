@@ -11,8 +11,13 @@ import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { NOVA_MAX_ETH_DEPOSIT_AMOUNT, isNovaDestination } from '../../../util/NovaUtils';
+import { getEcosystemConfig } from '../../../wallet/ecosystems/getEcosystemConfig';
 import { getSelectedRouteContext, useRouteStore } from '../hooks/useRouteStore';
 import { useNativeCurrencyBalances } from './useNativeCurrencyBalances';
+
+function subtractReserve(balance: BigNumber, sourceChainId: number) {
+  return balance.sub(BigNumber.from(getEcosystemConfig(sourceChainId).nativeCurrencyReserve));
+}
 
 export function getLifiMaxAmount({
   balance,
@@ -37,10 +42,10 @@ export function getLifiMaxAmount({
 
   const bufferedGasCost = sumSourceTokenCosts(route.gas).mul(14).div(10);
   const feeCost = sumSourceTokenCosts(route.fee);
-  const totalCost = bufferedGasCost.add(feeCost);
-  const maxAmount = balance.gt(totalCost) ? balance.sub(totalCost) : balance;
+  const maxAmount = subtractReserve(balance, sourceChainId).sub(bufferedGasCost).sub(feeCost);
 
-  return utils.formatUnits(maxAmount, decimals);
+  // A balance that can't cover the costs shows the insufficient gas error
+  return utils.formatUnits(maxAmount.gt(0) ? maxAmount : balance, decimals);
 }
 
 export function useMaxAmount() {
@@ -76,6 +81,15 @@ export function useMaxAmount() {
         sourceChainId: networks.sourceChain.id,
         route: selectedRouteContext,
       });
+    }
+
+    // LiFi-only chains, such as Solana, have no gas estimate until a route is quoted
+    if (getEcosystemConfig(networks.sourceChain.id).isLifiOnly) {
+      const maxAmount = subtractReserve(nativeCurrencySourceBalance, networks.sourceChain.id);
+      return utils.formatUnits(
+        maxAmount.gt(0) ? maxAmount : nativeCurrencySourceBalance,
+        nativeCurrencyDecimalsOnSourceChain,
+      );
     }
 
     if (nativeCurrency.isCustom && isDepositMode) {
