@@ -7,7 +7,7 @@ export type FetchEthDepositsToCustomDestinationFromSubgraphResult = {
   timestamp: string;
   transactionHash: string;
   type: 'EthDeposit';
-  isClassic: false;
+  isClassic: boolean;
   id: string;
   ethValue: string;
   blockCreatedAt: string;

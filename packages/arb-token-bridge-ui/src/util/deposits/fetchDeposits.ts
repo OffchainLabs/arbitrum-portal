@@ -141,7 +141,7 @@ export const fetchDeposits = async ({
           l2NetworkID: String(l2ChainId),
           blockNumber: Number(tx.blockCreatedAt),
           timestampCreated: tx.timestamp,
-          isClassic: false,
+          isClassic: tx.isClassic,
 
           childChainId: l2ChainId,
           parentChainId: l1ChainId,
