@@ -29,14 +29,10 @@ jobs:
       - id: set-matrix
         run: echo "e2eFiles=$(node .github/workflows/formatSpecfiles.js ${{ inputs.test_type }} | jq . --compact-output)" >> $GITHUB_OUTPUT
 
-  build:
-    name: 'Build'
-    uses: ./.github/workflows/build.yml
-    secrets: inherit
-
   test-e2e:
     name: 'Test E2E - ${{ matrix.test.name }} ${{ matrix.test.typeName }}'
-    needs: [build, load-e2e-files]
+    # Called by test.yml after its build job, so the build artifacts already exist
+    needs: [load-e2e-files]
     runs-on: ubuntu-8
     strategy:
       fail-fast: false
@@ -45,8 +41,6 @@ jobs:
 
     # The testnode runs as a service container; its ports are published to the
     # host runner so the (non-container) job and the app reach it on localhost.
-    # The job stays on the host runner so the build-artifacts cache (saved by the
-    # build job, also on the host) restores reliably.
     services:
       testnode:
         image: ghcr.io/offchainlabs/arbitrum-testnode-ci:v0.2.2-nc3.2-${{ matrix.test.tag }}
@@ -79,6 +73,8 @@ jobs:
         with:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
@@ -88,10 +84,9 @@ jobs:
 
       # Synpress/MetaMask 11.15.0 is a Manifest V2 extension that Playwright's bundled Chromium
       # refuses to load. fixtures.ts launches the pinned Chrome for Testing (Chrome 128, MV2) from
-      # node_modules/.cache/synpress instead, so install it explicitly here (idempotent) rather
-      # than relying on the postinstall hook surviving the node_modules cache.
+      # node_modules/.cache/synpress instead. `postinstall` skips it on CI, so install it here.
       - name: Install pinned Chrome for Testing
-        run: pnpm run install:chromium
+        uses: ./.github/actions/install-chrome
 
       - name: Install linux dependencies
         run: |
@@ -146,21 +141,3 @@ jobs:
             ./packages/arb-token-bridge-ui/playwright-report
           if-no-files-found: 'ignore'
         continue-on-error: true
-
-  clean-up:
-    name: 'Clean Up'
-    runs-on: ubuntu-8
-    needs: [test-e2e]
-    if: always()
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install gh-actions-cache
-        run: gh extension install actions/gh-actions-cache
-      - name: Delete build artifacts
-        run: |
-          if gh actions-cache list | grep build-artifacts-${{ github.run_id }}-${{ github.run_attempt }}
-          then
-            gh actions-cache delete build-artifacts-${{ github.run_id }}-${{ github.run_attempt }} --confirm
-          fi
-        shell: bash

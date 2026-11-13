@@ -45,6 +45,8 @@ describe.sequential('bridge history availability', () => {
     vi.stubGlobal('fetch', fetchMock);
     const fetchers = await importFetchersWithIndexedChainsStubbed('46630');
 
+    // ApeChain has no indexer entry and no subgraph. Arbitrum One no longer
+    // qualifies: it is always served by the indexer.
     await Promise.all(
       fetchers.map(([name, fetchHistory]) =>
         expect(fetchHistory(query(ChainId.ApeChain)), name).resolves.toEqual([]),

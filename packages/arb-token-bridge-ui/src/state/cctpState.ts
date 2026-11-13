@@ -19,14 +19,14 @@ import { useAccountType } from '../hooks/useAccountType';
 import { useNetworks } from '../hooks/useNetworks';
 import { useTransactionHistory } from '../hooks/useTransactionHistory';
 import { ChainId } from '../types/ChainId';
-import { Address } from '../util/AddressUtils';
+import { Address, EvmAddress } from '../util/AddressUtils';
 import { getAnalyticsAccountType, trackEvent } from '../util/AnalyticsUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
 import { fetchCCTPDeposits, fetchCCTPWithdrawals } from '../util/cctp/fetchCCTP';
 import { getL1BlockTime, getNetworkName, isNetwork } from '../util/networks';
 import { normalizeTimestamp } from '../util/normalizeTimestamp';
-import { useEthersSigner } from '../util/wagmi/useEthersSigner';
+import { useWalletContext } from '../wallet/WalletContext';
 import { DepositStatus, MergedTransaction, WithdrawalStatus } from './app/state';
 
 // see https://developers.circle.com/stablecoin/docs/cctp-technical-reference#block-confirmations-for-attestations
@@ -547,10 +547,15 @@ export function useClaimCctp(tx: MergedTransaction) {
   const { accountType } = useAccountType();
   const wagmiConfig = useConfig();
 
-  const signer = useEthersSigner({ chainId: tx.destinationChainId });
+  const { signer: evmSigner } = useWalletContext('evm');
 
   const claim = useCallback(async () => {
-    if (!tx.cctpData?.attestationHash || !tx.cctpData.messageBytes || !signer) {
+    if (!tx.cctpData?.attestationHash || !tx.cctpData.messageBytes) {
+      return;
+    }
+    // Nothing to claim with until the wallet is connected on the destination chain
+    const signer = await evmSigner.getEthersSigner(tx.destinationChainId).catch(() => undefined);
+    if (!signer) {
       return;
     }
 
@@ -559,7 +564,7 @@ export function useClaimCctp(tx: MergedTransaction) {
       const attestation = await waitForAttestation(tx.cctpData.attestationHash);
       const { hash: receiveTxHash } = await receiveMessage({
         attestation,
-        messageBytes: tx.cctpData.messageBytes as Address,
+        messageBytes: tx.cctpData.messageBytes as EvmAddress,
         wagmiConfig,
       });
       const receiveTx = await signer.provider.getTransaction(receiveTxHash);
@@ -575,7 +580,7 @@ export function useClaimCctp(tx: MergedTransaction) {
           ...tx.cctpData,
           receiveMessageTimestamp: resolvedAt,
           receiveMessageTransactionHash:
-            receiveReceiptTx.status === 1 ? (receiveReceiptTx.transactionHash as Address) : null,
+            receiveReceiptTx.status === 1 ? (receiveReceiptTx.transactionHash as EvmAddress) : null,
         },
       });
 
@@ -602,7 +607,7 @@ export function useClaimCctp(tx: MergedTransaction) {
     } finally {
       setIsClaiming(false);
     }
-  }, [accountType, receiveMessage, signer, tx, updatePendingTransaction, waitForAttestation]);
+  }, [accountType, receiveMessage, evmSigner, tx, updatePendingTransaction, waitForAttestation]);
 
   return {
     isClaiming,
@@ -648,7 +653,7 @@ export function useRemainingTimeCctp(tx: MergedTransaction) {
   }, [tx.status, setEstimatedMinutesLeftCctp]);
 
   useEffect(() => {
-    if (!tx.createdAt || tx.status === 'Failure') {
+    if (!tx.isCctp || !tx.createdAt || tx.status === 'Failure') {
       return;
     }
 
@@ -656,7 +661,7 @@ export function useRemainingTimeCctp(tx: MergedTransaction) {
   }, [tx]);
 
   useInterval(() => {
-    if (!canBeClaimedDate) {
+    if (!tx.isCctp || !canBeClaimedDate) {
       return;
     }
 

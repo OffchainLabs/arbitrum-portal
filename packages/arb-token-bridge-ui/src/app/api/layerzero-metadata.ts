@@ -22,7 +22,6 @@ const LZ_CHAIN_KEY_BY_CHAIN_ID: { chainId: number; chainKey: string }[] = [
   { chainId: ChainId.ApeChain, chainKey: 'ape' },
   { chainId: ChainId.RobinhoodChain, chainKey: 'robinhood' },
   { chainId: 98866, chainKey: 'plumephoenix' }, // Plume
-  { chainId: 1625, chainKey: 'gravity' }, // Gravity Alpha
   { chainId: 41923, chainKey: 'edu' }, // Edu Chain
   { chainId: 660279, chainKey: 'xai' }, // Xai
 ];

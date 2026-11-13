@@ -1,15 +1,6 @@
-name: Cache build artifacts
+name: Build
 
 on:
-  pull_request:
-    branches: ['master']
-    types:
-      - opened
-      - reopened
-      - synchronize
-      # we skip ci for draft PRs
-      # https://github.com/reviewdog/action-eslint/issues/29#issuecomment-985939887
-      - ready_for_review
   workflow_call:
 
 env:
@@ -23,8 +14,8 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  check-build-cache:
-    name: Check cache for build artifacts
+  build:
+    name: Build
     runs-on: ubuntu-4
     if: github.event.pull_request.draft == false
     steps:
@@ -43,24 +34,15 @@ jobs:
       - name: Validate indexer configuration
         run: node .github/workflows/validateIndexerConfig.js
 
-      - name: Check cache for build artifacts
-        id: cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ./packages/app/build
-            ./packages/app/public/__auto-generated-*
-          key: build-artifacts-${{ github.run_id }}
-
       - name: Install node_modules
-        if: steps.cache.outputs.cache-hit != 'true'
         uses: OffchainLabs/actions/node-modules/install@main
         with:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Build
-        if: steps.cache.outputs.cache-hit != 'true'
         shell: bash
         run: pnpm build
         env:
@@ -71,11 +53,20 @@ jobs:
           NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }}
           INDEXER_API_URL_BY_CHAIN: ${{ secrets.INDEXER_API_URL_BY_CHAIN }}
 
-      - name: Cache build artifacts
-        if: steps.cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+      # An artifact, not a cache: the build is only used by the jobs of this run, so it shouldn't
+      # count toward the repo's 10GB cache limit. `build/cache` is Next's compiler cache, which
+      # `next start` doesn't read
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
         with:
+          name: build-artifacts
           path: |
             ./packages/app/build
+            !./packages/app/build/cache
             ./packages/app/public/__auto-generated-*
-          key: build-artifacts-${{ github.run_id }}
+          include-hidden-files: true
+          if-no-files-found: error
+          # "Re-run failed jobs" doesn't rerun this job, so the artifact must outlive the run
+          retention-days: 7
+          # Re-running every job of a run builds and uploads again
+          overwrite: true

@@ -35,8 +35,8 @@ import { useNativeCurrencyBalances } from './useNativeCurrencyBalances';
 
 function Amount2ToggleButton() {
   const [networks] = useNetworks();
-  const { childChainProvider } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { childChain } = useNetworksRelationship(networks);
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const { showAmount2Input } = useAmount2InputVisibility();
 
   return (
@@ -67,11 +67,11 @@ export const useAmount2InputVisibility = create<{
 
 const Input1 = React.memo(() => {
   const [networks] = useNetworks();
-  const { childChainProvider } = useNetworksRelationship(networks);
+  const { childChain } = useNetworksRelationship(networks);
   const sourceNativeCurrency = useNativeCurrency({
-    provider: networks.sourceChainProvider,
+    chainId: networks.sourceChain.id,
   });
-  const destinationNativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const destinationNativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const { ethPrice } = useETHPrice();
   const [{ amount }] = useArbQueryParams();
   const { setAmount } = useSetInputAmount();
@@ -163,8 +163,8 @@ Input1.displayName = 'Input1';
 
 const Input2 = React.memo(() => {
   const [networks] = useNetworks();
-  const { childChainProvider } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { childChain } = useNetworksRelationship(networks);
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const { data: tokensFromLists } = useTokensFromLists();
   const { ethPrice } = useETHPrice();
   const [{ amount2 }] = useArbQueryParams();
@@ -250,9 +250,9 @@ Input2.displayName = 'Input2';
 
 export function SourceNetworkBox() {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, isDepositMode } = useNetworksRelationship(networks);
+  const { childChain, isDepositMode } = useNetworksRelationship(networks);
   const [selectedToken] = useSelectedToken();
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const [dialogProps, openDialog] = useDialog2();
   const openSourceNetworkSelectionDialog = () => {
     openDialog('source_network_selection');

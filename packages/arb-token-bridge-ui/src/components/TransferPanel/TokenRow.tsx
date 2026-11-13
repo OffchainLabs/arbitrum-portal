@@ -10,8 +10,6 @@ import { getUsdValueForAmount } from '@/bridge/util/TokenPriceUtils';
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useAccountType } from '../../hooks/useAccountType';
-import { useBalanceOnDestinationChain } from '../../hooks/useBalanceOnDestinationChain';
-import { useBalanceOnSourceChain } from '../../hooks/useBalanceOnSourceChain';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
@@ -50,15 +48,15 @@ function StyledLoader() {
 
 function TokenListInfo({ token }: { token: ERC20BridgeToken | null }) {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider } = useNetworksRelationship(networks);
+  const { childChain } = useNetworksRelationship(networks);
   const { isCustom: childChainNativeCurrencyIsCustom } = useNativeCurrency({
-    provider: childChainProvider,
+    chainId: childChain.id,
   });
   const sourceChainNativeCurrency = useNativeCurrency({
-    provider: networks.sourceChainProvider,
+    chainId: networks.sourceChain.id,
   });
   const destinationChainNativeCurrency = useNativeCurrency({
-    provider: networks.destinationChainProvider,
+    chainId: networks.destinationChain.id,
   });
 
   const tokenListInfo = useMemo(() => {
@@ -128,15 +126,15 @@ interface TokenRowProps {
   style?: React.CSSProperties;
   onTokenSelected: (token: ERC20BridgeToken | null, balance: BigNumber | null) => void;
   token: ERC20BridgeToken | null;
+  balance: BigNumber | null;
   isDestination?: boolean;
 }
 
 function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination: boolean }) {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, parentChain, isDepositMode } =
-    useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
   const chainId = isDepositMode ? parentChain.id : childChain.id;
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const overrideToken = useMemo(() => {
     const override = getTokenOverride({
       fromToken: token?.address,
@@ -192,10 +190,6 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
     return token.logoURI;
   }, [overrideToken, token, nativeCurrency.logoUrl]);
 
-  const sourceBalance = useBalanceOnSourceChain(token);
-  const destinationBalance = useBalanceOnDestinationChain(token);
-  const balance = options?.isDestination ? destinationBalance : sourceBalance;
-
   const decimals = useMemo(() => {
     if (overrideToken) {
       return overrideToken.decimals;
@@ -242,7 +236,6 @@ function useTokenInfo(token: ERC20BridgeToken | null, options?: { isDestination:
     name,
     symbol,
     logoURI,
-    balance,
     isArbitrumToken,
     isNativeStablecoin,
     isBridgeable,
@@ -276,9 +269,11 @@ function ArbitrumTokenBadge() {
 
 function TokenBalance({
   token,
+  balance,
   isDestination,
 }: {
   token: ERC20BridgeToken | null;
+  balance: BigNumber | null;
   isDestination: boolean;
 }) {
   const [networks] = useNetworks();
@@ -288,9 +283,9 @@ function TokenBalance({
     },
   } = useAppState();
   const { isLoading: isLoadingAccountType } = useAccountType();
-  const { balance, symbol } = useTokenInfo(token, { isDestination });
+  const { symbol } = useTokenInfo(token, { isDestination });
   const nativeCurrencyOnDestinationChain = useNativeCurrency({
-    provider: networks.destinationChainProvider,
+    chainId: networks.destinationChain.id,
   });
   const nativeCurrencyDecimalsOnSourceChain = useSourceChainNativeCurrencyDecimals();
   const nativeCurrencyDecimals = useMemo(() => {
@@ -366,7 +361,7 @@ function TokenContractLink({
   const [networks] = useNetworks();
   const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
 
-  const nativeCurrency = useNativeCurrency({ provider: networks.destinationChainProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: networks.destinationChain.id });
 
   const isCustomFeeTokenRow = token === null && nativeCurrency.isCustom;
 
@@ -458,6 +453,7 @@ export function TokenRow({
   style,
   onTokenSelected,
   token,
+  balance,
   isDestination = false,
 }: TokenRowProps): React.JSX.Element {
   const {
@@ -467,14 +463,13 @@ export function TokenRow({
     isArbitrumToken,
     isNativeStablecoin,
     isBridgeable: tokenIsBridgeable,
-    balance,
     decimals,
   } = useTokenInfo(token, { isDestination });
   const [networks] = useNetworks();
   const { data: tokensFromLists } = useTokensFromLists();
-  const sourceNativeCurrency = useNativeCurrency({ provider: networks.sourceChainProvider });
+  const sourceNativeCurrency = useNativeCurrency({ chainId: networks.sourceChain.id });
   const destinationNativeCurrency = useNativeCurrency({
-    provider: networks.destinationChainProvider,
+    chainId: networks.destinationChain.id,
   });
   const { ethPrice } = useETHPrice();
   /**
@@ -537,7 +532,9 @@ export function TokenRow({
             <span>{isNativeStablecoin && <NativeStablecoinBadge />}</span>
           </div>
           <div className="ml-auto font-medium tabular-nums">
-            {tokenIsBridgeable && <TokenBalance token={token} isDestination={isDestination} />}
+            {tokenIsBridgeable && (
+              <TokenBalance token={token} balance={balance} isDestination={isDestination} />
+            )}
           </div>
 
           {/* Row 2: Contract or token list info + USD value */}

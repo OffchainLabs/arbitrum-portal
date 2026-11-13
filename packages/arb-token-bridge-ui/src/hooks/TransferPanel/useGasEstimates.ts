@@ -1,13 +1,11 @@
-import { BigNumber, constants, utils } from 'ethers';
+import { BigNumber, constants } from 'ethers';
 import { useMemo } from 'react';
 import useSWR from 'swr';
-import { Address } from 'viem';
-import { Config, useAccount, useConfig } from 'wagmi';
+import { Config, useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
 import { TransferEstimateGasResult } from '@/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { useLifiSettingsStore } from '../../components/TransferPanel/hooks/useLifiSettingsStore';
@@ -16,6 +14,9 @@ import {
   getSelectedRouteContext,
   useRouteStore,
 } from '../../components/TransferPanel/hooks/useRouteStore';
+import { parseAddressForChain } from '../../util/AddressUtils';
+import { getNativeTokenAddress } from '../../wallet/ecosystems/getEcosystemConfig';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { useArbQueryParams } from '../useArbQueryParams';
 import { useBalanceOnSourceChain } from '../useBalanceOnSourceChain';
 import { useDestinationSelection } from '../useDestinationToken';
@@ -49,8 +50,6 @@ async function fetcher([
   routeContext: RouteContext | undefined,
 ]): Promise<TransferEstimateGasResult> {
   const _walletAddress = walletAddress ?? constants.AddressZero;
-  const sourceProvider = getProviderForChainId(sourceChainId);
-  const signer = sourceProvider.getSigner(_walletAddress);
   // use chainIds to initialize the bridgeTransferStarter to save RPC calls
   const bridgeTransferStarter = BridgeTransferStarterFactory.create({
     sourceChainId,
@@ -62,7 +61,7 @@ async function fetcher([
 
   return await bridgeTransferStarter.transferEstimateGas({
     amount,
-    from: await signer.getAddress(),
+    from: _walletAddress,
     destinationAddress,
     wagmiConfig,
   });
@@ -87,7 +86,15 @@ export function useGasEstimates({
   // Quote the same destination as the route request so both agree on the received asset.
   const { destinationAddress: toTokenAddress } = useDestinationSelection();
   const [{ destinationAddress }] = useArbQueryParams();
-  const { address: walletAddress } = useAccount();
+  const {
+    sourceWallet: {
+      account: { address: walletAddress },
+    },
+    destinationWallet: {
+      account: { address: destinationWalletAddress },
+    },
+  } = useWallets();
+  const recipientAddress = destinationAddress || destinationWalletAddress;
   const balance = useBalanceOnSourceChain(selectedToken);
   const wagmiConfig = useConfig();
   const { selectedRouteContext, eligibleRouteTypes } = useRouteStore(
@@ -120,7 +127,9 @@ export function useGasEstimates({
 
   const defaultFromTokenAddress = isDepositMode ? selectedToken?.address : selectedToken?.l2Address;
   const fromTokenAddress =
-    overrideSourceToken.source?.address || defaultFromTokenAddress || constants.AddressZero;
+    overrideSourceToken.source?.address ||
+    defaultFromTokenAddress ||
+    getNativeTokenAddress(sourceChain.id);
 
   const parameters = {
     enabled: isLifiRouteEligible,
@@ -128,7 +137,7 @@ export function useGasEstimates({
     fromAmount: amount.toString(),
     fromChainId: sourceChain.id,
     fromToken: fromTokenAddress,
-    toAddress: (destinationAddress as Address) || walletAddress,
+    toAddress: recipientAddress,
     toChainId: destinationChain.id,
     toToken: toTokenAddress,
     denyBridges: disabledBridges,
@@ -141,9 +150,7 @@ export function useGasEstimates({
 
   const amountToTransfer = balance !== null && amount.gte(balance) ? balance : amount;
 
-  const sanitizedDestinationAddress = utils.isAddress(String(destinationAddress))
-    ? destinationAddress
-    : undefined;
+  const sanitizedDestinationAddress = parseAddressForChain(destinationAddress, destinationChain.id);
 
   const { data: gasEstimates, error } = useSWR(
     () => {

@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLatest } from 'react-use';
 import { twMerge } from 'tailwind-merge';
 import { BaseError } from 'viem';
-import { useAccount, useConfig } from 'wagmi';
+import { useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
 import { useShowUsdgDripCardAfterSubmit } from '@/app-components/UsdgDripCard/useUsdgDripCard';
@@ -26,14 +26,11 @@ import {
   getPendingLifiRouteBatchIds,
 } from '@/bridge/util/LifiTransactionStatus';
 import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
-import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
-import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
 import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { useAccountType } from '../../hooks/useAccountType';
 import { TabParamEnum, tabToIndex, useArbQueryParams } from '../../hooks/useArbQueryParams';
-import { useBalances } from '../../hooks/useBalances';
 import { useError } from '../../hooks/useError';
 import { useIsTrustWalletConnection } from '../../hooks/useIsTrustWalletConnection';
 import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
@@ -65,7 +62,10 @@ import { logger } from '../../util/logger';
 import { getNetworkName, isNetwork } from '../../util/networks';
 import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
-import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { useWalletContext } from '../../wallet/WalletContext';
+import { getSigners } from '../../wallet/getSigners';
+import { useRefreshTokenBalances } from '../../wallet/hooks/useTokenBalances';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextActions } from '../App/AppContext';
 import { highlightTransactionHistoryDisclaimer } from '../TransactionHistory/TransactionHistoryDisclaimer';
 import { addDepositToCache } from '../TransactionHistory/helpers';
@@ -97,7 +97,6 @@ import { useIsTransferAllowed } from './hooks/useIsTransferAllowed';
 import { getSelectedRouteContext, isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
 
-const signerUndefinedError = 'Signer is undefined';
 const transferNotAllowedError = 'Transfer not allowed';
 
 const networkConnectionWarningToast = () =>
@@ -135,18 +134,24 @@ export function TransferPanel() {
   const [showSmartContractWalletTooltip, setShowSmartContractWalletTooltip] = useState(false);
   const {
     app: {
-      arbTokenBridge: { token, bridgeTokens },
+      arbTokenBridge: { bridgeTokens },
       warningTokens,
     },
   } = useAppState();
-  const { address: walletAddress, chain, isConnected } = useAccount();
+  const { sourceWallet, destinationWallet } = useWallets();
+  const {
+    account: { address: walletAddress, chainId: sourceWalletChainId },
+    isConnected,
+  } = sourceWallet;
+  const {
+    account: { address: destinationWalletAddress },
+  } = destinationWallet;
   const [selectedToken, setSelectedToken] = useSelectedToken();
   const hasTrackedBridgePageLoad = useRef(false);
   const { switchChainAsync } = useSwitchNetworkWithConfig({
     isSwitchingNetworkBeforeTx: true,
   });
-  // do not use `useChainId` because it won't detect chains outside of our wagmi config
-  const latestChain = useLatest(chain);
+  const latestChainId = useLatest(sourceWalletChainId);
   const [networks, setNetworks] = useNetworks();
   const latestNetworks = useLatest(networks);
   const { data: tokensFromLists } = useTokensFromLists();
@@ -158,14 +163,14 @@ export function TransferPanel() {
   const isBatchTransferSupported = useIsBatchTransferSupported();
   const nativeCurrencyDecimalsOnSourceChain = useSourceChainNativeCurrencyDecimals();
 
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
 
   const { accountType } = useAccountType();
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
 
   const isTrustWalletConnection = useIsTrustWalletConnection();
 
-  const { current: signer } = useLatest(useEthersSigner({ chainId: networks.sourceChain.id }));
+  const { signer: evmSigner } = useWalletContext('evm');
   const wagmiConfig = useConfig();
 
   const { setTransferring } = useAppContextActions();
@@ -208,8 +213,7 @@ export function TransferPanel() {
 
   const isCustomDestinationTransfer = !!latestDestinationAddress.current;
 
-  const { updateEthParentBalance, updateErc20ParentBalances, updateEthChildBalance } =
-    useBalances();
+  const refreshTokenBalances = useRefreshTokenBalances();
 
   const { destinationAddressError } = useDestinationAddressError();
 
@@ -218,15 +222,23 @@ export function TransferPanel() {
   const { handleError } = useError();
 
   const refreshBalances = async () => {
-    await Promise.all([updateEthParentBalance(), updateEthChildBalance()]);
+    const refreshes: Promise<unknown>[] = [];
 
-    if (selectedToken) {
-      token.updateTokenData(selectedToken.address);
+    if (walletAddress) {
+      refreshes.push(refreshTokenBalances({ chainId: networks.sourceChain.id, walletAddress }));
     }
 
-    if (nativeCurrency.isCustom) {
-      await updateErc20ParentBalances([nativeCurrency.address]);
+    const recipientAddress = destinationAddress || destinationWalletAddress;
+    if (recipientAddress) {
+      refreshes.push(
+        refreshTokenBalances({
+          chainId: networks.destinationChain.id,
+          walletAddress: recipientAddress,
+        }),
+      );
     }
+
+    await Promise.all(refreshes);
   };
 
   // The panel doesn't wait for the source transaction to confirm, so a slow or failed
@@ -471,7 +483,8 @@ export function TransferPanel() {
 
       case 'tx_ethers': {
         try {
-          const tx = await signer!.sendTransaction(step.payload.txRequest);
+          const signer = await evmSigner.getEthersSigner(latestNetworks.current.sourceChain.id);
+          const tx = await signer.sendTransaction(step.payload.txRequest);
           const txReceipt = await tx.wait();
 
           return { data: txReceipt };
@@ -504,9 +517,7 @@ export function TransferPanel() {
     if (!walletAddress) {
       throw new Error(`walletAddress is undefined`);
     }
-    if (!signer) {
-      throw new Error(signerUndefinedError);
-    }
+    const signer = await evmSigner.getEthersSigner(latestNetworks.current.sourceChain.id);
     if (!isTransferAllowed.current) {
       throw new Error(transferNotAllowedError);
     }
@@ -594,7 +605,7 @@ export function TransferPanel() {
         uniqueId: null,
         value: amount,
         depositStatus: DepositStatus.CCTP_DEFAULT_STATE,
-        destination: destinationAddress ?? walletAddress,
+        destination: destinationAddress ?? destinationWalletAddress,
         sender: walletAddress,
         isCctp: true,
         tokenAddress: getUsdcTokenAddressFromSourceChainId(sourceChain.id),
@@ -659,25 +670,9 @@ export function TransferPanel() {
         return;
       }
 
-      const { sourceChainProvider, destinationChainProvider } = networks;
-
-      const tokenOverrides = getTokenOverride({
-        fromToken: selectedToken?.address,
+      const lifiTransferStarter = BridgeTransferStarterFactory.create({
         sourceChainId: networks.sourceChain.id,
         destinationChainId: networks.destinationChain.id,
-      });
-
-      const destinationChainErc20Address =
-        tokenOverrides.destination?.address ||
-        (isDepositMode ? selectedToken?.l2Address : selectedToken?.address);
-      const sourceChainErc20Address =
-        tokenOverrides.source?.address ||
-        (isDepositMode ? selectedToken?.address : selectedToken?.l2Address);
-      const lifiTransferStarter = new LifiTransferStarter({
-        destinationChainProvider,
-        sourceChainProvider,
-        destinationChainErc20Address,
-        sourceChainErc20Address,
         lifiRoute: context,
       });
 
@@ -766,7 +761,7 @@ export function TransferPanel() {
       const transfer = await lifiTransferStarter.transfer({
         amount: amountBigNumber,
         destinationAddress,
-        wagmiConfig,
+        signers: getSigners(sourceWallet, destinationWallet),
         switchChainAsync,
         onApprovalRequest: (approvalRequest) =>
           confirmDialog('approve_lifi_token', { lifiApproval: { approvalRequest } }),
@@ -830,12 +825,9 @@ export function TransferPanel() {
         isSwap: isSwapTransfer,
       });
 
-      const sourceChainTransaction = transfer.sourceChainTransaction;
       if (!isSmartContractWallet) {
         refreshBalancesAfterConfirmation(
-          'wait' in sourceChainTransaction
-            ? sourceChainTransaction.wait()
-            : transfer.sourceChainProvider.waitForTransaction(sourceChainTransaction.hash),
+          transfer.sourceChainTransaction.wait(),
           'lifi_source_confirmation',
         );
       }
@@ -861,9 +853,7 @@ export function TransferPanel() {
     if (!selectedToken) {
       return;
     }
-    if (!signer) {
-      throw new Error(signerUndefinedError);
-    }
+    const signer = await evmSigner.getEthersSigner(latestNetworks.current.sourceChain.id);
     if (!isTransferAllowed.current) {
       throw new Error(transferNotAllowedError);
     }
@@ -1003,9 +993,7 @@ export function TransferPanel() {
       throw new Error(transferNotAllowedError);
     }
 
-    if (!signer) {
-      throw new Error(signerUndefinedError);
-    }
+    const signer = await evmSigner.getEthersSigner(latestNetworks.current.sourceChain.id);
 
     const childChainName = getNetworkName(childChain.id);
 
@@ -1344,7 +1332,7 @@ export function TransferPanel() {
 
   const moveFundsButtonOnClick = async () => {
     const isConnectedToTheWrongChain =
-      latestChain.current?.id !== latestNetworks.current.sourceChain.id;
+      latestChainId.current !== latestNetworks.current.sourceChain.id;
 
     const sourceChainId = latestNetworks.current.sourceChain.id;
     const childChainName = getNetworkName(childChain.id);
