@@ -275,7 +275,7 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
       </div>
       {/* Mobile Action Panel Overlay */}
       {showActionPanel && (
-        <div className="fixed inset-0 bg-overlay z-50 lg:hidden flex flex-col !mt-0">
+        <div className="fixed inset-0 bg-overlay z-50 lg:hidden flex flex-col mt-0!">
           <div className="flex items-center p-4">
             <button
               type="button"
@@ -298,7 +298,7 @@ export function LiquidStakingDetailPage({ opportunity }: LiquidStakingDetailPage
       )}
       {/* Mobile CTA Buttons - Sticky Bottom */}
       {!showActionPanel && (
-        <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-white/10 p-4 lg:hidden z-[60]">
+        <div className="fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-white/10 p-4 lg:hidden z-60">
           <div className="flex gap-2">
             <button
               onClick={() => {

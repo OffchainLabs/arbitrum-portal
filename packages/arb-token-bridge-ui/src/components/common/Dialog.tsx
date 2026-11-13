@@ -142,8 +142,8 @@ export function Dialog(props: DialogProps) {
         transition
         className={twMerge(
           'fixed inset-0 bg-black opacity-80 transition-opacity',
-          'data-[closed]:opacity-0 data-[enter]:duration-400 data-[enter]:ease-out',
-          'data-[leave]:duration-200 data-[leave]:ease-in',
+          'data-closed:opacity-0 data-enter:duration-400 data-enter:ease-out',
+          'data-leave:duration-200 data-leave:ease-in',
         )}
         aria-hidden="true"
       />
@@ -151,8 +151,8 @@ export function Dialog(props: DialogProps) {
         transition
         className={twMerge(
           'z-10 flex max-h-screen w-screen scale-100 flex-col overflow-y-auto border border-gray-dark bg-gray-1 opacity-100 transition-[transform_opacity] md:max-w-[727px] md:rounded',
-          'data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-400 data-[enter]:ease-out',
-          'data-[leave]:duration-200 data-[leave]:ease-in',
+          'data-closed:scale-95 data-closed:opacity-0 data-enter:duration-400 data-enter:ease-out',
+          'data-leave:duration-200 data-leave:ease-in',
           embedMode && 'border-0 bg-widget-background',
           className,
         )}

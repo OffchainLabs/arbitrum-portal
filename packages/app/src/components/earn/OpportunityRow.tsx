@@ -120,11 +120,11 @@ export function OpportunityRow({ opportunity, onOpportunitySelect }: Opportunity
                       height={16}
                       aria-hidden
                     />
-                    <span className="text-sm font-medium bg-gradient-to-b from-bright-blue to-electric-blue bg-clip-text text-transparent">
+                    <span className="text-sm font-medium bg-linear-to-b from-bright-blue to-electric-blue bg-clip-text text-transparent">
                       Rewards
                     </span>
                   </div>
-                  <span className="ml-auto text-sm font-medium bg-gradient-to-b from-bright-blue to-electric-blue bg-clip-text text-transparent">
+                  <span className="ml-auto text-sm font-medium bg-linear-to-b from-bright-blue to-electric-blue bg-clip-text text-transparent">
                     {formatPercentage(opportunity.apyBreakdown.reward)}
                   </span>
                 </div>
