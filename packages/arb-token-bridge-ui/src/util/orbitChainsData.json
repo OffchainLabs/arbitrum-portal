@@ -1553,6 +1553,54 @@
           "logoUrl": "/images/MarsChainTestnet_NativeTokenLogo.png"
         }
       }
+    },
+    {
+      "chainId": 4221,
+      "confirmPeriodBlocks": 60,
+      "ethBridge": {
+        "bridge": "0x4F408768E4eC8Fffb55E84c9ac21801c088C183c",
+        "inbox": "0x0f76cf640B349bA9D66DB844CF420c138C43d49A",
+        "outbox": "0x2e61FF852ECF20c5b4964C283eA20b07d7ea27Ff",
+        "rollup": "0x96cb416A3defB4Ec596e23806581Eb02f6def71a",
+        "sequencerInbox": "0x7fe7672D8a7DEb128707FeAf58b757D5840819EB"
+      },
+      "nativeToken": "0x424242424b68330CcFb022881d25a6acC29852ea",
+      "explorerUrl": "https://scan.testnet-chain.genlayer.com",
+      "rpcUrl": "https://rpc.testnet-chain.genlayer.com",
+      "isCustom": true,
+      "isTestnet": true,
+      "name": "GenLayer Chain Testnet",
+      "slug": "genlayer-chain-testnet",
+      "parentChainId": 11155111,
+      "tokenBridge": {
+        "parentCustomGateway": "0x856b2eDcbbBF9Af8a3a920704F33206e8f0aab10",
+        "parentErc20Gateway": "0xD28787A5f3fDC85cB3e706978C63583a53C856E7",
+        "parentGatewayRouter": "0x68F084B09c9b34CeD4894313689e1Fb55d114f34",
+        "parentMultiCall": "0x73465577E9FD7Cd585E4270F23A9eBa99B92b6eD",
+        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "parentWeth": "0x0000000000000000000000000000000000000000",
+        "parentWethGateway": "0x0000000000000000000000000000000000000000",
+        "childCustomGateway": "0x7cD9e194bF7736C873354A22719C59D17cA57cD5",
+        "childErc20Gateway": "0xB3137489A454155BB64459C45a431a716Fce2190",
+        "childGatewayRouter": "0x707DbF4d53390238C96A15C9406881Aec98f9289",
+        "childMultiCall": "0xa0116A52EA8e53Bd2D32EfF3Fd7e9a4af090cE0f",
+        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "childWeth": "0x0000000000000000000000000000000000000000",
+        "childWethGateway": "0x0000000000000000000000000000000000000000"
+      },
+      "bridgeUiConfig": {
+        "color": "#110FFF",
+        "network": {
+          "name": "GenLayer Chain Testnet",
+          "logo": "/images/GenLayerChainTestnet_Logo.svg",
+          "description": "GenLayer Chain Testnet is an Arbitrum Orbit testnet that settles to Sepolia and uses testnet GEN as its gas token."
+        },
+        "nativeTokenData": {
+          "name": "GenLayer",
+          "symbol": "GEN",
+          "logoUrl": "/images/GenLayerChainTestnet_Logo.svg"
+        }
+      }
     }
   ]
 }
