@@ -941,7 +941,7 @@
         "childWethGateway": "0x0000000000000000000000000000000000000000"
       },
       "bridgeUiConfig": {
-        "color": "#110FFF",
+        "color": "#070707",
         "network": {
           "name": "GenLayer Chain",
           "logo": "/images/GenLayerChain_Logo.svg",
@@ -950,7 +950,7 @@
         "nativeTokenData": {
           "name": "GenLayer",
           "symbol": "GEN",
-          "logoUrl": "/images/GenLayerChain_Logo.svg"
+          "logoUrl": "/images/GenLayerChain_NativeTokenLogo.svg"
         }
       }
     }
