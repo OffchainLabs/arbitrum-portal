@@ -9,7 +9,8 @@ vi.mock('../../../../util/txHistory/sources', () => ({
   isChildChainIndexed: vi.fn(),
 }));
 
-vi.mock('../../../../api-utils/ServerSubgraphUtils', () => ({
+vi.mock('../../../../api-utils/ServerSubgraphUtils', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../../api-utils/ServerSubgraphUtils')>()),
   getL1SubgraphClient: vi.fn(),
   getL2SubgraphClient: vi.fn(),
 }));

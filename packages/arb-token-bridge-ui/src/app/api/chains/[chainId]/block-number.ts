@@ -6,6 +6,7 @@ import {
   type SubgraphSource,
   getL1SubgraphClient,
   getL2SubgraphClient,
+  getQueryData,
 } from '../../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../../types/ChainId';
 import { isChildChainIndexed } from '../../../../util/txHistory/sources';
@@ -88,15 +89,13 @@ export async function GET(
 
     const subgraph = getSubgraphClient(numericChainId);
 
-    const result: {
-      data: {
-        _meta: {
-          block: {
-            number: number;
-          };
+    const result = await subgraph.client.query<{
+      _meta: {
+        block: {
+          number: number;
         };
       };
-    } = await subgraph.client.query({
+    }>({
       query: gql`
         {
           _meta {
@@ -111,7 +110,7 @@ export async function GET(
     return NextResponse.json(
       {
         meta: { source: subgraph.source },
-        data: result.data._meta.block.number,
+        data: getQueryData(result)._meta.block.number,
       },
       { status: 200 },
     );
