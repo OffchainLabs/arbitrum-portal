@@ -905,6 +905,54 @@
         },
         "fastWithdrawalTime": 900000
       }
+    },
+    {
+      "chainId": 42424242,
+      "confirmPeriodBlocks": 40320,
+      "ethBridge": {
+        "bridge": "0xeeffe30979047e99E9473Bf4d75c7fFb63D0Ac3a",
+        "inbox": "0x02B6709f98249938ca7538505DD5f42dEB7075Ae",
+        "outbox": "0xCC2837f9A8df9d5d06Da6a318293b4bdb0951177",
+        "rollup": "0xB349cAdbd040f0097a02dF120BE14D3A5Cda541A",
+        "sequencerInbox": "0x5fD4F8c159162d31AEbDc4C2EbE190246585d4C4"
+      },
+      "nativeToken": "0x4242424228C275C5b44E24C53f081E9246025a2f",
+      "explorerUrl": "https://scan.chain.genlayer.com",
+      "rpcUrl": "https://rpc.chain.genlayer.com",
+      "isCustom": true,
+      "isTestnet": false,
+      "name": "GenLayer Chain",
+      "slug": "genlayer-chain",
+      "parentChainId": 1,
+      "tokenBridge": {
+        "parentCustomGateway": "0x0a9F24C85980ad3e24Ed51D084fE1cbeD04e0cF6",
+        "parentErc20Gateway": "0xAFC538D56D5eEB77629329A8615128dbE52Bc665",
+        "parentGatewayRouter": "0xFee20C330BbE17F8E76701CA2579B27eA026e6E8",
+        "parentMultiCall": "0x7cdCB0Cc61f47B8Dd8f47C5A29edaDd84a1BDf5e",
+        "parentProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "parentWeth": "0x0000000000000000000000000000000000000000",
+        "parentWethGateway": "0x0000000000000000000000000000000000000000",
+        "childCustomGateway": "0xcaEf7d141f19Ba399f9BFBA09288b1aa14630D51",
+        "childErc20Gateway": "0x269f4e80b66678106fCebc248732b708ec823315",
+        "childGatewayRouter": "0x8b0841B5205374d381d518CFec1267Fb42F7438D",
+        "childMultiCall": "0x2EE0Ec8975Fb751b17D2BD8259c47C915184e331",
+        "childProxyAdmin": "0x0000000000000000000000000000000000000000",
+        "childWeth": "0x0000000000000000000000000000000000000000",
+        "childWethGateway": "0x0000000000000000000000000000000000000000"
+      },
+      "bridgeUiConfig": {
+        "color": "#110FFF",
+        "network": {
+          "name": "GenLayer Chain",
+          "logo": "/images/GenLayerChain_Logo.svg",
+          "description": "GenLayer Chain is an Arbitrum Orbit chain that settles to Ethereum and uses GEN as its gas token."
+        },
+        "nativeTokenData": {
+          "name": "GenLayer",
+          "symbol": "GEN",
+          "logoUrl": "/images/GenLayerChain_Logo.svg"
+        }
+      }
     }
   ],
   "testnet": [
