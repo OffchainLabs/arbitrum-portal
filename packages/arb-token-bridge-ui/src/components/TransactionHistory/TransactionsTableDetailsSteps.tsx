@@ -20,6 +20,7 @@ import { addressesEqual } from '../../util/AddressUtils';
 import { getLifiRouteHistorySteps } from '../../util/LifiRouteUtils';
 import {
   LIFI_TRANSFER_PROCESS_TYPES,
+  isActiveLifiProcess,
   isPendingLifiProcessId,
   isValidLifiTransactionHash,
 } from '../../util/LifiTransactionStatus';
@@ -224,7 +225,7 @@ function getLifiStepProcessState(
     return 'idle';
   }
 
-  const allProcesses = execution.process.filter((process) => process.type !== 'SWITCH_CHAIN');
+  const allProcesses = execution.process;
   const matchingProcesses = allProcesses.filter((process) => processTypes.has(process.type));
   const hasPreparedAllowance = matchingProcesses.some(
     (process) => process.type === 'TOKEN_ALLOWANCE' && process.status === 'DONE' && !process.txHash,
@@ -258,9 +259,7 @@ function getLifiStepProcessState(
     return 'done';
   }
 
-  const pending = processes.some((process) =>
-    ['STARTED', 'ACTION_REQUIRED', 'PENDING'].includes(process.status),
-  );
+  const pending = processes.some(isActiveLifiProcess);
 
   return pending ? 'pending' : 'idle';
 }
