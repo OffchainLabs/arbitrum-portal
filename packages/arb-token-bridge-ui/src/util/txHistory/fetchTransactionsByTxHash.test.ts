@@ -14,6 +14,7 @@ import {
 } from '../../hooks/useLifiTransactionHistory';
 import { fetchOftTransactionsByTxHash } from '../../hooks/useOftTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
+import { ChainId } from '../../types/ChainId';
 import { ecosystems } from '../../wallet/ecosystems';
 import { fetchCCTPDeposits, fetchCCTPWithdrawals } from '../cctp/fetchCCTP';
 import { fetchDeposits } from '../deposits/fetchDeposits';
@@ -347,6 +348,20 @@ describe.sequential('fetchTransactionsByTxHash', () => {
         isTestnetMode: false,
       }),
     ).rejects.toThrow('Some chains could not be checked');
+  });
+
+  it('does not probe Solana for an EVM hash', async () => {
+    mockProviders({ [ChainId.Solana]: new Error('no EVM provider for Solana') });
+
+    const transfers = await fetchTransactionsByTxHash({
+      txHash: TX_HASH,
+      chainPairs: CHAIN_PAIRS,
+      probeChainIds: [...PROBE_CHAIN_IDS, ChainId.Solana],
+      isTestnetMode: false,
+    });
+
+    expect(transfers).toEqual([]);
+    expect(getProviderForChainId).not.toHaveBeenCalledWith(ChainId.Solana);
   });
 
   it('tolerates a failed probe when the receipt was found elsewhere', async () => {
