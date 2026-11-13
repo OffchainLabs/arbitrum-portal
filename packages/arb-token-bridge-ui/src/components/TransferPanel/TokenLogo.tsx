@@ -1,9 +1,7 @@
 import { useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-import { useNativeCurrency } from '../../hooks/useNativeCurrency';
-import { useNetworks } from '../../hooks/useNetworks';
-import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
+import { useNativeCurrencyForTransfer } from '../../hooks/useNativeCurrency';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { SafeImage } from '../common/SafeImage';
 import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
@@ -13,23 +11,24 @@ import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
  * @param {Object} props
  * @param {string | null} [props.srcOverride] - Optional URL to override default token logo source
  * @param {string | undefined} [props.className] - Class name override
+ * @param {boolean} [props.isDestination] - Falls back to the destination side's native currency
  */
 export const TokenLogo = ({
   srcOverride,
   className,
   fallback,
+  isDestination = false,
 }: {
   srcOverride?: string | null;
   className?: string;
   fallback?: React.JSX.Element;
+  isDestination?: boolean;
 }) => {
   const [selectedToken] = useSelectedToken();
   const { data: tokensFromLists } = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
 
-  const [networks] = useNetworks();
-  const { childChain } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
+  const nativeCurrency = useNativeCurrencyForTransfer({ isDestination });
 
   const src = useMemo(() => {
     // Override to show the native currency logo

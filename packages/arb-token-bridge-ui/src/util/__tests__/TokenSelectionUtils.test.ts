@@ -3,12 +3,15 @@ import { describe, expect, it } from 'vitest';
 
 import { ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../types/ChainId';
+import { SOLANA_NATIVE_TOKEN_ADDRESS } from '../../wallet/ecosystems/solana';
 import { CommonAddress } from '../CommonAddressUtils';
 import { LIFI_TRANSFER_LIST_ID } from '../TokenListUtils';
 import {
   ARB_ONE_NATIVE_USDC_TOKEN,
   ARB_SEPOLIA_NATIVE_USDC_TOKEN,
+  NATIVE_CURRENCY_IDENTIFIER,
   getTokenForRow,
+  getTokenPickerAddresses,
   isHeldTokenFromEnabledList,
   isTokenDepositUnavailable,
   resolveDestinationSelection,
@@ -476,5 +479,50 @@ describe('isHeldTokenFromEnabledList', () => {
         bridgeTokens: { [address]: token },
       }),
     ).toBe(true);
+  });
+});
+
+describe('getTokenPickerAddresses', () => {
+  const tokenAddress = '0x0000000000000000000000000000000000000001';
+
+  it('replaces a native token with its own address by the native currency row', () => {
+    const mint = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+    expect(
+      getTokenPickerAddresses({
+        tokenAddresses: [SOLANA_NATIVE_TOKEN_ADDRESS, mint],
+        chainId: ChainId.Solana,
+        hasCustomNativeCurrency: false,
+      }),
+    ).toEqual([mint, NATIVE_CURRENCY_IDENTIFIER]);
+  });
+
+  it('keeps zero-address tokens separate from a custom native currency', () => {
+    expect(
+      getTokenPickerAddresses({
+        tokenAddresses: [constants.AddressZero, tokenAddress],
+        chainId: ChainId.ApeChain,
+        hasCustomNativeCurrency: true,
+      }),
+    ).toEqual([constants.AddressZero, tokenAddress, NATIVE_CURRENCY_IDENTIFIER]);
+  });
+
+  it('uses the zero-address row as the native row', () => {
+    expect(
+      getTokenPickerAddresses({
+        tokenAddresses: [constants.AddressZero, tokenAddress],
+        chainId: ChainId.Ethereum,
+        hasCustomNativeCurrency: false,
+      }),
+    ).toEqual([constants.AddressZero, tokenAddress]);
+  });
+
+  it('adds the native row when the list has no zero-address row', () => {
+    expect(
+      getTokenPickerAddresses({
+        tokenAddresses: [tokenAddress],
+        chainId: ChainId.Ethereum,
+        hasCustomNativeCurrency: false,
+      }),
+    ).toEqual([tokenAddress, NATIVE_CURRENCY_IDENTIFIER]);
   });
 });
