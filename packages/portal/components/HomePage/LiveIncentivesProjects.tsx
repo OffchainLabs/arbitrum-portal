@@ -1,8 +1,9 @@
 'use client';
 
+import type FlickityInstance from 'flickity';
 import Image from 'next/image';
 import { useCallback, useRef, useState } from 'react';
-import Flickity, { FlickityOptions } from 'react-flickity-component';
+import Flickity from 'react-flickity-component';
 import { useWindowSize } from 'react-use';
 import { twMerge } from 'tailwind-merge';
 
@@ -14,10 +15,10 @@ export function LiveIncentivesProjects() {
   const { width } = useWindowSize();
   const isDraggable = width <= 768;
   const [isReady, setIsReady] = useState(false);
-  const flickityRef = useRef<Flickity | null>(null);
+  const flickityRef = useRef<FlickityInstance | null>(null);
 
   const setupFlickityRef = useCallback(
-    (carouselRef: Flickity | null) => {
+    (carouselRef: FlickityInstance | null) => {
       flickityRef.current = carouselRef;
 
       if (!flickityRef.current) return;
@@ -34,7 +35,7 @@ export function LiveIncentivesProjects() {
     return null;
   }
 
-  const carouselOptions: FlickityOptions = {
+  const carouselOptions: FlickityInstance.Options = {
     draggable: isDraggable,
     cellAlign: 'left',
     prevNextButtons: true,

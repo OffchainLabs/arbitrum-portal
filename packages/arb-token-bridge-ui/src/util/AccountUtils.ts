@@ -3,9 +3,7 @@ import type { WalletEcosystem } from '../wallet/types';
 import { findAddressEcosystem, isValidAddressForChain } from './AddressUtils';
 
 export type AccountType =
-  | 'externally-owned-account'
-  | 'delegated-account'
-  | 'smart-contract-wallet';
+  'externally-owned-account' | 'delegated-account' | 'smart-contract-wallet';
 
 type AccountTypeParams = { address: string; chainId: number };
 const accountTypeProbes: Record<
