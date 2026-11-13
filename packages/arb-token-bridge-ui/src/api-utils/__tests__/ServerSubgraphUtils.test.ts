@@ -148,3 +148,41 @@ describe.sequential('getCctpSubgraphClient', () => {
     );
   });
 });
+
+async function importSubgraphClientsWithApiKeysStubbed() {
+  vi.resetModules();
+  vi.stubEnv('THE_GRAPH_NETWORK_API_KEY', 'the-graph-key');
+  vi.stubEnv('SELF_HOSTED_SUBGRAPH_API_KEY', 'self-hosted-key');
+  const { getL1SubgraphClient, getL2SubgraphClient } = await import('../ServerSubgraphUtils');
+  return { getL1SubgraphClient, getL2SubgraphClient };
+}
+
+describe.sequential('getL1SubgraphClient / getL2SubgraphClient', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it('resolves both Nova subgraphs', async () => {
+    const { getL1SubgraphClient, getL2SubgraphClient } =
+      await importSubgraphClientsWithApiKeysStubbed();
+
+    expect(getL1SubgraphClient(ChainId.ArbitrumNova).source).toBe('l1-arbitrum-nova');
+    expect(getL2SubgraphClient(ChainId.ArbitrumNova).source).toBe('l2-arbitrum-nova');
+  });
+
+  it.each([
+    ['Arbitrum One', ChainId.ArbitrumOne],
+    ['Arbitrum Sepolia', ChainId.ArbitrumSepolia],
+  ])('throws for %s, now served by the indexer', async (_label, chainId) => {
+    const { getL1SubgraphClient, getL2SubgraphClient } =
+      await importSubgraphClientsWithApiKeysStubbed();
+
+    expect(() => getL1SubgraphClient(chainId)).toThrow(
+      `[getL1SubgraphClient] unsupported chain: ${chainId}`,
+    );
+    expect(() => getL2SubgraphClient(chainId)).toThrow(
+      `[getL2SubgraphClient] unsupported chain: ${chainId}`,
+    );
+  });
+});

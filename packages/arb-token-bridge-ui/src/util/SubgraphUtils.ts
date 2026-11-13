@@ -1,5 +1,6 @@
-import { getAPIBaseUrl } from '.';
+import { assertOk, getAPIBaseUrl } from '.';
 import { ChainId } from '../types/ChainId';
+import { hasBridgeHistory } from './txHistory/sources';
 
 export function hasL1Subgraph(l2ChainId: number) {
   switch (l2ChainId) {
@@ -26,14 +27,19 @@ export function hasL2Subgraph(l2ChainId: number) {
 }
 
 export const fetchLatestIndexedBlockNumber = async (chainId: number): Promise<number> => {
+  // the route answers 0 for these anyway; batched callers ask once per batch
+  if (!hasBridgeHistory(chainId)) {
+    return 0;
+  }
+
   const response = await fetch(`${getAPIBaseUrl()}/api/chains/${chainId}/block-number`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });
 
-  if (!response.ok) {
-    return 0;
-  }
+  // the route reports "no backend serves this chain" as 0 with a 200, so a non-2xx
+  // is a real failure and must not be flattened into the same 0
+  await assertOk(response, `[fetchLatestIndexedBlockNumber] /api/chains/${chainId}/block-number`);
 
   const blockNumber = ((await response.json()) as { data?: number }).data;
   return Number.isFinite(blockNumber) ? (blockNumber as number) : 0;

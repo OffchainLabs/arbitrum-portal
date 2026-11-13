@@ -3,9 +3,16 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { fetchWithdrawalsInBatches } from '../../../hooks/useTransactionHistory';
 import * as addressUtils from '../../AddressUtils';
+import { fetchLatestIndexedBlockNumber } from '../../SubgraphUtils';
 import { initializeBridgeNetworks } from '../../networks';
 import * as fetchModule from '../fetchWithdrawals';
 import { getQueryCoveringClassicAndNitroWithResults } from './fetchWithdrawalsTestHelpers';
+
+vi.mock('../../SubgraphUtils', () => ({
+  fetchLatestIndexedBlockNumber: vi.fn().mockResolvedValue(123),
+}));
+
+const fetchLatestIndexedBlockNumberMock = vi.mocked(fetchLatestIndexedBlockNumber);
 
 const validResult = [
   expect.objectContaining({
@@ -37,6 +44,8 @@ describe.sequential('fetchWithdrawalsInBatches multiple calls', () => {
     });
 
     expect(mock).toHaveBeenCalledTimes(3);
+    expect(fetchLatestIndexedBlockNumberMock).toHaveBeenCalledTimes(1);
+    expect(mock).toHaveBeenCalledWith(expect.objectContaining({ lastIndexedBlock: 123 }));
     expect(result).toHaveLength(4);
     expect(result).toEqual(expect.arrayContaining(validResult));
 
