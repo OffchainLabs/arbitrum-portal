@@ -41,7 +41,7 @@ export const TransactionHistory = () => {
   useEffect(() => resetSearch, [resetSearch]);
 
   return (
-    <div className="m-auto w-full max-w-[100vw] bg-[#191919] p-4 md:max-w-[1000px] rounded">
+    <div className="m-auto w-full max-w-[100vw] rounded bg-[#191919] p-4 md:max-w-[1000px]">
       <TransactionHistorySearchBar />
 
       <TransactionHistorySearchResults />

@@ -41,7 +41,7 @@ export function EarnPagination({ currentPage, totalPages, onPageChange }: EarnPa
             type="button"
             onClick={() => canGoPrevious && onPageChange(currentPage - 1)}
             disabled={!canGoPrevious}
-            className="flex items-center justify-center disabled:cursor-not-allowed transition-opacity disabled:opacity-30"
+            className="flex items-center justify-center transition-opacity disabled:cursor-not-allowed disabled:opacity-30"
             aria-label="Go to previous page"
           >
             <ArrowLeftIcon className="h-4 w-4 text-white" />
@@ -83,7 +83,7 @@ export function EarnPagination({ currentPage, totalPages, onPageChange }: EarnPa
             type="button"
             onClick={() => canGoNext && onPageChange(currentPage + 1)}
             disabled={!canGoNext}
-            className="flex items-center justify-center disabled:cursor-not-allowed transition-opacity disabled:opacity-30"
+            className="flex items-center justify-center transition-opacity disabled:cursor-not-allowed disabled:opacity-30"
             aria-label="Go to next page"
           >
             <ArrowRightIcon className="h-4 w-4 text-white" />

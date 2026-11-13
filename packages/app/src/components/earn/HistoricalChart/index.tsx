@@ -145,7 +145,7 @@ function HistoricalChartContent({
     <Card className="rounded bg-gray-1 p-4">
       <div className="mb-3 flex flex-col gap-2 md:flex-row md:flex-nowrap md:items-start md:justify-between md:gap-4">
         {(availableMetrics.length > 0 || isLoading) && (
-          <div className="flex w-full md:w-auto md:shrink-0 items-center bg-white/5 rounded-[10px] p-[2px] gap-1 md:gap-2">
+          <div className="flex w-full items-center gap-1 rounded-[10px] bg-white/5 p-[2px] md:w-auto md:shrink-0 md:gap-2">
             {metricsToRender.map((mk) => (
               <PillButton
                 key={mk}
@@ -174,7 +174,7 @@ function HistoricalChartContent({
             ))}
           </div>
         )}
-        <div className="hidden md:flex w-[188px] items-center justify-between bg-white/5 rounded-[10px] p-[2px] gap-2 shrink-0">
+        <div className="hidden w-[188px] shrink-0 items-center justify-between gap-2 rounded-[10px] bg-white/5 p-[2px] md:flex">
           {RANGE_OPTIONS.map((r) => (
             <PillButton
               key={r.id}
@@ -227,9 +227,9 @@ function HistoricalChartContent({
         </div>
       )}
 
-      <div className="w-full min-h-[200px] rounded h-64 flex items-center justify-center bg-transparent">
+      <div className="flex h-64 min-h-[200px] w-full items-center justify-center rounded bg-transparent">
         {isLoading && (
-          <div className="w-full h-full animate-pulse" aria-hidden>
+          <div className="h-full w-full animate-pulse" aria-hidden>
             <div className="flex h-full flex-col gap-2 md:hidden">
               <div className="flex-1 rounded bg-white/10" />
               <div className="grid grid-cols-4 gap-1 px-1">
@@ -240,18 +240,18 @@ function HistoricalChartContent({
               </div>
             </div>
             <div className="hidden h-full flex-col gap-2 md:flex">
-              <div className="flex flex-1 min-h-0 gap-3">
-                <div className="flex flex-col justify-between py-1 shrink-0">
+              <div className="flex min-h-0 flex-1 gap-3">
+                <div className="flex shrink-0 flex-col justify-between py-1">
                   <div className="h-3 w-8 rounded bg-white/20" />
                   <div className="h-3 w-8 rounded bg-white/20" />
                   <div className="h-3 w-8 rounded bg-white/20" />
                   <div className="h-3 w-8 rounded bg-white/20" />
                   <div className="h-3 w-8 rounded bg-white/20" />
                 </div>
-                <div className="flex-1 min-w-0 flex flex-col opacity-20">
+                <div className="flex min-w-0 flex-1 flex-col opacity-20">
                   <svg
                     viewBox="0 0 400 160"
-                    className="w-full flex-1 min-h-0"
+                    className="min-h-0 w-full flex-1"
                     preserveAspectRatio="none"
                   >
                     <defs>
@@ -302,7 +302,7 @@ function HistoricalChartContent({
                   </svg>
                 </div>
               </div>
-              <div className="flex justify-between gap-1 shrink-0 px-1">
+              <div className="flex shrink-0 justify-between gap-1 px-1">
                 <div className="h-3 w-10 rounded bg-white/20" />
                 <div className="h-3 w-10 rounded bg-white/20" />
                 <div className="h-3 w-10 rounded bg-white/20" />
@@ -315,7 +315,7 @@ function HistoricalChartContent({
           </div>
         )}
         {!isLoading && error && (
-          <div className="text-red-400 text-xs">Failed to load chart: {error.message}</div>
+          <div className="text-xs text-red-400">Failed to load chart: {error.message}</div>
         )}
         {!isLoading && !error && chartData.length > 0 && data && (
           <HistoricalLineChart
@@ -327,10 +327,10 @@ function HistoricalChartContent({
           />
         )}
         {!isLoading && !error && chartData.length === 0 && (
-          <div className="text-gray-500 text-sm">No chart data available</div>
+          <div className="text-sm text-gray-500">No chart data available</div>
         )}
       </div>
-      <div className="mt-3 flex md:hidden items-center bg-white/5 rounded-full p-1 gap-1">
+      <div className="mt-3 flex items-center gap-1 rounded-full bg-white/5 p-1 md:hidden">
         {RANGE_OPTIONS.map((r) => (
           <PillButton
             key={r.id}

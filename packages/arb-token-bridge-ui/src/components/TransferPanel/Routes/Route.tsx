@@ -153,7 +153,7 @@ const RouteAmount = ({
             </div>
 
             {showUsdValueForReceivedToken && amountReceivedUsd !== null && (
-              <div className="text-sm tabular-nums text-white/50">
+              <div className="text-sm text-white/50 tabular-nums">
                 {formatUSD(Number(amountReceivedUsd))}
               </div>
             )}
@@ -174,7 +174,7 @@ const RouteAmount = ({
                 })}
               </div>
               {showUsdValueForAmount2 && amount2Usd !== null && (
-                <div className="text-sm tabular-nums text-white/50">
+                <div className="text-sm text-white/50 tabular-nums">
                   {formatUSD(Number(amount2Usd))}
                 </div>
               )}
@@ -233,7 +233,7 @@ function BreakdownTooltipContent({
 }>) {
   return (
     <div className="w-[310px] max-w-[calc(100vw-48px)] text-left">
-      <div className="text-[11px] uppercase leading-4 text-white/50">{title}</div>
+      <div className="text-[11px] leading-4 text-white/50 uppercase">{title}</div>
       <div className="mt-2 border-t border-white/10 pt-2">
         <div className="space-y-3">{children}</div>
         {footer}
@@ -319,7 +319,7 @@ const RouteBridge = ({ bridge, bridgeIconURI, routeTools, routeSteps }: RouteBri
             width={15}
             height={15}
             alt=""
-            className="h-[15px] max-h-[15px] w-[15px] min-w-[15px] max-w-[15px] rounded-full"
+            className="h-[15px] max-h-[15px] w-[15px] max-w-[15px] min-w-[15px] rounded-full"
             fallback={
               <div className="h-[15px] w-[15px] min-w-[15px] rounded-full bg-gray-dark/70" />
             }

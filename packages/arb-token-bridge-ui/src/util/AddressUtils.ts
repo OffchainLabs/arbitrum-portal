@@ -40,7 +40,7 @@ export function isValidAddress(
 ): address is Address {
   return Boolean(
     address &&
-      Object.values(ecosystems).some((ecosystem) => ecosystem.address.isValid(address, options)),
+    Object.values(ecosystems).some((ecosystem) => ecosystem.address.isValid(address, options)),
   );
 }
 

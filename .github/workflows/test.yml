@@ -167,8 +167,8 @@ jobs:
       - name: Fetch portal data
         run: pnpm --filter portal fetch:data
 
-      - name: Check formatting with Prettier
-        run: pnpm prettier:check
+      - name: Check formatting with oxfmt
+        run: pnpm format:check
 
       - name: Type-check and lint
         run: pnpm lint
