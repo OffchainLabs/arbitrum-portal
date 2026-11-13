@@ -1,10 +1,23 @@
 import { useAppKitAccount, useDisconnect, useWalletInfo } from '@reown/appkit/react';
-import { getAccount, getWalletClient } from '@wagmi/core';
+import { BaseError, getAccount, getConnectorClient, getWalletClient } from '@wagmi/core';
 import { useCallback, useMemo } from 'react';
 import { isAddress } from 'viem';
 import { useAccount, useConfig } from 'wagmi';
 
+import { clientToSigner } from '../util/wagmi/clientToSigner';
 import type { EvmSigner, EvmWalletHandle } from './types';
+
+// wagmi's message adds the docs URL and its version, which would show in error toasts
+async function withShortWagmiMessage<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (error instanceof BaseError) {
+      throw new Error(error.shortMessage, { cause: error });
+    }
+    throw error;
+  }
+}
 
 export function useEvmWallet(): EvmWalletHandle {
   const { address, isConnected, status } = useAppKitAccount({ namespace: 'eip155' });
@@ -20,11 +33,16 @@ export function useEvmWallet(): EvmWalletHandle {
     }
   }, [disconnect, isConnected]);
 
-  // Reads wagmi's state when LiFi calls it, so a route signs with the account connected at that point
+  // Reads wagmi's state when called, so a transfer signs with the account connected at that point
   const signer = useMemo<EvmSigner>(
     () => ({
       getAddress: () => getAccount(wagmiConfig).address,
-      getWalletClient: (chainId) => getWalletClient(wagmiConfig, { chainId }),
+      getWalletClient: (chainId) =>
+        withShortWagmiMessage(() => getWalletClient(wagmiConfig, { chainId })),
+      getEthersSigner: (chainId) =>
+        withShortWagmiMessage(async () =>
+          clientToSigner(await getConnectorClient(wagmiConfig, { chainId })),
+        ),
     }),
     [wagmiConfig],
   );

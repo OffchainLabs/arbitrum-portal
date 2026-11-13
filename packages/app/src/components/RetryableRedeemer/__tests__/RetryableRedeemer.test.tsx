@@ -32,7 +32,7 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('react-use', () => ({ useCopyToClipboard: () => [{}, vi.fn()] }));
 vi.mock('@/bridge/util/wagmi/setup', () => ({ wagmiConfig: {} }));
-vi.mock('@/bridge/util/wagmi/useEthersSigner', () => ({ clientToSigner: vi.fn() }));
+vi.mock('@/bridge/util/wagmi/clientToSigner', () => ({ clientToSigner: vi.fn() }));
 vi.mock('@/bridge/util/RetryableUtils', () => ({ getRetryableTicket: vi.fn() }));
 vi.mock('@/bridge/util/AnalyticsUtils', () => ({ trackEvent: vi.fn() }));
 vi.mock('@/bridge/components/common/atoms/Toast', () => ({ errorToast: vi.fn() }));

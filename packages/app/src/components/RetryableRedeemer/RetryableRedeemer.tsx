@@ -33,8 +33,8 @@ import { shortenTxHash } from '@/bridge/util/CommonUtils';
 import { getRetryableTicket } from '@/bridge/util/RetryableUtils';
 import { formatTransactionError, isUserRejectedError } from '@/bridge/util/isUserRejectedError';
 import { getExplorerUrl, getNetworkName, isNetwork } from '@/bridge/util/networks';
+import { clientToSigner } from '@/bridge/util/wagmi/clientToSigner';
 import { wagmiConfig } from '@/bridge/util/wagmi/setup';
-import { clientToSigner } from '@/bridge/util/wagmi/useEthersSigner';
 import { useWalletModal } from '@/bridge/wallet/hooks/useWalletModal';
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 

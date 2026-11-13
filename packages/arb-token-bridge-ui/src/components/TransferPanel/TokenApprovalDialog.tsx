@@ -21,7 +21,7 @@ import {
   fetchErc20ParentChainGatewayAddress,
 } from '../../util/TokenUtils';
 import { getExplorerUrl, isNetwork } from '../../util/networks';
-import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { useWalletContext } from '../../wallet/WalletContext';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { Checkbox } from '../common/Checkbox';
 import { Dialog, UseDialogProps } from '../common/Dialog';
@@ -51,7 +51,7 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
   const { isEthereumMainnet, isTestnet } = isNetwork(parentChain.id);
   const gasPrice = useGasPrice({ chainId: sourceChain.id });
   const chainId = useChainId();
-  const signer = useEthersSigner({ chainId });
+  const { signer: evmSigner } = useWalletContext('evm');
   const selectedRoute = useRouteStore((state) => state.selectedRoute);
   const isCctp = selectedRoute === 'cctp';
   const isOft = selectedRoute === 'oftV2';
@@ -89,6 +89,8 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
       }
 
       let gasEstimate;
+      // Without a connected wallet on this chain, there's no approval to estimate
+      const signer = await evmSigner.getEthersSigner(chainId).catch(() => undefined);
 
       if (!signer) {
         gasEstimate = constants.Zero;
@@ -134,7 +136,7 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
     isOpen,
     isDepositMode,
     isTestnet,
-    signer,
+    evmSigner,
     walletAddress,
     token?.address,
     token?.l2Address,
