@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useNetworks } from '../../hooks/useNetworks';
 import { shortenAddress } from '../../util/CommonUtils';
-import { getExplorerUrl, getNetworkName } from '../../util/networks';
+import { getAccountExplorerUrl, getNetworkName } from '../../util/networks';
 import { Checkbox } from '../common/Checkbox';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { ExternalLink } from '../common/ExternalLink';
@@ -37,7 +37,7 @@ export function CustomDestinationAddressConfirmationDialog(props: UseDialogProps
           You are attempting to deposit funds to the same address{' '}
           <ExternalLink
             className="arb-hover underline"
-            href={`${getExplorerUrl(networks.destinationChain.id)}/address/${destinationAddress}`}
+            href={getAccountExplorerUrl(networks.destinationChain.id, destinationAddress)}
           >
             {shortenAddress(destinationAddress)}
           </ExternalLink>{' '}

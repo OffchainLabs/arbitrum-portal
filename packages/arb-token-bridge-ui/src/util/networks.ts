@@ -9,11 +9,18 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
+import type { CoreEvmChainId } from '../wallet/ecosystems/evm';
+import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils';
 import { Erc20Data, fetchErc20Data } from './TokenUtils';
 import { getBridgeUiConfigForChain } from './bridgeUiConfig';
 import { loadEnvironmentVariableWithFallback } from './index';
 import { logger } from './logger';
+import {
+  getChainMetadata,
+  registerCustomChainMetadata,
+  removeCustomChainMetadata,
+} from './networkMetadata';
 import {
   defaultL2Network,
   defaultL3CustomGasTokenNetwork,
@@ -199,6 +206,7 @@ export function saveCustomChainToLocalStorage(newCustomChain: ChainWithRpcUrl) {
   const newCustomChains = [...getCustomChainsFromLocalStorage(), newCustomChain];
 
   storage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
+  registerCustomChainMetadata(newCustomChain);
 }
 
 export function removeCustomChainFromLocalStorage(chainId: number) {
@@ -210,6 +218,7 @@ export function removeCustomChainFromLocalStorage(chainId: number) {
   );
 
   storage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
+  removeCustomChainMetadata(chainId);
 }
 
 export const supportedCustomOrbitParentChains = [
@@ -241,7 +250,7 @@ export const localL3NetworkRpcUrl = loadEnvironmentVariableWithFallback({
   fallback: 'http://127.0.0.1:3347',
 });
 
-const defaultRpcUrls: { [chainId: number]: string } = {
+const defaultRpcUrls = {
   // L1 Mainnet
   [ChainId.Ethereum]: loadEnvironmentVariableWithFallback({
     env: process.env.NEXT_PUBLIC_RPC_URL_ETHEREUM,
@@ -274,7 +283,7 @@ const defaultRpcUrls: { [chainId: number]: string } = {
     env: process.env.NEXT_PUBLIC_RPC_URL_BASE_SEPOLIA,
     fallback: getRpcUrl(ChainId.BaseSepolia),
   }),
-};
+} satisfies Record<CoreEvmChainId, string>;
 
 export const rpcURLs: { [chainId: number]: string } =
   !isProductionEnvironment || isE2eTestingEnvironment
@@ -304,6 +313,16 @@ export const getExplorerUrl = (chainId: ChainId) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return explorerUrls[chainId] ?? explorerUrls[ChainId.Ethereum]!; //defaults to etherscan, can never be null
 };
+
+export function getAccountExplorerUrl(chainId: number, address: string) {
+  let accountPath = 'address';
+  try {
+    accountPath = getEcosystemConfig(chainId).explorerAccountPath;
+  } catch {
+    // unknown chains fall back to the EVM explorer path, like `getExplorerUrl` falls back to Etherscan
+  }
+  return `${getExplorerUrl(chainId)}/${accountPath}/${address}`;
+}
 
 export const getL1BlockTime = (chainId: number) => {
   const chain = getChainByChainId(getBlockNumberReferenceChainIdByChainId({ chainId }));
@@ -383,19 +402,9 @@ export async function registerLocalNetwork() {
 }
 
 function isTestnetChain(chainId: ChainId) {
-  const l1Network = l1Networks[chainId];
-  if (l1Network) {
-    return l1Network.isTestnet;
-  }
-
-  const baseNetwork = baseNetworks[chainId];
-  if (baseNetwork) {
-    return baseNetwork.isTestnet;
-  }
-
   try {
-    return getArbitrumNetwork(chainId).isTestnet;
-  } catch (error) {
+    return getChainMetadata(chainId).testnet === true;
+  } catch {
     // users could have data in local storage for chains that aren't supported anymore, avoid app error
     return true;
   }
@@ -497,6 +506,7 @@ export function isAlchemyChain(chainId: number) {
 }
 
 export function mapCustomChainToNetworkData(chain: ChainWithRpcUrl) {
+  registerCustomChainMetadata(chain);
   // custom chain details need to be added to various objects to make it work with the UI
   //
   // add RPC
