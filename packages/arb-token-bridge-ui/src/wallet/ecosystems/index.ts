@@ -29,6 +29,8 @@ export type EcosystemConfig = {
   };
   /** Address that stands for the native currency in balance requests and LiFi quotes */
   nativeTokenAddress: string;
+  /** Native currency, in base units, that MAX leaves in the wallet on top of the route fees */
+  nativeCurrencyReserve: bigint;
   /**
    * Every chain of the ecosystem reaches Arbitrum only through LiFi: no parent/child token addresses
    * and no canonical bridge
@@ -44,6 +46,8 @@ export type EcosystemConfig = {
   explorerAccountPath: string;
   /** Built-in chains. The network registry adds Orbit, local and custom chains as EVM */
   chains: readonly Chain[];
+  /** Asset type reported to analytics for the native currency */
+  nativeAssetType: 'ETH' | 'SOL';
   /** AppKit (CAIP-2) namespace */
   namespace: 'eip155' | 'solana';
 };

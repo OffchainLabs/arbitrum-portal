@@ -2,6 +2,7 @@ import { constants } from 'ethers';
 import { describe, expect, it } from 'vitest';
 
 import { ChainId } from '../../types/ChainId';
+import { SOLANA_NATIVE_TOKEN_ADDRESS } from '../../wallet/ecosystems/solana';
 import { getLifiAssetType } from '../AnalyticsUtils';
 import { CommonAddress } from '../CommonAddressUtils';
 
@@ -22,6 +23,15 @@ describe('getLifiAssetType', () => {
         chainId: ChainId.Ethereum,
       }),
     ).toBe('ETH');
+  });
+
+  it('classifies native SOL transfers as SOL', () => {
+    expect(
+      getLifiAssetType({
+        tokenAddress: SOLANA_NATIVE_TOKEN_ADDRESS,
+        chainId: ChainId.Solana,
+      }),
+    ).toBe('SOL');
   });
 
   it('classifies zero-address ApeChain transfers as ERC20', () => {

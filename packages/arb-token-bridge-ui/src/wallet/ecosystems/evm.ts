@@ -37,11 +37,13 @@ export const evmEcosystem: EcosystemConfig = {
     normalize: (transactionId) => transactionId.toLowerCase(),
   },
   nativeTokenAddress: zeroAddress,
+  nativeCurrencyReserve: 0n,
   isLifiOnly: false,
   hasGasPrice: true,
   isAppKitNetworkIdChainId: true,
   hasTokenApprovals: true,
   explorerAccountPath: 'address',
   chains: evmChains,
+  nativeAssetType: 'ETH',
   namespace: 'eip155',
 };

@@ -20,7 +20,10 @@ import {
 } from '../../util/NovaUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { isTransferDisabledToken } from '../../util/TokenTransferDisabledUtils';
-import { getNativeTokenAddress } from '../../wallet/ecosystems/getEcosystemConfig';
+import {
+  getEcosystemConfig,
+  getNativeTokenAddress,
+} from '../../wallet/ecosystems/getEcosystemConfig';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextState } from '../App/AppContext';
 import { useNativeCurrencyBalances } from './TransferPanelMain/useNativeCurrencyBalances';
@@ -498,9 +501,17 @@ export function useTransferReadiness(): UseTransferReadinessResult {
 
       const { amounts } = getAmountToPay(selectedRouteContext);
 
-      const sourceNativeAmountToPay = formatAmountToPay(
-        amounts[`${networks.sourceChain.id}:${getNativeTokenAddress(networks.sourceChain.id)}`],
+      // Keep the reserve that MAX leaves, so a typed amount can't drain the wallet below it either
+      const sourceNativeCurrencyReserve = parseFloat(
+        utils.formatUnits(
+          BigNumber.from(getEcosystemConfig(networks.sourceChain.id).nativeCurrencyReserve),
+          networks.sourceChain.nativeCurrency.decimals,
+        ),
       );
+      const sourceNativeAmountToPay =
+        formatAmountToPay(
+          amounts[`${networks.sourceChain.id}:${getNativeTokenAddress(networks.sourceChain.id)}`],
+        ) + sourceNativeCurrencyReserve;
       const sourceNativeBalanceError = getInsufficientNativeBalanceErrorMessage({
         amountToPay: sourceNativeAmountToPay,
         balance: ethBalanceFloat,

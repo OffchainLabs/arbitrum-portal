@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 import type { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi';
 import { createMockLifiRoute } from '../../../test-utils/lifi';
+import { ChainId } from '../../../types/ChainId';
+import { SOLANA_NATIVE_TOKEN_ADDRESS } from '../../../wallet/ecosystems/solana';
 import { getLifiMaxAmount } from './useMaxAmount';
 
 const eth = {
@@ -58,5 +60,41 @@ describe('getLifiMaxAmount', () => {
         route: createRoute(),
       }),
     ).toBe('0.966');
+  });
+
+  it('keeps the SOL reserve on top of the route costs', () => {
+    const sol = { address: SOLANA_NATIVE_TOKEN_ADDRESS, decimals: 9, logoURI: '', symbol: 'SOL' };
+    const route: LifiCrosschainTransfersRoute = {
+      ...createRoute(),
+      gas: [
+        {
+          amount: '100000',
+          token: sol,
+          chainId: ChainId.Solana,
+          details: { id: 'source-gas', label: 'Source gas', via: 'LI.FI' },
+        },
+      ],
+      fee: [
+        {
+          amount: '125000',
+          token: sol,
+          chainId: ChainId.Solana,
+          details: { id: 'source-fee', label: 'Source fee', via: 'LI.FI' },
+        },
+      ],
+      fromAmount: { amount: '50000000', amountUSD: '1', token: sol },
+      fromChainId: ChainId.Solana,
+      toChainId: ChainId.ArbitrumOne,
+    };
+
+    // 0.1 SOL - 0.002 SOL reserve - 1.4 * 0.0001 SOL gas - 0.000125 SOL fee
+    expect(
+      getLifiMaxAmount({
+        balance: utils.parseUnits('0.1', 9),
+        decimals: 9,
+        sourceChainId: ChainId.Solana,
+        route,
+      }),
+    ).toBe('0.097735');
   });
 });
