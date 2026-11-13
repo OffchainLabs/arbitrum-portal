@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import { ConnectorChainMismatchError, getConnectorClient } from '@wagmi/core';
+import { ConnectorChainMismatchError, getConnectorClient, getWalletClient } from '@wagmi/core';
 import { describe, expect, it, vi } from 'vitest';
 
 import { clientToSigner } from '../util/wagmi/clientToSigner';
@@ -55,5 +55,18 @@ describe.sequential('useEvmWallet', () => {
       new Error(error.shortMessage),
     );
     expect(error.message).toContain('Version: @wagmi/core');
+  });
+
+  // The LiFi EVM provider gets its client from here, and the LiFi SDK rethrows its errors as is
+  it('rejects the wallet client with the short message of a wagmi error', async () => {
+    const error = new ConnectorChainMismatchError({ connectionChainId: 1, connectorChainId: 10 });
+    vi.mocked(getWalletClient).mockRejectedValue(error);
+
+    const { result } = renderHook(useEvmWallet);
+
+    await expect(result.current.signer.getWalletClient(1)).rejects.toThrow(
+      new Error(error.shortMessage),
+    );
+    expect(getWalletClient).toHaveBeenCalledWith(wagmiConfig, { chainId: 1 });
   });
 });

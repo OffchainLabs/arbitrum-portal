@@ -7,6 +7,18 @@ import { useAccount, useConfig } from 'wagmi';
 import { clientToSigner } from '../util/wagmi/clientToSigner';
 import type { EvmSigner, EvmWalletHandle } from './types';
 
+// wagmi's message adds the docs URL and its version, which would show in error toasts
+async function withShortWagmiMessage<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (error instanceof BaseError) {
+      throw new Error(error.shortMessage, { cause: error });
+    }
+    throw error;
+  }
+}
+
 export function useEvmWallet(): EvmWalletHandle {
   const { address, isConnected, status } = useAppKitAccount({ namespace: 'eip155' });
   // Undefined when the wallet is on a chain outside the wagmi config
@@ -25,18 +37,12 @@ export function useEvmWallet(): EvmWalletHandle {
   const signer = useMemo<EvmSigner>(
     () => ({
       getAddress: () => getAccount(wagmiConfig).address,
-      getWalletClient: (chainId) => getWalletClient(wagmiConfig, { chainId }),
-      getEthersSigner: async (chainId) => {
-        try {
-          return clientToSigner(await getConnectorClient(wagmiConfig, { chainId }));
-        } catch (error) {
-          // wagmi's message adds the docs URL and its version, which would show in error toasts
-          if (error instanceof BaseError) {
-            throw new Error(error.shortMessage, { cause: error });
-          }
-          throw error;
-        }
-      },
+      getWalletClient: (chainId) =>
+        withShortWagmiMessage(() => getWalletClient(wagmiConfig, { chainId })),
+      getEthersSigner: (chainId) =>
+        withShortWagmiMessage(async () =>
+          clientToSigner(await getConnectorClient(wagmiConfig, { chainId })),
+        ),
     }),
     [wagmiConfig],
   );
