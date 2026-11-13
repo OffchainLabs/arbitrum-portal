@@ -1,7 +1,7 @@
 import { TransactionReceipt } from '@ethersproject/providers';
 import { utils } from 'ethers';
 
-import { Address } from '../AddressUtils';
+import { EvmAddress } from '../AddressUtils';
 
 export function getAttestationHashAndMessageFromReceipt(txReceipt: TransactionReceipt) {
   const eventTopic = utils.keccak256(utils.toUtf8Bytes('MessageSent(bytes)'));
@@ -13,10 +13,10 @@ export function getAttestationHashAndMessageFromReceipt(txReceipt: TransactionRe
       attestationHash: null,
     };
 
-  const messageBytes = utils.defaultAbiCoder.decode(['bytes'], log.data)[0] as Address;
+  const messageBytes = utils.defaultAbiCoder.decode(['bytes'], log.data)[0] as EvmAddress;
 
   return {
     messageBytes,
-    attestationHash: utils.keccak256(messageBytes) as Address,
+    attestationHash: utils.keccak256(messageBytes) as EvmAddress,
   };
 }

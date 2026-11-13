@@ -13,7 +13,6 @@ import { RecoverFunds } from '../RecoverFunds';
 import { TransactionHistory } from '../TransactionHistory/TransactionHistory';
 import { TransferPanel } from '../TransferPanel/TransferPanel';
 import { SettingsDialog } from '../common/SettingsDialog';
-import { useBalanceUpdater } from '../syncers/useBalanceUpdater';
 import { ArbitrumStats, statsLocalStorageKey } from './ArbitrumStats';
 
 export function MainContent() {
@@ -23,8 +22,6 @@ export function MainContent() {
   const [{ disabledFeatures }] = useArbQueryParams();
   const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
   useTokenListPriceUpdater();
-
-  useBalanceUpdater();
 
   const { embedMode } = useMode();
 

@@ -125,7 +125,7 @@ export function isKnownLayerZeroTokenFromMetadata(
   return !!chain && Boolean(chain.tokens[tokenAddress.toLowerCase()]);
 }
 
-async function getLayerZeroMetadata() {
+export async function getLayerZeroMetadata() {
   if (!layerZeroMetadataPromise) {
     layerZeroMetadataPromise = fetch(LAYERZERO_METADATA_URL)
       .then((response) => (response.ok ? response.json() : null))

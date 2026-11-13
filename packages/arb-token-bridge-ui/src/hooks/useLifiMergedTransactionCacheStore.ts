@@ -6,14 +6,27 @@ import { PersistOptions, persist } from 'zustand/middleware';
 import type { AmountWithToken } from '../app/api/crosschain-transfers/types';
 import { isSameTransaction } from '../components/TransactionHistory/helpers';
 import { LifiMergedTransaction, WithdrawalStatus } from '../state/app/state';
+import { addressesEqual } from '../util/AddressUtils';
 import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
-import { isLifiRouteComplete } from '../util/LifiTransactionStatus';
+import {
+  isLifiRouteComplete,
+  rejectInterruptedLifiRouteProcesses,
+} from '../util/LifiTransactionStatus';
 
 interface LifiMergedTransactionCacheState {
   transactions: Record<string, LifiMergedTransaction[]>;
   addTransaction: (tx: LifiMergedTransaction) => void;
   updateTransaction: (tx: LifiMergedTransaction, updates?: Partial<LifiMergedTransaction>) => void;
   removeTransaction: (tx: LifiMergedTransaction) => void;
+}
+
+export function getCachedLifiTransactions(
+  transactions: Record<string, LifiMergedTransaction[]>,
+  address: string,
+): LifiMergedTransaction[] {
+  return Object.entries(transactions)
+    .filter(([key]) => addressesEqual(key, address))
+    .flatMap(([, records]) => records);
 }
 
 type LifiCachePersistedState<Transaction> = {
@@ -93,7 +106,6 @@ export function prepareLifiTransactionForStorage(tx: LifiMergedTransaction): Lif
       return {
         ...transactionWithoutRoute,
         ...snapshot,
-        ...(tx.toAmount ? { toAmount: tx.toAmount } : {}),
         lifiRouteSteps: getLifiRouteHistorySteps(routeForHistory),
       };
     }
@@ -195,6 +207,12 @@ export function migrateLifiCacheStateToVersion3(
   }
 }
 
+function rejectInterruptedLifiTransaction(tx: LifiMergedTransaction): LifiMergedTransaction {
+  return tx.lifiRoute
+    ? { ...tx, lifiRoute: rejectInterruptedLifiRouteProcesses(tx.lifiRoute) }
+    : tx;
+}
+
 const persistOptions: PersistOptions<LifiMergedTransactionCacheState, Version3State> = {
   name: 'lifi-merged-transaction-cache',
   version: LIFI_CACHE_VERSION,
@@ -206,6 +224,24 @@ const persistOptions: PersistOptions<LifiMergedTransactionCacheState, Version3St
       persistedState,
       sourceVersion,
     ) as LifiMergedTransactionCacheState,
+  // Runs on every load, after any migration. Hydration happens when the store is created, before this
+  // tab can execute a route, so a stored process that hasn't sent its transaction was interrupted.
+  merge: (persistedState, currentState) => {
+    const { transactions } = (persistedState ?? {}) as Partial<Version3State>;
+    if (!transactions) {
+      return currentState;
+    }
+
+    return {
+      ...currentState,
+      transactions: Object.fromEntries(
+        Object.entries(transactions).map(([address, addressTransactions]) => [
+          address,
+          addressTransactions.map(rejectInterruptedLifiTransaction),
+        ]),
+      ),
+    };
+  },
 };
 
 function updateTransactions(
@@ -231,13 +267,16 @@ function applyToTransactionAddresses({
   destination: string | undefined;
   apply: (transactions: LifiMergedTransaction[]) => LifiMergedTransaction[];
 }): Record<string, LifiMergedTransaction[]> {
+  const senderKey = Object.keys(transactions).find((key) => addressesEqual(key, sender)) ?? sender;
   const updatedTransactions = {
     ...transactions,
-    [sender]: apply(transactions[sender] || []),
+    [senderKey]: apply(transactions[senderKey] || []),
   };
 
-  if (destination && destination !== sender) {
-    updatedTransactions[destination] = apply(transactions[destination] || []);
+  if (destination && !addressesEqual(destination, sender)) {
+    const destinationKey =
+      Object.keys(transactions).find((key) => addressesEqual(key, destination)) ?? destination;
+    updatedTransactions[destinationKey] = apply(transactions[destinationKey] || []);
   }
 
   return updatedTransactions;

@@ -91,6 +91,7 @@ See `tsconfig.base.json` for the full list.
 - **Environment Variables**: Copy `packages/app/.env.sample` to `packages/app/.env` and fill in keys. The bridge app requires RPC provider keys to function.
 - **Prebuild Steps**: `pnpm dev` and `pnpm build` automatically run data-fetching and CSS build steps via `predev`/`prebuild` scripts.
 - **Per-Package Context**: Check each package's own `package.json` and `tsconfig.json` for package-specific configuration.
+- **`supports-color` devDependency**: `packages/app` and `packages/arb-token-bridge-ui` declare `supports-color` even though no code imports it. Don't remove it as unused: it makes pnpm resolve debug's optional `supports-color` peer to the same version in both packages. Without it wagmi loads twice and every page throws `WagmiProviderNotFoundError`, while unit tests still pass. See the comment above `dedupePeers` in `pnpm-workspace.yaml`.
 
 ## Working Style
 

@@ -1,6 +1,6 @@
 import { BigNumber, constants, utils } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useAccount, useChainId } from 'wagmi';
+import { useChainId } from 'wagmi';
 
 import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '@/token-bridge-sdk/CctpTransferStarter';
@@ -21,7 +21,8 @@ import {
   fetchErc20ParentChainGatewayAddress,
 } from '../../util/TokenUtils';
 import { getExplorerUrl, isNetwork } from '../../util/networks';
-import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { useWalletContext } from '../../wallet/WalletContext';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { Checkbox } from '../common/Checkbox';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { ExternalLink } from '../common/ExternalLink';
@@ -34,7 +35,11 @@ export type TokenApprovalDialogProps = UseDialogProps & {
 };
 
 export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
-  const { address: walletAddress } = useAccount();
+  const {
+    sourceWallet: {
+      account: { address: walletAddress },
+    },
+  } = useWallets();
   const { isOpen, token, onClose } = props;
 
   const { ethToUSD } = useETHPrice();
@@ -44,10 +49,9 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
   const { childChainProvider, parentChain, parentChainProvider, isDepositMode } =
     useNetworksRelationship(networks);
   const { isEthereumMainnet, isTestnet } = isNetwork(parentChain.id);
-  const provider = isDepositMode ? parentChainProvider : childChainProvider;
-  const gasPrice = useGasPrice({ provider });
+  const gasPrice = useGasPrice({ chainId: sourceChain.id });
   const chainId = useChainId();
-  const signer = useEthersSigner({ chainId });
+  const { signer: evmSigner } = useWalletContext('evm');
   const selectedRoute = useRouteStore((state) => state.selectedRoute);
   const isCctp = selectedRoute === 'cctp';
   const isOft = selectedRoute === 'oftV2';
@@ -85,6 +89,8 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
       }
 
       let gasEstimate;
+      // Without a connected wallet on this chain, there's no approval to estimate
+      const signer = await evmSigner.getEthersSigner(chainId).catch(() => undefined);
 
       if (!signer) {
         gasEstimate = constants.Zero;
@@ -130,7 +136,7 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
     isOpen,
     isDepositMode,
     isTestnet,
-    signer,
+    evmSigner,
     walletAddress,
     token?.address,
     token?.l2Address,

@@ -41,7 +41,6 @@ const defaultQueryParams: ArbQueryParams = {
 
 const mocks = vi.hoisted(() => ({
   getProviderForChainId: vi.fn(),
-  getChainIdFromProvider: vi.fn(),
   isTokenNativeUSDC: vi.fn(),
   getL2ERC20Address: vi.fn(),
 }));
@@ -72,7 +71,6 @@ vi.mock('@/token-bridge-sdk/utils', async (importOriginal) => {
   return {
     ...actual,
     getProviderForChainId: mocks.getProviderForChainId,
-    getChainIdFromProvider: mocks.getChainIdFromProvider,
   };
 });
 
@@ -135,9 +133,6 @@ describe.sequential('useSelectedToken', () => {
     vi.clearAllMocks();
 
     mocks.getProviderForChainId.mockImplementation((chainId: number) => ({ chainId }));
-    mocks.getChainIdFromProvider.mockImplementation((provider: { chainId: number }) =>
-      Promise.resolve(provider.chainId),
-    );
     mocks.getL2ERC20Address.mockResolvedValue('0x00000000000000000000000000000000000000bb');
 
     mockedUseAppState.mockReturnValue({
@@ -441,17 +436,15 @@ describe.sequential('getUsdcToken', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mocks.getChainIdFromProvider.mockImplementation((provider: { chainId: number }) =>
-      Promise.resolve(provider.chainId),
-    );
+    mocks.getProviderForChainId.mockImplementation(fakeProvider);
     mocks.getL2ERC20Address.mockResolvedValue('0x00000000000000000000000000000000000000BB');
   });
 
   it('keeps Arbitrum USDC source-only for Robinhood without querying an unrelated canonical gateway', async () => {
     const token = await getUsdcToken({
       tokenAddress: CommonAddress.ArbitrumOne.USDC,
-      parentProvider: fakeProvider(ChainId.ArbitrumOne),
-      childProvider: fakeProvider(ChainId.RobinhoodChain),
+      parentChainId: ChainId.ArbitrumOne,
+      childChainId: ChainId.RobinhoodChain,
     });
 
     expect(token).toMatchObject({
@@ -466,8 +459,8 @@ describe.sequential('getUsdcToken', () => {
   it('returns mainnet USDC with the bridged USDC.e child address for Ethereum -> Arbitrum One', async () => {
     const result = await getUsdcToken({
       tokenAddress: CommonAddress.Ethereum.USDC,
-      parentProvider: fakeProvider(ChainId.Ethereum),
-      childProvider: fakeProvider(ChainId.ArbitrumOne),
+      parentChainId: ChainId.Ethereum,
+      childChainId: ChainId.ArbitrumOne,
     });
 
     expect(result).toEqual(
@@ -482,8 +475,8 @@ describe.sequential('getUsdcToken', () => {
   it('returns Sepolia USDC with the bridged USDC.e child address for Sepolia -> Arbitrum Sepolia', async () => {
     const result = await getUsdcToken({
       tokenAddress: CommonAddress.Sepolia.USDC,
-      parentProvider: fakeProvider(ChainId.Sepolia),
-      childProvider: fakeProvider(ChainId.ArbitrumSepolia),
+      parentChainId: ChainId.Sepolia,
+      childChainId: ChainId.ArbitrumSepolia,
     });
 
     expect(result).toEqual(
@@ -498,8 +491,8 @@ describe.sequential('getUsdcToken', () => {
   it('returns Arbitrum One native USDC as both parent and child address when the parent chain is Ethereum', async () => {
     const result = await getUsdcToken({
       tokenAddress: CommonAddress.ArbitrumOne.USDC,
-      parentProvider: fakeProvider(ChainId.Ethereum),
-      childProvider: fakeProvider(ChainId.ArbitrumOne),
+      parentChainId: ChainId.Ethereum,
+      childChainId: ChainId.ArbitrumOne,
     });
 
     expect(result).toEqual(
@@ -513,8 +506,8 @@ describe.sequential('getUsdcToken', () => {
   it('returns Arbitrum Sepolia native USDC as both parent and child address when the parent chain is Sepolia', async () => {
     const result = await getUsdcToken({
       tokenAddress: CommonAddress.ArbitrumSepolia.USDC,
-      parentProvider: fakeProvider(ChainId.Sepolia),
-      childProvider: fakeProvider(ChainId.ArbitrumSepolia),
+      parentChainId: ChainId.Sepolia,
+      childChainId: ChainId.ArbitrumSepolia,
     });
 
     expect(result).toEqual(
@@ -526,19 +519,16 @@ describe.sequential('getUsdcToken', () => {
   });
 
   it('looks up the child chain address via getL2ERC20Address for Arbitrum One native USDC going to an Orbit chain', async () => {
-    const parentProvider = fakeProvider(ChainId.ArbitrumOne);
-    const childProvider = fakeProvider(ChainId.ApeChain);
-
     const result = await getUsdcToken({
       tokenAddress: CommonAddress.ArbitrumOne.USDC,
-      parentProvider,
-      childProvider,
+      parentChainId: ChainId.ArbitrumOne,
+      childChainId: ChainId.ApeChain,
     });
 
     expect(mocks.getL2ERC20Address).toHaveBeenCalledWith({
       erc20L1Address: CommonAddress.ArbitrumOne.USDC,
-      l1Provider: parentProvider,
-      l2Provider: childProvider,
+      l1Provider: fakeProvider(ChainId.ArbitrumOne),
+      l2Provider: fakeProvider(ChainId.ApeChain),
     });
     // the looked-up child chain address is lowercased
     expect(result).toEqual(
@@ -554,8 +544,8 @@ describe.sequential('getUsdcToken', () => {
 
     const result = await getUsdcToken({
       tokenAddress: CommonAddress.ArbitrumOne.USDC,
-      parentProvider: fakeProvider(ChainId.ArbitrumOne),
-      childProvider: fakeProvider(ChainId.ApeChain),
+      parentChainId: ChainId.ArbitrumOne,
+      childChainId: ChainId.ApeChain,
     });
 
     expect(result).toEqual(
@@ -569,18 +559,29 @@ describe.sequential('getUsdcToken', () => {
   it('returns null for a token that is not USDC', async () => {
     const result = await getUsdcToken({
       tokenAddress: '0x0000000000000000000000000000000000000dad',
-      parentProvider: fakeProvider(ChainId.Ethereum),
-      childProvider: fakeProvider(ChainId.ArbitrumOne),
+      parentChainId: ChainId.Ethereum,
+      childChainId: ChainId.ArbitrumOne,
     });
 
     expect(result).toBeNull();
   });
 
+  it('returns null when one of the chains is not an EVM chain', async () => {
+    const result = await getUsdcToken({
+      tokenAddress: CommonAddress.Ethereum.USDC,
+      parentChainId: ChainId.Ethereum,
+      childChainId: ChainId.Solana,
+    });
+
+    expect(result).toBeNull();
+    expect(mocks.getProviderForChainId).not.toHaveBeenCalled();
+  });
+
   it('returns null for mainnet USDC when the parent chain is not Ethereum', async () => {
     const result = await getUsdcToken({
       tokenAddress: CommonAddress.Ethereum.USDC,
-      parentProvider: fakeProvider(ChainId.ArbitrumOne),
-      childProvider: fakeProvider(ChainId.ApeChain),
+      parentChainId: ChainId.ArbitrumOne,
+      childChainId: ChainId.ApeChain,
     });
 
     expect(result).toBeNull();

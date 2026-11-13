@@ -1,14 +1,20 @@
-import { createConfig, getTransactionHistory } from '@lifi/sdk';
+import { LiFiErrorCode, SDKError, createConfig, getStatus, getTransactionHistory } from '@lifi/sdk';
 import type { ExtendedTransactionInfo, StatusResponse } from '@lifi/types';
 import { constants, utils } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 import { AssetType } from '../../../../hooks/arbTokenBridge.types';
 import { DepositStatus, WithdrawalStatus } from '../../../../state/app/state';
-import { addressesEqual } from '../../../../util/AddressUtils';
+import {
+  addressesEqual,
+  isValidAddress,
+  isValidTransactionId,
+} from '../../../../util/AddressUtils';
 import { getLifiTransferStatus } from '../../../../util/LifiTransactionStatus';
 import { getNetworksRelationship } from '../../../../util/getNetworksRelationship';
 import { normalizeTimestamp } from '../../../../util/normalizeTimestamp';
+import { ecosystems } from '../../../../wallet/ecosystems';
 import { LIFI_INTEGRATOR_IDS } from '../lifi';
 import type { RouteTool, Token } from '../types';
 
@@ -54,7 +60,8 @@ export type LifiTransactionHistoryItem = {
   toolsDetails: RouteTool[];
   durationMs: number;
   fromAmount: LifiTransactionHistoryAmount;
-  toAmount: LifiTransactionHistoryAmount;
+  toAmount?: LifiTransactionHistoryAmount;
+  receivedAmount?: LifiTransactionHistoryAmount;
   destinationTxId: string | null;
   lifiExplorerLink?: string;
 };
@@ -82,6 +89,21 @@ function getIncludedSteps(statusResponse: StatusResponse) {
   return statusResponse.sending.includedSteps ?? [];
 }
 
+const quoteSchema = z.object({
+  action: z.object({
+    toToken: z.object({
+      address: z.string(),
+      decimals: z.number().int().nonnegative(),
+      symbol: z.string(),
+      logoURI: z.string().optional(),
+    }),
+  }),
+  estimate: z.object({
+    toAmount: z.string().regex(/^\d+$/),
+    toAmountUSD: z.string().optional(),
+  }),
+});
+
 export function transformLifiHistoryTransaction({
   wallet,
   statusResponse,
@@ -101,6 +123,10 @@ export function transformLifiHistoryTransaction({
     'receiving' in statusResponse
       ? (statusResponse.receiving as Partial<ExtendedTransactionInfo>)
       : undefined;
+  const parsedQuote = quoteSchema.safeParse(
+    'quote' in statusResponse ? statusResponse.quote : undefined,
+  );
+  const quote = parsedQuote.success ? parsedQuote.data : undefined;
   const sourceChainId = Number(sending.chainId || firstStep?.fromToken.chainId);
   const destinationChainId = Number(
     receiving ? receiving.chainId || lastStep?.toToken.chainId : lastStep?.toToken.chainId,
@@ -147,6 +173,13 @@ export function transformLifiHistoryTransaction({
     destinationChainId,
   });
   const isWithdrawal = !isDepositMode;
+  const quotedAmount = quote
+    ? {
+        amount: quote.estimate.toAmount,
+        amountUSD: quote.estimate.toAmountUSD ?? '0',
+        token: quote.action.toToken,
+      }
+    : undefined;
 
   return {
     txId: statusResponse.sending.txHash,
@@ -179,11 +212,15 @@ export function transformLifiHistoryTransaction({
       amountUSD: sending.amountUSD ?? '0',
       token: fromToken,
     },
-    toAmount: {
-      amount: toAmount,
-      amountUSD: receiving?.amountUSD ?? '0',
-      token: toToken,
-    },
+    toAmount: quotedAmount,
+    receivedAmount:
+      receiving?.amount && receiving.token
+        ? {
+            amount: receiving.amount,
+            amountUSD: receiving.amountUSD ?? '0',
+            token: receiving.token,
+          }
+        : undefined,
     destinationTxId,
     lifiExplorerLink:
       'lifiExplorerLink' in statusResponse ? statusResponse.lifiExplorerLink : undefined,
@@ -208,13 +245,62 @@ export function transformLifiHistoryTransactions({
     .filter((tx): tx is LifiTransactionHistoryItem => tx !== null);
 }
 
+async function getLifiTransactionById(
+  request: NextRequest,
+  txHash: string,
+): Promise<NextResponse<LifiTransactionHistoryResponse>> {
+  // EVM transactions are found through the wallet history
+  if (!isValidTransactionId(txHash) || ecosystems.evm.transactionId.isValid(txHash)) {
+    return NextResponse.json(
+      { message: 'txHash is not a valid transaction ID', data: null },
+      { status: 400, headers: NO_STORE_HEADERS },
+    );
+  }
+
+  createConfig({
+    integrator: getIntegratorId(request),
+    apiKey: process.env.LIFI_KEY,
+  });
+
+  try {
+    const statusResponse = await getStatus({ txHash });
+    // `getStatus` returns transfers from any integrator, so drop the ones not made in the bridge
+    const integrator =
+      'metadata' in statusResponse ? statusResponse.metadata.integrator : undefined;
+    if (integrator && !Object.values<string>(LIFI_INTEGRATOR_IDS).includes(integrator)) {
+      return NextResponse.json({ data: [] }, { headers: NO_STORE_HEADERS });
+    }
+    return NextResponse.json(
+      { data: transformLifiHistoryTransactions({ wallet: '', statusResponses: [statusResponse] }) },
+      { headers: NO_STORE_HEADERS },
+    );
+  } catch (error: unknown) {
+    // LiFi answers 404 when it has no transfer for this ID
+    if (error instanceof SDKError && error.code === LiFiErrorCode.NotFound) {
+      return NextResponse.json({ data: [] }, { headers: NO_STORE_HEADERS });
+    }
+    return NextResponse.json(
+      {
+        message: error instanceof Error ? error.message : 'Failed to fetch LiFi transaction',
+        data: null,
+      },
+      { status: 500, headers: NO_STORE_HEADERS },
+    );
+  }
+}
+
 export async function GET(
   request: NextRequest,
 ): Promise<NextResponse<LifiTransactionHistoryResponse>> {
   const { searchParams } = new URL(request.url);
   const wallet = searchParams.get('wallet');
+  const txHash = searchParams.get('txHash');
 
-  if (!wallet || !utils.isAddress(wallet)) {
+  if (txHash) {
+    return getLifiTransactionById(request, txHash);
+  }
+
+  if (!wallet || !isValidAddress(wallet)) {
     return NextResponse.json(
       { message: 'wallet is not a valid address', data: null },
       { status: 400, headers: NO_STORE_HEADERS },

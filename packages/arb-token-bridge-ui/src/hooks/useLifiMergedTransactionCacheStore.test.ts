@@ -4,10 +4,16 @@ import { BigNumber, constants } from 'ethers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { shallow } from 'zustand/shallow';
 
+import { isLifiTransferResumable } from '../components/TransactionHistory/helpers';
 import { DepositStatus, LifiMergedTransaction, WithdrawalStatus } from '../state/app/state';
-import { getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
+import {
+  createMockLifiBatchedTransaction,
+  createMockLifiPartialTransaction,
+} from '../test-utils/lifi';
+import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
 import { AssetType } from './arbTokenBridge.types';
 import {
+  getCachedLifiTransactions,
   migrateLifiCacheStateFromVersion1ToVersion2,
   migrateLifiCacheStateFromVersion2ToVersion3,
   migrateLifiCacheStateToVersion3,
@@ -16,6 +22,8 @@ import {
   sanitizeLifiRouteForStorage,
   useLifiMergedTransactionCacheStore,
 } from './useLifiMergedTransactionCacheStore';
+
+const LIFI_CACHE_KEY = 'lifi-merged-transaction-cache';
 
 const localStorageMock = vi.hoisted(() => {
   const storage = new Map<string, string>();
@@ -103,6 +111,138 @@ describe.sequential('useLifiMergedTransactionCacheStore', () => {
   beforeEach(() => {
     localStorageMock.clear();
     useLifiMergedTransactionCacheStore.setState({ transactions: {} });
+  });
+
+  it.each([1, 2, 3])(
+    'loads a version %i full route with separate quoted and received output',
+    async (version) => {
+      const tx = createMockLifiPartialTransaction();
+      const wallet = '0x1111111111111111111111111111111111111111';
+      localStorageMock.setItem(
+        'lifi-merged-transaction-cache',
+        JSON.stringify({ state: { transactions: { [wallet]: [tx] } }, version }),
+      );
+
+      await useLifiMergedTransactionCacheStore.persist.rehydrate();
+
+      const loaded = useLifiMergedTransactionCacheStore.getState().transactions[wallet]?.[0];
+      if (!loaded) throw new Error('Missing hydrated transaction');
+      expect(getLifiTransactionSnapshot(loaded)?.toAmount).toMatchObject({
+        amount: '8126613689',
+        token: { symbol: 'USDG' },
+      });
+      const steps = loaded.lifiRouteSteps ?? getLifiRouteHistorySteps(loaded.lifiRoute);
+      expect(steps.at(-1)?.displaySteps.at(-1)?.toAmount).toMatchObject({
+        amount: '16206962210',
+        token: { symbol: 'USDC' },
+      });
+    },
+  );
+
+  it.each([1, 2, 3])(
+    'preserves an unfinished version %i route during hydration',
+    async (version) => {
+      const tx = createMockLifiPartialTransaction();
+      const bridge = tx.lifiRoute?.steps[0];
+      if (!tx.lifiRoute || !bridge) throw new Error('Missing fixture route');
+      tx.lifiRoute.steps.push({
+        ...bridge,
+        id: 'unstarted-swap',
+        includedSteps: [],
+        execution: undefined,
+      });
+      const wallet = '0x1111111111111111111111111111111111111111';
+      localStorageMock.setItem(
+        'lifi-merged-transaction-cache',
+        JSON.stringify({ state: { transactions: { [wallet]: [tx] } }, version }),
+      );
+
+      await useLifiMergedTransactionCacheStore.persist.rehydrate();
+
+      const loaded = useLifiMergedTransactionCacheStore.getState().transactions[wallet]?.[0];
+      expect(loaded?.lifiRoute?.steps).toHaveLength(2);
+      expect(loaded?.lifiRoute?.steps[1]?.execution).toBeUndefined();
+      expect(loaded?.lifiRouteSteps).toBeUndefined();
+      expect(
+        getLifiRouteHistorySteps(loaded?.lifiRoute).at(-1)?.displaySteps.at(-1)?.toAmount,
+      ).toMatchObject({
+        amount: '8126613689',
+        token: { symbol: 'USDG' },
+      });
+    },
+  );
+
+  it('loads a previously compacted version 3 record without migrating its amounts', async () => {
+    const tx = prepareLifiTransactionForStorage(createMockLifiPartialTransaction());
+    const displayStep = tx.lifiRouteSteps?.[0]?.displaySteps[0];
+    if (!tx.toAmount || !displayStep) throw new Error('Missing fixture amounts');
+    displayStep.toAmount = tx.toAmount;
+    tx.toAmount = { ...tx.toAmount, amount: '16206962210' };
+    const wallet = '0x1111111111111111111111111111111111111111';
+    localStorageMock.setItem(
+      'lifi-merged-transaction-cache',
+      JSON.stringify({ state: { transactions: { [wallet]: [tx] } }, version: 3 }),
+    );
+
+    await useLifiMergedTransactionCacheStore.persist.rehydrate();
+
+    const loaded = useLifiMergedTransactionCacheStore.getState().transactions[wallet]?.[0];
+    expect(loaded?.toAmount).toEqual(tx.toAmount);
+    expect(loaded?.lifiRouteSteps).toEqual(tx.lifiRouteSteps);
+    expect(loaded?.receivedAmount).toBeUndefined();
+  });
+
+  it.each([
+    { processStatus: 'STARTED', stepStatus: 'PENDING' },
+    { processStatus: 'ACTION_REQUIRED', stepStatus: 'ACTION_REQUIRED' },
+  ] as const)(
+    'fails a $processStatus process left without a transaction so the route can be resumed',
+    async ({ processStatus, stepStatus }) => {
+      const tx = createMockLifiBatchedTransaction();
+      const swap = tx.lifiRoute?.steps[1];
+      if (!swap?.execution) throw new Error('Missing fixture swap');
+      swap.execution.status = stepStatus;
+      swap.execution.process = [
+        { type: 'TOKEN_ALLOWANCE', status: 'DONE', startedAt: 2 },
+        { type: 'SWAP', status: processStatus, startedAt: 3 },
+      ];
+      expect(isLifiTransferResumable(tx)).toBe(false);
+      const wallet = '0x1111111111111111111111111111111111111111';
+      localStorageMock.setItem(
+        'lifi-merged-transaction-cache',
+        JSON.stringify({ state: { transactions: { [wallet]: [tx] } }, version: 3 }),
+      );
+
+      await useLifiMergedTransactionCacheStore.persist.rehydrate();
+
+      const loaded = useLifiMergedTransactionCacheStore.getState().transactions[wallet]?.[0];
+      if (!loaded) throw new Error('Missing hydrated transaction');
+      expect(loaded.lifiRoute?.steps[0]?.execution?.status).toBe('DONE');
+      expect(loaded.lifiRoute?.steps[1]?.execution?.status).toBe('FAILED');
+      expect(
+        loaded.lifiRoute?.steps[1]?.execution?.process.map((process) => process.status),
+      ).toEqual(['DONE', 'FAILED']);
+      expect(isLifiTransferResumable(loaded)).toBe(true);
+    },
+  );
+
+  it('keeps a pending batch id across a reload so it can still be polled', async () => {
+    const tx = createMockLifiBatchedTransaction();
+    const swap = tx.lifiRoute?.steps[1];
+    const swapProcess = swap?.execution?.process[1];
+    if (!swap?.execution || !swapProcess) throw new Error('Missing fixture swap');
+    swapProcess.status = 'STARTED';
+    const wallet = '0x1111111111111111111111111111111111111111';
+    localStorageMock.setItem(
+      'lifi-merged-transaction-cache',
+      JSON.stringify({ state: { transactions: { [wallet]: [tx] } }, version: 3 }),
+    );
+
+    await useLifiMergedTransactionCacheStore.persist.rehydrate();
+
+    expect(
+      useLifiMergedTransactionCacheStore.getState().transactions[wallet]?.[0]?.lifiRoute,
+    ).toEqual(tx.lifiRoute);
   });
 
   it('should return undefined by default', async () => {
@@ -523,6 +663,26 @@ describe('version 3 transaction migration', () => {
 });
 
 describe('route storage compaction', () => {
+  it('keeps quoted list output separate from the completed step output', () => {
+    const transaction = createMockLifiPartialTransaction();
+    const finalStep = transaction.lifiRoute?.steps.at(-1);
+    if (!finalStep) throw new Error('Missing fixture step');
+    transaction.toAmount = {
+      amount: finalStep.estimate.toAmount,
+      amountUSD: finalStep.estimate.toAmountUSD ?? '0',
+      token: finalStep.action.toToken,
+    };
+
+    const stored = prepareLifiTransactionForStorage(transaction);
+
+    expect(stored.toAmount).toMatchObject({ amount: '8126613689', token: { symbol: 'USDG' } });
+    expect(stored.lifiRouteSteps?.at(-1)?.displaySteps.at(-1)?.toAmount).toMatchObject({
+      amount: '16206962210',
+      token: { symbol: 'USDC' },
+    });
+    expect(prepareLifiTransactionForStorage(stored)).toEqual(stored);
+  });
+
   const walletAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
   const route = {
     id: 'route-id',
@@ -791,5 +951,42 @@ describe('route storage compaction', () => {
       },
     ]);
     expect(storedTransaction.lifiRouteSteps).toBeUndefined();
+  });
+});
+
+describe.sequential('pending history account isolation', () => {
+  it('preserves unrelated accounts, legacy EVM casing, and Solana case across reloads', async () => {
+    localStorageMock.clear();
+    useLifiMergedTransactionCacheStore.setState({ transactions: {} });
+    const evmAddress = '0x9481eF9e2CA814fc94676dEa3E8c3097B06b3a33';
+    const solanaAddress = 'So11111111111111111111111111111111111111112';
+    const evmTx = createMockedLifiTransaction({
+      hash: 'evm-transaction',
+      sender: evmAddress,
+      destinationAddress: evmAddress,
+    });
+    const solanaTx = createMockedLifiTransaction({
+      hash: 'CaseSensitiveSignature',
+      sender: solanaAddress,
+      destinationAddress: solanaAddress,
+    });
+    const store = useLifiMergedTransactionCacheStore;
+    store.getState().addTransaction(evmTx);
+    store.getState().addTransaction({ ...evmTx, sender: evmAddress.toLowerCase() });
+    expect(Object.keys(store.getState().transactions)).toEqual([evmAddress]);
+    store.getState().updateTransaction(evmTx);
+    store.getState().addTransaction(solanaTx);
+    store.getState().updateTransaction({ ...solanaTx, status: WithdrawalStatus.CONFIRMED });
+    const persisted = localStorageMock.getItem(LIFI_CACHE_KEY);
+    store.setState({ transactions: {} });
+    if (persisted === null) throw new Error('Missing persisted transaction cache');
+    localStorageMock.setItem(LIFI_CACHE_KEY, persisted);
+    await store.persist.rehydrate();
+    expect(
+      getCachedLifiTransactions(store.getState().transactions, evmAddress.toLowerCase()),
+    ).toEqual([evmTx]);
+    expect(getCachedLifiTransactions(store.getState().transactions, solanaAddress)).toEqual([
+      { ...solanaTx, status: WithdrawalStatus.CONFIRMED },
+    ]);
   });
 });

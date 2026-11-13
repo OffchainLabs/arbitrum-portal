@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useAccount, useConfig } from 'wagmi';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 import { resumeLifiRoute } from '@/token-bridge-sdk/LifiRouteExecutor';
@@ -21,6 +20,9 @@ import { formatAmount } from '../../util/NumberUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
 import { formatTransactionError, isUserRejectedError } from '../../util/isUserRejectedError';
 import { getNetworkName } from '../../util/networks';
+import { useWalletContext } from '../../wallet/WalletContext';
+import { getSigners } from '../../wallet/getSigners';
+import { findWalletEcosystem } from '../../wallet/getWalletEcosystem';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
@@ -59,19 +61,26 @@ export function TransactionsTableRowAction({
   type: 'deposits' | 'withdrawals';
   updateTransaction?: UseTransactionHistoryResult['updateTransaction'];
 }) {
-  const { address: connectedAddress, chain, isConnected } = useAccount();
-  const wagmiConfig = useConfig();
+  // LiFi routes are resumed by the sender's wallet; claims and redeems are EVM actions.
+  // Rows for chains the bridge doesn't know fall back to EVM, so they still render.
+  const sourceWallet = useWalletContext(findWalletEcosystem(tx.sourceChainId) ?? 'evm');
+  const destinationWallet = useWalletContext(findWalletEcosystem(tx.destinationChainId) ?? 'evm');
+  const {
+    account: { address: connectedAddress, chainId },
+    isConnected,
+  } = sourceWallet;
   const { switchChainAsync } = useSwitchNetworkWithConfig();
   const updateLifiTransactionInCache = useLifiMergedTransactionCacheStore(
     (state) => state.updateTransaction,
   );
   const [isResumingLifiRoute, setIsResumingLifiRoute] = useState(false);
   const [dialogProps, openDialog] = useDialog2();
-  const networkName = getNetworkName(chain?.id ?? 0);
+  const networkName = getNetworkName(chainId ?? 0);
   const searchedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
 
-  const isViewingAnotherAddress =
-    connectedAddress && searchedAddress && !addressesEqual(connectedAddress, searchedAddress);
+  const isViewingAnotherAddress = Boolean(
+    connectedAddress && searchedAddress && !addressesEqual(connectedAddress, searchedAddress),
+  );
 
   const isError = useMemo(() => {
     if (tx.isCctp || !tx.isWithdrawal) {
@@ -100,8 +109,8 @@ export function TransactionsTableRowAction({
   const { redeem, isRedeeming } = useRedeemRetryable(tx, searchedAddress);
 
   const isConnectedToCorrectNetworkForAction = isDepositReadyToRedeem(tx)
-    ? chain?.id === tx.childChainId // for redemption actions, we connect to the child chain
-    : chain?.id === tx.destinationChainId; // for claims, we need to be on the destination chain
+    ? chainId === tx.childChainId // for redemption actions, we connect to the child chain
+    : chainId === tx.destinationChainId; // for claims, we need to be on the destination chain
 
   const handleRedeemRetryable = useCallback(async () => {
     try {
@@ -148,7 +157,7 @@ export function TransactionsTableRowAction({
     try {
       setIsResumingLifiRoute(true);
       await resumeLifiRoute(tx.lifiRoute, {
-        wagmiConfig,
+        signers: getSigners(sourceWallet, destinationWallet),
         switchChainAsync,
         onApprovalRequest: async (approvalRequest) => {
           const waitForInput = openDialog('approve_lifi_token', {
@@ -189,12 +198,13 @@ export function TransactionsTableRowAction({
       setIsResumingLifiRoute(false);
     }
   }, [
+    destinationWallet,
     openDialog,
+    sourceWallet,
     switchChainAsync,
     tx,
     updateLifiTransactionInCache,
     updateTransaction,
-    wagmiConfig,
   ]);
 
   const getHelpOnError = () => {
