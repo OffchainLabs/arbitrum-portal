@@ -4,11 +4,9 @@ description: Restore build artifacts
 runs:
   using: composite
   steps:
+    # The artifact's root is packages/app, the common folder of the uploaded paths
     - name: Restore build artifacts
-      uses: actions/cache/restore@v4
+      uses: actions/download-artifact@v8
       with:
-        path: |
-          ./packages/app/build
-          ./packages/app/public/__auto-generated-*
-        key: build-artifacts-${{ github.run_id }}
-        fail-on-cache-miss: true
+        name: build-artifacts
+        path: ./packages/app

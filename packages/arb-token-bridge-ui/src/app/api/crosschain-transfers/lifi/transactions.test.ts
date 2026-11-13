@@ -1,10 +1,32 @@
+import { HTTPError, SDKError } from '@lifi/sdk';
 import type { FullStatusData, StatusResponse, Token } from '@lifi/types';
-import { describe, expect, it } from 'vitest';
+import bs58 from 'bs58';
+import { NextRequest } from 'next/server';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { WithdrawalStatus } from '../../../../state/app/state';
-import { transformLifiHistoryTransaction, transformLifiHistoryTransactions } from './transactions';
+import { ChainId } from '../../../../types/ChainId';
+import { getLifiTransactionSnapshot } from '../../../../util/LifiRouteUtils';
+import { ecosystems } from '../../../../wallet/ecosystems';
+import {
+  GET,
+  transformLifiHistoryTransaction,
+  transformLifiHistoryTransactions,
+} from './transactions';
+
+const lifiMocks = vi.hoisted(() => ({
+  createConfig: vi.fn(),
+  getStatus: vi.fn(),
+  getTransactionHistory: vi.fn().mockResolvedValue({ transfers: [] }),
+}));
+
+vi.mock('@lifi/sdk', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@lifi/sdk')>()),
+  ...lifiMocks,
+}));
 
 const wallet = '0x1111111111111111111111111111111111111111';
+const solanaWallet = 'So11111111111111111111111111111111111111112';
 const usdcToken: Token = {
   address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
   chainId: 1,
@@ -96,6 +118,58 @@ function createStatusResponse({
 }
 
 describe('transformLifiHistoryTransaction', () => {
+  it.each(['COMPLETED', 'PARTIAL'] as const)(
+    'stores the quote separately from received output for DONE / %s',
+    (substatus) => {
+      const statusResponse = {
+        ...createStatusResponse(),
+        substatus,
+        quote: {
+          action: { toToken: { ...arbUsdcToken, symbol: 'USDG' } },
+          estimate: { toAmount: '8126613689', toAmountUSD: '8129.1852' },
+        },
+      };
+      if (!('amount' in statusResponse.receiving))
+        throw new Error('Missing fixture received amount');
+      statusResponse.receiving.amount = '16206962210';
+      expect(transformLifiHistoryTransaction({ wallet, statusResponse })).toMatchObject({
+        status: WithdrawalStatus.CONFIRMED,
+        destinationStatus: WithdrawalStatus.CONFIRMED,
+        toAmount: { amount: '8126613689', token: { symbol: 'USDG' } },
+        receivedAmount: { amount: '16206962210', token: { symbol: 'USDC' } },
+      });
+    },
+  );
+
+  it('falls back to received output when an API quote is malformed', () => {
+    const statusResponse = { ...createStatusResponse(), quote: { action: null } };
+    if (!('amount' in statusResponse.receiving)) throw new Error('Missing fixture received amount');
+    statusResponse.receiving.amount = '980000';
+    const transaction = transformLifiHistoryTransaction({ wallet, statusResponse });
+    expect(transaction).toMatchObject({
+      toAmount: undefined,
+      receivedAmount: { amount: '980000' },
+    });
+    expect(transaction && getLifiTransactionSnapshot(transaction)?.toAmount.amount).toBe('980000');
+  });
+
+  it('does not treat a source swap output as the destination quote', () => {
+    const statusResponse = createStatusResponse();
+    statusResponse.sending.includedSteps = [
+      {
+        fromAmount: '1000000',
+        fromToken: usdcToken,
+        toAmount: '58100418',
+        toToken: { ...usdcToken, symbol: 'USDG' },
+        tool: 'uniswap',
+        toolDetails: { key: 'uniswap', name: 'Uniswap', logoURI: '' },
+      },
+    ];
+    const transaction = transformLifiHistoryTransaction({ wallet, statusResponse });
+    expect(transaction?.receivedAmount).toMatchObject({ amount: '990000', token: arbUsdcToken });
+    expect(transaction?.toAmount).toBeUndefined();
+  });
+
   it('maps completed LiFi history by initiation time', () => {
     const statusResponse = createStatusResponse();
 
@@ -141,6 +215,24 @@ describe('transformLifiHistoryTransaction', () => {
       parentChainId: 42170,
       childChainId: 42161,
     });
+  });
+
+  it('maps a Solana source transfer as a deposit', () => {
+    const statusResponse = createStatusResponse({
+      sourceChainId: ChainId.Solana,
+      destinationChainId: ChainId.ArbitrumOne,
+    });
+
+    expect(transformLifiHistoryTransaction({ wallet: solanaWallet, statusResponse })).toMatchObject(
+      {
+        direction: 'deposit',
+        isWithdrawal: false,
+        sourceChainId: ChainId.Solana,
+        destinationChainId: ChainId.ArbitrumOne,
+        parentChainId: ChainId.Solana,
+        childChainId: ChainId.ArbitrumOne,
+      },
+    );
   });
 
   it('skips LiFi history when required display data is missing', () => {
@@ -220,7 +312,8 @@ describe('transformLifiHistoryTransaction', () => {
       feeCosts: [],
     };
 
-    expect(transformLifiHistoryTransaction({ wallet, statusResponse })).toMatchObject({
+    const transaction = transformLifiHistoryTransaction({ wallet, statusResponse });
+    expect(transaction).toMatchObject({
       txId: '0xa80d1317610b29f1a9d1f4cef8fd330aeb9606e8e65ed46d9bb2918454dc3712',
       status: WithdrawalStatus.CONFIRMED,
       destinationStatus: WithdrawalStatus.UNCONFIRMED,
@@ -229,17 +322,19 @@ describe('transformLifiHistoryTransaction', () => {
       isWithdrawal: false,
       sourceChainId: 1,
       destinationChainId: 42161,
-      toAmount: {
-        amount: '0',
-        amountUSD: '0',
-        token: {
-          address: '0x0000000000000000000000000000000000000000',
-          decimals: 0,
-          logoURI: '',
-          symbol: 'Unknown',
-        },
-      },
+      toAmount: undefined,
+      receivedAmount: undefined,
       destinationTxId: null,
+    });
+    expect(transaction && getLifiTransactionSnapshot(transaction)?.toAmount).toEqual({
+      amount: '0',
+      amountUSD: '0',
+      token: {
+        address: '0x0000000000000000000000000000000000000000',
+        decimals: 0,
+        logoURI: '',
+        symbol: 'Unknown',
+      },
     });
   });
 
@@ -254,5 +349,126 @@ describe('transformLifiHistoryTransaction', () => {
       txId: '0xsource',
       value: '1.0',
     });
+  });
+});
+
+describe.sequential('GET', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('accepts a Solana wallet at the LiFi request boundary', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/crosschain-transfers/lifi/transactions?wallet=${solanaWallet}`,
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(lifiMocks.getTransactionHistory).toHaveBeenCalledWith(
+      expect.objectContaining({ wallet: solanaWallet }),
+    );
+  });
+
+  it('rejects a Solana wallet while Solana is disabled', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(false);
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/crosschain-transfers/lifi/transactions?wallet=${solanaWallet}`,
+      ),
+    );
+
+    expect(response.status).toBe(400);
+  });
+});
+
+describe.sequential('GET by transaction ID', () => {
+  const signature = bs58.encode(Uint8Array.from({ length: 64 }, (_, index) => index + 1));
+  const requestUrl = (query: string) =>
+    new NextRequest(`http://localhost/api/crosschain-transfers/lifi/transactions?${query}`);
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('looks up a Solana signature and keeps its case', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    const status = createStatusResponse({ sourceChainId: ChainId.Solana });
+    status.sending.txHash = signature;
+    lifiMocks.getStatus.mockResolvedValue(status);
+
+    const response = await GET(requestUrl(`wallet=${solanaWallet}&txHash=${signature}`));
+
+    expect(response.status).toBe(200);
+    expect(lifiMocks.getStatus).toHaveBeenCalledWith({ txHash: signature });
+    expect(await response.json()).toMatchObject({
+      data: [{ txId: signature, sourceChainId: ChainId.Solana }],
+    });
+  });
+
+  it('ignores a transfer made through another integrator', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    const status = createStatusResponse({ sourceChainId: ChainId.Solana });
+    status.sending.txHash = signature;
+    status.metadata.integrator = 'jumper.exchange';
+    lifiMocks.getStatus.mockResolvedValue(status);
+
+    const response = await GET(requestUrl(`txHash=${signature}`));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ data: [] });
+  });
+
+  it('keeps a transfer made through the embedded bridge', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    const status = createStatusResponse({ sourceChainId: ChainId.Solana });
+    status.sending.txHash = signature;
+    status.metadata.integrator = 'widget_prod';
+    lifiMocks.getStatus.mockResolvedValue(status);
+
+    const response = await GET(requestUrl(`txHash=${signature}`));
+
+    expect(await response.json()).toMatchObject({ data: [{ txId: signature }] });
+  });
+
+  it('rejects signatures while Solana is disabled, and malformed IDs', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(false);
+    expect((await GET(requestUrl(`txHash=${signature}`))).status).toBe(400);
+
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    expect((await GET(requestUrl('txHash=request-id'))).status).toBe(400);
+  });
+
+  it('leaves EVM transaction hashes to the wallet history', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    lifiMocks.getStatus.mockClear();
+    const evmHash = `0x${'a'.repeat(64)}`;
+    expect((await GET(requestUrl(`txHash=${evmHash}`))).status).toBe(400);
+    expect(lifiMocks.getStatus).not.toHaveBeenCalled();
+  });
+
+  it('returns no transfer when LiFi does not know the signature', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    lifiMocks.getStatus.mockRejectedValue(
+      new SDKError(
+        new HTTPError(new Response(null, { status: 404 }), 'https://li.quest/v1/status', {}),
+      ),
+    );
+
+    const response = await GET(requestUrl(`txHash=${signature}`));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ data: [] });
+  });
+
+  it('returns an error response when the LiFi status lookup fails', async () => {
+    vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    lifiMocks.getStatus.mockRejectedValue(new Error('LiFi unavailable'));
+
+    const response = await GET(requestUrl(`txHash=${signature}`));
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ message: 'LiFi unavailable', data: null });
   });
 });

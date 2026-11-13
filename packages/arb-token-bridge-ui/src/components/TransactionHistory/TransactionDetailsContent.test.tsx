@@ -4,9 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
+import { prepareLifiTransactionForStorage } from '../../hooks/useLifiMergedTransactionCacheStore';
 import { LifiMergedTransaction, WithdrawalStatus } from '../../state/app/state';
-import { createMockLifiTransaction } from '../../test-utils/lifi';
+import { createMockLifiPartialTransaction, createMockLifiTransaction } from '../../test-utils/lifi';
 import { ChainId } from '../../types/ChainId';
+import { getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
 import { TransactionDetailsContent } from './TransactionDetailsContent';
 
 vi.mock('next/image', () => ({
@@ -153,7 +155,101 @@ const baseLifiTransaction: LifiMergedTransaction = createMockLifiTransaction({
   } as unknown as LifiMergedTransaction['lifiRoute'],
 });
 
-describe('TransactionDetailsContent', () => {
+describe.sequential('TransactionDetailsContent', () => {
+  it.each(
+    ['route', 'compact', 'api'].flatMap((source) =>
+      [
+        { amount: '16206962210', label: '16,207 USDC (Ethereum)' },
+        { amount: '8103481105', label: '8,103.4811 USDC (Ethereum)' },
+      ].map((output) => ({ source, ...output })),
+    ),
+  )(
+    'shows LI.FI output in details and the quote in the list, source=$source amount=$amount',
+    ({ source, amount, label }) => {
+      const transaction = createMockLifiPartialTransaction();
+      transaction.destinationTxId = '0x' + 'a'.repeat(64);
+      const execution = transaction.lifiRoute?.steps.at(-1)?.execution;
+      if (!execution) throw new Error('Missing fixture execution');
+      execution.toAmount = amount;
+      const tx = source === 'route' ? transaction : prepareLifiTransactionForStorage(transaction);
+      if (source === 'api') {
+        tx.receivedAmount = tx.lifiRouteSteps?.at(-1)?.displaySteps.at(-1)?.toAmount;
+        tx.lifiRouteSteps = undefined;
+      }
+
+      render(<TransactionDetailsContent tx={tx} />);
+
+      expect(screen.getByText(label)).toBeDefined();
+      expect(screen.queryByText('8,126.6137 USDG (Ethereum)')).toBeNull();
+      expect(getLifiTransactionSnapshot(tx)?.toAmount).toMatchObject({
+        amount: '8126613689',
+        token: { symbol: 'USDG' },
+      });
+      expect(getProviderForChainId).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([undefined, 'PENDING', 'FAILED', 'DONE'] as const)(
+    'preserves the intermediate output and the final step with status %s',
+    (status) => {
+      cleanup();
+      const tx = createMockLifiPartialTransaction();
+      const bridge = tx.lifiRoute?.steps[0];
+      if (!tx.lifiRoute || !bridge?.execution) throw new Error('Missing fixture bridge');
+      tx.receivedAmount = {
+        amount: '16206962210',
+        amountUSD: '16206.96',
+        token: usdcEthereum,
+      };
+      tx.lifiRoute.steps.push({
+        ...bridge,
+        id: 'destination-swap',
+        toolDetails: { key: 'fly', name: 'Fly', logoURI: '' },
+        includedSteps: [],
+        action: { ...bridge.action, fromChainId: 1, fromToken: bridge.action.toToken },
+        execution: status ? { ...bridge.execution, status, toAmount: '8103481105' } : undefined,
+      });
+
+      render(<TransactionDetailsContent tx={tx} />);
+
+      expect(screen.getByText('SYMBIOSIS (LiFi)')).toBeDefined();
+      expect(screen.getByText('16,207 USDC (Ethereum)')).toBeDefined();
+      expect(screen.getByText('FLY (LiFi)')).toBeDefined();
+      expect(
+        screen.getByText(
+          status === 'DONE' ? '8,103.4811 USDC (Ethereum)' : '8,126.6137 USDG (Ethereum)',
+        ),
+      ).toBeDefined();
+      expect(getProviderForChainId).not.toHaveBeenCalled();
+    },
+  );
+
+  it('uses refreshed received output over stale compact display steps', () => {
+    cleanup();
+    const tx = prepareLifiTransactionForStorage(createMockLifiPartialTransaction());
+    if (!tx.toAmount) throw new Error('Missing fixture output');
+    const output = tx.lifiRouteSteps?.at(-1)?.displaySteps.at(-1)?.toAmount;
+    if (!output) throw new Error('Missing fixture received output');
+    tx.receivedAmount = { ...output, amount: '8103481105' };
+
+    render(<TransactionDetailsContent tx={tx} />);
+
+    expect(screen.getByText('8,103.4811 USDC (Ethereum)')).toBeDefined();
+    expect(screen.queryByText('16,207 USDC (Ethereum)')).toBeNull();
+  });
+
+  it.each([false, true])('shows API-only received output, quote available=%s', (hasQuote) => {
+    cleanup();
+    const tx = prepareLifiTransactionForStorage(createMockLifiPartialTransaction());
+    tx.receivedAmount = tx.lifiRouteSteps?.at(-1)?.displaySteps.at(-1)?.toAmount;
+    tx.lifiRouteSteps = undefined;
+    if (!hasQuote) tx.toAmount = undefined;
+
+    render(<TransactionDetailsContent tx={tx} />);
+
+    expect(screen.getByText('16,207 USDC (Ethereum)')).toBeDefined();
+  });
+
   it('renders LiFi details without loading a native bridge provider', () => {
     render(<TransactionDetailsContent tx={baseLifiTransaction} />);
 

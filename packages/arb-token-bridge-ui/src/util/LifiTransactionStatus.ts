@@ -1,8 +1,8 @@
 import type { Process, ProcessType, RouteExtended } from '@lifi/sdk';
 import type { StatusResponse } from '@lifi/types';
-import { utils } from 'ethers';
 
 import { WithdrawalStatus } from '../state/app/state';
+import { isValidTransactionId } from './AddressUtils';
 
 export const LIFI_TRANSFER_PROCESS_TYPES: ReadonlySet<ProcessType> = new Set([
   'CROSS_CHAIN',
@@ -10,7 +10,7 @@ export const LIFI_TRANSFER_PROCESS_TYPES: ReadonlySet<ProcessType> = new Set([
   'TRANSACTION',
 ]);
 export function isValidLifiTransactionHash(txHash: string | null | undefined): txHash is string {
-  return typeof txHash === 'string' && utils.isHexString(txHash, 32);
+  return typeof txHash === 'string' && isValidTransactionId(txHash, { ignoreFeatureFlag: true });
 }
 
 export function isPendingLifiProcessId(process: { txType?: string; txLink?: string }) {
@@ -21,12 +21,15 @@ export function isPendingLifiProcessId(process: { txType?: string; txLink?: stri
   );
 }
 
+// The SDK holds these statuses in memory until it sends the transaction: STARTED while it prepares
+// it, ACTION_REQUIRED while the wallet prompt is open. A page reload ends that wait.
+const LIFI_UNSUBMITTED_PROCESS_STATUSES: ReadonlySet<Process['status']> = new Set([
+  'STARTED',
+  'ACTION_REQUIRED',
+]);
+
 export function isActiveLifiProcess(process: Pick<Process, 'status'>) {
-  return (
-    process.status === 'PENDING' ||
-    process.status === 'STARTED' ||
-    process.status === 'ACTION_REQUIRED'
-  );
+  return process.status === 'PENDING' || LIFI_UNSUBMITTED_PROCESS_STATUSES.has(process.status);
 }
 
 export function isLifiRouteComplete(route: RouteExtended | undefined) {
@@ -162,6 +165,18 @@ export function rejectPendingLifiRouteRequest(route: RouteExtended): RouteExtend
     (process) =>
       isActiveLifiProcess(process) &&
       (isPendingLifiProcessId(process) || !isValidLifiTransactionHash(process.txHash)),
+  );
+}
+
+// Only for a stored route: no execution survives a page load, so a process still waiting to send its
+// transaction was interrupted. Failing it like a rejected request lets the route be resumed.
+export function rejectInterruptedLifiRouteProcesses(route: RouteExtended): RouteExtended {
+  return rejectLifiRouteProcesses(
+    route,
+    (process) =>
+      LIFI_UNSUBMITTED_PROCESS_STATUSES.has(process.status) &&
+      !isPendingLifiProcessId(process) &&
+      !isValidLifiTransactionHash(process.txHash),
   );
 }
 

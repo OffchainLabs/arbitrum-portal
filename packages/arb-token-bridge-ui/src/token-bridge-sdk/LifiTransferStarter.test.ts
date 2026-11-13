@@ -1,4 +1,4 @@
-import type { Provider } from '@ethersproject/providers';
+import type { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { RouteExtended, executeRoute, resumeRoute } from '@lifi/sdk';
 import { BigNumber, constants } from 'ethers';
 import { UserRejectedRequestError } from 'viem';
@@ -7,6 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LifiCrosschainTransfersRoute } from '../app/api/crosschain-transfers/lifi';
 import type { RouteCost } from '../app/api/crosschain-transfers/types';
 import { createMockLifiRoute } from '../test-utils/lifi';
+import { createMockSigners } from '../test-utils/signers';
+import { ChainId } from '../types/ChainId';
 import {
   getExecutedLifiRouteTxHash,
   getLifiRouteStatusRequest,
@@ -15,6 +17,7 @@ import {
 } from '../util/LifiTransactionStatus';
 import { resumeLifiRoute } from './LifiRouteExecutor';
 import { LifiTransferStarter } from './LifiTransferStarter';
+import * as providers from './utils';
 
 vi.mock('@lifi/sdk', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@lifi/sdk')>();
@@ -63,16 +66,7 @@ const batchId = '0x3ed2270c44494ccfa9c60daf655e7879';
 const batchId32Bytes = '0x5f4e4b452a390f349b7fc1f7b9b1666da36199b342de010996606ac8cea5ace1';
 
 function createStarter() {
-  return new LifiTransferStarter({
-    sourceChainProvider: {
-      getNetwork: async () => ({ chainId: 1 }),
-      getTransaction: async (hash: string) => ({ hash }),
-    } as unknown as Provider,
-    destinationChainProvider: {
-      getNetwork: async () => ({ chainId: 42161 }),
-    } as unknown as Provider,
-    lifiRoute: createLifiTransferRoute(),
-  });
+  return new LifiTransferStarter({ lifiRoute: createLifiTransferRoute() });
 }
 
 function createTransferProps(
@@ -83,7 +77,7 @@ function createTransferProps(
   return {
     amount: BigNumber.from(1),
     destinationAddress: constants.AddressZero,
-    wagmiConfig: {} as Parameters<LifiTransferStarter['transfer']>[0]['wagmiConfig'],
+    signers: createMockSigners(),
     switchChainAsync: vi.fn().mockResolvedValue(undefined),
     onApprovalRequest,
     onRouteExecutionError: vi.fn(),
@@ -642,7 +636,7 @@ describe.sequential('LifiTransferStarter approvals', () => {
     vi.mocked(resumeRoute).mockResolvedValue(route);
 
     await resumeLifiRoute(route, {
-      wagmiConfig: {} as Parameters<typeof resumeLifiRoute>[1]['wagmiConfig'],
+      signers: createMockSigners(),
       switchChainAsync: vi.fn().mockResolvedValue(undefined),
     });
 
@@ -672,12 +666,6 @@ describe.sequential('LifiTransferStarter approvals', () => {
 describe('LifiTransferStarter estimates', () => {
   it('aggregates gas estimates by source and destination chain', async () => {
     const starter = new LifiTransferStarter({
-      sourceChainProvider: {
-        getNetwork: async () => ({ chainId: 1 }),
-      } as unknown as Provider,
-      destinationChainProvider: {
-        getNetwork: async () => ({ chainId: 42161 }),
-      } as unknown as Provider,
       lifiRoute: createLifiTransferRoute({
         gas: [
           {
@@ -711,5 +699,57 @@ describe('LifiTransferStarter estimates', () => {
       estimatedParentChainGas: BigNumber.from(10),
       estimatedChildChainGas: BigNumber.from(20),
     });
+  });
+});
+
+describe('LifiTransferStarter source transaction', () => {
+  it('waits for an EVM source transaction through the source chain provider', async () => {
+    const waitForTransaction = vi.fn().mockResolvedValue({ status: 1 });
+    const provider = vi
+      .spyOn(providers, 'getProviderForChainId')
+      .mockReturnValue({ waitForTransaction } as unknown as StaticJsonRpcProvider);
+    try {
+      const lifiRoute = createLifiTransferRoute();
+      const executeRoute = vi.fn(async () => ({
+        txHash: routeTxHash,
+        route: lifiRoute.protocolData.route,
+      }));
+
+      const transfer = await new LifiTransferStarter({ lifiRoute }).transfer(
+        createTransferProps(vi.fn()),
+        { executeRoute },
+      );
+      await transfer.sourceChainTransaction.wait();
+
+      expect(provider).toHaveBeenCalledWith(lifiRoute.fromChainId);
+      expect(waitForTransaction).toHaveBeenCalledWith(routeTxHash);
+    } finally {
+      provider.mockRestore();
+    }
+  });
+
+  it('does not wait through an EVM provider for a Solana source transaction', async () => {
+    // LiFi returns the Solana signature once the transaction is confirmed
+    const signature =
+      '5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW';
+    const provider = vi.spyOn(providers, 'getProviderForChainId');
+    try {
+      const lifiRoute = { ...createLifiTransferRoute(), fromChainId: ChainId.Solana };
+      const executeRoute = vi.fn(async () => ({
+        txHash: signature,
+        route: lifiRoute.protocolData.route,
+      }));
+
+      const transfer = await new LifiTransferStarter({ lifiRoute }).transfer(
+        createTransferProps(vi.fn()),
+        { executeRoute },
+      );
+
+      expect(transfer.sourceChainTransaction.hash).toBe(signature);
+      await expect(transfer.sourceChainTransaction.wait()).resolves.toBeUndefined();
+      expect(provider).not.toHaveBeenCalled();
+    } finally {
+      provider.mockRestore();
+    }
   });
 });

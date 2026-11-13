@@ -7,7 +7,7 @@ type RpcProvider = 'infura' | 'alchemy';
 
 export type ProductionChainId = Exclude<
   ChainId,
-  ChainId.Local | ChainId.ArbitrumLocal | ChainId.L3Local
+  ChainId.Local | ChainId.ArbitrumLocal | ChainId.L3Local | ChainId.Solana
 >;
 
 function getRpcProvider(): RpcProvider {
