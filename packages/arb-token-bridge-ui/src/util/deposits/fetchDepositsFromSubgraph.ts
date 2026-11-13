@@ -1,5 +1,5 @@
 import { fetchBridgeHistory } from '../txHistory/fetchBridgeHistory';
-import { hasBridgeHistory } from '../txHistory/sources';
+import { isChildChainIndexed } from '../txHistory/sources';
 
 export type FetchDepositsFromSubgraphResult = {
   receiver: string;
@@ -55,7 +55,7 @@ export const fetchDepositsFromSubgraph = async ({
   pageNumber?: number;
   searchString?: string;
 }): Promise<FetchDepositsFromSubgraphResult[]> => {
-  if (!hasBridgeHistory(Number(l2ChainId))) {
+  if (!isChildChainIndexed(Number(l2ChainId))) {
     return [];
   }
 
