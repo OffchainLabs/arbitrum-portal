@@ -1,0 +1,65 @@
+{
+  "l2Network": {
+    "parentChainId": 1337,
+    "chainId": 412346,
+    "confirmPeriodBlocks": 1,
+    "ethBridge": {
+      "bridge": "0xbB60811FCa4d31Cb08EBaC49Dc778F82ce1cbC88",
+      "inbox": "0x711adf7Fa137acDB70827BE8C2f6881e18965eb8",
+      "outbox": "0x77889fA4e94A161b57daC47865288E10Cbd5aCc8",
+      "rollup": "0x967d65c5ED43d567645f25940F56D0425fc8692F",
+      "sequencerInbox": "0x7615202A8127ef2eB639FA3A6bE769F3245B08e4"
+    },
+    "isCustom": true,
+    "name": "arb-dev-test",
+    "retryableLifetimeSeconds": 604800,
+    "isTestnet": true,
+    "tokenBridge": {
+      "parentCustomGateway": "0x82031791874b34e16896630158507ADB439804a9",
+      "parentErc20Gateway": "0x3927D4362F34716B7eaC724f1c4a2Cd984f31aB6",
+      "parentGatewayRouter": "0x1991b2C0Bea22F80322Ddcde45460557a91c582e",
+      "parentMultiCall": "0x4AB4F4C8df6CAb283bf822d1143CC1cE7b593c91",
+      "parentWeth": "0x217788c286797D56Cd59aF5e493f3699C39cbbe8",
+      "parentWethGateway": "0x961Bb8638415B996cD91a42B0eF706467E9DbbE9",
+      "childCustomGateway": "0x1E213F3Eb089C8De11B6a876492FCEB47b6cB5cB",
+      "childErc20Gateway": "0xd3ff1F8eEeb62ed9FaedF59224B72B531D4D339B",
+      "childGatewayRouter": "0xc023032A8d036d6A486f47780cc0Ea44c2B44f3C",
+      "childMultiCall": "0xadE54ece55BCccF9e767dD41abD3a8AED6BDFe81",
+      "childProxyAdmin": "0x82798dCb91B5741464f803DAE64ADa61581DEC10",
+      "childWeth": "0x17f6515a02c2Dd4206ba1e5cDBC2b9d41248846F",
+      "childWethGateway": "0x93dAE08BF0832cd620b7f48FE3fB851f9876F654"
+    }
+  },
+  "l3Network": {
+    "parentChainId": 412346,
+    "chainId": 333333,
+    "confirmPeriodBlocks": 1,
+    "ethBridge": {
+      "bridge": "0xC341A0d40CAB9a60a1f24339Dedae27975d9771A",
+      "inbox": "0x9e0c2aADdbe65900DB4Efeb285fAA4620E1fFd49",
+      "outbox": "0x4B7a34bb95A5508373D947800839941Bfed007fA",
+      "rollup": "0xaEF026AcD64d861DDBA90892D5e87c3839a7f624",
+      "sequencerInbox": "0x289f8Eb63C587F1e99d47BaAFe9C15BfdeDE29c7"
+    },
+    "isCustom": true,
+    "name": "orbit-dev-test",
+    "retryableLifetimeSeconds": 604800,
+    "isTestnet": true,
+    "nativeToken": "0x9B7C0fcc305ca36412F87Fd6Bd08c194909A7d4E",
+    "tokenBridge": {
+      "parentCustomGateway": "0x037299798e3449169406deC9bd1EF89eD6b0619c",
+      "parentErc20Gateway": "0xd33912A49F890384C98b227dFa544411a1cA1e74",
+      "parentGatewayRouter": "0x56A05d2Df1FE3F5c5c0F0A1916Ec05dF3F3666f3",
+      "parentMultiCall": "0xb48f974599961Dc36dEd26781C40623127D5C981",
+      "parentWeth": "0x17f6515a02c2Dd4206ba1e5cDBC2b9d41248846F",
+      "parentWethGateway": "0x0000000000000000000000000000000000000000",
+      "childCustomGateway": "0x32F66d3943c2b48925eA610531467795EB9784B4",
+      "childErc20Gateway": "0xa9E5b4Ad9ea2E4e3D048681286e2fb06Fe21535d",
+      "childGatewayRouter": "0xE8f8a4Db926D4d7D54159ACeCCDB3838dBd2C1db",
+      "childMultiCall": "0xB84628f7F17d17cf5a6C6f371C0711cFA5bcb996",
+      "childProxyAdmin": "0xB92Da3728d530925Fa7f914EC27079C6D3a4149a",
+      "childWeth": "0x0000000000000000000000000000000000000000",
+      "childWethGateway": "0x0000000000000000000000000000000000000000"
+    }
+  }
+}

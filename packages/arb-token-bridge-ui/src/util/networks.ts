@@ -366,7 +366,8 @@ export async function registerLocalNetwork() {
         address: defaultL3CustomGasTokenNetwork.nativeToken!,
         provider: new StaticJsonRpcProvider(localL2NetworkRpcUrl),
       });
-      if (data.symbol === 'TN') {
+      // litro v0.2.x named the fee token TN; v0.5.x names it by decimals (FEE6, FEE18, FEE20).
+      if (/^(TN|FEE\d+)$/.test(data.symbol)) {
         isLocalCustomNativeToken = true;
       }
     } catch (e) {
