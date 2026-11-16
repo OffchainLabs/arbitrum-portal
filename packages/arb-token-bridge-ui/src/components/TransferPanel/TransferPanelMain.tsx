@@ -16,7 +16,7 @@ import { shortenAddress } from '../../util/CommonUtils';
 import { isNovaDestination } from '../../util/NovaUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { isLifiEnabled } from '../../util/featureFlag';
-import { getDestinationChainIds, getExplorerUrl, isNetwork } from '../../util/networks';
+import { getAccountExplorerUrl, getDestinationChainIds, isNetwork } from '../../util/networks';
 import { getOrbitChains } from '../../util/orbitChainsList';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { Button } from '../common/Button';
@@ -131,7 +131,7 @@ function CustomAddressBanner({
         Showing balance for{' '}
         <ExternalLink
           className="arb-hover underline"
-          href={`${getExplorerUrl(network.id)}/address/${customAddress}`}
+          href={getAccountExplorerUrl(network.id, customAddress)}
         >
           {shortenAddress(customAddress)}
         </ExternalLink>

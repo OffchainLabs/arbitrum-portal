@@ -20,7 +20,7 @@ import { shortenAddress } from '../../util/CommonUtils';
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
 import { isBatchTransfer } from '../../util/TokenDepositUtils';
 import { sanitizeTokenSymbol } from '../../util/TokenUtils';
-import { getExplorerUrl, getNetworkName, isNetwork } from '../../util/networks';
+import { getAccountExplorerUrl, getNetworkName, isNetwork } from '../../util/networks';
 import { Button } from '../common/Button';
 import { ExternalLink } from '../common/ExternalLink';
 import { NetworkImage } from '../common/NetworkImage';
@@ -95,7 +95,7 @@ function CustomAddressDetails({ tx, walletAddress }: TransactionDetailsContentPr
           Funds received from{' '}
           <ExternalLink
             className="arb-hover underline"
-            href={`${getExplorerUrl(tx.sourceChainId)}/address/${sourceAddress}`}
+            href={getAccountExplorerUrl(tx.sourceChainId, sourceAddress)}
             aria-label={`Custom address: ${shortenAddress(sourceAddress)}`}
           >
             {showFullAddress ? sourceAddress : shortenAddress(sourceAddress)}
@@ -107,7 +107,7 @@ function CustomAddressDetails({ tx, walletAddress }: TransactionDetailsContentPr
           Funds sent to{' '}
           <ExternalLink
             className="arb-hover underline"
-            href={`${getExplorerUrl(tx.destinationChainId)}/address/${destinationAddress}`}
+            href={getAccountExplorerUrl(tx.destinationChainId, destinationAddress)}
             aria-label={`Custom address: ${shortenAddress(destinationAddress)}`}
           >
             {showFullAddress ? destinationAddress : shortenAddress(destinationAddress)}
