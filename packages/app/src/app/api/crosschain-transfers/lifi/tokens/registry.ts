@@ -194,7 +194,7 @@ function assignLogoURI(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
     }
     case USDG_COIN_KEY: {
       // LiFi has no logo for Arbitrum One USDG
-      token.logoURI ??= USDG_LOGO_URI;
+      token.logoURI ||= USDG_LOGO_URI;
       return token;
     }
     case CoinKey.ETH: {
