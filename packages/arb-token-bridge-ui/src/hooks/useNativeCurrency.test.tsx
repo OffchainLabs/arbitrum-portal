@@ -226,4 +226,27 @@ describe.sequential('transfer native currency', () => {
       });
     },
   );
+
+  // LiFi lists each EVM chain's native token at the zero address, so it is APE on ApeChain
+  it.each([
+    [ChainId.ArbitrumOne, 'ETH'],
+    [ChainId.ApeChain, 'APE'],
+  ])(
+    'labels the zero address destination token from Solana to %s as %s',
+    async (destination, symbol) => {
+      const wrapper = createWalletTestWrapper({
+        query: { sourceChain: ChainId.Solana, destinationChain: destination },
+      });
+      const { result } = renderHook(
+        () =>
+          useNativeCurrencyForTransfer({
+            isDestination: true,
+            tokenAddress: constants.AddressZero,
+          }),
+        { wrapper },
+      );
+      await waitFor(() => expect(result.current.symbol).toBe(symbol));
+      expect(result.current.nativeTokenChainId).toBe(destination);
+    },
+  );
 });
