@@ -15,7 +15,7 @@ import {
   getPendingLifiRouteBatchIds,
   resolveLifiRouteBatchId,
 } from '../util/LifiTransactionStatus';
-import { resumeLifiRoute } from './LifiRouteExecutor';
+import { resetExecutedLifiRoutes, resumeLifiRoute } from './LifiRouteExecutor';
 import { LifiTransferStarter } from './LifiTransferStarter';
 import * as providers from './utils';
 
@@ -90,6 +90,7 @@ function createTransferProps(
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resetExecutedLifiRoutes();
 });
 
 describe('getExecutedLifiRouteTxHash', () => {

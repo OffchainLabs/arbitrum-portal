@@ -7,14 +7,14 @@ import {
   config as lifiConfig,
   resumeRoute,
 } from '@lifi/sdk';
-import type { WalletClient } from 'viem';
+import { UserRejectedRequestError, type WalletClient } from 'viem';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createMockLifiRoute } from '../test-utils/lifi';
 import { createMockSigners } from '../test-utils/signers';
 import { ChainId } from '../types/ChainId';
 import { ecosystems } from '../wallet/ecosystems';
-import { executeLifiRoute, resumeLifiRoute } from './LifiRouteExecutor';
+import { executeLifiRoute, resetExecutedLifiRoutes, resumeLifiRoute } from './LifiRouteExecutor';
 
 vi.mock('@lifi/sdk', async (original) => {
   const actual = await original<typeof import('@lifi/sdk')>();
@@ -58,7 +58,16 @@ function crossEcosystemRoute(firstStepDone: boolean) {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getActiveRoute).mockReturnValue(undefined);
+  resetExecutedLifiRoutes();
 });
+
+// The quote with one process, as LiFi reports it on its own copy of the route
+function withProcess(quote: RouteExtended, process: Record<string, unknown>) {
+  return {
+    ...quote,
+    steps: [{ execution: { status: 'PENDING', process: [{ type: 'CROSS_CHAIN', ...process }] } }],
+  } as unknown as RouteExtended;
+}
 
 describe.sequential('LiFi providers', () => {
   afterEach(() => {
@@ -124,8 +133,42 @@ describe.sequential('LiFi execution guards', () => {
     const props = { ...runProps, onRouteExecutionError: vi.fn() };
 
     await expect(executeLifiRoute(createMockLifiRoute(), props)).rejects.toThrow(/already started/);
-    await expect(executeLifiRoute(route, props)).rejects.toThrow(/already started/);
     expect(executeRoute).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a pending batch', { status: 'PENDING', txType: 'batched', txHash: 'batch-id' }],
+    ['a submitted transaction', { status: 'PENDING', txHash }],
+  ])('refuses to execute a quote again after an attempt sent %s', async (_sent, process) => {
+    const quote = createMockLifiRoute();
+    vi.mocked(executeRoute).mockImplementationOnce(async (_route, options) => {
+      options?.updateRouteHook?.(withProcess(quote, process));
+      throw new Error('Execution interrupted');
+    });
+    const props = { ...runProps, onRouteExecutionError: vi.fn() };
+
+    await executeLifiRoute(quote, props).catch(() => undefined);
+
+    await expect(executeLifiRoute(quote, props)).rejects.toThrow(/already started/);
+    expect(executeRoute).toHaveBeenCalledTimes(1);
+  });
+
+  it('executes a quote again after the user rejected its request', async () => {
+    const quote = createMockLifiRoute();
+    vi.mocked(executeRoute)
+      .mockImplementationOnce(async (_route, options) => {
+        options?.updateRouteHook?.(
+          withProcess(quote, { status: 'PENDING', txType: 'batched', txHash: 'batch-id' }),
+        );
+        throw new UserRejectedRequestError(new Error('User rejected the request'));
+      })
+      .mockResolvedValueOnce(route);
+    const props = { ...runProps, onRouteExecutionError: vi.fn() };
+
+    await expect(executeLifiRoute(quote, props)).rejects.toThrow(UserRejectedRequestError);
+
+    await expect(executeLifiRoute(quote, props)).resolves.toMatchObject({ txHash });
+    expect(executeRoute).toHaveBeenCalledTimes(2);
   });
 
   it('rechecks the EVM account after the approval dialog', async () => {

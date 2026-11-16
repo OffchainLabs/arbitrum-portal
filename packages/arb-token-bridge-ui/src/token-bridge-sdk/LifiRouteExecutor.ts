@@ -113,6 +113,14 @@ function createExecutionOptions(
   };
 }
 
+// LiFi records execution on its own copy of the route, so the quote passed to `executeLifiRoute`
+// never shows what an earlier attempt sent. Keyed by route id.
+const executedLifiRoutes = new Map<string, RouteExtended>();
+
+export function resetExecutedLifiRoutes() {
+  executedLifiRoutes.clear();
+}
+
 export function executeLifiRoute(
   route: Route | RouteExtended,
   {
@@ -123,10 +131,12 @@ export function executeLifiRoute(
     onRouteExecutionError,
   }: LifiRouteExecutionProps,
 ): Promise<{ txHash: string; route: RouteExtended }> {
+  const executedRoute = executedLifiRoutes.get(route.id);
+
   if (
     getActiveRoute(route.id) ||
-    getExecutedLifiRouteTxHash(route) ||
-    getPendingLifiRouteBatchIds(route).length > 0
+    getExecutedLifiRouteTxHash(executedRoute) ||
+    getPendingLifiRouteBatchIds(executedRoute).length > 0
   ) {
     return Promise.reject(
       new Error('This route has already started. Resume it from transaction history.'),
@@ -139,6 +149,7 @@ export function executeLifiRoute(
 
     const handleRouteUpdate = (updatedRoute: RouteExtended) => {
       latestRoute = updatedRoute;
+      executedLifiRoutes.set(updatedRoute.id, updatedRoute);
       const txHash = getExecutedLifiRouteTxHash(updatedRoute);
 
       onRouteUpdate?.(updatedRoute);
@@ -165,12 +176,15 @@ export function executeLifiRoute(
         }
       })
       .catch((error) => {
-        onRouteExecutionError(
-          error,
+        const failedRoute =
           latestRoute && isUserRejectedError(error)
             ? rejectPendingLifiRouteRequest(latestRoute)
-            : latestRoute,
-        );
+            : latestRoute;
+        // A rejected request sent nothing, so the same quote can be retried
+        if (failedRoute) {
+          executedLifiRoutes.set(failedRoute.id, failedRoute);
+        }
+        onRouteExecutionError(error, failedRoute);
         if (resolvedRouteTx) {
           return;
         }
