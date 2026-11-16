@@ -12,6 +12,7 @@ import {
   layerZeroConfig,
 } from '../constants';
 import {
+  DEFAULT_SELECTION,
   DestinationChain,
   DestinationOption,
   HeldToken,
@@ -19,6 +20,7 @@ import {
   RegistryChainFile,
   RegistryFileToken,
   RegistryIndexFile,
+  Selection,
   TOKEN_REGISTRY_URL,
   TokenList,
   TopFile,
@@ -69,31 +71,38 @@ const getTopFile = () => fetchRegistryFile<TopFile>('top.json');
 const getChainFile = (chainId: number) =>
   fetchRegistryFile<RegistryChainFile>(`chains/${chainId}.json`);
 
-// Each destination chain of a request reads the volumes of the same top file.
-const volumesByTopFile = new WeakMap<TopFile, Map<string, number>>();
+// Each destination chain of a request reads the ranks of the same top file.
+const ranksByTopFile = new WeakMap<TopFile, Map<string, number>>();
 
-function getVolumes(top: TopFile): Map<string, number> {
-  const cached = volumesByTopFile.get(top);
+// A token's position among the top file's tokens of its own chain. The file lists one chain after
+// the other, so a position in the whole file would put every token of the first chain first.
+function getRanks(top: TopFile): Map<string, number> {
+  const cached = ranksByTopFile.get(top);
   if (cached) {
     return cached;
   }
-  const volumes = new Map(
-    top.tokens.flatMap((token) =>
-      token.volumeUSD24H === undefined
-        ? []
-        : [[`${token.chainId}:${token.address}`, token.volumeUSD24H] as const],
-    ),
-  );
-  volumesByTopFile.set(top, volumes);
-  return volumes;
+  const ranks = new Map<string, number>();
+  const countByChainId = new Map<number, number>();
+  for (const token of top.tokens) {
+    const rank = countByChainId.get(token.chainId) ?? 0;
+    countByChainId.set(token.chainId, rank + 1);
+    ranks.set(`${token.chainId}:${token.address}`, rank);
+  }
+  ranksByTopFile.set(top, ranks);
+  return ranks;
 }
 
-function toTopToken(
-  chainId: number,
-  token: RegistryFileToken,
-  volumes: Map<string, number>,
-): TopToken {
-  const volumeUSD24H = volumes.get(`${chainId}:${token.address}`);
+// By top-file rank, then the tokens outside the top file by symbol. localeCompare goes through
+// Intl, which is slow on sorts of thousands of tokens.
+function getTokenComparator(top: TopFile): (a: TopToken, b: TopToken) => number {
+  const ranks = getRanks(top);
+  const getRank = (token: TopToken) =>
+    ranks.get(`${token.chainId}:${token.address}`) ?? Number.MAX_SAFE_INTEGER;
+  return (a, b) =>
+    getRank(a) - getRank(b) || (a.symbol < b.symbol ? -1 : a.symbol > b.symbol ? 1 : 0);
+}
+
+function toTopToken(chainId: number, token: RegistryFileToken): TopToken {
   return {
     chainId,
     address: token.address,
@@ -101,16 +110,7 @@ function toTopToken(
     name: token.name,
     decimals: token.decimals,
     ...(token.logoURI ? { logoURI: token.logoURI } : {}),
-    ...(volumeUSD24H === undefined ? {} : { volumeUSD24H }),
   };
-}
-
-// localeCompare goes through Intl, which is slow on sorts of thousands of tokens.
-function compareTokens(a: TopToken, b: TopToken): number {
-  return (
-    (b.volumeUSD24H ?? 0) - (a.volumeUSD24H ?? 0) ||
-    (a.symbol < b.symbol ? -1 : a.symbol > b.symbol ? 1 : 0)
-  );
 }
 
 export function searchChainFiles({
@@ -129,13 +129,13 @@ export function searchChainFiles({
     return [];
   }
 
-  const volumes = getVolumes(top);
+  const compareTokens = getTokenComparator(top);
   const matches: { token: TopToken; score: number }[] = [];
   for (const file of chainFiles) {
     for (const token of file.tokens) {
       const score = getSearchScore(token, normalizedQuery);
       if (score !== null) {
-        matches.push({ token: toTopToken(file.chainId, token, volumes), score });
+        matches.push({ token: toTopToken(file.chainId, token), score });
       }
     }
   }
@@ -150,18 +150,15 @@ export function searchChainFiles({
 export function toHeldTokens({
   chainFile,
   balances,
-  top,
 }: {
   chainFile: RegistryChainFile;
   balances: readonly bigint[];
-  top: TopFile;
 }): HeldToken[] {
-  const volumes = getVolumes(top);
   return chainFile.tokens.flatMap((token, index) => {
     const balance = balances[index];
     return balance === undefined || balance === 0n
       ? []
-      : [{ ...toTopToken(chainFile.chainId, token, volumes), balance: balance.toString() }];
+      : [{ ...toTopToken(chainFile.chainId, token), balance: balance.toString() }];
   });
 }
 
@@ -177,7 +174,7 @@ export async function getHeldTokens(account: Address): Promise<HeldTokens> {
           account,
           tokens: chainFile.tokens.map((token) => token.address as Address),
         });
-        return { chainId, tokens: toHeldTokens({ chainFile, balances, top }) };
+        return { chainId, tokens: toHeldTokens({ chainFile, balances }) };
       } catch {
         // An RPC that fails or refuses the state override hides that chain's balances only.
         return { chainId, tokens: null };
@@ -187,7 +184,7 @@ export async function getHeldTokens(account: Address): Promise<HeldTokens> {
 
   const tokens = results.flatMap((result) => result.tokens ?? []);
   const failedChainIds = results.flatMap((result) => (result.tokens ? [] : [result.chainId]));
-  return { tokens: tokens.sort(compareTokens), failedChainIds };
+  return { tokens: tokens.sort(getTokenComparator(top)), failedChainIds };
 }
 
 export async function searchRegistryTokens({
@@ -370,7 +367,7 @@ function isCanonicalRouteAllowed({
 }
 
 // The destinations of one chain before the default, which depends on the user's pick: the
-// canonical token first, then LayerZero's, then the others by volume.
+// canonical token first, then LayerZero's, then the others by top-file rank.
 type ChainOptions = {
   options: DestinationOption[];
   canonicalAddress?: string;
@@ -407,7 +404,6 @@ function buildChainOptions({
     return { options: [], defaultCandidates: [] };
   }
 
-  const volumes = getVolumes(top);
   const destinationTokens = new Map(destinationFile.tokens.map((token) => [token.address, token]));
   const options = new Map<string, DestinationOption>();
   const add = (address: string, provider: ProviderId) => {
@@ -421,7 +417,7 @@ function buildChainOptions({
     const token = destinationTokens.get(address);
     if (token && !isExcludedToken(pair.destinationChainId, address)) {
       options.set(address, {
-        ...toTopToken(destinationFile.chainId, token, volumes),
+        ...toTopToken(destinationFile.chainId, token),
         providers: [provider],
       });
     }
@@ -471,6 +467,7 @@ function buildChainOptions({
     }
   }
 
+  const compareTokens = getTokenComparator(top);
   const rank = (address: string) =>
     address === canonicalAddress ? 0 : address === layerZeroAddress ? 1 : 2;
   return {
@@ -621,14 +618,14 @@ type ChainDestinations = { chainId: number } & ChainOptions;
 // The destinations of every chain the source reaches. Imports cost a few RPC calls per chain, so
 // they only run when the files give the token no destination at all.
 async function getAllChainOptions({
-  sourceChainId,
+  sourceFiles,
   sourceTokenAddress,
 }: {
-  sourceChainId: number;
+  sourceFiles: SourceFiles;
   sourceTokenAddress: string;
 }): Promise<ChainDestinations[]> {
-  const [index, sourceFiles] = await Promise.all([getIndexFile(), getSourceFiles(sourceChainId)]);
-  const pairs = index.pairs.filter((pair) => pair.sourceChainId === sourceChainId);
+  const index = await getIndexFile();
+  const pairs = index.pairs.filter((pair) => pair.sourceChainId === sourceFiles.sourceFile.chainId);
   const getChains = async (allowsImport: boolean) =>
     (
       await Promise.all(
@@ -662,7 +659,9 @@ export async function getDestinationChains({
   preferredToken?: { chainId: number; address: string };
 }): Promise<DestinationChain[]> {
   const [chains, preferredFile] = await Promise.all([
-    getAllChainOptions({ sourceChainId, sourceTokenAddress }),
+    getSourceFiles(sourceChainId).then((sourceFiles) =>
+      getAllChainOptions({ sourceFiles, sourceTokenAddress }),
+    ),
     preferredToken ? getChainFile(preferredToken.chainId) : undefined,
   ]);
   const preferredCounterparts =
@@ -684,10 +683,84 @@ export async function getDestinationChains({
     .sort((a, b) => Number(Boolean(b.canonicalToken)) - Number(Boolean(a.canonicalToken)));
 }
 
+// A token of the chain's file, or a token read from the chain like a pasted address. Null when the
+// address is not a token.
+async function resolveSourceToken({
+  chainId,
+  address,
+}: {
+  chainId: number;
+  address: string;
+}): Promise<TopToken | null> {
+  if (!isAddress(address)) {
+    return null;
+  }
+  const chainFile = await getChainFile(chainId);
+  const token = chainFile.tokens.find((candidate) => candidate.address === address);
+  return token ? toTopToken(chainId, token) : importToken({ chainId, address });
+}
+
+// The tokens of the page's URL, without top.json. A chain outside the registry falls back to the
+// default selection, Ether on Ethereum to Arbitrum One. Like Jumper, an unknown token on a registry
+// chain selects no token, and the source picker opens on that chain. A requested destination token
+// stays the default of its chain when the source reaches it, like a token the user picked.
+export async function getSelection({
+  sourceChainId,
+  sourceTokenAddress,
+  destinationChainId,
+  destinationTokenAddress,
+}: {
+  sourceChainId: number;
+  sourceTokenAddress: string;
+  destinationChainId?: number;
+  destinationTokenAddress?: string;
+}): Promise<Selection> {
+  const index = await getIndexFile();
+  const isRegistryChain = index.chains.some((chain) => chain.chainId === sourceChainId);
+  const request = isRegistryChain
+    ? { sourceChainId, sourceTokenAddress, destinationChainId, destinationTokenAddress }
+    : {
+        ...DEFAULT_SELECTION,
+        sourceTokenAddress: NATIVE_TOKEN_ADDRESS,
+        destinationTokenAddress: undefined,
+      };
+
+  const sourceToken = await resolveSourceToken({
+    chainId: request.sourceChainId,
+    address: request.sourceTokenAddress,
+  });
+  if (!sourceToken) {
+    return { sourceChainId: request.sourceChainId, destinationChains: [] };
+  }
+
+  const destinationChains = await getDestinationChains({
+    sourceChainId: sourceToken.chainId,
+    sourceTokenAddress: sourceToken.address,
+    preferredToken:
+      request.destinationChainId !== undefined && request.destinationTokenAddress
+        ? { chainId: request.destinationChainId, address: request.destinationTokenAddress }
+        : undefined,
+  });
+  const destinationChain =
+    destinationChains.find((chain) => chain.chainId === request.destinationChainId) ??
+    destinationChains[0];
+  return {
+    sourceChainId: sourceToken.chainId,
+    sourceToken,
+    destinationChains,
+    ...(destinationChain
+      ? {
+          destinationChainId: destinationChain.chainId,
+          destinationToken: destinationChain.defaultToken,
+        }
+      : {}),
+  };
+}
+
 // Without a destination chain, the tokens of every chain the source reaches, up to 1,000 per
 // chain like the source list: the canonical tokens first, then LayerZero's, then the others by
-// volume. A chain's default or the user's pick does not change this order. The list is complete
-// when no chain was cut, and the picker then searches it without the server.
+// top-file rank. A chain's default or the user's pick does not change this order. The list is
+// complete when no chain was cut, and the picker then searches it without the server.
 export async function getDestinationTokens({
   sourceChainId,
   sourceTokenAddress,
@@ -702,7 +775,9 @@ export async function getDestinationTokens({
   let options: DestinationOption[];
   let isComplete: boolean;
   if (destinationChainId === undefined) {
-    const chains = await getAllChainOptions({ sourceChainId, sourceTokenAddress });
+    const sourceFiles = await getSourceFiles(sourceChainId);
+    const chains = await getAllChainOptions({ sourceFiles, sourceTokenAddress });
+    const compareTokens = getTokenComparator(sourceFiles.top);
     const rank = (option: DestinationOption) =>
       option.providers.includes('canonical') ? 0 : option.providers.includes('layerzero') ? 1 : 2;
     // A search covers every token, past the 1,000 of each chain.

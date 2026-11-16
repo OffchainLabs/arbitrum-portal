@@ -1,5 +1,7 @@
 import { isAddress } from 'viem';
 
+import { ChainId } from '@/bridge/types/ChainId';
+
 import type { ProviderId } from './types';
 
 // The token-list repo's registry job publishes these files. The test folder holds the files of
@@ -46,11 +48,12 @@ export type TopToken = {
   name: string;
   decimals: number;
   logoURI?: string;
-  volumeUSD24H?: number;
   // Not in the registry files: the server read it from the chain when the user pasted its address.
   isImported?: true;
 };
 
+// The order is the ranking: chain by chain, the native and curated tokens first, then LiFi's 24-hour
+// volume, then symbol.
 export type TopFile = {
   generatedAt: string;
   tokens: TopToken[];
@@ -74,6 +77,29 @@ export type DestinationChain = {
   defaultToken: DestinationOption;
   // The token the canonical bridge delivers on this chain, when it has a route.
   canonicalToken?: DestinationOption;
+};
+
+// Ether on Ethereum to Arbitrum One, like the bridge.
+export const DEFAULT_SELECTION = {
+  sourceChainId: ChainId.Ethereum,
+  destinationChainId: ChainId.ArbitrumOne,
+};
+
+// What the selection endpoint returns for the tokens of a URL, so the page can show them without
+// top.json.
+export type Selection = {
+  // The chain the source picker opens on.
+  sourceChainId: number;
+  // Absent when the URL's token is not a token on its chain.
+  sourceToken?: TopToken;
+  // The chains the source reaches, each with its default token. The destination picker loads the
+  // tokens of these chains from the destination-tokens endpoint.
+  destinationChains: DestinationChain[];
+  // The requested chain when the source reaches it, otherwise the first chain. Absent when the
+  // source reaches no chain.
+  destinationChainId?: number;
+  // The default token of that chain: the requested token when the source reaches it.
+  destinationToken?: DestinationOption;
 };
 
 // Lower is better. An address only matches itself.

@@ -49,33 +49,15 @@ const arbitrumOne: RegistryChainFile = {
   ],
 };
 
+// Ranked chain by chain, like the registry's file. USDCX comes before WBTC in the file, but WBTC is
+// first on its chain.
 const top: TopFile = {
   generatedAt: '',
   tokens: [
-    {
-      chainId: 42161,
-      address: USDC_ARBITRUM,
-      symbol: 'USDC',
-      name: 'USD Coin',
-      decimals: 6,
-      volumeUSD24H: 90,
-    },
-    {
-      chainId: 1,
-      address: USDC_ETHEREUM,
-      symbol: 'USDC',
-      name: 'USD Coin',
-      decimals: 6,
-      volumeUSD24H: 800,
-    },
-    {
-      chainId: 42161,
-      address: WBTC_ARBITRUM,
-      symbol: 'WBTC',
-      name: 'Wrapped BTC',
-      decimals: 8,
-      volumeUSD24H: 30,
-    },
+    { chainId: 1, address: USDC_ETHEREUM, symbol: 'USDC', name: 'USD Coin', decimals: 6 },
+    { chainId: 1, address: USDCX_ETHEREUM, symbol: 'USDCX', name: 'Wrapped thing', decimals: 6 },
+    { chainId: 42161, address: WBTC_ARBITRUM, symbol: 'WBTC', name: 'Wrapped BTC', decimals: 8 },
+    { chainId: 42161, address: USDC_ARBITRUM, symbol: 'USDC', name: 'USD Coin', decimals: 6 },
   ],
 };
 
@@ -113,14 +95,15 @@ const keys = (tokens: { chainId: number; address: string }[]) =>
   tokens.map((token) => `${token.chainId}:${token.address}`);
 
 describe('searchChainFiles', () => {
-  it('ranks exact symbols, then prefixes, then names, then volume', () => {
+  it('ranks exact symbols, then prefixes, then names, then the rank on its chain', () => {
     expect(
       keys(searchChainFiles({ chainFiles: [ethereum, arbitrumOne], top, query: 'usdc' })),
     ).toEqual([
       `1:${USDC_ETHEREUM}`,
       `42161:${USDC_ARBITRUM}`,
-      `42161:${USDC_E_ARBITRUM}`,
+      // A ranked token comes before the tokens outside the top file.
       `1:${USDCX_ETHEREUM}`,
+      `42161:${USDC_E_ARBITRUM}`,
     ]);
     expect(
       keys(searchChainFiles({ chainFiles: [ethereum, arbitrumOne], top, query: 'wrapped' })),
@@ -134,7 +117,6 @@ describe('searchChainFiles', () => {
       query: USDC_E_ARBITRUM.toUpperCase().replace('0X', '0x'),
     });
     expect(usdcE).toMatchObject({ chainId: 42161, address: USDC_E_ARBITRUM });
-    expect(usdcE?.volumeUSD24H).toBeUndefined();
   });
 
   it('stops at the limit', () => {
@@ -145,7 +127,7 @@ describe('searchChainFiles', () => {
 });
 
 describe('buildDestinationOptions', () => {
-  it('puts the canonical token first, then the same token, then LiFi tokens by volume', () => {
+  it('puts the canonical token first, then the same token, then LiFi tokens by rank', () => {
     const { options, defaultToken, canonicalToken } = buildDestinationOptions({
       ...withLifi({ sourceFile: ethereum, destinationFile: arbitrumOne, lifi: depositLifi }),
       top,
@@ -419,23 +401,9 @@ describe('withImportedTokens', () => {
 
 describe('toHeldTokens', () => {
   it('keeps the tokens with a balance, outside the top file too', () => {
-    const topFile: TopFile = {
-      generatedAt: '',
-      tokens: [
-        {
-          chainId: 1,
-          address: USDC_ETHEREUM,
-          symbol: 'USDC',
-          name: 'USD Coin',
-          decimals: 6,
-          volumeUSD24H: 10,
-        },
-      ],
-    };
-
-    expect(toHeldTokens({ chainFile: ethereum, balances: [0n, 5n, 7n], top: topFile })).toEqual([
-      expect.objectContaining({ address: USDC_ETHEREUM, balance: '5', volumeUSD24H: 10 }),
-      expect.objectContaining({ address: USDCX_ETHEREUM, balance: '7' }),
+    expect(toHeldTokens({ chainFile: arbitrumOne, balances: [0n, 5n, 7n, 0n] })).toEqual([
+      expect.objectContaining({ address: USDC_ARBITRUM, balance: '5' }),
+      expect.objectContaining({ address: USDC_E_ARBITRUM, balance: '7' }),
     ]);
   });
 });

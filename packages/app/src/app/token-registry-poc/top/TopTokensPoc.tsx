@@ -2,17 +2,19 @@
 
 import { useDebounce } from '@uidotdev/usehooks';
 import dynamic from 'next/dynamic';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
-import useSWR from 'swr';
+import useSWR, { preload } from 'swr';
 import { twMerge } from 'tailwind-merge';
 import { formatUnits } from 'viem';
 import { useAccount } from 'wagmi';
 
 import {
-  DestinationChain,
+  DEFAULT_SELECTION,
   DestinationOption,
   HeldTokens,
+  Selection,
   TOKEN_REGISTRY_URL,
   TokenList,
   TopFile,
@@ -20,8 +22,14 @@ import {
   searchTokens,
 } from '@/app/src/token-registry/registryFiles';
 import { NATIVE_TOKEN_ADDRESS, ProviderId } from '@/app/src/token-registry/types';
-import { formatAmount, formatCompactUsd } from '@/bridge/util/NumberUtils';
+import { formatAmount } from '@/bridge/util/NumberUtils';
 import { getBridgeUiConfigForChain } from '@/bridge/util/bridgeUiConfig';
+import {
+  DestinationTokenQueryParam,
+  TokenQueryParam,
+  decodeChainQueryParam,
+  encodeChainQueryParam,
+} from '@/bridge/util/queryParamUtils';
 
 const ROW_HEIGHT = 56;
 const LIST_HEIGHT = 512;
@@ -50,6 +58,16 @@ const providerLabels: Record<ProviderId, string> = {
 type PickerToken = TopToken & { providers?: ProviderId[] };
 
 type SwrKey = [string, string];
+
+const TOP_FILE_KEY: SwrKey = [`${TOKEN_REGISTRY_URL}/top.json`, 'token-registry-top'];
+
+// The URL's tokens, with the chains decoded to ids.
+type SelectionQuery = {
+  sourceChainId: number;
+  sourceToken: string;
+  destinationChainId?: number;
+  destinationToken?: string;
+};
 
 type RequestStats = {
   durationMs: number;
@@ -217,9 +235,6 @@ function TokenRow({
             {formatAmount(Number(formatUnits(BigInt(balance), token.decimals)))}
           </span>
         )}
-        <span className="block">
-          {token.volumeUSD24H === undefined ? '—' : formatCompactUsd(token.volumeUSD24H)}
-        </span>
         <span className="block">
           {token.address === NATIVE_TOKEN_ADDRESS ? 'native' : truncateAddress(token.address)}
         </span>
@@ -441,14 +456,19 @@ function SelectedTokenButton({
   token,
   placeholder,
   onClick,
+  onIntent,
 }: {
   token: PickerToken | null | undefined;
   placeholder: string;
   onClick: () => void;
+  // The pointer or the keyboard focus reached the button, so a click may follow.
+  onIntent?: () => void;
 }) {
   return (
     <button
       onClick={onClick}
+      onPointerEnter={onIntent}
+      onFocus={onIntent}
       className="mt-2 flex w-full items-center gap-3 rounded-md border border-white/10 bg-white/5 px-3 py-3 text-left hover:bg-white/10"
     >
       {token ? (
@@ -468,6 +488,43 @@ function SelectedTokenButton({
       )}
     </button>
   );
+}
+
+// The bridge's parameters, so links work on both pages: sourceChain and destinationChain take a
+// slug or a chain id, and without a token the source is the native token.
+function parseSelectionQuery(searchParams: URLSearchParams): SelectionQuery {
+  const sourceToken = TokenQueryParam.decode(searchParams.get('token'));
+  const destinationToken = DestinationTokenQueryParam.decode(searchParams.get('destinationToken'));
+  return {
+    sourceChainId:
+      decodeChainQueryParam(searchParams.get('sourceChain')) ?? DEFAULT_SELECTION.sourceChainId,
+    sourceToken: sourceToken?.toLowerCase() ?? NATIVE_TOKEN_ADDRESS,
+    destinationChainId: decodeChainQueryParam(searchParams.get('destinationChain')),
+    ...(destinationToken ? { destinationToken: destinationToken.toLowerCase() } : {}),
+  };
+}
+
+function encodeChain(chainId: number): string {
+  return encodeChainQueryParam(chainId) ?? String(chainId);
+}
+
+// The source is the last element, so a response can tell which source it belongs to.
+function getSelectionKey(query: SelectionQuery): readonly [string, string, string] {
+  const params = new URLSearchParams({
+    sourceChainId: String(query.sourceChainId),
+    sourceToken: query.sourceToken,
+  });
+  if (query.destinationChainId !== undefined) {
+    params.set('destinationChainId', String(query.destinationChainId));
+  }
+  if (query.destinationToken) {
+    params.set('destinationToken', query.destinationToken);
+  }
+  return [
+    `/api/token-registry/files/selection?${params}`,
+    'token-registry-selection',
+    `${query.sourceChainId}:${query.sourceToken}`,
+  ];
 }
 
 function getSourceSearchKey(chainId: number | null, query: string): SwrKey | null {
@@ -524,51 +581,58 @@ export function TopTokensPoc() {
 }
 
 function TopTokensPocContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { address } = useAccount();
-  const [sourceToken, setSourceToken] = useState<TopToken | null>(null);
-  const [destinationChainId, setDestinationChainId] = useState<number | null>(null);
+  // The URL's tokens on load. The page writes each pick back to the URL, but reads it from the state.
+  const [initialQuery] = useState(() =>
+    parseSelectionQuery(new URLSearchParams(searchParams.toString())),
+  );
+  // Null until the user picks a source: the page shows the one the selection endpoint resolved.
+  const [pickedSourceToken, setPickedSourceToken] = useState<TopToken | null>(null);
+  const [destinationChainId, setDestinationChainId] = useState(initialQuery.destinationChainId);
   // Set when the user picks a destination token. Each chain then defaults to that token, or to its
   // counterpart on the chain, until the user picks another one.
   const [destinationToken, setDestinationToken] = useState<DestinationOption | null>(null);
   const [openPicker, setOpenPicker] = useState<'source' | 'destination' | null>(null);
-  // Null opens the destination picker on all chains.
-  const [destinationPickerChainId, setDestinationPickerChainId] = useState<number | null>(null);
+  // Most visitors never open the source picker, so top.json only loads when it opens.
+  const [isTopFileNeeded, setIsTopFileNeeded] = useState(false);
 
   const { data, error } = useSWR(
-    [`${TOKEN_REGISTRY_URL}/top.json`, 'token-registry-top'] as SwrKey,
+    isTopFileNeeded ? TOP_FILE_KEY : null,
     fetchTopTokens,
     AGGRESSIVE_CACHE_OPTIONS,
   );
 
-  const { data: destinationChainsResponse, error: destinationChainsError } = useSWR(
-    sourceToken
-      ? ([
-          `/api/token-registry/files/destination-chains?${new URLSearchParams({
-            sourceChainId: String(sourceToken.chainId),
-            sourceToken: sourceToken.address,
-            ...(destinationToken
-              ? {
-                  preferredChainId: String(destinationToken.chainId),
-                  preferredToken: destinationToken.address,
-                }
-              : {}),
-          })}`,
-          'token-registry-destination-chains',
-          getTokenKey(sourceToken),
-        ] as const)
-      : null,
+  // The URL's destination token counts as a pick until the user picks another one.
+  const preferredDestination = destinationToken
+    ? { destinationChainId: destinationToken.chainId, destinationToken: destinationToken.address }
+    : {
+        destinationChainId: initialQuery.destinationChainId,
+        destinationToken: initialQuery.destinationToken,
+      };
+  const selectionQuery: SelectionQuery = {
+    ...(pickedSourceToken
+      ? { sourceChainId: pickedSourceToken.chainId, sourceToken: pickedSourceToken.address }
+      : { sourceChainId: initialQuery.sourceChainId, sourceToken: initialQuery.sourceToken }),
+    ...preferredDestination,
+  };
+  const selectionKey = getSelectionKey(selectionQuery);
+  const { data: selectionResponse, error: selectionError } = useSWR(
+    selectionKey,
     async ([url, , sourceKey]: readonly [string, string, string]) => ({
       sourceKey,
-      chains: await fetchJson<DestinationChain[]>([url, 'token-registry-destination-chains']),
+      selection: await fetchJson<Selection>([url, 'token-registry-selection']),
     }),
     // Keeps the chain chips on screen while a new pick reloads their defaults.
     { ...AGGRESSIVE_CACHE_OPTIONS, keepPreviousData: true },
   );
   // keepPreviousData would show the previous source's chains while a new source loads.
-  const destinationChains =
-    sourceToken && destinationChainsResponse?.sourceKey === getTokenKey(sourceToken)
-      ? destinationChainsResponse.chains
-      : undefined;
+  const selection =
+    selectionResponse?.sourceKey === selectionKey[2] ? selectionResponse.selection : undefined;
+  const sourceToken = pickedSourceToken ?? selection?.sourceToken ?? null;
+  const destinationChains = selection?.destinationChains;
   // Fills the picker's all-chains view with the canonical tokens until the full list loads.
   const allChainsCanonicalTokens = destinationChains?.flatMap((chain) =>
     chain.canonicalToken ? [chain.canonicalToken] : [],
@@ -608,31 +672,109 @@ function TopTokensPocContent() {
   const activeDestinationChain =
     destinationChains?.find((chain) => chain.chainId === destinationChainId) ??
     destinationChains?.[0];
+  // The destination picker opens on the URL's destination chain, or the chain the user picked, when
+  // the source reaches it. Otherwise it opens on all chains.
+  const destinationPickerChainId =
+    destinationChainId !== undefined &&
+    destinationChains?.some((chain) => chain.chainId === destinationChainId)
+      ? destinationChainId
+      : null;
   const displayedDestinationToken =
     destinationToken?.chainId === activeDestinationChain?.chainId
       ? destinationToken
       : activeDestinationChain?.defaultToken;
 
+  // The bridge's parameters, written only when the query string changes.
+  function replaceQuery({
+    source,
+    destinationChainId: nextDestinationChainId,
+    destinationTokenAddress,
+  }: {
+    source: TopToken;
+    destinationChainId?: number;
+    destinationTokenAddress?: string;
+  }) {
+    const params = new URLSearchParams(searchParams.toString());
+    const set = (name: string, value: string | undefined) =>
+      value ? params.set(name, value) : params.delete(name);
+    set('sourceChain', encodeChain(source.chainId));
+    set(
+      'token',
+      source.address === NATIVE_TOKEN_ADDRESS ? undefined : TokenQueryParam.encode(source.address),
+    );
+    set(
+      'destinationChain',
+      nextDestinationChainId === undefined ? undefined : encodeChain(nextDestinationChainId),
+    );
+    set('destinationToken', DestinationTokenQueryParam.encode(destinationTokenAddress));
+
+    const queryString = params.toString();
+    if (queryString !== searchParams.toString()) {
+      router.replace(`${pathname}?${queryString}`, { scroll: false });
+    }
+  }
+
+  // The preferred token's address when it is on this chain.
+  function getPreferredAddress(chainId: number | undefined) {
+    return preferredDestination.destinationChainId === chainId
+      ? preferredDestination.destinationToken
+      : undefined;
+  }
+
+  // Starts loading top.json before the click, so the picker rarely waits for it.
+  function preloadTopFile() {
+    void preload(TOP_FILE_KEY, fetchTopTokens);
+  }
+
+  function openSourcePicker() {
+    setIsTopFileNeeded(true);
+    setOpenPicker('source');
+  }
+
   // Like Jumper, picking a source moves on to the destination.
   function handleSelectSource(token: PickerToken) {
-    setSourceToken(token);
-    setDestinationPickerChainId(null);
+    setPickedSourceToken(token);
     setOpenPicker('destination');
+    replaceQuery({
+      source: token,
+      destinationChainId,
+      destinationTokenAddress: getPreferredAddress(destinationChainId),
+    });
   }
 
   function openDestinationPicker() {
-    setDestinationPickerChainId(activeDestinationChain?.chainId ?? null);
     setOpenPicker('destination');
   }
 
   function handleSelectDestinationChain(chainId: number) {
     setDestinationChainId(chainId);
+    if (!sourceToken) {
+      return;
+    }
+    // A pick on another chain is written as the token the chain shows for it: its counterpart, or
+    // the chain's default.
+    const hasPreference = preferredDestination.destinationToken !== undefined;
+    replaceQuery({
+      source: sourceToken,
+      destinationChainId: chainId,
+      destinationTokenAddress: hasPreference
+        ? (getPreferredAddress(chainId) ??
+          destinationChains?.find((chain) => chain.chainId === chainId)?.defaultToken.address)
+        : undefined,
+    });
   }
 
   function handleSelectDestination(token: PickerToken) {
     setDestinationChainId(token.chainId);
     setDestinationToken(token as DestinationOption);
     setOpenPicker(null);
+    if (sourceToken) {
+      replaceQuery({
+        source: sourceToken,
+        destinationChainId: token.chainId,
+        destinationTokenAddress: token.address,
+      });
+    }
   }
 
   return (
@@ -642,10 +784,11 @@ function TopTokensPocContent() {
         <WalletButton />
       </div>
       <p className="mt-2 text-sm text-white/60">
-        One request for the picker&apos;s tokens on every chain, from {TOKEN_REGISTRY_URL}/top.json.
-        Searches and destinations go through the backend, which reads every token. A connected
-        wallet&apos;s balances come from a separate request, so the token lists stay cached for
-        every user.
+        The page loads the tokens of its URL with one small request. The picker&apos;s tokens on
+        every chain come from {TOKEN_REGISTRY_URL}/top.json, which only loads when the source picker
+        is about to open. Searches and destinations go through the backend, which reads every token.
+        A connected wallet&apos;s balances come from a separate request, so the token lists stay
+        cached for every user.
       </p>
       {address && (
         <p className="mt-2 text-sm text-white/60">
@@ -660,125 +803,122 @@ function TopTokensPocContent() {
         </p>
       )}
 
-      {error && <p className="mt-6 text-red-400">Failed to load top.json: {String(error)}</p>}
-      {!data && !error && <p className="mt-6 text-sm text-white/50">Loading top tokens…</p>}
-
       {data && (
-        <>
-          <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-4">
-            <div>
-              <dt className="text-white/50">Tokens</dt>
-              <dd>{topTokens.length}</dd>
-            </div>
-            <div>
-              <dt className="text-white/50">Request</dt>
-              <dd>{Math.round(data.stats.durationMs)} ms</dd>
-            </div>
-            <div>
-              <dt className="text-white/50">Transferred / JSON</dt>
-              <dd>
-                {data.stats.transferredBytes === undefined
-                  ? 'n/a'
-                  : formatBytes(data.stats.transferredBytes)}{' '}
-                / {formatBytes(data.stats.decodedBytes)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-white/50">Generated</dt>
-              <dd>{new Date(data.file.generatedAt).toLocaleString()}</dd>
-            </div>
-          </dl>
+        <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-4">
+          <div>
+            <dt className="text-white/50">Tokens</dt>
+            <dd>{topTokens.length}</dd>
+          </div>
+          <div>
+            <dt className="text-white/50">Request</dt>
+            <dd>{Math.round(data.stats.durationMs)} ms</dd>
+          </div>
+          <div>
+            <dt className="text-white/50">Transferred / JSON</dt>
+            <dd>
+              {data.stats.transferredBytes === undefined
+                ? 'n/a'
+                : formatBytes(data.stats.transferredBytes)}{' '}
+              / {formatBytes(data.stats.decodedBytes)}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-white/50">Generated</dt>
+            <dd>{new Date(data.file.generatedAt).toLocaleString()}</dd>
+          </div>
+        </dl>
+      )}
 
-          <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-white/60">From</h2>
-          <SelectedTokenButton
-            token={sourceToken}
-            placeholder="Select chain and token"
-            onClick={() => setOpenPicker('source')}
+      <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-white/60">From</h2>
+      {selectionError && (
+        <p className="mt-2 text-red-400">Failed to load the selection: {String(selectionError)}</p>
+      )}
+      <SelectedTokenButton
+        token={sourceToken}
+        placeholder={selection || selectionError ? 'Select chain and token' : 'Loading…'}
+        onClick={openSourcePicker}
+        onIntent={preloadTopFile}
+      />
+      {openPicker === 'source' &&
+        (error ? (
+          <p className="mt-4 text-red-400">Failed to load top.json: {String(error)}</p>
+        ) : !data ? (
+          <p className="mt-4 text-sm text-white/50">Loading top tokens…</p>
+        ) : (
+          <TokenPicker
+            title="Select a source token"
+            chains={[...tokenCountByChainId].map(([chainId, tokenCount]) => ({
+              chainId,
+              tokenCount,
+            }))}
+            allowAllChains
+            initialChainId={sourceToken?.chainId ?? selection?.sourceChainId ?? null}
+            selectedToken={sourceToken}
+            balances={balances}
+            getChainTokens={getSourceTokens}
+            getSearchKey={getSourceSearchKey}
+            onSelect={handleSelectSource}
+            onClose={() => setOpenPicker(null)}
           />
-          {openPicker === 'source' && (
+        ))}
+
+      {sourceToken && (
+        <>
+          <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-white/60">To</h2>
+          {!destinationChains && !selectionError && (
+            <p className="mt-2 text-sm text-white/50">Loading destinations…</p>
+          )}
+          {destinationChains?.length === 0 && (
+            <p className="mt-2 text-sm text-white/50">No route from this token.</p>
+          )}
+          {destinationChains && destinationChains.length > 0 && (
+            <>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {destinationChains.map((chain) => (
+                  <button
+                    key={chain.chainId}
+                    onClick={() => handleSelectDestinationChain(chain.chainId)}
+                    className={twMerge(
+                      'flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1 text-xs hover:bg-white/10',
+                      chain.chainId === activeDestinationChain?.chainId &&
+                        'border-white/60 bg-white/10',
+                    )}
+                  >
+                    <ChainIcon chainId={chain.chainId} className="h-4 w-4" />
+                    {getChainName(chain.chainId)}
+                  </button>
+                ))}
+              </div>
+              <SelectedTokenButton
+                token={displayedDestinationToken}
+                placeholder="Select destination token"
+                onClick={openDestinationPicker}
+              />
+            </>
+          )}
+          {openPicker === 'destination' && destinationChains && (
             <TokenPicker
-              title="Select a source token"
-              chains={[...tokenCountByChainId].map(([chainId, tokenCount]) => ({
-                chainId,
-                tokenCount,
-              }))}
+              key={`${getTokenKey(sourceToken)}-${destinationPickerChainId}`}
+              title="Select a destination token"
+              chains={destinationChains.map(({ chainId }) => ({ chainId }))}
               allowAllChains
-              initialChainId={sourceToken?.chainId ?? null}
-              selectedToken={sourceToken}
+              initialChainId={destinationPickerChainId}
+              selectedToken={displayedDestinationToken ?? null}
               balances={balances}
-              getChainTokens={getSourceTokens}
-              getSearchKey={getSourceSearchKey}
-              onSelect={handleSelectSource}
+              getChainTokens={(chainId) =>
+                chainId === null ? allChainsCanonicalTokens : undefined
+              }
+              getListKey={(chainId) =>
+                getDestinationTokensKey({ sourceToken, destinationChainId: chainId })
+              }
+              getSearchKey={(chainId, query) =>
+                query
+                  ? getDestinationTokensKey({ sourceToken, destinationChainId: chainId, query })
+                  : null
+              }
+              onSelect={handleSelectDestination}
               onClose={() => setOpenPicker(null)}
             />
-          )}
-
-          {sourceToken && (
-            <>
-              <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-white/60">
-                To
-              </h2>
-              {destinationChainsError && (
-                <p className="mt-2 text-red-400">
-                  Failed to load the destinations: {String(destinationChainsError)}
-                </p>
-              )}
-              {!destinationChains && !destinationChainsError && (
-                <p className="mt-2 text-sm text-white/50">Loading destinations…</p>
-              )}
-              {destinationChains?.length === 0 && (
-                <p className="mt-2 text-sm text-white/50">No route from this token.</p>
-              )}
-              {destinationChains && destinationChains.length > 0 && (
-                <>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {destinationChains.map((chain) => (
-                      <button
-                        key={chain.chainId}
-                        onClick={() => handleSelectDestinationChain(chain.chainId)}
-                        className={twMerge(
-                          'flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1 text-xs hover:bg-white/10',
-                          chain.chainId === activeDestinationChain?.chainId &&
-                            'border-white/60 bg-white/10',
-                        )}
-                      >
-                        <ChainIcon chainId={chain.chainId} className="h-4 w-4" />
-                        {getChainName(chain.chainId)}
-                      </button>
-                    ))}
-                  </div>
-                  <SelectedTokenButton
-                    token={displayedDestinationToken}
-                    placeholder="Select destination token"
-                    onClick={openDestinationPicker}
-                  />
-                </>
-              )}
-              {openPicker === 'destination' && destinationChains && (
-                <TokenPicker
-                  key={`${getTokenKey(sourceToken)}-${destinationPickerChainId}`}
-                  title="Select a destination token"
-                  chains={destinationChains.map(({ chainId }) => ({ chainId }))}
-                  allowAllChains
-                  initialChainId={destinationPickerChainId}
-                  selectedToken={displayedDestinationToken ?? null}
-                  balances={balances}
-                  getChainTokens={(chainId) =>
-                    chainId === null ? allChainsCanonicalTokens : undefined
-                  }
-                  getListKey={(chainId) =>
-                    getDestinationTokensKey({ sourceToken, destinationChainId: chainId })
-                  }
-                  getSearchKey={(chainId, query) =>
-                    query
-                      ? getDestinationTokensKey({ sourceToken, destinationChainId: chainId, query })
-                      : null
-                  }
-                  onSelect={handleSelectDestination}
-                  onClose={() => setOpenPicker(null)}
-                />
-              )}
-            </>
           )}
         </>
       )}
