@@ -26,10 +26,6 @@
     // https://github.com/advisories/GHSA-rc47-6667-2j5j
     // http-cache-semantics vulnerable to Regular Expression Denial of Service (CVE-2022-25881)
     //
-    // https://github.com/advisories/GHSA-ch52-4w7c-c8xp
-    // http-cache-semantics max-stale handling can disclose cross-user cached responses (CVE-2026-93748)
-    // No backport: only 4.3.0 is patched; cacheable-request@2 in the synpress chain pins ^3.8.1
-    //
     // https://github.com/advisories/GHSA-mp2f-45pm-3cg9
     // decompress archive extraction can create files and links outside the target directory (CVE-2026-53486)
     // No upstream fix: decompress is unmaintained, patched only in the @xhmikosr/decompress ESM fork
@@ -52,7 +48,6 @@
     // from: arb-token-bridge-ui>@synthetixio/synpress>download>...
     "GHSA-pfrx-2q88-qq97",
     "GHSA-rc47-6667-2j5j",
-    "GHSA-ch52-4w7c-c8xp",
     "GHSA-mp2f-45pm-3cg9",
     "GHSA-h39j-r5qq-r9mm",
     "GHSA-jwp9-9v96-94mx",
