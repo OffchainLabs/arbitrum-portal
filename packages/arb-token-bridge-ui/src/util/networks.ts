@@ -10,7 +10,7 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
 import type { CoreEvmChainId } from '../wallet/ecosystems/evm';
-import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
+import { findEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils';
 import { Erc20Data, fetchErc20Data } from './TokenUtils';
 import { getBridgeUiConfigForChain } from './bridgeUiConfig';
@@ -315,13 +315,9 @@ export const getExplorerUrl = (chainId: ChainId) => {
 };
 
 export function getAccountExplorerUrl(chainId: number, address: string) {
-  let accountPath = 'address';
-  try {
-    accountPath = getEcosystemConfig(chainId).explorerAccountPath;
-  } catch {
-    // unknown chains fall back to the EVM explorer path, like `getExplorerUrl` falls back to Etherscan
-  }
-  return `${getExplorerUrl(chainId)}/${accountPath}/${address}`;
+  // unknown chains fall back to the EVM explorer path, like `getExplorerUrl` falls back to Etherscan
+  const accountPath = findEcosystemConfig(chainId)?.explorerAccountPath ?? 'address';
+  return `${getExplorerUrl(chainId)}/${accountPath}/${encodeURIComponent(address)}`;
 }
 
 export const getL1BlockTime = (chainId: number) => {

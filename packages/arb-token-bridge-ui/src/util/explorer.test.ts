@@ -12,4 +12,11 @@ describe('getAccountExplorerUrl', () => {
       getAccountExplorerUrl(ChainId.Solana, 'So11111111111111111111111111111111111111112'),
     ).toBe(`${getExplorerUrl(ChainId.Solana)}/account/So11111111111111111111111111111111111111112`);
   });
+
+  // The destination address input links to the explorer while the address is still being checked
+  it('encodes the typed address', () => {
+    expect(getAccountExplorerUrl(ChainId.Ethereum, '0x1?tab=tokens#../')).toBe(
+      'https://etherscan.io/address/0x1%3Ftab%3Dtokens%23..%2F',
+    );
+  });
 });
