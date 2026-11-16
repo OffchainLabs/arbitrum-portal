@@ -5,11 +5,20 @@ import type {
   SDKProvider,
   TransactionParameters,
 } from '@lifi/sdk';
-import { EVM, Solana, executeRoute, config as lifiConfig, resumeRoute } from '@lifi/sdk';
+import {
+  EVM,
+  Solana,
+  executeRoute,
+  getActiveRoute,
+  config as lifiConfig,
+  resumeRoute,
+} from '@lifi/sdk';
 import { Client, UserRejectedRequestError } from 'viem';
 
+import { addressesEqual } from '../util/AddressUtils';
 import {
   getExecutedLifiRouteTxHash,
+  getPendingLifiRouteBatchIds,
   rejectPendingLifiRouteRequest,
 } from '../util/LifiTransactionStatus';
 import { isUserRejectedError } from '../util/isUserRejectedError';
@@ -62,13 +71,27 @@ function configureLifiProviders(props: ProviderProps) {
   );
 }
 
-function createExecutionOptions({
-  signers,
-  switchChainAsync,
-  onApprovalRequest,
-  onRouteUpdate,
-}: LifiRouteRunProps): ExecutionOptions {
+// Steps run in order, so the first step that isn't done is the one requesting a signature. The
+// sender's address format picks the signing wallet, since steps can start on chains the bridge
+// doesn't list.
+function assertSigningAccount(route: RouteExtended, signers: Partial<Signers>) {
+  const sender = route.steps.find((routeStep) => routeStep.execution?.status !== 'DONE')?.action
+    .fromAddress;
+  const ecosystem = (Object.keys(ecosystems) as WalletEcosystem[]).find(
+    (walletEcosystem) => sender && ecosystems[walletEcosystem].address.isValid(sender),
+  );
+
+  if (!ecosystem || !addressesEqual(signers[ecosystem]?.getAddress(), sender)) {
+    throw new Error('The signing account changed. Reconnect the account that started this route.');
+  }
+}
+
+function createExecutionOptions(
+  route: RouteExtended,
+  { signers, switchChainAsync, onApprovalRequest, onRouteUpdate }: LifiRouteRunProps,
+): ExecutionOptions {
   configureLifiProviders({ signers, switchChainAsync });
+  let latestRoute = route;
 
   return {
     updateTransactionRequestHook: async ({ requestType, ...transactionRequest }) => {
@@ -80,10 +103,22 @@ function createExecutionOptions({
         }
       }
 
+      assertSigningAccount(latestRoute, signers);
       return transactionRequest;
     },
-    updateRouteHook: onRouteUpdate,
+    updateRouteHook: (updatedRoute) => {
+      latestRoute = updatedRoute;
+      onRouteUpdate?.(updatedRoute);
+    },
   };
+}
+
+// LiFi records execution on its own copy of the route, so the quote passed to `executeLifiRoute`
+// never shows what an earlier attempt sent. Keyed by route id.
+const executedLifiRoutes = new Map<string, RouteExtended>();
+
+export function resetExecutedLifiRoutes() {
+  executedLifiRoutes.clear();
 }
 
 export function executeLifiRoute(
@@ -96,11 +131,17 @@ export function executeLifiRoute(
     onRouteExecutionError,
   }: LifiRouteExecutionProps,
 ): Promise<{ txHash: string; route: RouteExtended }> {
-  const executionOptions = createExecutionOptions({
-    signers,
-    switchChainAsync,
-    onApprovalRequest,
-  });
+  const executedRoute = executedLifiRoutes.get(route.id);
+
+  if (
+    getActiveRoute(route.id) ||
+    getExecutedLifiRouteTxHash(executedRoute) ||
+    getPendingLifiRouteBatchIds(executedRoute).length > 0
+  ) {
+    return Promise.reject(
+      new Error('This route has already started. Resume it from transaction history.'),
+    );
+  }
 
   return new Promise((resolve, reject) => {
     let resolvedRouteTx = false;
@@ -108,6 +149,7 @@ export function executeLifiRoute(
 
     const handleRouteUpdate = (updatedRoute: RouteExtended) => {
       latestRoute = updatedRoute;
+      executedLifiRoutes.set(updatedRoute.id, updatedRoute);
       const txHash = getExecutedLifiRouteTxHash(updatedRoute);
 
       onRouteUpdate?.(updatedRoute);
@@ -118,10 +160,15 @@ export function executeLifiRoute(
       }
     };
 
-    executeRoute(route, {
-      ...executionOptions,
-      updateRouteHook: handleRouteUpdate,
-    })
+    executeRoute(
+      route,
+      createExecutionOptions(route, {
+        signers,
+        switchChainAsync,
+        onApprovalRequest,
+        onRouteUpdate: handleRouteUpdate,
+      }),
+    )
       .then((updatedRoute) => {
         handleRouteUpdate(updatedRoute);
         if (!resolvedRouteTx) {
@@ -129,12 +176,15 @@ export function executeLifiRoute(
         }
       })
       .catch((error) => {
-        onRouteExecutionError(
-          error,
+        const failedRoute =
           latestRoute && isUserRejectedError(error)
             ? rejectPendingLifiRouteRequest(latestRoute)
-            : latestRoute,
-        );
+            : latestRoute;
+        // A rejected request sent nothing, so the same quote can be retried
+        if (failedRoute) {
+          executedLifiRoutes.set(failedRoute.id, failedRoute);
+        }
+        onRouteExecutionError(error, failedRoute);
         if (resolvedRouteTx) {
           return;
         }
@@ -149,7 +199,7 @@ export function resumeLifiRoute(
 ): Promise<RouteExtended> {
   return resumeRoute(
     structuredClone(route),
-    createExecutionOptions({
+    createExecutionOptions(route, {
       signers,
       switchChainAsync,
       onApprovalRequest,
