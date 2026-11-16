@@ -2,7 +2,6 @@ name: Lighthouse
 
 permissions:
   contents: read
-  pull-requests: write
 
 on:
   pull_request:
@@ -34,6 +33,8 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-4
     strategy:
+      # One failed runner shouldn't cancel the others, the report compares the runners that finished
+      fail-fast: false
       matrix:
         run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
@@ -129,7 +130,13 @@ jobs:
   report:
     name: Report results
     needs: lighthouse
+    # Runs when some runners failed, but not when the PR is a draft and the runners were skipped
+    if: ${{ !cancelled() && needs.lighthouse.result != 'skipped' }}
     runs-on: ubuntu-latest
+    # Only this job comments on the PR. The other jobs build and run the PR's code.
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
