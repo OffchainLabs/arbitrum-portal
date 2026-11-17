@@ -3,6 +3,7 @@
  * Port of tests/e2e/specs/urlQueryParam.cy.ts.
  */
 import { scaleFrom18DecimalsToNativeTokenDecimals } from '@arbitrum/sdk';
+import type { Page } from '@playwright/test';
 import { utils } from 'ethers';
 
 import { formatAmount } from '../../../../src/util/NumberUtils';
@@ -19,6 +20,14 @@ import {
   getL1NetworkConfig,
   getNetworkSlug,
 } from '../support/common';
+
+// The amount query param is sanitized synchronously when the URL is decoded, so the input shows
+// the final value on first render. Wait for the input instead of visitAfterSomeDelay's fixed 30s.
+async function visitBridge(page: Page, qs: Record<string, string>) {
+  await page.goto(`/bridge?${new URLSearchParams(qs).toString()}`);
+  await expect(findAmountInput(page)).toBeVisible();
+  await page.waitForTimeout(2_000);
+}
 
 test.describe('User enters site with query params on URL', () => {
   test('should correctly populate amount input from query param', async ({ page, e2eEnv }) => {
@@ -53,11 +62,11 @@ test.describe('User enters site with query params on URL', () => {
 
     await login(page, e2eEnv, { networkType: 'parentChain' });
 
+    const visitWithAmount = (amount: string) =>
+      visitBridge(page, { amount, sourceChain, destinationChain });
+
     const expectMaxAmount = async (amount: string) => {
-      await visitAfterSomeDelay(page, '/bridge', {
-        qs: { amount, sourceChain, destinationChain },
-      });
-      await expect(findAmountInput(page)).toBeVisible();
+      await visitWithAmount(amount);
       await expect
         .poll(async () => Number(await findAmountInput(page).inputValue()), { timeout: 30_000 })
         .toBeGreaterThan(0);
@@ -70,9 +79,7 @@ test.describe('User enters site with query params on URL', () => {
     await expectMaxAmount('MaX');
 
     const expectExactAmount = async (amount: string, expected: string) => {
-      await visitAfterSomeDelay(page, '/bridge', {
-        qs: { amount, sourceChain, destinationChain },
-      });
+      await visitWithAmount(amount);
       await expect(findAmountInput(page)).toHaveValue(expected);
     };
 
@@ -80,31 +87,16 @@ test.describe('User enters site with query params on URL', () => {
     await expectExactAmount('1.6678', '1.6678');
     await expectExactAmount('6', '6');
 
-    await visitAfterSomeDelay(page, '/bridge', {
-      qs: { amount: '0.123', sourceChain, destinationChain },
-    });
+    await visitWithAmount('0.123');
     await expect(page).toHaveURL(/amount=0\.123/);
     await expect(findAmountInput(page)).toHaveValue('0.123');
 
     await expectExactAmount('-0.123', '0.123');
-
-    await visitAfterSomeDelay(page, '/bridge', {
-      qs: { amount: 'asdfs', sourceChain, destinationChain },
-    });
-    await expect(findAmountInput(page)).toHaveValue('');
-
+    await expectExactAmount('asdfs', '');
     await expectExactAmount('0', '0');
     await expectExactAmount('0.0001', '0.0001');
-
-    await visitAfterSomeDelay(page, '/bridge', {
-      qs: { amount: '123,3,43', sourceChain, destinationChain },
-    });
-    await expect(findAmountInput(page)).toHaveValue('');
-
-    await visitAfterSomeDelay(page, '/bridge', {
-      qs: { amount: '0, 123.222, 0.3', sourceChain, destinationChain },
-    });
-    await expect(findAmountInput(page)).toHaveValue('');
+    await expectExactAmount('123,3,43', '');
+    await expectExactAmount('0, 123.222, 0.3', '');
   });
 
   test('should select token using query params', async ({ page }) => {
