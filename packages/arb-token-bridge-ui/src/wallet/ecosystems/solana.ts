@@ -2,6 +2,7 @@ import bs58 from 'bs58';
 
 import type { EcosystemConfig, ValidationOptions } from '.';
 import type { SolanaAddress } from '../../util/AddressUtils';
+import { solanaChain } from '../solana/network';
 
 export const SOLANA_NATIVE_TOKEN_ADDRESS = '11111111111111111111111111111111';
 
@@ -54,4 +55,7 @@ export const solanaEcosystem: EcosystemConfig = {
   isLifiOnly: true,
   hasGasPrice: false,
   hasTokenApprovals: false,
+  // Solscan
+  explorerAccountPath: 'account',
+  chains: [solanaChain],
 };

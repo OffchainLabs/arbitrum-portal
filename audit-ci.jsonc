@@ -97,6 +97,18 @@
     // from: test-exclude>glob
     "GHSA-3g3m-2fjr-6pw4",
     //
+    // https://github.com/advisories/GHSA-fc5q-39xc-vjpf
+    // picomatch ReDoS through single-branch repeated extglobs
+    // Reason to ignore: No patched version published (the advisory covers <=4.0.7, the latest release).
+    // Every copy runs in dev tooling (ESLint, Tailwind 3's chokidar and fast-glob, Vite, Vitest) and only
+    // matches glob patterns from our own config. The one copy in the app tree comes through unstorage,
+    // which only loads anymatch in its `fs` driver; WalletConnect uses its own IndexedDB driver instead.
+    // from: eslint-config-next>...>tinyglobby>picomatch, @offchainlabs/eslint-config-typescript>...>picomatch
+    // from: tailwindcss>chokidar>anymatch>picomatch, tailwindcss>micromatch>picomatch
+    // from: vite>picomatch, vitest>picomatch, @vitest/coverage-v8>vitest>picomatch
+    // from: packages__app>@reown/appkit>...>@walletconnect/keyvaluestorage>unstorage>anymatch>picomatch
+    "GHSA-fc5q-39xc-vjpf",
+    //
     // https://github.com/advisories/GHSA-rj75-hqrm-r3gf
     // postcss-selector-parser quadratic-time parsing of flat selectors with repeated class or id tokens allows CPU exhaustion (CVE-2026-104844)
     // Reason to ignore: Only 7.1.6 is patched and tailwindcss@3 / postcss-nested@6 pin ^6.1.x, so the fix is a major
@@ -124,5 +136,36 @@
     // Reason to ignore: No patched version published (1.1.5 is the latest). Transitive dependency via Reown's Solana adapter.
     // from: arb-token-bridge-ui>@reown/appkit-adapter-solana>@solana/spl-token>@solana/buffer-layout-utils>bigint-buffer
     "GHSA-3gc7-fjrx-p6mg",
+    //
+    // https://github.com/advisories/GHSA-c475-qrg2-pj4r
+    // basic-ftp quadratic-time CPU denial of service in Client.list() Unix directory-listing parser
+    //
+    // https://github.com/advisories/GHSA-5pm8-86m8-9m6r
+    // basic-ftp: Uncaught TypeError in MLSD directory-listing parser via __proto__ fact name causes DoS in Client.list()
+    //
+    // https://github.com/advisories/GHSA-r4jh-29pc-gfqr
+    // basic-ftp: Uncaught exception crashes the Node.js process when a password (or resumed-download path) contains CR/LF
+    // 6.2.4 fixes all three, but get-uri (latest 8.0.1) pins ^5.3.1, a major bump it does not declare support for
+    //
+    // https://github.com/advisories/GHSA-jmr9-qjv8-65gv
+    // extract-zip unvalidated symlink path traversal
+    //
+    // https://github.com/advisories/GHSA-7pqw-9j4j-h8q3
+    // extract-zip allows arbitrary file writes through symlink archive entries
+    // No upstream fix: 2.0.1 is the latest published version
+    //
+    // Reason to ignore: All from the browser downloader of puppeteer-core, a Lighthouse CI devDependency.
+    // @puppeteer/browsers 3 drops extract-zip and proxy-agent, but puppeteer-core 24 (required by
+    // lighthouse 12) stays on 2.x. The Lighthouse CI flow launches the pinned local Chrome and only
+    // browses localhost over HTTP, so it never downloads or unzips a browser through this chain.
+    // Not used in production builds or runtime code.
+    // from: puppeteer-core>@puppeteer/browsers>proxy-agent>pac-proxy-agent>get-uri>basic-ftp
+    // from: puppeteer-core>@puppeteer/browsers>extract-zip
+    // from: lighthouse>puppeteer-core>...
+    "GHSA-c475-qrg2-pj4r",
+    "GHSA-5pm8-86m8-9m6r",
+    "GHSA-r4jh-29pc-gfqr",
+    "GHSA-jmr9-qjv8-65gv",
+    "GHSA-7pqw-9j4j-h8q3",
   ],
 }
