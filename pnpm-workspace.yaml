@@ -6,6 +6,10 @@ packages:
 # Bump the version here: the bridge uses `catalog:` and the override below follows it.
 catalog:
   '@playwright/test': 1.64.1
+  # app, bridge, and the next peer of next-query-params and @offchainlabs/cobalt must share one
+  # next. Two copies break vi.mock('next/navigation'). Bump the version here: packages use
+  # `catalog:` and the override below follows it.
+  next: 16.4.6
 
 overrides:
   # Keeps synpress (^1.37.0) and next's peer on the catalog version, see `catalog` above.
@@ -34,7 +38,8 @@ overrides:
   'brace-expansion': 1.1.21
   '@typescript-eslint/eslint-plugin': 8.59.3
   '@typescript-eslint/parser': 8.59.3
-  'next-query-params>next': 16.4.2
+  # Keeps the next peer of next-query-params and @offchainlabs/cobalt on the catalog version, see `catalog` above.
+  next: 'catalog:'
   '@reown/appkit-adapter-wagmi>@wagmi/core': 2.22.1
   'eslint-plugin-react-hooks': 7.1.1
   'utf-8-validate': 6.0.6
