@@ -146,7 +146,8 @@ test.describe('Deposit Token', () => {
         ).toContainText(moreThanZeroBalance);
         const parentBalance = page.getByLabel(`${testCase.symbol} balance amount on parentChain`);
         await expect(parentBalance).toBeVisible();
-        await expect(parentBalance).not.toHaveText(l1Erc20Bal);
+        // Token balances refresh every 15s
+        await expect(parentBalance).not.toHaveText(l1Erc20Bal, { timeout: 35_000 });
 
         await expect(findAmountInput(page)).toHaveValue('');
         await expect(await findMoveFundsButton(page)).toBeDisabled();

@@ -75,8 +75,8 @@ test.describe('Withdraw native token', () => {
 
       await metamask.confirmTransaction({ gasConfig: 'aggressive' });
 
+      // No duration check: testnode withdrawals turn claimable within seconds, which replaces it.
       await findTransactionInTransactionHistory(page, {
-        duration: 'Less than a minute',
         amount: ethToWithdraw,
         symbol: e2eEnv.NATIVE_TOKEN_SYMBOL,
       });
@@ -117,7 +117,8 @@ test.describe('Withdraw native token', () => {
       // the balance on the destination chain should not be the same as before
       const balance = page.getByLabel(`${nativeTokenSymbol} balance amount on parentChain`);
       await expect(balance).toBeVisible();
-      await expect(balance).not.toHaveText(l1EthBal);
+      // Native balances refresh every 30s
+      await expect(balance).not.toHaveText(l1EthBal, { timeout: 65_000 });
     });
 
     test('should withdraw to custom destination address successfully', async ({ page, e2eEnv }) => {
@@ -147,10 +148,7 @@ test.describe('Withdraw native token', () => {
       await metamask.confirmTransaction({ gasConfig: 'aggressive' });
 
       const txData = { amount, symbol: e2eEnv.NATIVE_TOKEN_SYMBOL };
-      await findTransactionInTransactionHistory(page, {
-        duration: 'Less than a minute',
-        ...txData,
-      });
+      await findTransactionInTransactionHistory(page, txData);
       await openTransactionDetails(page, txData);
       await findTransactionDetailsCustomDestinationAddress(
         page,

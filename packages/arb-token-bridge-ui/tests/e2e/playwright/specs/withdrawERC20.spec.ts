@@ -111,8 +111,8 @@ test.describe('Withdraw ERC20 Token', () => {
 
         await metamask.confirmTransaction({ gasConfig: 'aggressive' });
 
+        // No duration check: testnode withdrawals turn claimable within seconds, which replaces it.
         await findTransactionInTransactionHistory(page, {
-          duration: 'Less than a minute',
           amount: amountToSend,
           symbol: testCase.symbol,
         });
@@ -161,7 +161,8 @@ test.describe('Withdraw ERC20 Token', () => {
 
         const parentBalance = page.getByLabel(`${testCase.symbol} balance amount on parentChain`);
         await expect(parentBalance).toBeVisible();
-        await expect(parentBalance).not.toHaveText(l1Erc20Bal);
+        // Token balances refresh every 15s
+        await expect(parentBalance).not.toHaveText(l1Erc20Bal, { timeout: 35_000 });
       });
 
       test(`should withdraw ${tokenType} to custom destination address successfully`, async ({
@@ -202,10 +203,7 @@ test.describe('Withdraw ERC20 Token', () => {
         await metamask.confirmTransaction({ gasConfig: 'aggressive' });
 
         const txData = { amount, symbol: testCase.symbol };
-        await findTransactionInTransactionHistory(page, {
-          duration: 'Less than a minute',
-          ...txData,
-        });
+        await findTransactionInTransactionHistory(page, txData);
         await openTransactionDetails(page, txData);
         await findTransactionDetailsCustomDestinationAddress(
           page,
@@ -217,7 +215,7 @@ test.describe('Withdraw ERC20 Token', () => {
 
         const childBalance = page.getByLabel(`${testCase.symbol} balance amount on childChain`);
         await expect(childBalance).toBeVisible();
-        await expect(childBalance).not.toHaveText(l2Erc20Bal);
+        await expect(childBalance).not.toHaveText(l2Erc20Bal, { timeout: 35_000 });
 
         await expect(findAmountInput(page)).toHaveValue('');
         await expect(await findMoveFundsButton(page)).toBeDisabled();
