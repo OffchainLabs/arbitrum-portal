@@ -11,12 +11,6 @@ type IndexerStatus = Record<string, { id: string; block: { number: number } }>;
 /** Callers read this as "nothing is indexed here" and scan event logs instead. */
 const NO_INDEXED_BLOCK = 0;
 
-function isIndexerBackedChain(chainId: number): boolean {
-  return (
-    isChildChainIndexed(chainId) || chainId === ChainId.Ethereum || chainId === ChainId.Sepolia
-  );
-}
-
 // Throws rather than answering 0: for an indexed chain, 0 would send callers to a
 // full event-log scan. Each failure names its cause so a missing config entry
 // isn't mistaken for an indexer outage.
@@ -67,15 +61,12 @@ export async function GET(
   const { chainId } = await params;
   const numericChainId = Number(chainId);
 
-  if (!isIndexerBackedChain(numericChainId)) {
+  const indexerConfigChainId = getIndexerConfigChainId(numericChainId);
+  if (typeof indexerConfigChainId === 'undefined') {
     return NextResponse.json({ data: NO_INDEXED_BLOCK }, { status: 200 });
   }
 
   try {
-    const indexerConfigChainId = getIndexerConfigChainId(numericChainId);
-    if (typeof indexerConfigChainId === 'undefined') {
-      throw new Error(`No indexer source mapped for chain ${numericChainId}`);
-    }
     const indexerBlockNumber = await fetchIndexerBlockNumber(numericChainId, indexerConfigChainId);
 
     return NextResponse.json(
