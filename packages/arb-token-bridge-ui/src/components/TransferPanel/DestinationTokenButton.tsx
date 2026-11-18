@@ -76,7 +76,7 @@ export function DestinationTokenButton({
         disabled={!canSelectDestinationToken}
       >
         <div className="flex flex-nowrap items-center gap-1 text-base leading-[1.1]">
-          <TokenLogo srcOverride={tokenLogoSrc} />
+          <TokenLogo srcOverride={tokenLogoSrc} isDestination />
           <span className="font-light">{tokenSymbol}</span>
           {canSelectDestinationToken && (
             <ChevronDownIcon
