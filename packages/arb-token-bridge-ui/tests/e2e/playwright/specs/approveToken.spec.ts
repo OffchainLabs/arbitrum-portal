@@ -15,6 +15,7 @@ import {
   importTokenThroughUI,
   login,
   selectRoute,
+  waitForMetamaskNotification,
 } from '../support/actions';
 import { ERC20TokenName, ERC20TokenSymbol, getZeroToLessThanOneToken } from '../support/common';
 
@@ -49,7 +50,9 @@ test.describe('Approve token for deposit', () => {
      * If confirm spending fails, the test is still considered passing, so add another check to
      * make sure it fails if needed.
      */
-    await page.waitForTimeout(25_000);
-    await metamask.rejectTransaction();
+    await waitForMetamaskNotification(page);
+    // MetaMask can reload its popup between the approval and the deposit request, closing the
+    // page Synpress picked up, so retry until the deposit request is rejected.
+    await expect(() => metamask.rejectTransaction()).toPass({ timeout: 60_000 });
   });
 });

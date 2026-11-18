@@ -8,12 +8,7 @@ import { utils } from 'ethers';
 
 import { formatAmount } from '../../../../src/util/NumberUtils';
 import { expect, test } from '../fixtures';
-import {
-  findAmountInput,
-  findSelectTokenButton,
-  login,
-  visitAfterSomeDelay,
-} from '../support/actions';
+import { findAmountInput, findSelectTokenButton, login } from '../support/actions';
 import {
   getInitialERC20Balance,
   getInitialETHBalance,
@@ -22,11 +17,10 @@ import {
 } from '../support/common';
 
 // The amount query param is sanitized synchronously when the URL is decoded, so the input shows
-// the final value on first render. Wait for the input instead of visitAfterSomeDelay's fixed 30s.
+// the final value on first render and waiting for it is enough.
 async function visitBridge(page: Page, qs: Record<string, string>) {
   await page.goto(`/bridge?${new URLSearchParams(qs).toString()}`);
   await expect(findAmountInput(page)).toBeVisible();
-  await page.waitForTimeout(2_000);
 }
 
 test.describe('User enters site with query params on URL', () => {
@@ -100,13 +94,11 @@ test.describe('User enters site with query params on URL', () => {
   });
 
   test('should select token using query params', async ({ page }) => {
-    await visitAfterSomeDelay(page, '/bridge', {
-      qs: {
-        sourceChain: 'sepolia',
-        destinationChain: 'arbitrum-sepolia',
-        // Arbitrum token on Sepolia
-        token: '0xfa898e8d38b008f3bac64dce019a9480d4f06863',
-      },
+    await visitBridge(page, {
+      sourceChain: 'sepolia',
+      destinationChain: 'arbitrum-sepolia',
+      // Arbitrum token on Sepolia
+      token: '0xfa898e8d38b008f3bac64dce019a9480d4f06863',
     });
 
     await findSelectTokenButton(page, 'ARB');

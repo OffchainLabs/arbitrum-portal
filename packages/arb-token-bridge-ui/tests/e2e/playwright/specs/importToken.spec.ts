@@ -3,12 +3,7 @@
  * Port of tests/e2e/specs/importToken.cy.ts.
  */
 import { expect, test } from '../fixtures';
-import {
-  findSelectTokenButton,
-  importTokenThroughUI,
-  login,
-  visitAfterSomeDelay,
-} from '../support/actions';
+import { findSelectTokenButton, importTokenThroughUI, login, visit } from '../support/actions';
 import { ERC20TokenName, ERC20TokenSymbol, invalidTokenAddress } from '../support/common';
 
 test.describe('Import token', () => {
@@ -140,8 +135,6 @@ test.describe('Import token', () => {
         connectMetamask: false,
       });
 
-      await page.waitForTimeout(3000);
-
       await expect(page.getByRole('heading', { name: /import unknown token/i })).toBeVisible();
       await expect(page.getByText(new RegExp(ERC20TokenName, 'i'))).toBeVisible();
       await expect(
@@ -163,8 +156,6 @@ test.describe('Import token', () => {
         query: { token: e2eEnv.ERC20_TOKEN_ADDRESS_CHILD_CHAIN as string },
         connectMetamask: false,
       });
-
-      await page.waitForTimeout(3000);
 
       await expect(page.getByRole('heading', { name: /import unknown token/i })).toBeVisible();
       await expect(page.getByText(new RegExp(ERC20TokenName, 'i'))).toBeVisible();
@@ -189,7 +180,7 @@ test.describe('Import token', () => {
         connectMetamask: false,
       });
 
-      await visitAfterSomeDelay(page, '/bridge', {
+      await visit(page, '/bridge', {
         qs: {
           sourceChain: 'nitro-testnode-l2',
           destinationChain: 'nitro-testnode-l3',

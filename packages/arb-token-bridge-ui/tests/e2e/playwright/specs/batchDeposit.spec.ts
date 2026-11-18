@@ -110,8 +110,9 @@ test.describe('Batch Deposit', () => {
     await expect(await findMoveFundsButton(page)).toBeDisabled();
 
     await typeAmount(page, amount);
-    await page.waitForTimeout(5_000);
+    await expect(findAmountInput(page)).toHaveValue(String(amount));
     await typeAmount2(page, nativeCurrencyAmountToSend);
+    await expect(findAmount2Input(page)).toHaveValue(String(nativeCurrencyAmountToSend));
     await findGasFeeSummary(page, zeroToLessThanOneEth);
 
     const txData = {
@@ -174,8 +175,9 @@ test.describe('Batch Deposit', () => {
     await expect(await findMoveFundsButton(page)).toBeDisabled();
 
     await typeAmount(page, amount);
-    await page.waitForTimeout(5_000);
+    await expect(findAmountInput(page)).toHaveValue(String(amount));
     await typeAmount2(page, nativeCurrencyAmountToSend);
+    await expect(findAmount2Input(page)).toHaveValue(String(nativeCurrencyAmountToSend));
     await findGasFeeSummary(page, zeroToLessThanOneEth);
 
     const txData = {

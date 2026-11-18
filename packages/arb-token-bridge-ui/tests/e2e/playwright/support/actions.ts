@@ -171,15 +171,35 @@ export async function clickMoveFundsButton(
   page: Page,
   { shouldConfirmInMetamask = true }: { shouldConfirmInMetamask?: boolean } = {},
 ) {
-  await page.waitForTimeout(5_000);
-  await (await findMoveFundsButton(page)).click();
-  await page.waitForTimeout(15_000);
+  const button = await findMoveFundsButton(page);
+  await expect(button).toBeEnabled({ timeout: 60_000 });
+  await button.click();
   if (shouldConfirmInMetamask) {
+    await waitForMetamaskNotification(page);
     await metamask.confirmTransaction({
       gasConfig: 'market',
       shouldWaitForPopupClosure: true,
     });
   }
+}
+
+/**
+ * Waits for MetaMask's transaction popup. Synpress itself only polls for it for 10s, and the app
+ * estimates gas before asking MetaMask to sign.
+ */
+export async function waitForMetamaskNotification(page: Page) {
+  await expect
+    .poll(
+      () =>
+        page
+          .context()
+          .pages()
+          .some((p) => p.url().includes('/notification.html')),
+      {
+        timeout: 60_000,
+      },
+    )
+    .toBe(true);
 }
 
 /**
@@ -204,7 +224,8 @@ export async function switchToTransferPanelTab(page: Page) {
 }
 
 export async function selectTransactionHistoryChain(page: Page, networkName: string) {
-  await page.getByLabel('Filter transaction history by network').click();
+  const trigger = page.getByLabel('Filter transaction history by network');
+  await trigger.click();
 
   // the search text persists between popover openings, so drop any previous query
   const search = page.getByLabel('Search networks');
@@ -225,8 +246,14 @@ export async function selectTransactionHistoryChain(page: Page, networkName: str
     await row.click();
   }
 
-  // close the filter popover so it doesn't cover the table
-  await page.keyboard.press('Escape');
+  // Close the filter popover so it doesn't cover the table. Escape doesn't reach the popover once
+  // a row is clicked, but its trigger toggles it.
+  await expect(async () => {
+    if (await search.isVisible()) {
+      await trigger.click();
+    }
+    await expect(search).toBeHidden({ timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
 }
 
 export async function switchToTransactionHistoryTab(
@@ -328,9 +355,9 @@ export async function findTransactionDetailsCustomDestinationAddress(
 
 export async function clickClaimButton(page: Page, amountToClaim: string) {
   // claim button can take ~(20 blocks * 10 blocks/sec) to activate
-  await expect(findClaimButton(page, amountToClaim)).toBeVisible({ timeout: 200_000 });
-  await page.waitForTimeout(10_000);
+  await expect(findClaimButton(page, amountToClaim)).toBeEnabled({ timeout: 200_000 });
   await findClaimButton(page, amountToClaim).click();
+  await waitForMetamaskNotification(page);
 }
 
 // --- navigation / login ----------------------------------------------------
@@ -339,15 +366,9 @@ export async function acceptMetamaskAccess() {
   await metamask.acceptAccess();
 }
 
-export async function visitAfterSomeDelay(
-  page: Page,
-  url: string,
-  options?: { qs?: Record<string, string> },
-) {
-  await page.waitForTimeout(15_000); // let all the race conditions settle, let UI load well first
+export async function visit(page: Page, url: string, options?: { qs?: Record<string, string> }) {
   const search = options?.qs ? `?${new URLSearchParams(options.qs).toString()}` : '';
   await page.goto(`${url}${search}`);
-  await page.waitForTimeout(15_000);
 }
 
 export async function startWebApp(
