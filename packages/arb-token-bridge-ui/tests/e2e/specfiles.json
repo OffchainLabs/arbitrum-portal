@@ -1,14 +1,26 @@
 [
   {
-    "name": "Withdraw Standard ERC20",
+    "name": "Withdraw Standard ERC20 form and custom address",
     "files": "withdrawERC20.spec.ts",
-    "grep": "Standard ERC20",
+    "grep": "imports Standard ERC20.*(form fields|custom destination)",
     "recordVideo": "false"
   },
   {
-    "name": "Withdraw WETH",
+    "name": "Withdraw and claim Standard ERC20",
     "files": "withdrawERC20.spec.ts",
-    "grep": "WETH",
+    "grep": "imports Standard ERC20.*(same address|claim funds)",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Withdraw WETH form and custom address",
+    "files": "withdrawERC20.spec.ts",
+    "grep": "imports WETH.*(form fields|custom destination)",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Withdraw and claim WETH",
+    "files": "withdrawERC20.spec.ts",
+    "grep": "imports WETH.*(same address|claim funds)",
     "recordVideo": "false"
   },
   {
@@ -48,9 +60,15 @@
     "recordVideo": "false"
   },
   {
-    "name": "URL query param max, sanitizing and token",
+    "name": "URL query param max amount",
     "files": "urlQueryParam.spec.ts",
-    "grep": "max amount|sanitize|select token",
+    "grep": "max amount",
+    "recordVideo": "false"
+  },
+  {
+    "name": "URL query param sanitizing and token",
+    "files": "urlQueryParam.spec.ts",
+    "grep": "sanitize|select token",
     "recordVideo": "false"
   },
   {

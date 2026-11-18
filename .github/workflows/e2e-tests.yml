@@ -19,7 +19,7 @@ env:
 jobs:
   load-e2e-files:
     name: 'Load e2e files'
-    runs-on: ubuntu-8
+    runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.e2eFiles }}
     steps:
