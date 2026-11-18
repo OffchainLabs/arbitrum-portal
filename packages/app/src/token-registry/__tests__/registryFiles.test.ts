@@ -49,8 +49,7 @@ const arbitrumOne: RegistryChainFile = {
   ],
 };
 
-// Ranked chain by chain, like the registry's file. USDCX comes before WBTC in the file, but WBTC is
-// first on its chain.
+// One order across every chain, like the registry's file.
 const top: TopFile = {
   generatedAt: '',
   tokens: [
@@ -95,7 +94,7 @@ const keys = (tokens: { chainId: number; address: string }[]) =>
   tokens.map((token) => `${token.chainId}:${token.address}`);
 
 describe('searchChainFiles', () => {
-  it('ranks exact symbols, then prefixes, then names, then the rank on its chain', () => {
+  it('ranks exact symbols, then prefixes, then names, then the rank', () => {
     expect(
       keys(searchChainFiles({ chainFiles: [ethereum, arbitrumOne], top, query: 'usdc' })),
     ).toEqual([
@@ -107,7 +106,7 @@ describe('searchChainFiles', () => {
     ]);
     expect(
       keys(searchChainFiles({ chainFiles: [ethereum, arbitrumOne], top, query: 'wrapped' })),
-    ).toEqual([`42161:${WBTC_ARBITRUM}`, `1:${USDCX_ETHEREUM}`]);
+    ).toEqual([`1:${USDCX_ETHEREUM}`, `42161:${WBTC_ARBITRUM}`]);
   });
 
   it('finds tokens outside the top list, and matches an address exactly', () => {
@@ -127,7 +126,7 @@ describe('searchChainFiles', () => {
 });
 
 describe('buildDestinationOptions', () => {
-  it('puts the canonical token first, then the same token, then LiFi tokens by rank', () => {
+  it('sorts by top-file rank like the source list, and defaults to the same token', () => {
     const { options, defaultToken, canonicalToken } = buildDestinationOptions({
       ...withLifi({ sourceFile: ethereum, destinationFile: arbitrumOne, lifi: depositLifi }),
       top,
@@ -135,10 +134,10 @@ describe('buildDestinationOptions', () => {
       layerZeroMetadata: null,
     });
     expect(options.map((option) => [option.address, option.providers])).toEqual([
-      [USDC_E_ARBITRUM, ['canonical']],
-      [USDC_ARBITRUM, ['lifi']],
       [WBTC_ARBITRUM, ['lifi']],
+      [USDC_ARBITRUM, ['lifi']],
       [NATIVE_TOKEN_ADDRESS, ['lifi']],
+      [USDC_E_ARBITRUM, ['canonical']],
     ]);
     expect(defaultToken?.address).toBe(USDC_ARBITRUM);
     expect(canonicalToken?.address).toBe(USDC_E_ARBITRUM);
@@ -264,13 +263,13 @@ describe('buildDestinationOptions policy', () => {
       sourceTokenAddress: USDT_ETHEREUM,
     });
     expect(options.map((option) => [option.address, option.providers])).toEqual([
-      [USDT0_ARBITRUM, ['layerzero', 'lifi']],
       [NATIVE_TOKEN_ADDRESS, ['lifi']],
+      [USDT0_ARBITRUM, ['layerzero', 'lifi']],
     ]);
     expect(defaultToken?.address).toBe(USDT0_ARBITRUM);
   });
 
-  it("defaults to the pair's override, and keeps the canonical token first", () => {
+  it("defaults to the pair's override", () => {
     const { options, defaultToken } = build({
       sourceFile: ethereumTokens,
       destinationFile: chainFile(42161, 1, [

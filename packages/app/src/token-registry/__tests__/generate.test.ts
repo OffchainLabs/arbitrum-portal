@@ -13,6 +13,7 @@ import {
   getSwapDestinationTokens,
 } from '../server/generate';
 import {
+  Address,
   NATIVE_TOKEN_ADDRESS,
   PickerTokens,
   SelectedTokenAvailability,
@@ -438,6 +439,28 @@ describe('getDefaultDestinationOverride', () => {
     expect(
       getDefaultDestinationOverride({ sourceChainId: 1, destinationChainId: 42161 }, USDC_ETHEREUM),
     ).toBe(USDC_ARBITRUM);
+  });
+
+  it('defaults the stablecoins to USDG on Robinhood', () => {
+    const usdg = CommonAddress.RobinhoodChain.USDG.toLowerCase();
+    expect(
+      getDefaultDestinationOverride(
+        { sourceChainId: 8453, destinationChainId: 4663 },
+        CommonAddress.Base.USDC.toLowerCase() as Address,
+      ),
+    ).toBe(usdg);
+    expect(
+      getDefaultDestinationOverride(
+        { sourceChainId: 42161, destinationChainId: 4663 },
+        CommonAddress.ArbitrumOne.USDT.toLowerCase() as Address,
+      ),
+    ).toBe(usdg);
+    expect(
+      getDefaultDestinationOverride(
+        { sourceChainId: 42161, destinationChainId: 4663 },
+        NATIVE_TOKEN_ADDRESS,
+      ),
+    ).toBeUndefined();
   });
 
   it('does not override canonical PYUSD withdrawals', () => {
