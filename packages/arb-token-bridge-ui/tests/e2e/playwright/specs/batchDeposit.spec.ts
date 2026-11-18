@@ -110,9 +110,12 @@ test.describe('Batch Deposit', () => {
     await expect(await findMoveFundsButton(page)).toBeDisabled();
 
     await typeAmount(page, amount);
-    await expect(findAmountInput(page)).toHaveValue(String(amount));
     await typeAmount2(page, nativeCurrencyAmountToSend);
-    await expect(findAmount2Input(page)).toHaveValue(String(nativeCurrencyAmountToSend));
+    // The route lists the native amount once it has worked out that the batch is supported. Moving
+    // funds before then sends a token-only deposit.
+    await expect(page.getByLabel('Route arbitrum')).toContainText(
+      formatAmount(nativeCurrencyAmountToSend, { symbol: nativeTokenSymbol }),
+    );
     await findGasFeeSummary(page, zeroToLessThanOneEth);
 
     const txData = {
@@ -132,18 +135,20 @@ test.describe('Batch Deposit', () => {
 
     // funds should reach destination account successfully.
     // The balances refresh asynchronously after the deposit settles, so poll instead of taking a
-    // single snapshot (the Cypress `.should(($el) => ...)` form retried the callback).
+    // single snapshot (the Cypress `.should(($el) => ...)` form retried the callback). Native
+    // balances refresh every 30s and token balances every 15s, so allow two refreshes.
+    const balanceTimeout = { timeout: 65_000 };
     const childErc20 = page.getByLabel(`${ERC20TokenSymbol} balance amount on childChain`);
     await expect
-      .poll(async () => parseFloat(await childErc20.innerText()))
+      .poll(async () => parseFloat(await childErc20.innerText()), balanceTimeout)
       .toBeGreaterThan(Number(childErc20Balance));
     const childNative = page.getByLabel(`${nativeTokenSymbol} balance amount on childChain`);
     await expect
-      .poll(async () => parseFloat(await childNative.innerText()))
+      .poll(async () => parseFloat(await childNative.innerText()), balanceTimeout)
       .toBeGreaterThan(Number(childNativeTokenBalance));
     const parentErc20 = page.getByLabel(`${ERC20TokenSymbol} balance amount on parentChain`);
     await expect
-      .poll(async () => parseFloat(await parentErc20.innerText()))
+      .poll(async () => parseFloat(await parentErc20.innerText()), balanceTimeout)
       .toBeLessThan(Number(parentErc20Balance));
 
     await expect(findAmountInput(page)).toHaveValue('');
@@ -175,9 +180,12 @@ test.describe('Batch Deposit', () => {
     await expect(await findMoveFundsButton(page)).toBeDisabled();
 
     await typeAmount(page, amount);
-    await expect(findAmountInput(page)).toHaveValue(String(amount));
     await typeAmount2(page, nativeCurrencyAmountToSend);
-    await expect(findAmount2Input(page)).toHaveValue(String(nativeCurrencyAmountToSend));
+    // The route lists the native amount once it has worked out that the batch is supported. Moving
+    // funds before then sends a token-only deposit.
+    await expect(page.getByLabel('Route arbitrum')).toContainText(
+      formatAmount(nativeCurrencyAmountToSend, { symbol: nativeTokenSymbol }),
+    );
     await findGasFeeSummary(page, zeroToLessThanOneEth);
 
     const txData = {

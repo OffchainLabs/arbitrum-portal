@@ -17,11 +17,8 @@
     "recordVideo": "false"
   },
   { "name": "Deposit ERC20", "files": "depositERC20.spec.ts", "recordVideo": "false" },
-  {
-    "name": "Batch deposit, approve ERC20",
-    "files": "batchDeposit.spec.ts approveToken.spec.ts",
-    "recordVideo": "false"
-  },
+  { "name": "Batch deposit", "files": "batchDeposit.spec.ts", "recordVideo": "false" },
+  { "name": "Approve ERC20", "files": "approveToken.spec.ts", "recordVideo": "false" },
   {
     "name": "URL query param, deposit native token, redeem retryable",
     "files": "urlQueryParam.spec.ts depositNativeToken.spec.ts redeemRetryable.spec.ts",

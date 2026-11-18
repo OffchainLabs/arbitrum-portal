@@ -99,9 +99,10 @@ test.describe('Redeem ERC20 Deposit', () => {
 
     await switchToTransferPanelTab(page);
 
-    // the destination balance updates on the next poll; toHaveText retries until it does
+    // token balances refresh every 15s; allow a few refreshes
     await expect(page.getByLabel('WETH balance amount on childChain')).toHaveText(
       formatAmount(Number(l2Erc20Bal) + wethAmountToDeposit),
+      { timeout: 65_000 },
     );
   });
 });

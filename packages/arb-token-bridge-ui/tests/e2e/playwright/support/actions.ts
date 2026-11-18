@@ -183,23 +183,52 @@ export async function clickMoveFundsButton(
   }
 }
 
+async function showsLoadedRequest(popup: Page) {
+  if (popup.isClosed() || !popup.url().includes('/notification.html')) {
+    return false;
+  }
+  const confirm = popup.getByTestId('page-container-footer-next');
+  try {
+    return (await confirm.count()) > 0 && (await confirm.isEnabled());
+  } catch {
+    return false;
+  }
+}
+
 /**
- * Waits for MetaMask's transaction popup. Synpress itself only polls for it for 10s, and the app
- * estimates gas before asking MetaMask to sign.
+ * Waits until MetaMask's popup shows a fully loaded transaction request and returns that popup.
+ * Synpress itself only polls for the popup for 10s, and the app estimates gas before asking
+ * MetaMask to sign. Confirm stays disabled while MetaMask estimates the fee, and a Reject clicked
+ * before then doesn't take: the request comes back and the next confirm sends it instead of that
+ * test's own transaction.
  */
-export async function waitForMetamaskNotification(page: Page) {
+export async function waitForMetamaskNotification(page: Page): Promise<Page> {
+  let popup: Page | undefined;
   await expect
     .poll(
-      () =>
-        page
-          .context()
-          .pages()
-          .some((p) => p.url().includes('/notification.html')),
-      {
-        timeout: 60_000,
+      async () => {
+        const pages = page.context().pages();
+        const loaded = await Promise.all(pages.map(showsLoadedRequest));
+        popup = pages.find((_, i) => loaded[i]);
+        return popup !== undefined;
       },
+      { timeout: 60_000 },
     )
     .toBe(true);
+  return popup!;
+}
+
+/**
+ * Rejects MetaMask's pending request. Synpress's rejectTransaction acts on the first popup page it
+ * finds, which can be one MetaMask is closing between requests, so click Reject on the popup that
+ * shows the loaded request. On L3s MetaMask can also replace that popup with a new one for the
+ * same request; a click on a replaced popup rejects nothing, so retry on the new one.
+ */
+export async function rejectMetamaskRequest(page: Page) {
+  await expect(async () => {
+    const popup = await waitForMetamaskNotification(page);
+    await popup.getByTestId('page-container-footer-cancel').click({ timeout: 5_000 });
+  }).toPass({ timeout: 90_000 });
 }
 
 /**
