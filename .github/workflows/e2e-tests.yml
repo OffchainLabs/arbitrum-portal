@@ -78,6 +78,11 @@ jobs:
       # Synpress/MetaMask 11.15.0 is a Manifest V2 extension that Playwright's bundled Chromium
       # refuses to load. fixtures.ts launches the pinned Chrome for Testing (Chrome 128, MV2) from
       # node_modules/.cache/synpress instead. `postinstall` skips it on CI, so install it here.
+      # The first pnpm command in a job spends ~23s checking the lockfile against the supply-chain
+      # policies. Pay it here, while the build runs, rather than before the tests.
+      - name: Check the lockfile in the background
+        run: pnpm --filter arb-token-bridge-ui exec true > "$RUNNER_TEMP/pnpm-check.log" 2>&1 &
+
       - name: Install pinned Chrome for Testing
         uses: ./.github/actions/install-chrome
 
@@ -106,7 +111,8 @@ jobs:
 
       - name: Run e2e tests (Playwright)
         run: |
-          pnpm start &
+          # next directly: the first pnpm command in a job spends ~23s checking the lockfile
+          (cd packages/app && ./node_modules/.bin/next start) &
           timeout 120 bash -c 'until curl -sf -o /dev/null http://127.0.0.1:3000; do sleep 0.5; done'
           pnpm test:e2e ${{ matrix.test.files }} ${E2E_GREP:+--grep "$E2E_GREP"}
         env:

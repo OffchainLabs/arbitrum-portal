@@ -75,6 +75,11 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-
           save: ${{ github.ref == 'refs/heads/master' }}
 
+      # The first pnpm command in a job spends ~23s checking the lockfile against the supply-chain
+      # policies. Pay it while the build runs rather than before the tests.
+      - name: Check the lockfile in the background
+        run: pnpm --filter arb-token-bridge-ui exec true > "$RUNNER_TEMP/pnpm-check.log" 2>&1 &
+
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
 
@@ -120,6 +125,11 @@ jobs:
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-
           save: ${{ github.ref == 'refs/heads/master' }}
+
+      # The first pnpm command in a job spends ~23s checking the lockfile against the supply-chain
+      # policies. Pay it while the build runs rather than before the tests.
+      - name: Check the lockfile in the background
+        run: pnpm --filter arb-token-bridge-ui exec true > "$RUNNER_TEMP/pnpm-check.log" 2>&1 &
 
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
