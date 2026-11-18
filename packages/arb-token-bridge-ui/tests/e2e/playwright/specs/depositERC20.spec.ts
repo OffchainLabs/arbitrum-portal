@@ -15,13 +15,12 @@ import {
   findGasFeeSummary,
   findMoveFundsButton,
   findSelectTokenButton,
+  findSettledTransaction,
   findSourceChainButton,
   findTransactionDetailsCustomDestinationAddress,
-  findTransactionInTransactionHistory,
   login,
   openTransactionDetails,
   searchAndSelectToken,
-  selectTransactionsPanelTab,
   switchToTransferPanelTab,
   typeAmount,
 } from '../support/actions';
@@ -68,7 +67,6 @@ test.describe('Deposit Token', () => {
         e2eEnv,
       }) => {
         const testCase = getTestCase(e2eEnv, tokenType);
-        const depositTime = e2eEnv.ORBIT_TEST === '1' ? 'Less than a minute' : '9 minutes';
         const amount = Number((Math.random() * 0.001).toFixed(5));
 
         const l1Erc20Bal = formatAmount(
@@ -95,11 +93,7 @@ test.describe('Deposit Token', () => {
 
         await acceptTnC(page);
         await clickMoveFundsButton(page);
-        await findTransactionInTransactionHistory(page, {
-          duration: depositTime,
-          amount,
-          symbol: testCase.symbol,
-        });
+        await findSettledTransaction(page, { amount, symbol: testCase.symbol });
 
         await switchToTransferPanelTab(page);
         await expect(findAmountInput(page)).toHaveValue('');
@@ -111,7 +105,6 @@ test.describe('Deposit Token', () => {
         e2eEnv,
       }) => {
         const testCase = getTestCase(e2eEnv, tokenType);
-        const depositTime = e2eEnv.ORBIT_TEST === '1' ? 'Less than a minute' : '9 minutes';
         const amount = Number((Math.random() * 0.001).toFixed(5));
 
         const l1Erc20Bal = formatAmount(
@@ -138,20 +131,7 @@ test.describe('Deposit Token', () => {
 
         await acceptTnC(page);
         await clickMoveFundsButton(page);
-        await findTransactionInTransactionHistory(page, { duration: depositTime, ...txData });
-        await openTransactionDetails(page, txData);
-        await findTransactionDetailsCustomDestinationAddress(
-          page,
-          e2eEnv.CUSTOM_DESTINATION_ADDRESS as string,
-        );
-        await closeTransactionDetails(page);
-
-        // deposit should complete successfully (settled tab)
-        await selectTransactionsPanelTab(page, 'settled');
-        await findTransactionInTransactionHistory(page, {
-          duration: 'a few seconds ago',
-          ...txData,
-        });
+        await findSettledTransaction(page, txData);
         await openTransactionDetails(page, txData);
         await findTransactionDetailsCustomDestinationAddress(
           page,

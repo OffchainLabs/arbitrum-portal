@@ -12,9 +12,9 @@ import {
   findDestinationChainButton,
   findGasFeeSummary,
   findMoveFundsButton,
+  findSettledTransaction,
   findSourceChainButton,
   findTransactionDetailsCustomDestinationAddress,
-  findTransactionInTransactionHistory,
   login,
   openTransactionDetails,
   switchToTransferPanelTab,
@@ -33,15 +33,13 @@ test.describe('Deposit native token', () => {
 
   test('should show gas estimations and bridge successfully', async ({ page, e2eEnv }) => {
     const ethAmountToDeposit = Number((Math.random() * 0.001).toFixed(5));
-    const depositTime = e2eEnv.ORBIT_TEST === '1' ? 'Less than a minute' : '9 minutes';
 
     await login(page, e2eEnv, { networkType: 'parentChain' });
     await typeAmount(page, ethAmountToDeposit);
     await findGasFeeSummary(page, zeroToLessThanOneEth);
     await acceptTnC(page);
     await clickMoveFundsButton(page);
-    await findTransactionInTransactionHistory(page, {
-      duration: depositTime,
+    await findSettledTransaction(page, {
       amount: ethAmountToDeposit,
       symbol: e2eEnv.NATIVE_TOKEN_SYMBOL,
     });
@@ -52,7 +50,6 @@ test.describe('Deposit native token', () => {
 
   test('should deposit to custom destination address successfully', async ({ page, e2eEnv }) => {
     const ethAmountToDeposit = Number((Math.random() * 0.001).toFixed(5));
-    const depositTime = e2eEnv.ORBIT_TEST === '1' ? 'Less than a minute' : '9 minutes';
 
     await login(page, e2eEnv, { networkType: 'parentChain' });
 
@@ -65,7 +62,7 @@ test.describe('Deposit native token', () => {
 
     const txData = { amount: ethAmountToDeposit, symbol: e2eEnv.NATIVE_TOKEN_SYMBOL };
 
-    await findTransactionInTransactionHistory(page, { duration: depositTime, ...txData });
+    await findSettledTransaction(page, txData);
 
     await openTransactionDetails(page, txData);
     await findTransactionDetailsCustomDestinationAddress(

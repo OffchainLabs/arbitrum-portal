@@ -28,6 +28,7 @@ import { addNetwork, initialSetup } from '@synthetixio/synpress/commands/metamas
 import {
   prepareMetamask,
   addNetwork as registerSynpressNetwork,
+  setNetwork as setSynpressNetwork,
 } from '@synthetixio/synpress/helpers';
 import { createHash } from 'crypto';
 import fs from 'fs';
@@ -127,15 +128,20 @@ async function setUpMetamask(e2eEnv: E2EConfig) {
 // Synpress only switches to networks it added itself, which it tracks in memory. A snapshot's
 // MetaMask already has them, so list them with Synpress the way its addNetwork does, minus the UI.
 function registerSnapshotNetworks(e2eEnv: E2EConfig) {
+  let lastNetwork: object | undefined;
   for (const network of getMetamaskNetworks(e2eEnv)) {
-    registerSynpressNetwork({
+    lastNetwork = {
       id: network.chainId,
       name: network.networkName,
       nativeCurrency: { symbol: network.symbol },
       rpcUrls: { public: { http: [network.rpcUrl] }, default: { http: [network.rpcUrl] } },
       testnet: network.isTestnet,
-    });
+    };
+    registerSynpressNetwork(lastNetwork);
   }
+  // MetaMask switches to each network it adds, so the snapshot is on the last one. Synpress
+  // otherwise assumes mainnet and skips a switch to mainnet as already done.
+  setSynpressNetwork(lastNetwork);
 }
 
 // What a snapshot depends on: the wallet and the networks setUpMetamask adds.

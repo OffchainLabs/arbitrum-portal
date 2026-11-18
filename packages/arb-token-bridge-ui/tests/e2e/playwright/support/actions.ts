@@ -348,6 +348,18 @@ export async function findTransactionInTransactionHistory(
   return row;
 }
 
+/**
+ * Testnode deposits settle within seconds, often before the pending tab is read, so look for a
+ * deposit in the settled tab.
+ */
+export async function findSettledTransaction(
+  page: Page,
+  txData: { symbol: string; symbol2?: string; amount: number; amount2?: number },
+): Promise<Locator> {
+  await selectTransactionsPanelTab(page, 'settled');
+  return findTransactionInTransactionHistory(page, txData);
+}
+
 export async function openTransactionDetails(
   page: Page,
   {
