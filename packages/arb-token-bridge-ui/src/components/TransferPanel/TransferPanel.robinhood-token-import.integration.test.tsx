@@ -345,6 +345,33 @@ describe.sequential('TransferPanel Robinhood token import integration', () => {
     });
   });
 
+  it.each([
+    { address: '0x523Fc1c7649155d8F8a13Ed860eAD39Af1A3019c', isEnabled: true },
+    { address: ROBINHOOD_BWLK_ADDRESS, isEnabled: true },
+    // One letter's case changed, so the EIP-55 checksum no longer matches
+    { address: '0x523fc1c7649155d8F8a13Ed860eAD39Af1A3019c', isEnabled: false },
+  ])('enables Add New Token for $address: $isEnabled', async ({ address, isEnabled }) => {
+    await renderTransferPanel({
+      sourceChain: 'robinhood-chain',
+      destinationChain: 'ethereum',
+    });
+
+    await act(async () => {
+      fireEvent.click(await screen.findByRole('button', { name: 'Select Token', hidden: true }));
+    });
+    const dialog = await screen.findByRole('dialog');
+    await act(async () => {
+      fireEvent.change(
+        within(dialog).getByPlaceholderText('Search by token name, symbol, or address'),
+        { target: { value: address } },
+      );
+    });
+
+    expect(
+      within(dialog).getByRole('button', { name: 'Add New Token' }).hasAttribute('disabled'),
+    ).toBe(!isEnabled);
+  });
+
   it('imports a canonical Robinhood token from source search with its Ethereum parent', async () => {
     await renderTransferPanel({
       sourceChain: 'robinhood-chain',

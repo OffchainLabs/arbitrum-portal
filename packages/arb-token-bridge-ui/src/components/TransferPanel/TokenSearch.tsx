@@ -17,7 +17,7 @@ import { useTokenLists } from '../../hooks/useTokenLists';
 import { getTokenData } from '../../services/tokenMetadata';
 import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
-import { addressesEqual, normalizeAddress, parseAddressForChain } from '../../util/AddressUtils';
+import { addressesEqual, isValidAddressForChain, normalizeAddress } from '../../util/AddressUtils';
 import { trackEvent } from '../../util/AnalyticsUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import {
@@ -554,7 +554,7 @@ function TokensPanel({
     e.preventDefault();
     setErrorMessage('');
 
-    if (!parseAddressForChain(newToken, networks.sourceChain.id) || isAddingToken) {
+    if (!isValidAddressForChain(newToken, networks.sourceChain.id) || isAddingToken) {
       return;
     }
 
@@ -669,7 +669,7 @@ function TokensPanel({
         variant="secondary"
         loading={isAddingToken}
         loadingProps={{ loaderColor: '#999999' /** text-gray-6 */ }}
-        disabled={!parseAddressForChain(newToken, networks.sourceChain.id)}
+        disabled={!isValidAddressForChain(newToken, networks.sourceChain.id)}
         className="border border-gray-dark py-1"
         aria-label="Add New Token"
       >

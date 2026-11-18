@@ -91,50 +91,103 @@ export function useNativeCurrencyForTransfer({
   const destinationCurrency = useNativeCurrency({ chainId: destinationChainId });
 
   // Stable reference for memoized consumers (e.g. the token list in TokenSearch)
-  return useMemo(() => {
-    const isCrossEcosystem =
-      getWalletEcosystem(sourceChainId) !== getWalletEcosystem(destinationChainId);
-    const rowChainId = isDestination ? destinationChainId : sourceChainId;
-    const currencyChainId = isCrossEcosystem ? rowChainId : childChain.id;
-    const isEth = addressesEqual(tokenAddress, constants.AddressZero);
-    const nativeCurrency: NativeCurrency = isEth
-      ? nativeCurrencyEther
-      : currencyChainId === sourceChainId
-        ? sourceCurrency
-        : destinationCurrency;
-    const nativeTokenAddress = getNativeTokenAddress(currencyChainId);
-    const priceAddress = isEth
-      ? undefined
-      : nativeCurrency.isCustom
-        ? normalizeAddress(nativeCurrency.address)
-        : addressesEqual(nativeTokenAddress, constants.AddressZero)
-          ? undefined
-          : nativeTokenAddress;
-    const nativeTokenChainId = isEth
-      ? sourceCurrency.isCustom && destinationCurrency.isCustom
-        ? undefined
-        : sourceCurrency.isCustom
-          ? destinationChainId
-          : sourceChainId
-      : isCrossEcosystem
-        ? rowChainId
-        : nativeCurrency.isCustom
-          ? childChain.id
-          : sourceChainId;
-    const balanceDecimals = isDestination
-      ? destinationCurrency.decimals
-      : isNetwork(sourceChainId).isOrbitChain
-        ? 18
-        : nativeCurrency.decimals;
+  return useMemo(
+    () =>
+      getTransferNativeCurrency({
+        sourceChainId,
+        destinationChainId,
+        childChainId: childChain.id,
+        sourceCurrency,
+        destinationCurrency,
+        isDestination,
+        tokenAddress,
+      }),
+    [
+      sourceChainId,
+      destinationChainId,
+      childChain.id,
+      sourceCurrency,
+      destinationCurrency,
+      isDestination,
+      tokenAddress,
+    ],
+  );
+}
 
-    return { ...nativeCurrency, balanceDecimals, nativeTokenChainId, priceAddress };
-  }, [
+type TransferNativeCurrencyParams = {
+  sourceChainId: number;
+  destinationChainId: number;
+  childChainId: number;
+  sourceCurrency: NativeCurrency;
+  destinationCurrency: NativeCurrency;
+  isDestination: boolean;
+  tokenAddress: string | undefined;
+};
+
+function getTransferNativeCurrency(params: TransferNativeCurrencyParams): TransferNativeCurrency {
+  const {
     sourceChainId,
     destinationChainId,
-    childChain.id,
+    childChainId,
     sourceCurrency,
     destinationCurrency,
     isDestination,
-    tokenAddress,
-  ]);
+  } = params;
+
+  if (addressesEqual(params.tokenAddress, constants.AddressZero)) {
+    return {
+      ...nativeCurrencyEther,
+      balanceDecimals: getBalanceDecimals(params, nativeCurrencyEther),
+      nativeTokenChainId: getEthChainId(params),
+      priceAddress: undefined,
+    };
+  }
+
+  if (getWalletEcosystem(sourceChainId) !== getWalletEcosystem(destinationChainId)) {
+    const chainId = isDestination ? destinationChainId : sourceChainId;
+    const currency = isDestination ? destinationCurrency : sourceCurrency;
+    return {
+      ...currency,
+      balanceDecimals: getBalanceDecimals(params, currency),
+      nativeTokenChainId: chainId,
+      priceAddress: getPriceAddress(currency, chainId),
+    };
+  }
+
+  const currency = childChainId === sourceChainId ? sourceCurrency : destinationCurrency;
+  return {
+    ...currency,
+    balanceDecimals: getBalanceDecimals(params, currency),
+    nativeTokenChainId: currency.isCustom ? childChainId : sourceChainId,
+    priceAddress: getPriceAddress(currency, childChainId),
+  };
+}
+
+function getBalanceDecimals(
+  { isDestination, sourceChainId, destinationCurrency }: TransferNativeCurrencyParams,
+  currency: NativeCurrency,
+): number {
+  if (isDestination) return destinationCurrency.decimals;
+  // An Orbit chain's native balance has 18 decimals, whatever its parent chain token has
+  if (isNetwork(sourceChainId).isOrbitChain) return 18;
+  return currency.decimals;
+}
+
+// ETH is listed on the side whose gas token is ETH
+function getEthChainId({
+  sourceChainId,
+  destinationChainId,
+  sourceCurrency,
+  destinationCurrency,
+}: TransferNativeCurrencyParams): number | undefined {
+  if (!sourceCurrency.isCustom) return sourceChainId;
+  if (!destinationCurrency.isCustom) return destinationChainId;
+  return undefined;
+}
+
+function getPriceAddress(currency: NativeCurrency, chainId: number): string | undefined {
+  if (currency.isCustom) return normalizeAddress(currency.address);
+  const nativeTokenAddress = getNativeTokenAddress(chainId);
+  // The zero address means the ETH price
+  return addressesEqual(nativeTokenAddress, constants.AddressZero) ? undefined : nativeTokenAddress;
 }

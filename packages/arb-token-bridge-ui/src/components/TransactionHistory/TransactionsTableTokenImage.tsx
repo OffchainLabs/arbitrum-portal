@@ -9,6 +9,7 @@ import { normalizeAddress } from '../../util/AddressUtils';
 import { TokenListWithId } from '../../util/TokenListUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { orbitChains } from '../../util/orbitChainsList';
+import { findWalletEcosystem } from '../../wallet/getWalletEcosystem';
 
 // TODO: cache
 function createTokenLogoMapFromTokenLists(tokenLists: TokenListWithId[] | undefined) {
@@ -25,6 +26,13 @@ function createTokenLogoMapFromTokenLists(tokenLists: TokenListWithId[] | undefi
   );
 }
 
+// History rows can be on chains the bridge no longer lists, which count as the same ecosystem
+function isCrossEcosystemTransfer({ sourceChainId, destinationChainId }: MergedTransaction) {
+  const sourceEcosystem = findWalletEcosystem(sourceChainId);
+  const destinationEcosystem = findWalletEcosystem(destinationChainId);
+  return !!sourceEcosystem && !!destinationEcosystem && sourceEcosystem !== destinationEcosystem;
+}
+
 export const TransactionsTableTokenImage = ({ tx }: { tx: MergedTransaction }) => {
   // we need to take token image from mainnet by symbol, some token images don't exists on other networks
   const tokenLists = useTokenLists(tx.sourceChainId);
@@ -37,10 +45,13 @@ export const TransactionsTableTokenImage = ({ tx }: { tx: MergedTransaction }) =
 
   if (tx.assetType === AssetType.ETH) {
     const orbitChain = orbitChains[tx.childChainId];
+    const sourceNativeTokenLogoSrc = getBridgeUiConfigForChain(tx.sourceChainId).nativeTokenData
+      ?.logoUrl;
 
-    const nativeTokenLogoSrc =
-      orbitChain?.bridgeUiConfig.nativeTokenData?.logoUrl ??
-      getBridgeUiConfigForChain(tx.sourceChainId).nativeTokenData?.logoUrl;
+    // Across ecosystems the asset is the source chain's native token, whatever the child chain's
+    const nativeTokenLogoSrc = isCrossEcosystemTransfer(tx)
+      ? sourceNativeTokenLogoSrc
+      : (orbitChain?.bridgeUiConfig.nativeTokenData?.logoUrl ?? sourceNativeTokenLogoSrc);
 
     if (nativeTokenLogoSrc) {
       return (

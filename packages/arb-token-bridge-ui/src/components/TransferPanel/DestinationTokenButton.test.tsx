@@ -45,8 +45,14 @@ vi.mock('../common/Dialog2', () => ({
   DialogWrapper: () => null,
 }));
 vi.mock('./TokenLogo', () => ({
-  TokenLogo: ({ srcOverride }: { srcOverride?: string }) => (
-    <span data-testid="token-logo" data-src={srcOverride} />
+  TokenLogo: ({
+    srcOverride,
+    isDestination,
+  }: {
+    srcOverride?: string;
+    isDestination?: boolean;
+  }) => (
+    <span data-testid="token-logo" data-src={srcOverride} data-is-destination={isDestination} />
   ),
 }));
 
@@ -161,6 +167,8 @@ describe.sequential('DestinationTokenButton on ApeChain routes', () => {
         symbol,
       );
       expect(screen.getByTestId('token-logo').getAttribute('data-src')).toBe(logo);
+      // Without a logo, TokenLogo falls back to the destination side's native currency
+      expect(screen.getByTestId('token-logo').getAttribute('data-is-destination')).toBe('true');
     },
   );
 });
