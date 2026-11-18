@@ -33,6 +33,7 @@ import {
   getL1NetworkName,
   getL2NetworkConfig,
   getL2NetworkName,
+  getRandomAmount,
   getZeroToLessThanOneToken,
 } from '../support/common';
 
@@ -73,7 +74,7 @@ test.describe('Batch Deposit', () => {
     page,
     e2eEnv,
   }) => {
-    const amount = Number((Math.random() * 0.001).toFixed(5));
+    const amount = getRandomAmount();
     const nativeCurrencyAmountToSend = 0.002;
     const nativeTokenSymbol = e2eEnv.NATIVE_TOKEN_SYMBOL;
     const { childErc20Balance, childNativeTokenBalance, parentErc20Balance } =
@@ -155,7 +156,7 @@ test.describe('Batch Deposit', () => {
     page,
     e2eEnv,
   }) => {
-    const amount = Number((Math.random() * 0.001).toFixed(5));
+    const amount = getRandomAmount();
     const nativeCurrencyAmountToSend = 0.002;
     const nativeTokenSymbol = e2eEnv.NATIVE_TOKEN_SYMBOL;
 

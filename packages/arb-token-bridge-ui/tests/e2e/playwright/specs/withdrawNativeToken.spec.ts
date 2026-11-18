@@ -29,12 +29,13 @@ import {
   getInitialETHBalance,
   getL1NetworkName,
   getL2NetworkName,
+  getRandomAmount,
   getZeroToLessThanOneToken,
 } from '../support/common';
 
 test.describe('Withdraw native token', () => {
   // shared across the withdraw + claim tests (run serially, single worker)
-  let ethToWithdraw = Number((Math.random() * 0.001).toFixed(5));
+  let ethToWithdraw = getRandomAmount();
 
   test.describe('user has some native token and is on L2', () => {
     test('should show form fields correctly', async ({ page, e2eEnv }) => {
@@ -52,7 +53,7 @@ test.describe('Withdraw native token', () => {
     });
 
     test('should show withdrawal confirmation and withdraw', async ({ page, e2eEnv }) => {
-      ethToWithdraw = Number((Math.random() * 0.001).toFixed(5));
+      ethToWithdraw = getRandomAmount();
       await login(page, e2eEnv, { networkType: 'childChain' });
       await typeAmount(page, ethToWithdraw);
       await acceptTnC(page);
@@ -122,7 +123,7 @@ test.describe('Withdraw native token', () => {
     });
 
     test('should withdraw to custom destination address successfully', async ({ page, e2eEnv }) => {
-      const amount = Number((Math.random() * 0.001).toFixed(5));
+      const amount = getRandomAmount();
 
       await login(page, e2eEnv, { networkType: 'childChain' });
 

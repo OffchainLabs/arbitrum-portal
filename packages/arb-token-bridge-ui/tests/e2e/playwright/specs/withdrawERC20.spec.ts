@@ -36,6 +36,7 @@ import {
   getL1NetworkName,
   getL2NetworkConfig,
   getL2NetworkName,
+  getRandomAmount,
   getZeroToLessThanOneToken,
 } from '../support/common';
 
@@ -74,7 +75,7 @@ async function clickContinueWithdrawal(page: import('@playwright/test').Page) {
 
 test.describe('Withdraw ERC20 Token', () => {
   // shared across withdraw + claim tests (run serially, single worker)
-  let amountToSend = Number((Math.random() * 0.001).toFixed(5));
+  let amountToSend = getRandomAmount();
 
   tokenTypes.forEach((tokenType) => {
     test.describe(`User is on L2 and imports ${tokenType}`, () => {
@@ -92,7 +93,7 @@ test.describe('Withdraw ERC20 Token', () => {
       }) => {
         const testCase = getTestCase(e2eEnv, tokenType);
         const zeroToLessThanOneNativeToken = getZeroToLessThanOneToken(e2eEnv.NATIVE_TOKEN_SYMBOL);
-        amountToSend = Number((Math.random() * 0.001).toFixed(5));
+        amountToSend = getRandomAmount();
 
         await login(page, e2eEnv, { networkType: 'childChain' });
         await searchAndSelectToken(page, e2eEnv, {
@@ -171,7 +172,7 @@ test.describe('Withdraw ERC20 Token', () => {
       }) => {
         const testCase = getTestCase(e2eEnv, tokenType);
         const zeroToLessThanOneNativeToken = getZeroToLessThanOneToken(e2eEnv.NATIVE_TOKEN_SYMBOL);
-        const amount = Number((Math.random() * 0.001).toFixed(5));
+        const amount = getRandomAmount();
 
         const l2Erc20Bal = formatAmount(
           (await getInitialERC20Balance({

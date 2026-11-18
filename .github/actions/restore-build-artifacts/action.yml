@@ -24,9 +24,19 @@ runs:
       env:
         GH_TOKEN: ${{ github.token }}
 
-    # The artifact's root is packages/app, the common folder of the uploaded paths
+    # The artifact's root is packages/app, the common folder of the uploaded paths. The 53 MB
+    # download takes ~3s but about 1 in 60 stalls for minutes, so time it out and retry.
     - name: Restore build artifacts
-      uses: actions/download-artifact@v8
-      with:
-        name: build-artifacts
-        path: ./packages/app
+      shell: bash
+      run: |
+        for attempt in 1 2 3; do
+          dir="$RUNNER_TEMP/build-artifacts-$attempt"
+          if timeout 45 gh run download "$GITHUB_RUN_ID" -R "$GITHUB_REPOSITORY" -n build-artifacts -D "$dir"; then
+            cp -a "$dir/." ./packages/app/
+            exit 0
+          fi
+          echo "Download attempt $attempt failed or timed out"
+        done
+        exit 1
+      env:
+        GH_TOKEN: ${{ github.token }}

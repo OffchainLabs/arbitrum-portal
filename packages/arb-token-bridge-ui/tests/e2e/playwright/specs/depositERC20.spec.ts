@@ -30,6 +30,7 @@ import {
   getL1NetworkConfig,
   getL1NetworkName,
   getL2NetworkName,
+  getRandomAmount,
   getZeroToLessThanOneToken,
   moreThanZeroBalance,
 } from '../support/common';
@@ -67,7 +68,7 @@ test.describe('Deposit Token', () => {
         e2eEnv,
       }) => {
         const testCase = getTestCase(e2eEnv, tokenType);
-        const amount = Number((Math.random() * 0.001).toFixed(5));
+        const amount = getRandomAmount();
 
         const l1Erc20Bal = formatAmount(
           (await getInitialERC20Balance({
@@ -105,7 +106,7 @@ test.describe('Deposit Token', () => {
         e2eEnv,
       }) => {
         const testCase = getTestCase(e2eEnv, tokenType);
-        const amount = Number((Math.random() * 0.001).toFixed(5));
+        const amount = getRandomAmount();
 
         const l1Erc20Bal = formatAmount(
           (await getInitialERC20Balance({

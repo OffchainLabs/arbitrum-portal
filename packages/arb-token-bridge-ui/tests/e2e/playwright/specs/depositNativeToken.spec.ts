@@ -20,7 +20,12 @@ import {
   switchToTransferPanelTab,
   typeAmount,
 } from '../support/actions';
-import { getL1NetworkName, getL2NetworkName, getZeroToLessThanOneToken } from '../support/common';
+import {
+  getL1NetworkName,
+  getL2NetworkName,
+  getRandomAmount,
+  getZeroToLessThanOneToken,
+} from '../support/common';
 
 const zeroToLessThanOneEth = getZeroToLessThanOneToken('ETH');
 
@@ -32,7 +37,7 @@ test.describe('Deposit native token', () => {
   });
 
   test('should show gas estimations and bridge successfully', async ({ page, e2eEnv }) => {
-    const ethAmountToDeposit = Number((Math.random() * 0.001).toFixed(5));
+    const ethAmountToDeposit = getRandomAmount();
 
     await login(page, e2eEnv, { networkType: 'parentChain' });
     await typeAmount(page, ethAmountToDeposit);
@@ -49,7 +54,7 @@ test.describe('Deposit native token', () => {
   });
 
   test('should deposit to custom destination address successfully', async ({ page, e2eEnv }) => {
-    const ethAmountToDeposit = Number((Math.random() * 0.001).toFixed(5));
+    const ethAmountToDeposit = getRandomAmount();
 
     await login(page, e2eEnv, { networkType: 'parentChain' });
 
