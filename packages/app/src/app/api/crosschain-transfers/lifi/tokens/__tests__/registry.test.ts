@@ -13,9 +13,11 @@ import { SOLANA_NATIVE_TOKEN_ADDRESS } from '@/bridge/wallet/ecosystems/solana';
 import { groupChildTokensAndParentTokens } from '../groupChildTokensAndParentTokens';
 import { getLifiTokenRegistry } from '../registry';
 
+const solanaFlag = vi.hoisted(() => ({ isEnabled: true }));
+
 vi.mock('@/bridge/wallet/ecosystems/solana', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/bridge/wallet/ecosystems/solana')>();
-  actual.solanaEcosystem.isEnabled = () => true;
+  actual.solanaEcosystem.isEnabled = () => solanaFlag.isEnabled;
   return actual;
 });
 
@@ -409,4 +411,36 @@ describe('getLifiTokenRegistry USDG pairing', () => {
       expect(registry.tokensByChain[ChainId.ArbitrumOne]?.[0]?.logoURI).toBe(usdgLogo);
     },
   );
+});
+
+describe.sequential('getLifiTokenRegistry with the Solana flag off', () => {
+  beforeEach(() => {
+    getTokens.mockReset();
+  });
+
+  it('neither requests nor returns Solana tokens', async () => {
+    solanaFlag.isEnabled = false;
+    try {
+      // The LiFi source chains read the flag when `constants.ts` loads
+      vi.resetModules();
+      const { getLifiTokenRegistry: getRegistryWithFlagOff } = await import('../registry');
+      getTokens.mockResolvedValue({
+        tokens: {
+          [ChainId.Solana]: [
+            virtualToken(SOLANA_NATIVE_TOKEN_ADDRESS, ChainId.Solana, CoinKey.SOL),
+          ],
+        },
+      });
+
+      const registry = await getRegistryWithFlagOff();
+
+      expect(getTokens).toHaveBeenCalledTimes(1);
+      expect(getTokens.mock.calls[0]?.[0].chains).not.toContain(ChainId.Solana);
+      expect(registry.tokensByChain[ChainId.Solana]).toBeUndefined();
+      expect(registry.tokensByChainAndCoinKey[ChainId.Solana]).toBeUndefined();
+    } finally {
+      solanaFlag.isEnabled = true;
+      vi.resetModules();
+    }
+  });
 });

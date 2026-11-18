@@ -127,6 +127,19 @@ describe.sequential('useAccountIsBlocked', () => {
     expect(result.current.blockedAddress).toBe(evmAddress.toLowerCase());
   });
 
+  it('returns no blocked address while no wallet is blocked', async () => {
+    const fetchMock = mockScreening([]);
+
+    const { result } = renderUseAccountIsBlocked({
+      sourceChain: ChainId.Solana,
+      destinationChain: ChainId.ArbitrumOne,
+    });
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(result.current.isBlocked).toBe(false));
+    expect(result.current.blockedAddress).toBeUndefined();
+  });
+
   it('does not screen disconnected wallets', async () => {
     const fetchMock = mockScreening([]);
 

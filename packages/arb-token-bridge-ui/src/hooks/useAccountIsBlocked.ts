@@ -74,7 +74,10 @@ function useWalletIsBlocked(wallet: WalletHandle) {
   return { address, isBlocked };
 }
 
-/** Screens the source and destination wallets. `blockedAddress` is the first blocked one. */
+/**
+ * Screens the source and destination wallets. `blockedAddress` is the first blocked one, undefined
+ * while none is.
+ */
 export function useAccountIsBlocked() {
   const { sourceWallet, destinationWallet } = useWallets();
   const source = useWalletIsBlocked(sourceWallet);
@@ -82,6 +85,10 @@ export function useAccountIsBlocked() {
 
   return {
     isBlocked: source.isBlocked || destination.isBlocked,
-    blockedAddress: source.isBlocked ? source.address : destination.address,
+    blockedAddress: source.isBlocked
+      ? source.address
+      : destination.isBlocked
+        ? destination.address
+        : undefined,
   };
 }
