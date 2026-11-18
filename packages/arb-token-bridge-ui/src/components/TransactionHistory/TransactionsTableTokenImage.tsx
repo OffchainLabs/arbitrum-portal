@@ -9,7 +9,7 @@ import { normalizeAddress } from '../../util/AddressUtils';
 import { TokenListWithId } from '../../util/TokenListUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { orbitChains } from '../../util/orbitChainsList';
-import { findWalletEcosystem } from '../../wallet/getWalletEcosystem';
+import { isCrossEcosystemTransfer } from '../../wallet/getWalletEcosystem';
 
 // TODO: cache
 function createTokenLogoMapFromTokenLists(tokenLists: TokenListWithId[] | undefined) {
@@ -24,13 +24,6 @@ function createTokenLogoMapFromTokenLists(tokenLists: TokenListWithId[] | undefi
     },
     {} as { [key in string]: string | undefined },
   );
-}
-
-// History rows can be on chains the bridge no longer lists, which count as the same ecosystem
-function isCrossEcosystemTransfer({ sourceChainId, destinationChainId }: MergedTransaction) {
-  const sourceEcosystem = findWalletEcosystem(sourceChainId);
-  const destinationEcosystem = findWalletEcosystem(destinationChainId);
-  return !!sourceEcosystem && !!destinationEcosystem && sourceEcosystem !== destinationEcosystem;
 }
 
 export const TransactionsTableTokenImage = ({ tx }: { tx: MergedTransaction }) => {
