@@ -47,18 +47,26 @@
     "grep": "WETH",
     "recordVideo": "false"
   },
-  { "name": "Batch deposit", "files": "batchDeposit.spec.ts", "recordVideo": "false" },
   {
-    "name": "Approve ERC20, URL query param exact amount",
-    "files": "approveToken.spec.ts urlQueryParam.spec.ts",
-    "grep": "Approve|exact amount",
+    "name": "Batch deposit to the same address",
+    "files": "batchDeposit.spec.ts",
+    "grep": "L1 and L2 chains|same address",
     "recordVideo": "false"
   },
   {
-    "name": "Login, redeem retryable, switch network",
-    "files": "login.spec.ts redeemRetryable.spec.ts switchNetworks.spec.ts",
+    "name": "Batch deposit to a different address",
+    "files": "batchDeposit.spec.ts",
+    "grep": "different address",
     "recordVideo": "false"
   },
+  { "name": "Approve ERC20", "files": "approveToken.spec.ts", "recordVideo": "false" },
+  {
+    "name": "Login, switch network, URL query param exact amount",
+    "files": "login.spec.ts switchNetworks.spec.ts urlQueryParam.spec.ts",
+    "grep": "Login Account|Switch Networks|exact amount",
+    "recordVideo": "false"
+  },
+  { "name": "Redeem retryable", "files": "redeemRetryable.spec.ts", "recordVideo": "false" },
   {
     "name": "URL query param max amount",
     "files": "urlQueryParam.spec.ts",

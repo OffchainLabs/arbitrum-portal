@@ -10,5 +10,10 @@ import { setupTransferPanelLifiIntegrationSuite } from './TransferPanel.integrat
 describe.sequential('TransferPanel LiFi Integration - Default Token (3)', () => {
   setupTransferPanelLifiIntegrationSuite();
 
-  it.each(defaultTokenCases.slice(9))(defaultTokenCaseTitle, assertDefaultTokenCase);
+  // Ethereum -> Arbitrum One takes ~2 min alone, so it has its own file
+  it.each(
+    defaultTokenCases
+      .slice(9)
+      .filter((c) => !(c.sourceChain === 'ethereum' && c.destinationChain === 'arbitrum-one')),
+  )(defaultTokenCaseTitle, assertDefaultTokenCase);
 });
