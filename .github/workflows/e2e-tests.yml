@@ -88,24 +88,7 @@ jobs:
             || { cat "$RUNNER_TEMP/testnode.log"; docker logs testnode; exit 1; }
           curl -sf http://localhost:8080/config/localNetwork.json -o packages/arb-token-bridge-ui/src/util/networksNitroTestnode.generated.json
 
-      # This job starts alongside the build rather than after it, so the setup above overlaps it.
-      # Fails fast if the build failed rather than waiting out the timeout.
-      - name: Wait for the build
-        run: |
-          deadline=$((SECONDS + 900))
-          while [ $SECONDS -lt $deadline ]; do
-            count=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=build-artifacts" --jq '.total_count')
-            [ "$count" != 0 ] && exit 0
-            failed=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" \
-              --jq '[.jobs[] | select((.name | endswith("Build")) and .status == "completed" and .conclusion != "success")] | length')
-            [ "$failed" != 0 ] && { echo "The build job failed"; exit 1; }
-            sleep 3
-          done
-          echo "Timed out waiting for the build artifact"
-          exit 1
-        env:
-          GH_TOKEN: ${{ github.token }}
-
+      # Waits for the build, which runs alongside this job's setup
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
 
