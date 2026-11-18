@@ -84,6 +84,19 @@ test.describe('User enters site with query params on URL', () => {
     await visitWithAmount('0.123');
     await expect(page).toHaveURL(/amount=0\.123/);
     await expect(findAmountInput(page)).toHaveValue('0.123');
+  });
+
+  // Split from the test above so CI can run the page loads on two runners.
+  test('should sanitize the amount query param', async ({ page, e2eEnv }) => {
+    const sourceChain = getNetworkSlug(e2eEnv, 'parent');
+    const destinationChain = getNetworkSlug(e2eEnv, 'child');
+
+    await login(page, e2eEnv, { networkType: 'parentChain' });
+
+    const expectExactAmount = async (amount: string, expected: string) => {
+      await visitBridge(page, { amount, sourceChain, destinationChain });
+      await expect(findAmountInput(page)).toHaveValue(expected);
+    };
 
     await expectExactAmount('-0.123', '0.123');
     await expectExactAmount('asdfs', '');
