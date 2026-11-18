@@ -43,8 +43,8 @@ jobs:
     # host runner so the (non-container) job and the app reach it on localhost.
     services:
       testnode:
-        # Litro v0.5.1 with the e2e setup prebaked (see e2e-testnode-images.yml).
-        image: ghcr.io/offchainlabs/arbitrum-portal-e2e-testnode:v0.5.1-nc3.2-${{ matrix.test.tag }}-r1
+        # Litro v0.6.1 with the e2e setup prebaked (see e2e-testnode-images.yml).
+        image: ghcr.io/offchainlabs/arbitrum-portal-e2e-testnode:v0.6.1-nc3.2-${{ matrix.test.tag }}-r1
         credentials:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
