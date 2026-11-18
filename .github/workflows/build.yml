@@ -16,8 +16,9 @@ env:
 jobs:
   build:
     name: Build
-    # The e2e jobs wait on this build, so it gets the larger runner
-    runs-on: ubuntu-8
+    # Every test job waits on this build. The shared ubuntu-8 pool queued it for 12-112s, longer
+    # than the 8 cores save, so it runs on GitHub's standard runners.
+    runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
     steps:
       - name: Checkout
