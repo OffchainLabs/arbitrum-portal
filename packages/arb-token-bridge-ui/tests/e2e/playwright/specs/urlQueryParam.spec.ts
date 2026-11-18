@@ -95,23 +95,34 @@ test.describe('User enters site with query params on URL', () => {
     await expect(findAmountInput(page)).toHaveValue('0.123');
   });
 
-  test('should sanitize the amount query param', async ({ page, e2eEnv }) => {
-    const sourceChain = getNetworkSlug(e2eEnv, 'parent');
-    const destinationChain = getNetworkSlug(e2eEnv, 'child');
+  // Split in two so CI can run the page loads on two runners
+  const sanitizeCases = [
+    [
+      ['-0.123', '0.123'],
+      ['asdfs', ''],
+      ['0', '0'],
+    ],
+    [
+      ['0.0001', '0.0001'],
+      ['123,3,43', ''],
+      ['0, 123.222, 0.3', ''],
+    ],
+  ] as const;
 
-    await login(page, e2eEnv, { networkType: 'parentChain' });
+  sanitizeCases.forEach((cases, index) => {
+    test(`should sanitize the amount query param (${index + 1})`, async ({ page, e2eEnv }) => {
+      const sourceChain = getNetworkSlug(e2eEnv, 'parent');
+      const destinationChain = getNetworkSlug(e2eEnv, 'child');
 
-    const expectExactAmount = async (amount: string, expected: string) => {
-      await visitBridge(page, { amount, sourceChain, destinationChain });
-      await expect(findAmountInput(page)).toHaveValue(expected);
-    };
+      await login(page, e2eEnv, { networkType: 'parentChain' });
 
-    await expectExactAmount('-0.123', '0.123');
-    await expectExactAmount('asdfs', '');
-    await expectExactAmount('0', '0');
-    await expectExactAmount('0.0001', '0.0001');
-    await expectExactAmount('123,3,43', '');
-    await expectExactAmount('0, 123.222, 0.3', '');
+      for (const [amount, expected] of cases) {
+        // eslint-disable-next-line no-await-in-loop -- one page load at a time
+        await visitBridge(page, { amount, sourceChain, destinationChain });
+        // eslint-disable-next-line no-await-in-loop -- one page load at a time
+        await expect(findAmountInput(page)).toHaveValue(expected);
+      }
+    });
   });
 
   test('should select token using query params', async ({ page }) => {

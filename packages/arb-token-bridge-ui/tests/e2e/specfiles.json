@@ -61,9 +61,14 @@
   },
   { "name": "Approve ERC20", "files": "approveToken.spec.ts", "recordVideo": "false" },
   {
-    "name": "Login, switch network, URL query param exact amount",
-    "files": "login.spec.ts switchNetworks.spec.ts urlQueryParam.spec.ts",
-    "grep": "Login Account|Switch Networks|exact amount",
+    "name": "Login, switch network",
+    "files": "login.spec.ts switchNetworks.spec.ts",
+    "recordVideo": "false"
+  },
+  {
+    "name": "URL query param exact amount",
+    "files": "urlQueryParam.spec.ts",
+    "grep": "exact amount",
     "recordVideo": "false"
   },
   { "name": "Redeem retryable", "files": "redeemRetryable.spec.ts", "recordVideo": "false" },
@@ -74,9 +79,15 @@
     "recordVideo": "false"
   },
   {
-    "name": "URL query param sanitizing and token",
+    "name": "URL query param sanitizing 1 and token",
     "files": "urlQueryParam.spec.ts",
-    "grep": "sanitize|select token",
+    "grep": "sanitize the amount query param \\(1\\)|select token",
+    "recordVideo": "false"
+  },
+  {
+    "name": "URL query param sanitizing 2",
+    "files": "urlQueryParam.spec.ts",
+    "grep": "sanitize the amount query param \\(2\\)",
     "recordVideo": "false"
   },
   {
