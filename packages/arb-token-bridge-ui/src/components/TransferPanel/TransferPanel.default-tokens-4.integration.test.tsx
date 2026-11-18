@@ -15,5 +15,5 @@ describe.sequential('TransferPanel LiFi Integration - Default Token (4)', () => 
     defaultTokenCases.filter(
       (c) => c.sourceChain === 'ethereum' && c.destinationChain === 'arbitrum-one',
     ),
-  )(defaultTokenCaseTitle, assertDefaultTokenCase);
+  )(defaultTokenCaseTitle, assertDefaultTokenCase, 240_000);
 });

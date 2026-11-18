@@ -41,6 +41,14 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-
           save: ${{ github.ref == 'refs/heads/master' }}
 
+      # pnpm's verdict that the lockfile passes the supply-chain policies. Without it the first
+      # pnpm command spends ~21s verifying the lockfile against the registry.
+      - name: Cache the lockfile check
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/pnpm/lockfile-verified.jsonl
+          key: ${{ runner.os }}-pnpm-lockfile-verified-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
+
       - name: Build
         shell: bash
         run: pnpm build
