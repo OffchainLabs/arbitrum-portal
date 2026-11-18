@@ -3,7 +3,7 @@ import { getChainMetadata } from '../../util/networkMetadata';
 import { useWalletForChain } from '../../wallet/hooks/useWallets';
 import { SafeImage } from '../common/SafeImage';
 
-export function NetworkWalletButton({ chainId }: { chainId: number }) {
+export function NetworkWalletLabel({ chainId }: { chainId: number }) {
   const {
     account: { address, walletInfo },
     isConnected,

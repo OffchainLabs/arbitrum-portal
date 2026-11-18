@@ -28,6 +28,7 @@ const mocks = vi.hoisted(() => ({
   resumeLifiRoute: vi.fn(),
   updateTransaction: vi.fn(),
   updateLifiTransactionInCache: vi.fn(),
+  openConnectModalFor: vi.fn(),
 }));
 
 vi.mock('@/token-bridge-sdk/LifiTransferStarter', () => ({
@@ -97,6 +98,7 @@ vi.mock('../../state/cctpState', async (importActual) => ({
 vi.mock('../../wallet/hooks/useWalletModal', () => ({
   useWalletModal: () => ({
     openConnectModal: vi.fn(),
+    openConnectModalFor: mocks.openConnectModalFor,
   }),
 }));
 
@@ -410,4 +412,20 @@ describe.sequential('TransactionsTableRowAction', () => {
 
     expect(screen.getByRole('button', { name: 'Resume LiFi transaction' })).toBeDefined();
   });
+
+  // The transfer panel's source chain is Ethereum in these tests
+  it.each([
+    { sourceChainId: ChainId.Ethereum, ecosystem: 'evm' },
+    { sourceChainId: ChainId.Solana, ecosystem: 'solana' },
+  ])(
+    'connects the $ecosystem wallet for a transaction from chain $sourceChainId',
+    ({ sourceChainId, ecosystem }) => {
+      wallets = connectedWallets({});
+
+      renderAction({ ...baseLifiTransaction, sourceChainId, parentChainId: sourceChainId });
+      fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+
+      expect(mocks.openConnectModalFor).toHaveBeenCalledWith(ecosystem);
+    },
+  );
 });

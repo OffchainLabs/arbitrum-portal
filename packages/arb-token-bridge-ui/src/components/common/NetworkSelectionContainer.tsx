@@ -170,15 +170,18 @@ export function NetworkButton({
   );
 }
 
-function NetworkRow({
+export function NetworkRow({
   chainId,
   isSelected,
+  isConnected,
   style,
   onClick,
   close,
 }: {
   chainId: ChainId;
   isSelected: boolean;
+  /** Whether any wallet is connected, so the column lists balances rather than native tokens */
+  isConnected: boolean;
   style: CSSProperties;
   onClick: (value: Chain) => void;
   close: (focusableElement?: HTMLElement) => void;
@@ -216,7 +219,8 @@ function NetworkRow({
         <span className="truncate text-base">{network.name}</span>
 
         <div className="text-xs leading-none text-white/70">
-          {!walletAddress && (
+          {/* Under "Native Balance", a row whose wallet isn't connected has no balance to show */}
+          {!walletAddress && !isConnected && (
             <Tooltip content={`${nativeTokenData?.symbol ?? 'ETH'} is the native token`}>
               <span className="leading-none text-white/70">{nativeTokenData?.symbol ?? 'ETH'}</span>
             </Tooltip>
@@ -447,6 +451,7 @@ export function NetworksPanel({
           style={style}
           chainId={networkOrChainTypeName}
           isSelected={networkOrChainTypeName === selectedChainId}
+          isConnected={isConnected}
           onClick={onNetworkRowClick}
           close={close}
         />

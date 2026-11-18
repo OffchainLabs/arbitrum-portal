@@ -20,7 +20,7 @@ interface YourHoldingsEmptyStateProps {
 
 export function YourHoldingsEmptyState({ opportunities }: YourHoldingsEmptyStateProps) {
   const { isConnected } = useAccount();
-  const { openConnectModal } = useWalletModal();
+  const { openConnectModalFor } = useWalletModal();
   const posthog = usePostHog();
 
   const title = isConnected ? 'No active positions yet' : 'Connect your wallet to get started';
@@ -81,7 +81,8 @@ export function YourHoldingsEmptyState({ opportunities }: YourHoldingsEmptyState
                 section: 'Your Holdings',
                 walletConnected: false,
               });
-              openConnectModal();
+              // Earn only supports EVM wallets
+              openConnectModalFor('evm');
             }}
             className="bg-primary-cta hover:bg-primary-cta/90 px-4 flex items-center justify-center transition-colors cursor-pointer rounded border border-dark text-sm text-white py-2 no-underline"
           >

@@ -280,7 +280,7 @@ export function RetryableRedeemer({
   const pathname = usePathname();
   const router = useRouter();
   const { isConnected, chainId: connectedChainId } = useAccount();
-  const { openConnectModal } = useWalletModal();
+  const { openConnectModalFor } = useWalletModal();
   const { switchChainAsync } = useSwitchNetworkWithConfig();
   const [, copyToClipboard] = useCopyToClipboard();
 
@@ -522,7 +522,7 @@ export function RetryableRedeemer({
                     isRedeeming={redeemingId === retryable.retryableCreationId}
                     isRedeemDisabled={typeof redeemingId !== 'undefined'}
                     onRedeem={() => handleRedeem(retryable.retryableCreationId)}
-                    onConnect={openConnectModal}
+                    onConnect={() => openConnectModalFor('evm')}
                   />
                 )}
               />

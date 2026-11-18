@@ -1,7 +1,7 @@
 import { act, cleanup, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { NetworkWalletButton } from '../../components/TransferPanel/NetworkWalletButton';
+import { NetworkWalletLabel } from '../../components/TransferPanel/NetworkWalletLabel';
 import { createWalletTestWrapper } from '../../test-utils/wallet-test-wrapper';
 import { ChainId } from '../../types/ChainId';
 import type { SolanaAddress } from '../../util/AddressUtils';
@@ -66,8 +66,8 @@ describe.sequential('wallet UI through wallet hooks', () => {
       };
       render(
         <>
-          <NetworkWalletButton chainId={ChainId.Solana} />
-          <NetworkWalletButton chainId={42161} />
+          <NetworkWalletLabel chainId={ChainId.Solana} />
+          <NetworkWalletLabel chainId={42161} />
         </>,
         {
           wrapper: createWalletTestWrapper({
