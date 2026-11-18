@@ -51,16 +51,25 @@ const nativeSolanaTransfer: LifiMergedTransaction = {
   destinationTxId: null,
 };
 
-describe('TransactionsTableTokenImage', () => {
-  it('uses the source chain native-token logo for a Solana transfer', () => {
-    render(<TransactionsTableTokenImage tx={nativeSolanaTransfer} />, {
-      wrapper: createBridgeTestWrapper({
-        query: { sourceChain: ChainId.Ethereum, destinationChain: ChainId.ArbitrumOne },
-      }),
-    });
+describe.sequential('TransactionsTableTokenImage', () => {
+  // ApeChain has its own native token logo, which must not replace SOL's
+  it.each([ChainId.ArbitrumOne, ChainId.ApeChain])(
+    'uses the source chain native-token logo for a Solana transfer to %s',
+    (destinationChainId) => {
+      const tx = {
+        ...nativeSolanaTransfer,
+        childChainId: destinationChainId,
+        destinationChainId,
+      };
+      render(<TransactionsTableTokenImage tx={tx} />, {
+        wrapper: createBridgeTestWrapper({
+          query: { sourceChain: ChainId.Ethereum, destinationChain: ChainId.ArbitrumOne },
+        }),
+      });
 
-    expect(screen.getByRole('img', { name: 'Native token logo' }).getAttribute('src')).toBe(
-      '/images/Solana.svg',
-    );
-  });
+      expect(screen.getByRole('img', { name: 'Native token logo' }).getAttribute('src')).toBe(
+        '/images/Solana.svg',
+      );
+    },
+  );
 });
