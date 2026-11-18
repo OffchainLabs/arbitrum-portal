@@ -58,7 +58,7 @@ describe.sequential('bridge history availability', () => {
 
   it.each([
     ['a chain the indexer serves', 46630],
-    ['Nova when unlisted, through its required indexer default', ChainId.ArbitrumNova],
+    ['Nova when unlisted, through its subgraph', ChainId.ArbitrumNova],
   ])('requests history for %s', async (_label, l2ChainId) => {
     const fetchMock = vi
       .fn()

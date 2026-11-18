@@ -1,11 +1,27 @@
-const enabledChainIds = (process.env.NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS ?? '')
+const fs = require('node:fs');
+const path = require('node:path');
+
+const configuredChainIds = (process.env.NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS ?? '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean);
 
-if (enabledChainIds.length === 0) {
+if (configuredChainIds.length === 0) {
   throw new Error('NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS must enable at least one chain');
 }
+
+// The app always indexes these on top of the configured list (see sources.ts).
+const defaultChainIds = JSON.parse(
+  fs.readFileSync(
+    path.join(
+      __dirname,
+      '../../packages/arb-token-bridge-ui/src/util/txHistory/defaultIndexerChildChainIds.json',
+    ),
+    'utf8',
+  ),
+).map(String);
+
+const enabledChainIds = Array.from(new Set([...defaultChainIds, ...configuredChainIds]));
 
 let indexerUrls;
 

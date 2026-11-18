@@ -55,7 +55,7 @@ describe('hasBridgeHistory', { concurrent: false }, () => {
     const { isChildChainIndexed } = await importSourcesWith('');
 
     expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(true);
-    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
+    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(false);
     expect(isChildChainIndexed(ChainId.ArbitrumSepolia)).toBe(true);
     expect(isChildChainIndexed(46630)).toBe(false);
   });
@@ -67,10 +67,10 @@ describe('hasBridgeHistory', { concurrent: false }, () => {
     expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
   });
 
-  it('cannot remove Nova with a configured list', async () => {
+  it('keeps Nova on its subgraph when the configured list leaves it out', async () => {
     const { hasBridgeHistory, isChildChainIndexed } = await importSourcesWith('42161');
 
-    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
+    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(false);
     expect(hasBridgeHistory(ChainId.ArbitrumNova)).toBe(true);
   });
 });
