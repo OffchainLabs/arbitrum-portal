@@ -12,8 +12,34 @@
     "recordVideo": "false"
   },
   {
-    "name": "Withdraw native token",
+    "name": "Withdraw native token form and custom address",
     "files": "withdrawNativeToken.spec.ts",
+    "grep": "form fields|gas estimations|custom destination",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Withdraw and claim native token",
+    "files": "withdrawNativeToken.spec.ts",
+    "grep": "withdrawal confirmation|claim funds",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Deposit Standard ERC20",
+    "files": "depositERC20.spec.ts",
+    "grep": "Standard ERC20",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Deposit WETH",
+    "files": "depositERC20.spec.ts",
+    "grep": "WETH",
+    "recordVideo": "false"
+  },
+  { "name": "Batch deposit", "files": "batchDeposit.spec.ts", "recordVideo": "false" },
+  {
+    "name": "Approve ERC20, URL query param exact amount",
+    "files": "approveToken.spec.ts urlQueryParam.spec.ts",
+    "grep": "Approve|exact amount",
     "recordVideo": "false"
   },
   {
@@ -21,19 +47,15 @@
     "files": "login.spec.ts redeemRetryable.spec.ts switchNetworks.spec.ts",
     "recordVideo": "false"
   },
-  { "name": "Deposit ERC20", "files": "depositERC20.spec.ts", "recordVideo": "false" },
-  { "name": "Batch deposit", "files": "batchDeposit.spec.ts", "recordVideo": "false" },
-  { "name": "Approve ERC20", "files": "approveToken.spec.ts", "recordVideo": "false" },
   {
-    "name": "URL query param amount",
+    "name": "URL query param max, sanitizing and token",
     "files": "urlQueryParam.spec.ts",
-    "grep": "populate amount input",
+    "grep": "max amount|sanitize|select token",
     "recordVideo": "false"
   },
   {
-    "name": "Deposit native token, URL query param sanitizing and token",
-    "files": "depositNativeToken.spec.ts urlQueryParam.spec.ts",
-    "grep": "Deposit native token|sanitize|select token",
+    "name": "Deposit native token",
+    "files": "depositNativeToken.spec.ts",
     "recordVideo": "false"
   },
   { "name": "Import test ERC20", "files": "importToken.spec.ts", "recordVideo": "false" },

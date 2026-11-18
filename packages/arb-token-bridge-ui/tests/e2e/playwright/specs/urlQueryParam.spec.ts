@@ -24,9 +24,7 @@ async function visitBridge(page: Page, qs: Record<string, string>) {
 }
 
 test.describe('User enters site with query params on URL', () => {
-  test('should correctly populate amount input from query param', async ({ page, e2eEnv }) => {
-    test.setTimeout(600_000);
-
+  test('should populate the max amount input from query param', async ({ page, e2eEnv }) => {
     const nativeTokenSymbol = e2eEnv.NATIVE_TOKEN_SYMBOL;
     const nativeTokenDecimals = e2eEnv.NATIVE_TOKEN_DECIMALS;
     const isCustomFeeToken = nativeTokenSymbol !== 'ETH';
@@ -71,6 +69,17 @@ test.describe('User enters site with query params on URL', () => {
     await expectMaxAmount('max');
     await expectMaxAmount('MAX');
     await expectMaxAmount('MaX');
+  });
+
+  // The tests below are split from the one above so CI can run the page loads on several runners.
+  test('should populate an exact amount input from query param', async ({ page, e2eEnv }) => {
+    const sourceChain = getNetworkSlug(e2eEnv, 'parent');
+    const destinationChain = getNetworkSlug(e2eEnv, 'child');
+
+    await login(page, e2eEnv, { networkType: 'parentChain' });
+
+    const visitWithAmount = (amount: string) =>
+      visitBridge(page, { amount, sourceChain, destinationChain });
 
     const expectExactAmount = async (amount: string, expected: string) => {
       await visitWithAmount(amount);
@@ -86,7 +95,6 @@ test.describe('User enters site with query params on URL', () => {
     await expect(findAmountInput(page)).toHaveValue('0.123');
   });
 
-  // Split from the test above so CI can run the page loads on two runners.
   test('should sanitize the amount query param', async ({ page, e2eEnv }) => {
     const sourceChain = getNetworkSlug(e2eEnv, 'parent');
     const destinationChain = getNetworkSlug(e2eEnv, 'child');
