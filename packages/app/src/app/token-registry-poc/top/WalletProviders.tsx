@@ -1,12 +1,16 @@
 'use client';
 
+import { createConfig } from '@lifi/sdk';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PropsWithChildren } from 'react';
 import { WagmiProvider, useAccount } from 'wagmi';
 
+import { addOrbitChainsToArbitrumSDK } from '@/app/src/initialization';
 import { appKit, wagmiConfig } from '@/bridge/util/wagmi/setup';
 
 const queryClient = new QueryClient();
+addOrbitChainsToArbitrumSDK();
+createConfig({ integrator: '_arbitrum' });
 
 // The PoC page sits outside the app shell, so it brings its own wallet providers.
 export function WalletProviders({ children }: PropsWithChildren) {
