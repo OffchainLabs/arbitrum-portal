@@ -12,18 +12,36 @@
     "recordVideo": "false"
   },
   {
-    "name": "Withdraw native token, login, switch network",
-    "files": "withdrawNativeToken.spec.ts login.spec.ts switchNetworks.spec.ts",
+    "name": "Withdraw native token",
+    "files": "withdrawNativeToken.spec.ts",
     "recordVideo": "false"
   },
-  { "name": "Deposit ERC20", "files": "depositERC20.spec.ts", "recordVideo": "false" },
+  {
+    "name": "Login, switch network",
+    "files": "login.spec.ts switchNetworks.spec.ts",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Deposit Standard ERC20",
+    "files": "depositERC20.spec.ts",
+    "grep": "Standard ERC20",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Deposit WETH",
+    "files": "depositERC20.spec.ts",
+    "grep": "WETH",
+    "recordVideo": "false"
+  },
   { "name": "Batch deposit", "files": "batchDeposit.spec.ts", "recordVideo": "false" },
   { "name": "Approve ERC20", "files": "approveToken.spec.ts", "recordVideo": "false" },
+  { "name": "URL query param", "files": "urlQueryParam.spec.ts", "recordVideo": "false" },
   {
-    "name": "URL query param, deposit native token, redeem retryable",
-    "files": "urlQueryParam.spec.ts depositNativeToken.spec.ts redeemRetryable.spec.ts",
+    "name": "Deposit native token",
+    "files": "depositNativeToken.spec.ts",
     "recordVideo": "false"
   },
+  { "name": "Redeem retryable", "files": "redeemRetryable.spec.ts", "recordVideo": "false" },
   { "name": "Import test ERC20", "files": "importToken.spec.ts", "recordVideo": "false" },
   {
     "name": "TX history",

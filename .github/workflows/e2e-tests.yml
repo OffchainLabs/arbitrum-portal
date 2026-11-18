@@ -39,24 +39,20 @@ jobs:
       matrix:
         test: ${{ fromJson(needs.load-e2e-files.outputs.matrix) }}
 
-    # The testnode runs as a service container; its ports are published to the
-    # host runner so the (non-container) job and the app reach it on localhost.
-    services:
-      testnode:
-        # Litro v0.6.1 with the e2e setup prebaked (see e2e-testnode-images.yml).
-        image: ghcr.io/offchainlabs/arbitrum-portal-e2e-testnode:v0.6.1-nc3.2-${{ matrix.test.tag }}-r1
-        credentials:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          TESTNODE_VARIANT: ${{ matrix.test.tag }}
-        ports:
-          - 8080:8080
-          - 8545:8545
-          - 8547:8547
-          - 3347:8549
-
     steps:
+      # Litro v0.6.1 with the e2e setup prebaked (see e2e-testnode-images.yml). Started in the
+      # background rather than as a service container: a service is pulled before the first step
+      # and stopped after the last, which added 40-100s per job.
+      - name: Start testnode
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker run -d --name testnode -e TESTNODE_VARIANT=${{ matrix.test.tag }} \
+            -p 8080:8080 -p 8545:8545 -p 8547:8547 -p 3347:8549 \
+            ghcr.io/offchainlabs/arbitrum-portal-e2e-testnode:v0.6.1-nc3.2-${{ matrix.test.tag }}-r1 \
+            > "$RUNNER_TEMP/testnode.log" 2>&1 &
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -92,11 +88,12 @@ jobs:
       - name: Install pinned Chrome for Testing
         uses: ./.github/actions/install-chrome
 
-      # The runner only starts job steps once the testnode service container
-      # reports healthy (its HEALTHCHECK polls all chain RPCs), so the config
-      # is ready to fetch here.
+      # The image's HEALTHCHECK polls all chain RPCs, so healthy means the config is ready.
       - name: Fetch testnode config
-        run: curl -sf http://localhost:8080/config/localNetwork.json -o packages/arb-token-bridge-ui/src/util/networksNitroTestnode.generated.json
+        run: |
+          timeout 180 bash -c 'until [ "$(docker inspect -f "{{.State.Health.Status}}" testnode 2>/dev/null)" = healthy ]; do sleep 1; done' \
+            || { cat "$RUNNER_TEMP/testnode.log"; docker logs testnode; exit 1; }
+          curl -sf http://localhost:8080/config/localNetwork.json -o packages/arb-token-bridge-ui/src/util/networksNitroTestnode.generated.json
 
       # This job starts alongside the build rather than after it, so the setup above overlaps it.
       # Fails fast if the build failed rather than waiting out the timeout.
