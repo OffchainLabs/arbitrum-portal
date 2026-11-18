@@ -10,6 +10,11 @@ on:
     paths:
       - .github/workflows/e2e-testnode-images.yml
       - .github/testnode/slim.Dockerfile
+  # workflow_dispatch needs the file on master, so a PR that changes it bakes through this.
+  pull_request:
+    paths:
+      - .github/workflows/e2e-testnode-images.yml
+      - .github/testnode/slim.Dockerfile
 
 env:
   LITRO_VERSION: 0.6.1
