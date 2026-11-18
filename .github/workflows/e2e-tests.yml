@@ -33,7 +33,9 @@ jobs:
     name: 'Test E2E - ${{ matrix.test.name }} ${{ matrix.test.typeName }}'
     # Called by test.yml after its build job, so the build artifacts already exist
     needs: [load-e2e-files]
-    runs-on: ubuntu-8
+    # GitHub's standard runners, free for public repos. The org's ubuntu-8 pool is shared, and with
+    # 51 jobs they waited up to 16 min for it.
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
