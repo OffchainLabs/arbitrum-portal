@@ -349,3 +349,42 @@ describe('groupChildTokensAndParentTokens', () => {
     },
   );
 });
+
+describe('cross-ecosystem token list metadata', () => {
+  it('keeps source mint casing and decimals independent of a destination token with the same coin key', () => {
+    const mint = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+    const source = buildToken({
+      chainId: ChainId.Solana,
+      address: mint,
+      decimals: 6,
+      coinKey: CoinKey.USDC,
+    });
+    const destination = buildToken({
+      chainId: ChainId.ArbitrumOne,
+      decimals: 18,
+      coinKey: CoinKey.USDC,
+    });
+    // No source token shares its coin key
+    const unmatchedDestination = buildToken({
+      chainId: ChainId.ArbitrumOne,
+      address: '0x0000000000000000000000000000000000000012',
+      coinKey: CoinKey.DAI,
+    });
+    const tokens = groupChildTokensAndParentTokens({
+      parentTokens: [source],
+      childTokens: [destination, unmatchedDestination],
+      childTokensByCoinKey: { [CoinKey.USDC]: destination, [CoinKey.DAI]: unmatchedDestination },
+      parentChainId: ChainId.Solana,
+      childChainId: ChainId.ArbitrumOne,
+    });
+    expect(tokens).toHaveLength(3);
+    expect(tokens[0]).toMatchObject({ chainId: ChainId.Solana, address: mint, decimals: 6 });
+    expect(tokens[1]).toMatchObject({ chainId: ChainId.ArbitrumOne, decimals: 18 });
+    expect(tokens[2]).toMatchObject({
+      chainId: ChainId.ArbitrumOne,
+      address: unmatchedDestination.address,
+      symbol: CoinKey.DAI,
+    });
+    tokens.forEach((token) => expect(token.extensions?.bridgeInfo).toBeUndefined());
+  });
+});

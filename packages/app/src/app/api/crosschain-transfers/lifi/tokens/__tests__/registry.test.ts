@@ -312,4 +312,42 @@ describe('getLifiTokenRegistry USDG pairing', () => {
       }),
     ]);
   });
+
+  it.each([undefined, ''])(
+    'hardcodes the USDG logo when the LiFi logo is %j, and keeps the LiFi one otherwise',
+    async (lifiLogo) => {
+      const usdgLogo =
+        'https://static.debank.com/image/eth_token/logo_url/0xe343167631d89b6ffc58b88d6b7fb0228795491d/4cbeae5d28b9db12bcf655fae7a328bb.png';
+      getTokens.mockResolvedValue({
+        tokens: {
+          [ChainId.Ethereum]: [
+            buildLifiToken({
+              address: CommonAddress.Ethereum.USDG,
+              name: 'Global Dollar',
+              symbol: 'USDG',
+              chainId: ChainId.Ethereum,
+            }),
+          ],
+          [ChainId.ArbitrumOne]: [
+            {
+              ...buildLifiToken({
+                address: CommonAddress.ArbitrumOne.USDG,
+                name: 'Global Dollar',
+                symbol: 'USDG',
+                chainId: ChainId.ArbitrumOne,
+              }),
+              logoURI: lifiLogo,
+            },
+          ],
+        },
+      });
+
+      const registry = await getLifiTokenRegistry();
+
+      expect(registry.tokensByChain[ChainId.Ethereum]?.[0]?.logoURI).toBe(
+        'https://example.com/logo.png',
+      );
+      expect(registry.tokensByChain[ChainId.ArbitrumOne]?.[0]?.logoURI).toBe(usdgLogo);
+    },
+  );
 });
