@@ -1,4 +1,5 @@
 import { CoinKey, ChainId as LiFiChainId, type Token as LiFiToken } from '@lifi/sdk';
+import { getAddress } from 'viem';
 import { describe, expect, it } from 'vitest';
 
 import { ChainId } from '@/bridge/types/ChainId';
@@ -254,7 +255,7 @@ describe('groupChildTokensAndParentTokens', () => {
     (childChainId) => {
       const baseUsdc = buildToken({
         chainId: ChainId.Base,
-        address: CommonAddress.Base.USDC.toUpperCase(),
+        address: getAddress(CommonAddress.Base.USDC),
         coinKey: CoinKey.USDC,
         name: 'USD Coin',
         decimals: 6,

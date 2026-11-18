@@ -60,6 +60,13 @@ vi.mock('../../../hooks/useNativeCurrency', () => ({
     name: 'Ether',
     symbol: 'ETH',
   }),
+  useNativeCurrencyForTransfer: () => ({
+    decimals: 18,
+    isCustom: false,
+    name: 'Ether',
+    symbol: 'ETH',
+    balanceDecimals: 18,
+  }),
 }));
 
 vi.mock('../../../hooks/useNetworks', () => ({
