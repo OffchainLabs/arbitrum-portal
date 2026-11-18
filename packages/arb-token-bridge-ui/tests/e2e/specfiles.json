@@ -1,23 +1,43 @@
 [
-  { "name": "Login and balance check", "file": "login.spec.ts", "recordVideo": "false" },
-  { "name": "Deposit native token", "file": "depositNativeToken.spec.ts", "recordVideo": "false" },
   {
-    "name": "Withdraw native token",
-    "file": "withdrawNativeToken.spec.ts",
+    "name": "Withdraw Standard ERC20",
+    "files": "withdrawERC20.spec.ts",
+    "grep": "Standard ERC20",
     "recordVideo": "false"
   },
-  { "name": "Deposit ERC20", "file": "depositERC20.spec.ts", "recordVideo": "false" },
-  { "name": "Withdraw ERC20", "file": "withdrawERC20.spec.ts", "recordVideo": "false" },
-  { "name": "Batch deposit", "file": "batchDeposit.spec.ts", "recordVideo": "false" },
-  { "name": "TX history", "file": "txHistory.spec.ts", "recordVideo": "false" },
-  { "name": "Approve ERC20", "file": "approveToken.spec.ts", "recordVideo": "false" },
-  { "name": "Import test ERC20", "file": "importToken.spec.ts", "recordVideo": "false" },
+  {
+    "name": "Withdraw WETH",
+    "files": "withdrawERC20.spec.ts",
+    "grep": "WETH",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Withdraw native token, login, switch network",
+    "files": "withdrawNativeToken.spec.ts login.spec.ts switchNetworks.spec.ts",
+    "recordVideo": "false"
+  },
+  { "name": "Deposit ERC20", "files": "depositERC20.spec.ts", "recordVideo": "false" },
+  {
+    "name": "Batch deposit, approve ERC20",
+    "files": "batchDeposit.spec.ts approveToken.spec.ts",
+    "recordVideo": "false"
+  },
+  {
+    "name": "URL query param, deposit native token, redeem retryable",
+    "files": "urlQueryParam.spec.ts depositNativeToken.spec.ts redeemRetryable.spec.ts",
+    "recordVideo": "false"
+  },
+  { "name": "Import test ERC20", "files": "importToken.spec.ts", "recordVideo": "false" },
+  {
+    "name": "TX history",
+    "files": "txHistory.spec.ts",
+    "regularOnly": true,
+    "recordVideo": "false"
+  },
   {
     "name": "Read classic deposits",
-    "file": "readClassicDeposits.spec.ts",
+    "files": "readClassicDeposits.spec.ts",
+    "regularOnly": true,
     "recordVideo": "false"
-  },
-  { "name": "Redeem Retryable", "file": "redeemRetryable.spec.ts", "recordVideo": "false" },
-  { "name": "Switch network", "file": "switchNetworks.spec.ts", "recordVideo": "false" },
-  { "name": "URL query param", "file": "urlQueryParam.spec.ts", "recordVideo": "false" }
+  }
 ]

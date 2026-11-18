@@ -9,6 +9,8 @@ module.exports = {
   distDir: 'build',
   productionBrowserSourceMaps: true,
   reactStrictMode: true,
+  // CI type-checks in its lint job, so its build skips the check (22s of a 61s build)
+  typescript: { ignoreBuildErrors: process.env.SKIP_BUILD_TYPECHECK === 'true' },
   experimental: {
     externalDir: true,
   },

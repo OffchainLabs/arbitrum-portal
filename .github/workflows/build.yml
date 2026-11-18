@@ -16,7 +16,8 @@ env:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-4
+    # The e2e jobs wait on this build, so it gets the larger runner
+    runs-on: ubuntu-8
     if: github.event.pull_request.draft == false
     steps:
       - name: Checkout
@@ -43,6 +44,7 @@ jobs:
         shell: bash
         run: pnpm build
         env:
+          SKIP_BUILD_TYPECHECK: true
           NEXT_PUBLIC_IS_E2E_TEST: true
           NEXT_PUBLIC_RPC_PROVIDER: alchemy
           NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}

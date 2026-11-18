@@ -175,10 +175,15 @@ jobs:
           NODE_OPTIONS: '--max_old_space_size=4096'
         run: pnpm lint
 
+  # Doesn't need the build: each e2e job sets up alongside it and waits for its artifact.
   e2e-tests:
     name: 'E2E Tests'
-    needs: [build, check-files]
+    needs: [check-files]
     if: needs.check-files.outputs.run_tests == 'true' && github.event.pull_request.draft == false
+    permissions:
+      actions: read
+      contents: read
+      packages: read
     uses: ./.github/workflows/e2e-tests.yml
     with:
       test_type: 'regular'

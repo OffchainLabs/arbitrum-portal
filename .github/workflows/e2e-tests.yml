@@ -77,11 +77,14 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-
           save: ${{ github.ref == 'refs/heads/master' }}
 
-      - name: Restore build artifacts
-        uses: ./.github/actions/restore-build-artifacts
-
-      - name: Install browser system dependencies
-        run: pnpm --filter arb-token-bridge-ui exec playwright install-deps chromium
+      # Runs in the background while this job waits for the build; "Run xvfb and fluxbox" waits for it.
+      - name: Install linux dependencies
+        run: |
+          (
+            sudo apt-get update &&
+            sudo apt-get install --no-install-recommends -y fluxbox xvfb &&
+            pnpm --filter arb-token-bridge-ui exec playwright install-deps chromium
+          ) > "$RUNNER_TEMP/apt.log" 2>&1 && touch "$RUNNER_TEMP/apt.ok" || touch "$RUNNER_TEMP/apt.failed" &
 
       # Synpress/MetaMask 11.15.0 is a Manifest V2 extension that Playwright's bundled Chromium
       # refuses to load. fixtures.ts launches the pinned Chrome for Testing (Chrome 128, MV2) from
@@ -89,32 +92,59 @@ jobs:
       - name: Install pinned Chrome for Testing
         uses: ./.github/actions/install-chrome
 
-      - name: Install linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y \
-          fluxbox \
-          xvfb
-
-      - name: Run xvfb and fluxbox
-        run: |
-          Xvfb :0 -screen 0 1366x768x24 -listen tcp -ac &
-          fluxbox &
-        env:
-          DISPLAY: :0.0
-
       # The runner only starts job steps once the testnode service container
       # reports healthy (its HEALTHCHECK polls all chain RPCs), so the config
       # is ready to fetch here.
       - name: Fetch testnode config
         run: curl -sf http://localhost:8080/config/localNetwork.json -o packages/arb-token-bridge-ui/src/util/networksNitroTestnode.generated.json
 
+      # This job starts alongside the build rather than after it, so the setup above overlaps it.
+      # Fails fast if the build failed rather than waiting out the timeout.
+      - name: Wait for the build
+        run: |
+          deadline=$((SECONDS + 900))
+          while [ $SECONDS -lt $deadline ]; do
+            count=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=build-artifacts" --jq '.total_count')
+            [ "$count" != 0 ] && exit 0
+            failed=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" \
+              --jq '[.jobs[] | select((.name | endswith("Build")) and .status == "completed" and .conclusion != "success")] | length')
+            [ "$failed" != 0 ] && { echo "The build job failed"; exit 1; }
+            sleep 3
+          done
+          echo "Timed out waiting for the build artifact"
+          exit 1
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Restore build artifacts
+        uses: ./.github/actions/restore-build-artifacts
+
+      - name: Run xvfb and fluxbox
+        run: |
+          timeout 300 bash -c 'until [ -e "$RUNNER_TEMP/apt.ok" ] || [ -e "$RUNNER_TEMP/apt.failed" ]; do sleep 1; done'
+          cat "$RUNNER_TEMP/apt.log"
+          [ -e "$RUNNER_TEMP/apt.ok" ]
+          Xvfb :0 -screen 0 1366x768x24 -listen tcp -ac &
+          fluxbox &
+        env:
+          DISPLAY: :0.0
+
+      # A MetaMask profile saved right after setup (see fixtures.ts), so most jobs only unlock it.
+      # Its vault password comes from the wallet's secret key, so the cached copy is safe to share.
+      - name: Cache MetaMask profile
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/metamask-profile
+          key: ${{ runner.os }}-metamask-${{ matrix.test.type }}-${{ hashFiles('packages/arb-token-bridge-ui/tests/e2e/playwright/fixtures.ts', 'packages/arb-token-bridge-ui/tests/e2e/playwright/support/common.ts', 'package.json') }}
+
       - name: Run e2e tests (Playwright)
         run: |
           pnpm start &
-          npx --yes wait-on http://127.0.0.1:3000 --timeout 120000
-          pnpm test:e2e ${{ matrix.test.file }}
+          timeout 120 bash -c 'until curl -sf -o /dev/null http://127.0.0.1:3000; do sleep 0.5; done'
+          pnpm test:e2e ${{ matrix.test.files }} ${E2E_GREP:+--grep "$E2E_GREP"}
         env:
+          E2E_GREP: ${{ matrix.test.grep }}
+          E2E_METAMASK_PROFILE: ${{ runner.temp }}/metamask-profile
           DISPLAY: :0.0
           E2E_ORBIT: ${{ matrix.test.type == 'orbit-eth' }}
           E2E_ORBIT_CUSTOM_GAS_TOKEN: ${{ startsWith(matrix.test.type, 'orbit-custom') }}
