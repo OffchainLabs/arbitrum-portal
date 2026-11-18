@@ -17,6 +17,7 @@ export const ChainIds = {
   Ethereum: 1,
   ArbitrumOne: 42161,
   Robinhood: 4663,
+  Base: 8453,
 } as const;
 
 export const chainNames: Record<number, string> = {

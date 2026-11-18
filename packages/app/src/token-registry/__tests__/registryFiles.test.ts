@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { RegistryChainFile, TopFile } from '../registryFiles';
 import {
   buildDestinationOptions,
+  buildSourcesForDestination,
   searchChainFiles,
   toHeldTokens,
   withImportedTokens,
@@ -60,6 +61,72 @@ const top: TopFile = {
   ],
 };
 
+describe('sources for a selected destination', () => {
+  const sources = (destinationTokenAddress: string, sourceFile = ethereum) =>
+    buildSourcesForDestination({
+      sourceFile,
+      destinationFile: arbitrumOne,
+      destinationTokenAddress,
+      hasLifi: false,
+      top,
+    });
+  it('finds the actual canonical source for the exact selected destination', () => {
+    expect(sources(USDC_E_ARBITRUM).map((option) => option.sourceToken.address)).toEqual([
+      USDC_ETHEREUM,
+    ]);
+    expect(sources(USDC_E_ARBITRUM)[0]?.destinationToken.providers).toEqual(['canonical']);
+  });
+  it('does not turn symbol or counterpart matches into routes', () => {
+    expect(sources(USDC_ARBITRUM)).toEqual([]);
+  });
+  it('keeps OFT deposit restrictions when changing the source', () => {
+    expect(
+      sources(USDC_E_ARBITRUM, {
+        ...ethereum,
+        tokens: ethereum.tokens.map((token) => ({ ...token, oftBlockedChainIds: [42161] })),
+      }),
+    ).toEqual([]);
+  });
+  it('uses the parent ERC20 for a custom gas native destination', () => {
+    const options = buildSourcesForDestination({
+      sourceFile: arbitrumOne,
+      destinationFile: {
+        generatedAt: '',
+        chainId: 660279,
+        parentChainId: 42161,
+        tokens: [
+          {
+            address: NATIVE_TOKEN_ADDRESS,
+            parentAddress: WBTC_ARBITRUM,
+            symbol: 'GAS',
+            name: 'Gas asset',
+            decimals: 18,
+          },
+        ],
+      },
+      destinationTokenAddress: NATIVE_TOKEN_ADDRESS,
+      hasLifi: false,
+      top,
+    });
+    expect(options.map((option) => option.sourceToken.address)).toEqual([WBTC_ARBITRUM]);
+  });
+  it('requires LiFi support on both tokens and the forward pair', () => {
+    const params = {
+      ...withLifi({
+        sourceFile: ethereum,
+        destinationFile: arbitrumOne,
+        lifi: { fromTokens: [USDC_ETHEREUM], toTokens: [USDC_ARBITRUM] },
+      }),
+      destinationTokenAddress: USDC_ARBITRUM,
+      top,
+    };
+    expect(buildSourcesForDestination(params).map((option) => option.sourceToken.address)).toEqual([
+      USDC_ETHEREUM,
+    ]);
+    expect(buildSourcesForDestination({ ...params, hasLifi: false })).toEqual([]);
+  });
+});
+
 type LifiTokens = { fromTokens: string[]; toTokens: string[] };
 
 // The files flag the tokens LiFi routes, and the index the pairs it connects.
@@ -94,6 +161,25 @@ const keys = (tokens: { chainId: number; address: string }[]) =>
   tokens.map((token) => `${token.chainId}:${token.address}`);
 
 describe('searchChainFiles', () => {
+  it('uses registry network names for server-side mixed and network-only search', () => {
+    const chains = [
+      { chainId: 1, name: 'Ethereum' },
+      { chainId: 42161, name: 'Arbitrum One' },
+    ];
+    expect(
+      searchChainFiles({ chainFiles: [ethereum, arbitrumOne], top, chains, query: 'ethereum' }),
+    ).toHaveLength(3);
+    expect(
+      keys(
+        searchChainFiles({
+          chainFiles: [ethereum, arbitrumOne],
+          top,
+          chains,
+          query: 'usdc arbitrum one',
+        }),
+      ),
+    ).toEqual([`42161:${USDC_ARBITRUM}`, `42161:${USDC_E_ARBITRUM}`]);
+  });
   it('ranks exact symbols, then prefixes, then names, then the rank', () => {
     expect(
       keys(searchChainFiles({ chainFiles: [ethereum, arbitrumOne], top, query: 'usdc' })),
@@ -131,7 +217,6 @@ describe('buildDestinationOptions', () => {
       ...withLifi({ sourceFile: ethereum, destinationFile: arbitrumOne, lifi: depositLifi }),
       top,
       sourceTokenAddress: USDC_ETHEREUM,
-      layerZeroMetadata: null,
     });
     expect(options.map((option) => [option.address, option.providers])).toEqual([
       [WBTC_ARBITRUM, ['lifi']],
@@ -141,6 +226,8 @@ describe('buildDestinationOptions', () => {
     ]);
     expect(defaultToken?.address).toBe(USDC_ARBITRUM);
     expect(canonicalToken?.address).toBe(USDC_E_ARBITRUM);
+    expect(defaultToken?.isCounterpart).toBe(true);
+    expect(canonicalToken?.isCounterpart).toBeUndefined();
   });
 
   it('ignores the LiFi flags on a pair that LiFi does not connect', () => {
@@ -149,7 +236,6 @@ describe('buildDestinationOptions', () => {
       hasLifi: false,
       top,
       sourceTokenAddress: USDC_ETHEREUM,
-      layerZeroMetadata: null,
     });
     expect(options.map((option) => [option.address, option.providers])).toEqual([
       [USDC_E_ARBITRUM, ['canonical']],
@@ -164,7 +250,6 @@ describe('buildDestinationOptions', () => {
         hasLifi: false,
         top,
         sourceTokenAddress,
-        layerZeroMetadata: null,
       }).options;
     expect(build(USDC_E_ARBITRUM).map((option) => option.address)).toEqual([USDC_ETHEREUM]);
     expect(build(NATIVE_TOKEN_ADDRESS)).toMatchObject([
@@ -215,7 +300,6 @@ describe('buildDestinationOptions policy', () => {
       ...withLifi({ sourceFile, destinationFile, lifi }),
       top,
       sourceTokenAddress,
-      layerZeroMetadata: null,
     });
 
   const ethereumTokens = chainFile(1, undefined, [
@@ -250,6 +334,54 @@ describe('buildDestinationOptions policy', () => {
     expect(options.map((option) => [option.address, option.providers])).toEqual([
       [USDC_ETHEREUM, ['canonical']],
     ]);
+  });
+
+  it('drops a canonical deposit that the OFT block lists, except for an exemption', () => {
+    const blocked = (address: string) => ({
+      ...ethereum,
+      tokens: ethereum.tokens.map((token) =>
+        token.address === address ? { ...token, oftBlockedChainIds: [42161] } : token,
+      ),
+    });
+    const withdrawalTarget = {
+      ...arbitrumOne,
+      tokens: [
+        ...arbitrumOne.tokens,
+        {
+          address: PYUSD_CANONICAL_ARBITRUM,
+          symbol: 'PYUSD',
+          name: 'PayPal USD',
+          decimals: 6,
+          parentAddress: PYUSD_ETHEREUM,
+        },
+      ],
+    };
+    const ethereumWithPyusd = {
+      ...ethereum,
+      tokens: [
+        ...ethereum.tokens,
+        { address: PYUSD_ETHEREUM, symbol: 'PYUSD', name: 'PayPal USD', decimals: 6 },
+      ],
+    };
+    const canonicalOf = (sourceFile: RegistryChainFile, sourceTokenAddress: string) =>
+      buildDestinationOptions({
+        sourceFile,
+        destinationFile: withdrawalTarget,
+        hasLifi: false,
+        top,
+        sourceTokenAddress,
+      }).canonicalToken?.address;
+
+    expect(canonicalOf(ethereum, USDC_ETHEREUM)).toBe(USDC_E_ARBITRUM);
+    expect(canonicalOf(blocked(USDC_ETHEREUM), USDC_ETHEREUM)).toBeUndefined();
+    // PYUSD's canonical deposit to Arbitrum One is exempt.
+    const blockedPyusd = {
+      ...ethereumWithPyusd,
+      tokens: ethereumWithPyusd.tokens.map((token) =>
+        token.address === PYUSD_ETHEREUM ? { ...token, oftBlockedChainIds: [42161] } : token,
+      ),
+    };
+    expect(canonicalOf(blockedPyusd, PYUSD_ETHEREUM)).toBe(PYUSD_CANONICAL_ARBITRUM);
   });
 
   it('adds the LayerZero route', () => {
@@ -299,7 +431,6 @@ describe('buildDestinationOptions policy', () => {
       top,
       sourceTokenAddress: PYUSD_ETHEREUM,
       preferredAddress: PYUSD_CANONICAL_ARBITRUM,
-      layerZeroMetadata: null,
     });
     expect(defaultToken?.address).toBe(PYUSD_CANONICAL_ARBITRUM);
   });
@@ -314,7 +445,6 @@ describe('buildDestinationOptions policy', () => {
       top,
       sourceTokenAddress: PYUSD_ETHEREUM,
       preferredAddress: USDT0_ARBITRUM,
-      layerZeroMetadata: null,
     });
     expect(defaultToken?.address).toBe(PYUSD_ARBITRUM);
   });
@@ -367,7 +497,6 @@ describe('withImportedTokens', () => {
       hasLifi: false,
       top,
       sourceTokenAddress: IMPORTED_ETHEREUM,
-      layerZeroMetadata: null,
     });
     expect(options.map((option) => [option.address, option.providers])).toEqual([
       [IMPORTED_ARBITRUM, ['canonical']],

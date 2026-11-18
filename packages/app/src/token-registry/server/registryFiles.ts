@@ -7,7 +7,6 @@ import {
   blockedSourceRoutes,
   canonicalBlockExemptions,
   getDefaultDestinationOverride,
-  hardcodedLifiRoutes,
   isExcludedToken,
   layerZeroConfig,
 } from '../constants';
@@ -15,6 +14,7 @@ import {
   DEFAULT_SELECTION,
   DestinationChain,
   DestinationOption,
+  DestinationSelection,
   HeldToken,
   HeldTokens,
   RegistryChainFile,
@@ -28,6 +28,7 @@ import {
   getSearchScore,
   getTokenComparator,
   searchTokens,
+  tokenKey,
 } from '../registryFiles';
 import {
   Address,
@@ -39,14 +40,8 @@ import {
   pairKey,
 } from '../types';
 import { readBalances } from './balanceReader';
+import { getCachedImport } from './cachedImport';
 import { getCanonicalBridge, isCanonicalTransferAllowed } from './canonicalBridge';
-import { getCachedImport } from './generate';
-import {
-  LayerZeroMetadata,
-  getLayerZeroMetadata,
-  isListedByLayerZero,
-  isOftDepositBlocked,
-} from './oftDeposits';
 import { readErc20Metadata } from './resolveImport';
 
 export const SEARCH_LIMIT = 50;
@@ -54,9 +49,9 @@ export const DESTINATION_TOKENS_LIMIT = 1_000;
 
 // Like Jumper, a pasted address that no file knows is only looked up on the selected chain, or
 // without one on these chains.
-const IMPORT_LOOKUP_CHAIN_IDS = [ChainIds.Ethereum, ChainIds.ArbitrumOne];
+const IMPORT_LOOKUP_CHAIN_IDS = [ChainIds.Ethereum, ChainIds.ArbitrumOne, ChainIds.Base];
 
-// The Ethereum file is about 1.4 MB, under Next's 2 MiB fetch-cache limit.
+// The Ethereum file is about 1.5 MB, under Next's 2 MiB fetch-cache limit.
 async function fetchRegistryFile<T>(file: string): Promise<T> {
   const response = await fetch(`${TOKEN_REGISTRY_URL}/${file}`, {
     next: { revalidate: 3_600 },
@@ -88,11 +83,13 @@ export function searchChainFiles({
   top,
   query,
   limit = SEARCH_LIMIT,
+  chains = [],
 }: {
   chainFiles: RegistryChainFile[];
   top: TopFile;
   query: string;
   limit?: number;
+  chains?: RegistryIndexFile['chains'];
 }): TopToken[] {
   const normalizedQuery = query.trim().toLowerCase();
   if (normalizedQuery.length === 0) {
@@ -103,7 +100,11 @@ export function searchChainFiles({
   const matches: { token: TopToken; score: number }[] = [];
   for (const file of chainFiles) {
     for (const token of file.tokens) {
-      const score = getSearchScore(token, normalizedQuery);
+      const score = getSearchScore(
+        token,
+        normalizedQuery,
+        chains.find((chain) => chain.chainId === file.chainId)?.name,
+      );
       if (score !== null) {
         matches.push({ token: toTopToken(file.chainId, token), score });
       }
@@ -168,7 +169,13 @@ export async function searchRegistryTokens({
   const chainIds = chainId === undefined ? index.chains.map((chain) => chain.chainId) : [chainId];
   const [top, ...chainFiles] = await Promise.all([getTopFile(), ...chainIds.map(getChainFile)]);
   // One more than the limit tells whether the limit cut the results.
-  const matches = searchChainFiles({ chainFiles, top, query, limit: SEARCH_LIMIT + 1 });
+  const matches = searchChainFiles({
+    chainFiles,
+    top,
+    query,
+    chains: index.chains,
+    limit: SEARCH_LIMIT + 1,
+  });
   const tokens = matches.slice(0, SEARCH_LIMIT);
   const isComplete = matches.length <= SEARCH_LIMIT;
 
@@ -287,20 +294,19 @@ function getCanonicalDestinationAddress({
   return undefined;
 }
 
-// The per-pair registry's policy: blocked tokens, the transfer-disabled and withdraw-only lists,
-// and the OFT deposit block.
+// The bridge's policy: the transfer-disabled and withdraw-only lists, and the OFT deposit block.
+// The registry job applies the bridge's OFT rule and lists the child chains a parent token's
+// deposit may not reach. The exemptions stay here.
 function isCanonicalRouteAllowed({
   pair,
   isDeposit,
   sourceToken,
   destinationAddress,
-  layerZeroMetadata,
 }: {
   pair: ChainPair;
   isDeposit: boolean;
   sourceToken: RegistryFileToken;
   destinationAddress: string;
-  layerZeroMetadata: LayerZeroMetadata | null;
 }): boolean {
   const bridge = isDeposit
     ? { parentChainId: pair.sourceChainId, childChainId: pair.destinationChainId }
@@ -310,30 +316,11 @@ function isCanonicalRouteAllowed({
     return false;
   }
 
-  if (
+  return (
     !isDeposit ||
-    !layerZeroMetadata ||
-    parentTokenAddress === NATIVE_TOKEN_ADDRESS ||
-    // Master deposits a custom gas token as the native token, without the OFT check.
-    destinationAddress === NATIVE_TOKEN_ADDRESS ||
-    canonicalBlockExemptions[pair.destinationChainId]?.includes(parentTokenAddress)
-  ) {
-    return true;
-  }
-  return !isOftDepositBlocked({
-    metadata: layerZeroMetadata,
-    parentChainId: pair.sourceChainId,
-    childChainId: pair.destinationChainId,
-    parentTokenAddress,
-    childTokenAddress: destinationAddress as Address,
-    isOftOnChain:
-      sourceToken.isOft === true &&
-      !isListedByLayerZero({
-        metadata: layerZeroMetadata,
-        chainId: pair.sourceChainId,
-        address: parentTokenAddress,
-      }),
-  });
+    !sourceToken.oftBlockedChainIds?.includes(pair.destinationChainId) ||
+    (canonicalBlockExemptions[pair.destinationChainId]?.includes(parentTokenAddress) ?? false)
+  );
 }
 
 // The destinations of one chain before the default, which depends on the user's pick, by top-file
@@ -352,7 +339,6 @@ function buildChainOptions({
   hasLifi,
   top,
   sourceTokenAddress,
-  layerZeroMetadata,
 }: {
   sourceFile: RegistryChainFile;
   destinationFile: RegistryChainFile;
@@ -360,8 +346,6 @@ function buildChainOptions({
   hasLifi: boolean;
   top: TopFile;
   sourceTokenAddress: string;
-  // Null skips the OFT deposit block.
-  layerZeroMetadata: LayerZeroMetadata | null;
 }): ChainOptions {
   const pair = { sourceChainId: sourceFile.chainId, destinationChainId: destinationFile.chainId };
   const key = pairKey(pair);
@@ -389,6 +373,9 @@ function buildChainOptions({
       options.set(address, {
         ...toTopToken(destinationFile.chainId, token),
         providers: [provider],
+        ...(sourceToken.counterparts?.[destinationFile.chainId] === address
+          ? { isCounterpart: true as const }
+          : {}),
       });
     }
   };
@@ -405,7 +392,6 @@ function buildChainOptions({
       isDeposit: destinationFile.parentChainId === sourceFile.chainId,
       sourceToken,
       destinationAddress: canonicalCandidate,
-      layerZeroMetadata,
     })
       ? canonicalCandidate
       : undefined;
@@ -419,20 +405,14 @@ function buildChainOptions({
   }
 
   // LiFi swaps the source token into any token it routes on the destination chain.
-  const pairLifiRoutes = hardcodedLifiRoutes[key] ?? {};
-  const isLifiSource =
-    !blockedLifiSourceRoutes[key]?.includes(sourceToken.address as Address) &&
-    ((hasLifi && sourceToken.isLifi === true) || sourceToken.address in pairLifiRoutes);
-  if (isLifiSource) {
-    const hardcodedDestination = pairLifiRoutes[sourceToken.address as Address];
-    if (hardcodedDestination) {
-      add(hardcodedDestination, 'lifi');
-    }
-    if (hasLifi) {
-      for (const token of destinationFile.tokens) {
-        if (token.isLifi) {
-          add(token.address, 'lifi');
-        }
+  if (
+    hasLifi &&
+    sourceToken.isLifi === true &&
+    !blockedLifiSourceRoutes[key]?.includes(sourceToken.address as Address)
+  ) {
+    for (const token of destinationFile.tokens) {
+      if (token.isLifi) {
+        add(token.address, 'lifi');
       }
     }
   }
@@ -498,20 +478,15 @@ function getPair(index: RegistryIndexFile, sourceChainId: number, destinationCha
 type SourceFiles = {
   sourceFile: RegistryChainFile;
   top: TopFile;
-  layerZeroMetadata: LayerZeroMetadata | null;
 };
 
 async function getSourceFiles(sourceChainId: number): Promise<SourceFiles> {
-  const [sourceFile, top, layerZeroMetadata] = await Promise.all([
-    getChainFile(sourceChainId),
-    getTopFile(),
-    getLayerZeroMetadata(),
-  ]);
-  return { sourceFile, top, layerZeroMetadata };
+  const [sourceFile, top] = await Promise.all([getChainFile(sourceChainId), getTopFile()]);
+  return { sourceFile, top };
 }
 
 async function getChainOptions({
-  sourceFiles: { sourceFile, top, layerZeroMetadata },
+  sourceFiles: { sourceFile, top },
   sourceTokenAddress,
   destinationChainId,
   hasLifi,
@@ -526,7 +501,7 @@ async function getChainOptions({
   const sourceChainId = sourceFile.chainId;
   const destinationFile = await getChainFile(destinationChainId);
   const build = (files: { sourceFile: RegistryChainFile; destinationFile: RegistryChainFile }) =>
-    buildChainOptions({ ...files, hasLifi, top, sourceTokenAddress, layerZeroMetadata });
+    buildChainOptions({ ...files, hasLifi, top, sourceTokenAddress });
 
   const result = build({ sourceFile, destinationFile });
   const pair = { sourceChainId, destinationChainId };
@@ -637,26 +612,10 @@ export async function getDestinationChains({
     .sort((a, b) => Number(Boolean(b.canonicalToken)) - Number(Boolean(a.canonicalToken)));
 }
 
-// A token of the chain's file, or a token read from the chain like a pasted address. Null when the
-// address is not a token.
-async function resolveSourceToken({
-  chainId,
-  address,
-}: {
-  chainId: number;
-  address: string;
-}): Promise<TopToken | null> {
-  if (!isAddress(address)) {
-    return null;
-  }
-  const chainFile = await getChainFile(chainId);
-  const token = chainFile.tokens.find((candidate) => candidate.address === address);
-  return token ? toTopToken(chainId, token) : importToken({ chainId, address });
-}
-
-// The tokens of the page's URL, without top.json. A chain outside the registry falls back to the
-// default selection, Ether on Ethereum to Arbitrum One. Like Jumper, an unknown token on a registry
-// chain selects no token, and the source picker opens on that chain. A requested destination token
+// The tokens of the page's URL. A chain outside the registry falls back to the default selection,
+// Ether on Ethereum to Arbitrum One. Like Jumper, a token outside the chain's file selects no token,
+// and the source picker opens on that chain. A token the user imported through the search still
+// gets its destinations, so the page can show them for the pick. A requested destination token
 // stays the default of its chain when the source reaches it, like a token the user picked.
 export async function getSelection({
   sourceChainId,
@@ -679,19 +638,25 @@ export async function getSelection({
         destinationTokenAddress: undefined,
       };
 
-  const sourceToken = await resolveSourceToken({
-    chainId: request.sourceChainId,
-    address: request.sourceTokenAddress,
-  });
+  const { sourceChainId: chainId, sourceTokenAddress: address } = request;
+  const chainFile = await getChainFile(chainId);
+  const fileToken = chainFile.tokens.find((token) => token.address === address);
+  const sourceToken = fileToken
+    ? toTopToken(chainId, fileToken)
+    : isAddress(address)
+      ? await importToken({ chainId, address })
+      : null;
   if (!sourceToken) {
-    return { sourceChainId: request.sourceChainId, destinationChains: [] };
+    return { sourceChainId: chainId, destinationChains: [] };
   }
 
   const destinationChains = await getDestinationChains({
-    sourceChainId: sourceToken.chainId,
-    sourceTokenAddress: sourceToken.address,
+    sourceChainId: chainId,
+    sourceTokenAddress: address,
     preferredToken:
-      request.destinationChainId !== undefined && request.destinationTokenAddress
+      request.destinationChainId !== undefined &&
+      request.destinationTokenAddress &&
+      index.chains.some((chain) => chain.chainId === request.destinationChainId)
         ? { chainId: request.destinationChainId, address: request.destinationTokenAddress }
         : undefined,
   });
@@ -699,9 +664,29 @@ export async function getSelection({
     destinationChains.find((chain) => chain.chainId === request.destinationChainId) ??
     destinationChains[0];
   return {
-    sourceChainId: sourceToken.chainId,
-    sourceToken,
+    sourceChainId: chainId,
+    ...(sourceToken ? { sourceToken } : {}),
     destinationChains,
+    ...(!isRegistryChain
+      ? {
+          adjustment: {
+            kind: 'source-chain' as const,
+            message: 'The source network is outside the registry. Showing the default transfer.',
+          },
+        }
+      : request.destinationChainId !== undefined &&
+          (destinationChain?.chainId !== request.destinationChainId ||
+            (request.destinationTokenAddress !== undefined &&
+              destinationChain?.defaultToken.address !== request.destinationTokenAddress))
+        ? {
+            adjustment: {
+              kind: 'destination' as const,
+              message: destinationChain
+                ? `The requested destination is unavailable from this source. Selected ${destinationChain.defaultToken.symbol} on ${index.chains.find((chain) => chain.chainId === destinationChain.chainId)?.name ?? destinationChain.chainId}.`
+                : 'This source has no supported destination.',
+            },
+          }
+        : {}),
     ...(destinationChain
       ? {
           destinationChainId: destinationChain.chainId,
@@ -757,7 +742,7 @@ export async function getDestinationTokens({
   }
 
   if (query?.trim()) {
-    const matches = searchTokens(options, query);
+    const matches = searchTokens(options, query, (await getIndexFile()).chains);
     return {
       tokens: matches.slice(0, SEARCH_LIMIT),
       isComplete: matches.length <= SEARCH_LIMIT,
@@ -768,4 +753,188 @@ export async function getDestinationTokens({
     tokens: destinationChainId === undefined ? options : options.slice(0, DESTINATION_TOKENS_LIMIT),
     isComplete,
   };
+}
+
+export async function getEligibleDestinationTokens({
+  sourceChainId,
+  sourceTokenAddress,
+  candidates,
+}: {
+  sourceChainId: number;
+  sourceTokenAddress: string;
+  candidates: Pick<TopToken, 'chainId' | 'address'>[];
+}): Promise<TokenList<DestinationOption>> {
+  const index = await getIndexFile();
+  if (!index.chains.some((chain) => chain.chainId === sourceChainId)) {
+    return { tokens: [], isComplete: true };
+  }
+  const sourceFiles = await getSourceFiles(sourceChainId);
+  const requested = new Set(candidates.map(tokenKey));
+  const chainIds = new Set(candidates.map((token) => token.chainId));
+  const pairs = index.pairs.filter(
+    (pair) => pair.sourceChainId === sourceChainId && chainIds.has(pair.destinationChainId),
+  );
+  const options = await Promise.all(
+    pairs.map((pair) =>
+      getChainOptions({
+        sourceFiles,
+        sourceTokenAddress,
+        destinationChainId: pair.destinationChainId,
+        hasLifi: pair.hasLifi === true,
+        allowsImport: true,
+      }),
+    ),
+  );
+  return {
+    tokens: options
+      .flatMap((chain) => chain.options)
+      .filter((token) => requested.has(tokenKey(token)))
+      .sort(getTokenComparator(sourceFiles.top)),
+    isComplete: true,
+  };
+}
+
+// Evaluate the forward route for each source. A reverse route or matching symbol is not proof.
+export function buildSourcesForDestination({
+  sourceFile,
+  destinationFile,
+  destinationTokenAddress,
+  hasLifi,
+  top,
+}: {
+  sourceFile: RegistryChainFile;
+  destinationFile: RegistryChainFile;
+  destinationTokenAddress: string;
+  hasLifi: boolean;
+  top: TopFile;
+}): { sourceToken: TopToken; destinationToken: DestinationOption }[] {
+  const destination = destinationFile.tokens.find(
+    (token) => token.address === destinationTokenAddress,
+  );
+  if (!destination) return [];
+  return sourceFile.tokens.flatMap((sourceToken) => {
+    const { options } = buildChainOptions({
+      sourceFile: { ...sourceFile, tokens: [sourceToken] },
+      destinationFile: { ...destinationFile, tokens: [destination] },
+      sourceTokenAddress: sourceToken.address,
+      hasLifi,
+      top,
+    });
+    const option = options.find((token) => token.address === destinationTokenAddress);
+    return option
+      ? [{ sourceToken: toTopToken(sourceFile.chainId, sourceToken), destinationToken: option }]
+      : [];
+  });
+}
+
+export async function resolveDestinationSelection({
+  sourceChainId,
+  sourceTokenAddress,
+  destinationChainId,
+  destinationTokenAddress,
+}: {
+  sourceChainId: number;
+  sourceTokenAddress: string;
+  destinationChainId: number;
+  destinationTokenAddress: string;
+}): Promise<DestinationSelection> {
+  const index = await getIndexFile();
+  const pairs = index.pairs.filter((pair) => pair.destinationChainId === destinationChainId);
+  if (!pairs.length)
+    return { kind: 'unavailable', reason: 'No supported incoming route for this network.' };
+  const [destinationFile, top, sourceFiles] = await Promise.all([
+    getChainFile(destinationChainId),
+    getTopFile(),
+    Promise.all(pairs.map((pair) => getChainFile(pair.sourceChainId))),
+  ]);
+  const currentPair = pairs.find((pair) => pair.sourceChainId === sourceChainId);
+  const currentFile = sourceFiles.find((file) => file.chainId === sourceChainId);
+  if (currentPair && currentFile) {
+    const { options } = await getChainOptions({
+      sourceFiles: { sourceFile: currentFile, top },
+      sourceTokenAddress,
+      destinationChainId,
+      hasLifi: currentPair.hasLifi === true,
+      allowsImport: true,
+    });
+    const destinationToken = options.find((token) => token.address === destinationTokenAddress);
+    if (destinationToken) {
+      const known = currentFile.tokens.find((token) => token.address === sourceTokenAddress);
+      const sourceToken = known
+        ? toTopToken(sourceChainId, known)
+        : await importToken({ chainId: sourceChainId, address: sourceTokenAddress });
+      if (sourceToken)
+        return { kind: 'resolved', sourceToken, destinationToken, sourceChanged: false };
+    }
+  }
+  const candidates = sourceFiles.flatMap((sourceFile) =>
+    buildSourcesForDestination({
+      sourceFile,
+      destinationFile,
+      destinationTokenAddress,
+      hasLifi: pairs.some((pair) => pair.sourceChainId === sourceFile.chainId && pair.hasLifi),
+      top,
+    }),
+  );
+  if (!candidates.length && destinationTokenAddress !== NATIVE_TOKEN_ADDRESS) {
+    const imports = await Promise.all(
+      sourceFiles.map(async (sourceFile) => {
+        const pair = { sourceChainId: sourceFile.chainId, destinationChainId };
+        const bridge = getCanonicalBridge(pair, { allowCustomGasToken: true });
+        if (!bridge) return [];
+        const imported = await getCachedImport({
+          bridge,
+          pair,
+          sourceTokenAddress: destinationTokenAddress as Address,
+        });
+        if (!imported || imported.destinationToken.address !== destinationTokenAddress) return [];
+        const files = withImportedTokens({ sourceFile, destinationFile, imported });
+        return buildSourcesForDestination({
+          ...files,
+          destinationTokenAddress,
+          hasLifi: false,
+          top,
+        }).map((candidate) => ({
+          sourceToken: {
+            ...candidate.sourceToken,
+            ...(!sourceFile.tokens.some((token) => token.address === candidate.sourceToken.address)
+              ? { isImported: true as const }
+              : {}),
+          },
+          destinationToken: {
+            ...candidate.destinationToken,
+            ...(!destinationFile.tokens.some((token) => token.address === destinationTokenAddress)
+              ? { isImported: true as const }
+              : {}),
+          },
+        }));
+      }),
+    );
+    candidates.push(...imports.flat());
+  }
+  const compare = getTokenComparator(top);
+  candidates.sort(
+    (a, b) =>
+      Number(b.sourceToken.chainId === sourceChainId) -
+        Number(a.sourceToken.chainId === sourceChainId) ||
+      Number(b.sourceToken.chainId === destinationFile.parentChainId) -
+        Number(a.sourceToken.chainId === destinationFile.parentChainId) ||
+      Number(Boolean(b.destinationToken.isCounterpart)) -
+        Number(Boolean(a.destinationToken.isCounterpart)) ||
+      compare(a.sourceToken, b.sourceToken),
+  );
+  const chosen = candidates[0];
+  return chosen
+    ? {
+        kind: 'resolved',
+        ...chosen,
+        sourceChanged:
+          tokenKey(chosen.sourceToken) !==
+          tokenKey({ chainId: sourceChainId, address: sourceTokenAddress }),
+      }
+    : {
+        kind: 'unavailable',
+        reason:
+          'No supported source could be found for this token. Choose another token or try again after the registry updates.',
+      };
 }

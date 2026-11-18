@@ -42,12 +42,12 @@ For example, the selection for Ethereum USDC lists every chain that USDC reaches
 }
 ```
 
-On load, the page requests only the selection, which is about 0.5 KB compressed. Today the page downloads 1,573 KB of token lists on every visit. The pickers load their lists when the user opens them:
+On load, the page requests only the selection, which is about 0.5 KB compressed. Today the page downloads 218 KB of token lists, compressed, on every visit. The pickers load their lists when the user opens them:
 
 - The source picker loads `top.json` once, 200 KB compressed, and reuses it on every chain.
 - The destination picker loads every token that the source token reaches, 57 KB to 75 KB compressed.
 
-The average visitor downloads about 175 KB raw instead of 1,573 KB. In return, a search for a token outside the top 1,000 of its chain waits for the server, and balances take 1.2 to 1.5 seconds instead of about 0.3 seconds.
+The average visitor downloads about 46 KB compressed instead of 218 KB. In return, a search for a token outside the top 1,000 of its chain waits for the server.
 
 The [PoC](https://arbitrum-portal-git-token-poc-top-offchain-labs.vercel.app/token-registry-poc/top) implements the design.
 
@@ -59,7 +59,7 @@ This RFC describes how the bridge pickers get their tokens once they list every 
 
 ## Loading every list in the browser does not scale
 
-Today the page fetches the token lists of the selected source and destination chains, merges them into `bridgeTokens`, and finds the providers on the client. It downloads 1,573 KB on every load, and the pickers show only those two chains. To pick a token on a third chain, the user changes the network first.
+Today the page fetches the token lists of the selected source and destination chains, merges them into `bridgeTokens`, and finds the providers on the client. It downloads 218 KB compressed on every load, and the pickers show only those two chains. To pick a token on a third chain, the user changes the network first.
 
 Listing every chain this way means downloading the whole registry: 12,020 tokens on 23 chains, 2.76 MB raw and 787 KB compressed. The Ethereum file alone is 1.52 MB, and each new chain adds to the total.
 
@@ -131,7 +131,7 @@ The job reads the Arbitrum token lists, the LiFi token API, `orbitChainsData.jso
   3. the `bridgeInfo` links
   4. LiFi's `coinKey`
 - `isLifi` marks a token that LiFi routes on at least one of the chain's LiFi pairs.
-- `isOft` marks a parent token whose canonical deposit the bridge blocks because LayerZero bridges it. The job applies master's OFT deposit rule from LayerZero's metadata and `oftVersion()` calls. OFT deployments rarely change, so an hourly check is enough, and the API makes no LayerZero request and no RPC call for it.
+- `oftBlockedChainIds` lists, on a canonical parent token, the child chains that its canonical deposit may not reach, because LayerZero bridges the token there. The job applies master's OFT deposit rule to each child chain, from LayerZero's metadata and `oftVersion()` calls. The rule depends on the child chain: a deposit is allowed when LayerZero knows the canonical child token, and blocked when LayerZero has its own OFT deployment there. OFT deployments rarely change, so an hourly check is enough, and the API makes no LayerZero request and no RPC call for it.
 
 In `index.json`, `hasLifi` marks a pair where the bridge offers LiFi and LiFi supports both chains.
 
@@ -150,13 +150,13 @@ The CDN caches each API response for one hour by query string, so the API comput
 
 For a source token and a destination chain, the API collects every destination token and the providers that reach it:
 
-- **Canonical.** The canonical bridge connects a chain to its parent. A deposit sends a parent token to the child token whose `parentAddress` points to it. A withdrawal sends a child token to its `parentAddress`. Ether moves as Ether when both chains pay gas in Ether. The API drops a deposit of an `isOft` token.
+- **Canonical.** The canonical bridge connects a chain to its parent. A deposit sends a parent token to the child token whose `parentAddress` points to it. A withdrawal sends a child token to its `parentAddress`. Ether moves as Ether when both chains pay gas in Ether. The API drops a deposit to a chain in the parent token's `oftBlockedChainIds`, except for the tokens in `canonicalBlockExemptions`.
 - **LayerZero.** `layerZeroConfig` names the destination token.
 - **LiFi.** On a pair with `hasLifi`, every source token with `isLifi` reaches every destination token with `isLifi`.
 
 The bridge's block lists stay in the portal, so a list change takes effect without a new registry. `isCanonicalTransferAllowed` reads the transfer-disabled and withdraw-only lists, and `blockedSourceRoutes` and `blockedLifiSourceRoutes` remove routes by source token.
 
-When the files give a source token only LiFi routes, or none, on a pair with a canonical bridge, the API tries a canonical import. This covers a token that nobody has bridged to the chain yet. `getCanonicalBridge` finds the gateway router in the bridge's chain registry. The import makes a few RPC calls and caches the result for one hour. The all-chains destination list tries imports only when no chain has a route, because each import costs RPC calls.
+When the files give a source token only LiFi routes, or none, on a pair with a canonical bridge, the API tries a canonical import. This covers a token that nobody has bridged to the chain yet. `getCanonicalBridge` finds the gateway router in the bridge's chain registry. The import makes a few RPC calls and caches the result for one hour. An imported token is not in the files, so the import applies the OFT rule itself, with LayerZero's metadata. The all-chains destination list tries imports only when no chain has a route, because each import costs RPC calls.
 
 ## The backend picks the default destination
 
@@ -218,15 +218,15 @@ The endpoint makes one `eth_call` per chain. The call loads a small contract wit
 
 The page reads the bridge's URL parameters and requests the selection. It updates the URL when the user changes a chain or a token.
 
-| User action                      | Request                                                                                                            |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Open the bridge                  | One selection, 0.5 KB to 0.6 KB compressed.                                                                        |
-| Hover or focus the source button | `top.json` starts to load with SWR `preload`, so the picker rarely waits.                                          |
-| Open the source picker           | `top.json`, 200 KB compressed, once for every chain.                                                               |
-| Search the source picker         | One search when the user stops typing for 250 ms, 2.5 KB compressed. The page filters `top.json` until it answers. |
-| Change the source token          | One selection. `top.json` stays cached.                                                                            |
-| Open the destination picker      | One destination list for the source token, 57 KB to 75 KB compressed.                                              |
-| Connect a wallet                 | One balances request, in parallel with the lists.                                                                  |
+| User action                      | Request                                                                                                                                                                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Open the bridge                  | One selection, 0.5 KB to 0.6 KB compressed.                                                                                                                                                                                     |
+| Hover or focus the source button | `top.json` starts to load with SWR `preload`, so the picker rarely waits.                                                                                                                                                       |
+| Open the source picker           | `top.json`, 200 KB compressed, once for every chain.                                                                                                                                                                            |
+| Search the source picker         | One search when the user stops typing for 250 ms, 2.5 KB compressed. The page filters `top.json` until it answers. On a chain with fewer than 1,000 tokens, the page searches `top.json` alone, unless the query is an address. |
+| Change the source token          | One selection. `top.json` stays cached.                                                                                                                                                                                         |
+| Open the destination picker      | One destination list for the source token, 57 KB to 75 KB compressed.                                                                                                                                                           |
+| Connect a wallet                 | One balances request, in parallel with the lists.                                                                                                                                                                               |
 
 The destination picker opens on the chain from the `destinationChain` parameter when the source reaches it. Otherwise it opens on all chains.
 
@@ -241,7 +241,9 @@ Both pickers show the tokens with a balance above every other token, in the list
 | CDN              | each API response, by query string  | 1 hour, then stale while it revalidates, up to 1 day     |
 | `unstable_cache` | each canonical import               | 1 hour                                                   |
 
-A registry change reaches the API responses within about three hours: the hourly job, then the fetch cache, then the response cache.
+A registry change usually reaches the API responses within about three hours: the hourly job, then the fetch cache, then the response cache. A URL that nobody requested for a while still serves its old response once, up to a day old, while the CDN refreshes it.
+
+Next keeps its fetch cache across deployments. A change in what a file means, such as a new ranking, therefore needs a new folder version, such as `v3`, so that new code never reads old files.
 
 ## The trade favors the common visit
 
@@ -251,12 +253,12 @@ At observed picker-open rates, the average visitor downloads about 175 KB raw, o
 - `top.json` for 19.9% of visitors, 750 KB raw
 - one destination list for 7.3% of visitors, 297 KB raw
 
-The estimate does not assume that the two picker audiences are separate groups. Today every visitor downloads 1,573 KB raw.
+The estimate does not assume that the two picker audiences are separate groups. It is a lower bound: hovering over the source button also loads `top.json`, so more visitors than the 19.9% who open the picker download it. Today every visitor downloads 218 KB compressed, or 1,210 KB raw.
 
 The design has four costs that reviewers should weigh:
 
 - A token outside `top.json` shows up in a search only when the server answers. On the dev server, that took about 20 ms with the files cached and 250 ms without them. Today the search runs in the browser, but only on two chains.
-- Balances take 1.2 to 1.5 seconds for 23 chains. Today they take about 0.25 to 0.45 seconds for two chains.
+- Balances take about 0.45 seconds for 23 chains, close to today's 0.25 to 0.45 seconds for two chains. The first request after a server instance starts takes about 1.2 seconds, because it opens a connection to each RPC. Each request also costs 23 RPC calls, and nothing caches them.
 - The first selection with an empty fetch cache takes about 1.2 seconds, because the API fetches and parses every file it needs. Next refreshes an expired file in the background, so only an empty cache makes the user wait.
 - `top.json` grows when a chain gains tokens. Ethereum, Arbitrum One, and Base reach 1,000 today. At 1,000 on every chain, the file would hold 23,000 tokens.
 
@@ -270,15 +272,15 @@ The work has four milestones. The bridge keeps its current token management unti
 
 1. Ship the `Cache-Control` header on the S3 uploads (token-lists#214).
 2. Ship token-lists#215, which keeps only the rank order in `top.json`.
-3. Move master's OFT deposit rule into the job, so the API reads it from `isOft`.
+3. Ship the OFT block lists with the job (token-lists#214). The job copies the bridge's LayerZero chain keys, so a chain that LayerZero adds needs an entry in both repos.
 4. Add a Cloudflare cache rule for the registry files. Cloudflare answers `cf-cache-status: DYNAMIC` for `.json` today, so every request reaches S3.
-5. Alert when the job fails.
+5. Alert when the job fails, or when `index.json` is more than 3 hours old.
 6. Point `TOKEN_REGISTRY_URL` at the production folder.
 
 ## Build the API
 
 1. Move the PoC's server code to production modules, and validate every registry file with Zod before use.
-2. Implement the four endpoints with the cache headers above.
+2. Implement the four endpoints with the cache headers above. Rate-limit the balances endpoint, and split each chain's balance call into calls of about 2,000 tokens. Ethereum's single call reads about 7,000 tokens, close to the gas cap of some RPCs.
 3. Add the API tests from the testing plan.
 
 ## Move the bridge to the API
@@ -300,7 +302,7 @@ The token-lists repo tests the generator:
 
 - the rank order in `top.json`, and the limit of 1,000 tokens per chain
 - each counterpart rule
-- the `isLifi`, `isOft`, and `parentAddress` fields, and `hasLifi` on the pairs
+- the `isLifi`, `oftBlockedChainIds`, and `parentAddress` fields, and `hasLifi` on the pairs
 
 API tests cover these cases:
 
@@ -354,7 +356,7 @@ A balance belongs to one wallet and changes with every transfer. The balances en
 
 ## What the user downloads
 
-Measured on November 18, 2026, on a local Next dev server, against a registry generated that day with 23 chains. Compressed sizes use gzip.
+Measured on November 18, 2026, on a local Next dev server, against a registry generated that day with 23 chains. Compressed sizes use gzip. Today's numbers come from the production bridge on the same day, from Ethereum to Arbitrum One: five token lists, the LiFi token list, and the warning list.
 
 | Download                               | When                          | Tokens |    Raw | Compressed |
 | -------------------------------------- | ----------------------------- | -----: | -----: | ---------: |
@@ -365,6 +367,6 @@ Measured on November 18, 2026, on a local Next dev server, against a registry ge
 | Destination list, ETH to all chains    | destination picker open       |  1,345 | 297 KB |      75 KB |
 | Destination list, USDC to all chains   | destination picker open       |  1,013 | 230 KB |      58 KB |
 | Destination list, USDC to Arbitrum One | destination picker, one chain |  1,000 | 226 KB |      57 KB |
-| Balances, one active wallet            | wallet connect                |    319 |  85 KB |      23 KB |
+| Balances, one active wallet            | wallet connect                |    322 |  86 KB |      23 KB |
 
-Today the page downloads 1,573 KB raw of token lists on every load, whether or not the user opens a picker.
+Today the page downloads 218 KB compressed, or 1,210 KB raw, of token lists on every load, whether or not the user opens a picker.

@@ -20,10 +20,12 @@ export type RegistryFileToken = {
   coinKey?: string;
   // The canonical parent token on the chain's parent chain.
   parentAddress?: string;
-  isOft?: true;
+  // On a canonical parent token, the child chains its canonical deposit may not reach, because
+  // LayerZero bridges the token there.
+  oftBlockedChainIds?: number[];
   // The same token on the other registry chains, keyed by chain id.
   counterparts?: Record<string, string>;
-  // LiFi routes the token on every LiFi pair of the chain.
+  // LiFi routes the token on at least one LiFi pair of the chain.
   isLifi?: true;
 };
 
@@ -38,7 +40,11 @@ export type RegistryIndexFile = {
   generatedAt: string;
   chains: { chainId: number; name: string; parentChainId?: number }[];
   // hasLifi: the bridge offers LiFi on the pair, and LiFi connects it.
-  pairs: { sourceChainId: number; destinationChainId: number; hasLifi?: true }[];
+  pairs: {
+    sourceChainId: number;
+    destinationChainId: number;
+    hasLifi?: true;
+  }[];
 };
 
 export type TopToken = {
@@ -59,11 +65,26 @@ export type TopFile = {
   tokens: TopToken[];
 };
 
-export type DestinationOption = TopToken & { providers: ProviderId[] };
+export type DestinationOption = TopToken & {
+  providers: ProviderId[];
+  isCounterpart?: true;
+};
+
+export type DestinationSelection =
+  | {
+      kind: 'resolved';
+      sourceToken: TopToken;
+      destinationToken: DestinationOption;
+      sourceChanged: boolean;
+    }
+  | { kind: 'unavailable'; reason: string };
 
 // What the search and destination-tokens endpoints return. A complete list holds every token
 // that matches, so the picker can search it without the server.
-export type TokenList<T extends TopToken = TopToken> = { tokens: T[]; isComplete: boolean };
+export type TokenList<T extends TopToken = TopToken> = {
+  tokens: T[];
+  isComplete: boolean;
+};
 
 // What the balances endpoint returns: the tokens the wallet holds, with the balance in the token's
 // smallest unit. failedChainIds lists the chains whose RPC call failed.
@@ -80,6 +101,9 @@ export type DestinationChain = {
 };
 
 // Ether on Ethereum to Arbitrum One, like the bridge.
+// top.json keeps up to this many tokens per chain. A chain with fewer has all its tokens there.
+export const TOP_TOKENS_PER_CHAIN = 1_000;
+
 export const DEFAULT_SELECTION = {
   sourceChainId: ChainId.Ethereum,
   destinationChainId: ChainId.ArbitrumOne,
@@ -100,6 +124,7 @@ export type Selection = {
   destinationChainId?: number;
   // The default token of that chain: the requested token when the source reaches it.
   destinationToken?: DestinationOption;
+  adjustment?: { kind: 'source-chain' | 'destination'; message: string };
 };
 
 // Each destination chain of a request reads the ranks of the same top file.
@@ -132,31 +157,78 @@ export function getTokenComparator(top: TopFile): (a: TopToken, b: TopToken) => 
 export function getSearchScore(
   token: Pick<TopToken, 'address' | 'symbol' | 'name'>,
   query: string,
+  chainName = '',
 ): number | null {
   if (isAddress(query)) {
-    return token.address === query ? 0 : null;
+    return token.address.toLowerCase() === query.toLowerCase() ? 0 : null;
   }
+  const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const network = chainName.toLowerCase();
+  const tokenWords = words.filter((word) => word.length < 2 || !network.includes(word));
+  if (words.length === 0) return null;
+  if (tokenWords.length === 0) return 0;
+  const tokenQuery = tokenWords.join(' ');
   const symbol = token.symbol.toLowerCase();
-  if (symbol === query) {
+  if (symbol === tokenQuery) {
     return 0;
   }
-  if (symbol.startsWith(query)) {
+  if (symbol.startsWith(tokenQuery)) {
     return 1;
   }
-  if (symbol.includes(query)) {
+  if (symbol.includes(tokenQuery)) {
     return 2;
   }
-  return token.name.toLowerCase().includes(query) ? 3 : null;
+  const name = token.name.toLowerCase();
+  return tokenWords.every((word) => symbol.includes(word) || name.includes(word)) ? 3 : null;
 }
 
 // The tokens that match, best first. Tokens with the same score keep their order.
-export function searchTokens<T extends TopToken>(tokens: T[], query: string): T[] {
+export function searchTokens<T extends TopToken>(
+  tokens: T[],
+  query: string,
+  chains: RegistryIndexFile['chains'] = [],
+): T[] {
   const normalizedQuery = query.trim().toLowerCase();
+  const names = new Map(chains.map((chain) => [chain.chainId, chain.name]));
   return tokens
     .flatMap((token) => {
-      const score = getSearchScore(token, normalizedQuery);
+      const score = getSearchScore(token, normalizedQuery, names.get(token.chainId));
       return score === null ? [] : [{ token, score }];
     })
     .sort((a, b) => a.score - b.score)
     .map(({ token }) => token);
+}
+
+export function getNetworkSuggestions(query: string, chains: RegistryIndexFile['chains']) {
+  const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  if (isAddress(query.trim())) return [];
+  return chains.filter((chain) =>
+    words.some((word) => word.length >= 2 && chain.name.toLowerCase().includes(word)),
+  );
+}
+
+export function removeNetworkQuery(query: string, chainName: string): string {
+  return query
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length < 2 || !chainName.toLowerCase().includes(word.toLowerCase()))
+    .join(' ');
+}
+
+export function tokenKey(token: Pick<TopToken, 'chainId' | 'address'>): string {
+  return `${token.chainId}:${token.address.toLowerCase()}`;
+}
+
+export function mergePickerTokens<T extends TopToken>(...lists: T[][]): T[] {
+  const tokens = new Map<string, T>();
+  for (const list of lists) {
+    for (const token of list) {
+      if (!tokens.has(tokenKey(token))) tokens.set(tokenKey(token), token);
+    }
+  }
+  return [...tokens.values()];
+}
+
+export function addRecentToken<T extends TopToken>(recents: T[], token: T): T[] {
+  return mergePickerTokens([token], recents).slice(0, 4);
 }
