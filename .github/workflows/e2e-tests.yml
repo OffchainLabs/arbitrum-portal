@@ -73,15 +73,6 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-
           save: ${{ github.ref == 'refs/heads/master' }}
 
-      # Runs in the background while this job waits for the build; "Run xvfb and fluxbox" waits for it.
-      - name: Install linux dependencies
-        run: |
-          (
-            sudo apt-get update &&
-            sudo apt-get install --no-install-recommends -y fluxbox xvfb &&
-            pnpm --filter arb-token-bridge-ui exec playwright install-deps chromium
-          ) > "$RUNNER_TEMP/apt.log" 2>&1 && touch "$RUNNER_TEMP/apt.ok" || touch "$RUNNER_TEMP/apt.failed" &
-
       # Synpress/MetaMask 11.15.0 is a Manifest V2 extension that Playwright's bundled Chromium
       # refuses to load. fixtures.ts launches the pinned Chrome for Testing (Chrome 128, MV2) from
       # node_modules/.cache/synpress instead. `postinstall` skips it on CI, so install it here.
@@ -116,15 +107,9 @@ jobs:
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
 
-      - name: Run xvfb and fluxbox
-        run: |
-          timeout 300 bash -c 'until [ -e "$RUNNER_TEMP/apt.ok" ] || [ -e "$RUNNER_TEMP/apt.failed" ]; do sleep 1; done'
-          cat "$RUNNER_TEMP/apt.log"
-          [ -e "$RUNNER_TEMP/apt.ok" ]
-          Xvfb :0 -screen 0 1366x768x24 -listen tcp -ac &
-          fluxbox &
-        env:
-          DISPLAY: :0.0
+      # The ubuntu-24.04 runner image already has Xvfb and Chrome's libraries.
+      - name: Run xvfb
+        run: Xvfb :0 -screen 0 1366x768x24 -listen tcp -ac &
 
       # A MetaMask profile saved right after setup (see fixtures.ts), so most jobs only unlock it.
       # Its vault password comes from the wallet's secret key, so the cached copy is safe to share.
