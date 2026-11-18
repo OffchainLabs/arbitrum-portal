@@ -46,7 +46,6 @@ describe('isChildChainIndexed', { concurrent: false }, () => {
     expect(isChildChainIndexed(33139)).toBe(true);
 
     expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(true);
-    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
     expect(isChildChainIndexed(ChainId.ArbitrumSepolia)).toBe(true);
   });
 
@@ -54,7 +53,7 @@ describe('isChildChainIndexed', { concurrent: false }, () => {
     const { isChildChainIndexed } = await importSourcesWith('');
 
     expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(true);
-    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
+    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(false);
     expect(isChildChainIndexed(ChainId.ArbitrumSepolia)).toBe(true);
     expect(isChildChainIndexed(46630)).toBe(false);
   });
@@ -66,9 +65,9 @@ describe('isChildChainIndexed', { concurrent: false }, () => {
     expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
   });
 
-  it('cannot remove Nova with a configured list', async () => {
+  it('leaves Nova unindexed when the configured list leaves it out', async () => {
     const { isChildChainIndexed } = await importSourcesWith('42161');
 
-    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
+    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(false);
   });
 });
