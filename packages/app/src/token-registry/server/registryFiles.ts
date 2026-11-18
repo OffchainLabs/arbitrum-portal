@@ -26,6 +26,7 @@ import {
   TopFile,
   TopToken,
   getSearchScore,
+  getTokenComparator,
   searchTokens,
 } from '../registryFiles';
 import {
@@ -70,37 +71,6 @@ const getIndexFile = () => fetchRegistryFile<RegistryIndexFile>('index.json');
 const getTopFile = () => fetchRegistryFile<TopFile>('top.json');
 const getChainFile = (chainId: number) =>
   fetchRegistryFile<RegistryChainFile>(`chains/${chainId}.json`);
-
-// Each destination chain of a request reads the ranks of the same top file.
-const ranksByTopFile = new WeakMap<TopFile, Map<string, number>>();
-
-// A token's position among the top file's tokens of its own chain. The file lists one chain after
-// the other, so a position in the whole file would put every token of the first chain first.
-function getRanks(top: TopFile): Map<string, number> {
-  const cached = ranksByTopFile.get(top);
-  if (cached) {
-    return cached;
-  }
-  const ranks = new Map<string, number>();
-  const countByChainId = new Map<number, number>();
-  for (const token of top.tokens) {
-    const rank = countByChainId.get(token.chainId) ?? 0;
-    countByChainId.set(token.chainId, rank + 1);
-    ranks.set(`${token.chainId}:${token.address}`, rank);
-  }
-  ranksByTopFile.set(top, ranks);
-  return ranks;
-}
-
-// By top-file rank, then the tokens outside the top file by symbol. localeCompare goes through
-// Intl, which is slow on sorts of thousands of tokens.
-function getTokenComparator(top: TopFile): (a: TopToken, b: TopToken) => number {
-  const ranks = getRanks(top);
-  const getRank = (token: TopToken) =>
-    ranks.get(`${token.chainId}:${token.address}`) ?? Number.MAX_SAFE_INTEGER;
-  return (a, b) =>
-    getRank(a) - getRank(b) || (a.symbol < b.symbol ? -1 : a.symbol > b.symbol ? 1 : 0);
-}
 
 function toTopToken(chainId: number, token: RegistryFileToken): TopToken {
   return {
@@ -366,8 +336,8 @@ function isCanonicalRouteAllowed({
   });
 }
 
-// The destinations of one chain before the default, which depends on the user's pick: the
-// canonical token first, then LayerZero's, then the others by top-file rank.
+// The destinations of one chain before the default, which depends on the user's pick, by top-file
+// rank like the source list.
 type ChainOptions = {
   options: DestinationOption[];
   canonicalAddress?: string;
@@ -467,13 +437,8 @@ function buildChainOptions({
     }
   }
 
-  const compareTokens = getTokenComparator(top);
-  const rank = (address: string) =>
-    address === canonicalAddress ? 0 : address === layerZeroAddress ? 1 : 2;
   return {
-    options: [...options.values()].sort(
-      (a, b) => rank(a.address) - rank(b.address) || compareTokens(a, b),
-    ),
+    options: [...options.values()].sort(getTokenComparator(top)),
     canonicalAddress,
     layerZeroAddress,
     defaultCandidates: [
@@ -490,8 +455,7 @@ type DestinationOptions = {
 };
 
 // The default is the token the user picked, otherwise the pair's override, otherwise the same token
-// as the source, otherwise the canonical, LayerZero or native token. It comes right after the
-// canonical and LayerZero tokens.
+// as the source, otherwise the canonical, LayerZero or native token. It does not change the order.
 function withDefault(
   { options, canonicalAddress, layerZeroAddress, defaultCandidates }: ChainOptions,
   preferredAddress?: string,
@@ -505,18 +469,8 @@ function withDefault(
     layerZeroAddress,
     NATIVE_TOKEN_ADDRESS,
   ].reduce<DestinationOption | undefined>((found, address) => found ?? find(address), undefined);
-  const isPinned = (option: DestinationOption) =>
-    option.address === canonicalAddress || option.address === layerZeroAddress;
-  const pinned = options.filter(isPinned);
   return {
-    options:
-      defaultToken && !isPinned(defaultToken)
-        ? [
-            ...pinned,
-            defaultToken,
-            ...options.filter((option) => !isPinned(option) && option !== defaultToken),
-          ]
-        : options,
+    options,
     defaultToken,
     canonicalToken: find(canonicalAddress),
   };
@@ -758,9 +712,9 @@ export async function getSelection({
 }
 
 // Without a destination chain, the tokens of every chain the source reaches, up to 1,000 per
-// chain like the source list: the canonical tokens first, then LayerZero's, then the others by
-// top-file rank. A chain's default or the user's pick does not change this order. The list is
-// complete when no chain was cut, and the picker then searches it without the server.
+// chain like the source list, and in the same order: by top-file rank.
+// A chain's default or the user's pick does not change this order. The list is complete when no
+// chain was cut, and the picker then searches it without the server.
 export async function getDestinationTokens({
   sourceChainId,
   sourceTokenAddress,
@@ -777,15 +731,12 @@ export async function getDestinationTokens({
   if (destinationChainId === undefined) {
     const sourceFiles = await getSourceFiles(sourceChainId);
     const chains = await getAllChainOptions({ sourceFiles, sourceTokenAddress });
-    const compareTokens = getTokenComparator(sourceFiles.top);
-    const rank = (option: DestinationOption) =>
-      option.providers.includes('canonical') ? 0 : option.providers.includes('layerzero') ? 1 : 2;
     // A search covers every token, past the 1,000 of each chain.
     options = chains
       .flatMap((chain) =>
         query?.trim() ? chain.options : chain.options.slice(0, DESTINATION_TOKENS_LIMIT),
       )
-      .sort((a, b) => rank(a) - rank(b) || compareTokens(a, b));
+      .sort(getTokenComparator(sourceFiles.top));
     isComplete = chains.every((chain) => chain.options.length <= DESTINATION_TOKENS_LIMIT);
   } else {
     const [index, sourceFiles] = await Promise.all([getIndexFile(), getSourceFiles(sourceChainId)]);

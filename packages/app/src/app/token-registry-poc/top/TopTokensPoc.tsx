@@ -331,8 +331,12 @@ function TokenPicker({
   // Until the backend answers, the picker filters the tokens it already has.
   const chainTokens = list?.tokens ?? getChainTokens?.(chainId) ?? [];
   const isTyping = search !== debouncedSearch;
-  const tokens =
+  const matches =
     searchKey && !isTyping && searchedTokens ? searchedTokens : filterTokens(chainTokens, search);
+  // The held tokens come above every other token, in the list and in search results. Each group
+  // keeps its order.
+  const isHeld = (token: PickerToken) => balances.has(getTokenKey(token));
+  const tokens = [...matches.filter(isHeld), ...matches.filter((token) => !isHeld(token))];
   const isLoading = isListLoading || (searchKey !== null && (isTyping || isSearchLoading));
 
   const chainQuery = chainSearch.trim().toLowerCase();

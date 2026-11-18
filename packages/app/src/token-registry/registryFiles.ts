@@ -52,8 +52,8 @@ export type TopToken = {
   isImported?: true;
 };
 
-// The order is the ranking: chain by chain, the native and curated tokens first, then LiFi's 24-hour
-// volume, then symbol.
+// The order is the ranking across every chain: the curated tokens, the native tokens, then LiFi's
+// 24-hour volume, then symbol.
 export type TopFile = {
   generatedAt: string;
   tokens: TopToken[];
@@ -101,6 +101,32 @@ export type Selection = {
   // The default token of that chain: the requested token when the source reaches it.
   destinationToken?: DestinationOption;
 };
+
+// Each destination chain of a request reads the ranks of the same top file.
+const ranksByTopFile = new WeakMap<TopFile, Map<string, number>>();
+
+// A token's position in the top file.
+function getRanks(top: TopFile): Map<string, number> {
+  const cached = ranksByTopFile.get(top);
+  if (cached) {
+    return cached;
+  }
+  const ranks = new Map(
+    top.tokens.map((token, index) => [`${token.chainId}:${token.address}`, index]),
+  );
+  ranksByTopFile.set(top, ranks);
+  return ranks;
+}
+
+// By top-file rank, then the tokens outside the top file by symbol. localeCompare goes through
+// Intl, which is slow on sorts of thousands of tokens.
+export function getTokenComparator(top: TopFile): (a: TopToken, b: TopToken) => number {
+  const ranks = getRanks(top);
+  const getRank = (token: TopToken) =>
+    ranks.get(`${token.chainId}:${token.address}`) ?? Number.MAX_SAFE_INTEGER;
+  return (a, b) =>
+    getRank(a) - getRank(b) || (a.symbol < b.symbol ? -1 : a.symbol > b.symbol ? 1 : 0);
+}
 
 // Lower is better. An address only matches itself.
 export function getSearchScore(

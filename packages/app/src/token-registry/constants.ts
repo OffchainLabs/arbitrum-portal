@@ -1,4 +1,5 @@
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
+import { isStablecoin } from '@/bridge/util/RobinhoodStablecoinUtils';
 
 import { Address, ChainPair, NATIVE_TOKEN_ADDRESS, Token, pairKey, toTokenId } from './types';
 
@@ -136,7 +137,19 @@ export function getDefaultDestinationOverride(
   pair: ChainPair,
   sourceTokenAddress: Address,
 ): Address | undefined {
-  return defaultDestinationOverrides[pairKey(pair)]?.[sourceTokenAddress];
+  const override = defaultDestinationOverrides[pairKey(pair)]?.[sourceTokenAddress];
+  if (override) {
+    return override;
+  }
+  // USDG is Robinhood's stablecoin, so the other stablecoins default to it there. Master suggests
+  // it for the same stablecoins. The user can still pick another token.
+  if (
+    pair.destinationChainId === ChainIds.Robinhood &&
+    isStablecoin(sourceTokenAddress, pair.sourceChainId)
+  ) {
+    return USDG_ROBINHOOD;
+  }
+  return undefined;
 }
 
 const excludedTokenIds = new Set<string>([
