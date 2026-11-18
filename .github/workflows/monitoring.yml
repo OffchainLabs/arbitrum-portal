@@ -9,6 +9,10 @@ on:
       monitor:
         required: true
         type: string
+      ref:
+        required: false
+        type: string
+        default: master
 
 env:
   NEXT_PUBLIC_RPC_PROVIDER: alchemy
@@ -27,6 +31,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: OffchainLabs/arbitrum-portal
+          ref: ${{ inputs.ref }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v5
@@ -42,6 +47,8 @@ jobs:
         with:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Checkout Arbitrum Monitoring repository
         uses: actions/checkout@v4
@@ -50,10 +57,10 @@ jobs:
           path: arbitrum-monitoring
 
       - name: Setup Node and install dependencies
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: latest
-      - run: cd ./arbitrum-monitoring && yarn install
+          node-version: 22
+      - run: cd ./arbitrum-monitoring && pnpm install --frozen-lockfile
 
       - name: Load configuration
         id: config
@@ -66,12 +73,14 @@ jobs:
 
       - name: Generate chains JSON
         run: pnpm --filter arb-token-bridge-ui ${{ steps.config.outputs.generate_command }}
+        env:
+          MONITOR_ENTERPRISE_CHAINS: ${{ inputs.chain == 'enterprise' }}
 
       - name: Copy chains JSON to Arbitrum Monitoring
         run: cp ./packages/arb-token-bridge-ui/public/${{ steps.config.outputs.config_file }} ./arbitrum-monitoring/config.json
 
       - name: Run monitoring command
-        run: cd ./arbitrum-monitoring && yarn ${{ inputs.monitor }}-monitor --enableAlerting --writeToNotion ${{ inputs.chain == 'core' && 'true' || 'false' }} ${{ inputs.monitor == 'retryable' && '--autoRedeem' || '' }}
+        run: cd ./arbitrum-monitoring && pnpm ${{ inputs.monitor }}-monitor --enableAlerting --writeToNotion ${{ (inputs.chain == 'core' || inputs.chain == 'enterprise') && 'true' || 'false' }} ${{ inputs.monitor == 'retryable' && inputs.chain == 'enterprise' && '--autoRedeem' || '' }}
         env:
           RETRYABLE_MONITORING_SLACK_TOKEN: ${{ secrets[steps.config.outputs.slack_token] }}
           RETRYABLE_MONITORING_SLACK_CHANNEL: ${{ secrets[steps.config.outputs.slack_channel] }}
@@ -82,6 +91,15 @@ jobs:
           ASSERTION_MONITORING_SLACK_CHANNEL: ${{ secrets[steps.config.outputs.slack_channel] }}
           RETRYABLE_MONITORING_NOTION_TOKEN: ${{ secrets.RETRYABLE_MONITORING_NOTION_TOKEN }}
           RETRYABLE_MONITORING_NOTION_DB_ID: ${{ secrets.RETRYABLE_MONITORING_NOTION_DB_ID }}
+
+      - name: Upload retryable run report
+        if: inputs.monitor == 'retryable' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retryable-run-report-${{ inputs.chain }}
+          path: arbitrum-monitoring/packages/retryable-monitor/retryable-run-report.json
+          if-no-files-found: 'ignore'
+        continue-on-error: true
 
       - name: Send Slack notification on failure
         if: failure()

@@ -53,7 +53,10 @@ export function getInfuraKeyFromEnv(chainId: InfuraSupportedChainId): string {
     case ChainId.ApeChain:
       return '';
 
-    case ChainId.Superposition:
+    case ChainId.RobinhoodChain:
+      return '';
+
+    case ChainId.RobinhoodChainTestnet:
       return '';
   }
 }
@@ -86,7 +89,10 @@ export function getInfuraRpcUrl(
     case ChainId.ApeChain:
       return '';
 
-    case ChainId.Superposition:
+    case ChainId.RobinhoodChain:
+      return '';
+
+    case ChainId.RobinhoodChainTestnet:
       return '';
   }
 }

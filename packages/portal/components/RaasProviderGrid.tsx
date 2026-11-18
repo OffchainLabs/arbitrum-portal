@@ -6,14 +6,14 @@ export const RaasProviderGrid = () => {
       <RaasProviderCard
         name="Caldera"
         description="Supports AnyTrust and Rollup chains"
-        caption="Powering Treasure, Hychain, Rari"
+        caption="Powering Treasure, Hychain"
         link="https://caldera.xyz/"
         logo="/images/Caldera.svg"
       />
       <RaasProviderCard
         name="Conduit"
         description="Supports AnyTrust and Rollup chains"
-        caption="Powering Proof of Play and Gravity"
+        caption="Powering Proof of Play"
         link="https://conduit.xyz/"
         logo="/images/Conduit.svg"
       />

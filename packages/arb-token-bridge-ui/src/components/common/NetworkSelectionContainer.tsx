@@ -24,17 +24,17 @@ import { useNativeCurrencyBalanceForChainId } from '../../hooks/useNativeCurrenc
 import { useNetworks } from '../../hooks/useNetworks';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { ChainId } from '../../types/ChainId';
+import { NOVA_MINIMIZED_STATE_LINK } from '../../util/NovaUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
-import { getNetworkName, isNetwork } from '../../util/networks';
-import { getWagmiChain } from '../../util/wagmi/getWagmiChain';
+import { getChainMetadata } from '../../util/networkMetadata';
+import { getNetworkName, isCoreChainForDisplay, isNetwork } from '../../util/networks';
 import { useIsSwapTransfer } from '../TransferPanel/hooks/useIsSwapTransfer';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
 import { DialogProps } from './Dialog2';
 import { ExternalLink } from './ExternalLink';
 import { NetworkImage } from './NetworkImage';
-import { NetworkRowPoP } from './NetworkRowPoP';
 import { SearchPanel } from './SearchPanel/SearchPanel';
 import { SearchPanelTable } from './SearchPanel/SearchPanelTable';
 import { TestnetToggle } from './TestnetToggle';
@@ -184,7 +184,7 @@ function NetworkRow({
   close: (focusableElement?: HTMLElement) => void;
 }) {
   const { network, nativeTokenData } = getBridgeUiConfigForChain(chainId);
-  const chain = getWagmiChain(chainId);
+  const chain = getChainMetadata(chainId);
   const { address: walletAddress } = useAccount();
   const {
     data: balanceState,
@@ -272,7 +272,6 @@ function AddCustomOrbitChainButton({
 }
 
 export function NetworksPanel({
-  type = 'source',
   chainIds,
   selectedChainId,
   onNetworkRowClick,
@@ -280,7 +279,6 @@ export function NetworksPanel({
   showSearch = true,
   showFooter = true,
 }: {
-  type?: 'source' | 'destination';
   chainIds: ChainId[];
   selectedChainId: ChainId;
   onNetworkRowClick: (value: Chain) => void;
@@ -300,35 +298,27 @@ export function NetworksPanel({
   const networksToShow = useMemo(() => {
     const _networkSearched = debouncedNetworkSearched.trim().toLowerCase();
 
-    const proofOfPlayNetworks = !isTestnetMode && type === 'source' ? [70700, 70701] : []; // PoP Apex, PoP Boss
-
     if (_networkSearched) {
-      return chainIds.concat(proofOfPlayNetworks).filter((chainId) => {
-        if (chainId === (70700 as ChainId) || chainId === (70701 as ChainId)) {
-          const popName =
-            chainId === (70700 as ChainId) ? 'Proof of Play Apex' : 'Proof of Play Boss';
-          return popName.toLowerCase().includes(_networkSearched);
-        }
-
+      return chainIds.filter((chainId) => {
         const networkName = getBridgeUiConfigForChain(chainId).network.name.toLowerCase();
         return networkName.includes(_networkSearched);
       });
     }
 
-    const coreNetworks = chainIds.filter((chainId) => isNetwork(chainId).isCoreChain);
+    const coreNetworks = chainIds.filter((chainId) => isCoreChainForDisplay(chainId));
     const moreNetworks = chainIds.filter(
-      (chainId) => !isNetwork(chainId).isCoreChain && !isNetwork(chainId).isOrbitChain,
+      (chainId) => !isCoreChainForDisplay(chainId) && !isNetwork(chainId).isOrbitChain,
     );
-    const orbitNetworks = chainIds
-      .filter((chainId) => isNetwork(chainId).isOrbitChain)
-      .concat(proofOfPlayNetworks);
+    const orbitNetworks = chainIds.filter(
+      (chainId) => isNetwork(chainId).isOrbitChain && !isCoreChainForDisplay(chainId),
+    );
 
     return {
       core: coreNetworks,
       more: moreNetworks,
       orbit: orbitNetworks,
     };
-  }, [debouncedNetworkSearched, chainIds, isTestnetMode, type]);
+  }, [debouncedNetworkSearched, chainIds]);
 
   const isNetworkSearchResult = Array.isArray(networksToShow);
 
@@ -429,33 +419,19 @@ export function NetworksPanel({
         return (
           <div style={style} className="px-5">
             <ExternalLink
-              href="https://snapshot.org/#/s:arbitrumfoundation.eth/proposal/0x002b8264f83d19f88d17dc48a92d1e92638285a6592c491255fa7b14c955da81"
+              href={NOVA_MINIMIZED_STATE_LINK}
               className="mt-2 flex items-center justify-between gap-1 whitespace-normal rounded bg-destructive/20 px-[10px] py-[15px] text-xs text-destructive"
             >
               <span className="flex items-center gap-1">
                 <ShieldExclamationIcon className="h-4 w-4 shrink-0 text-destructive" />
                 <span>
-                  Arbitrum Nova is losing support. Please bridge to{' '}
-                  <span className="font-semibold">Arbitrum One.</span>
+                  Arbitrum Nova is in a minimized state and only accepts ETH deposits. Please bridge
+                  to <span className="font-semibold">Arbitrum One.</span>
                 </span>
               </span>
               <ArrowTopRightOnSquareIcon className="h-4 w-4 shrink-0 text-destructive" />
             </ExternalLink>
           </div>
-        );
-      }
-
-      if (
-        networkOrChainTypeName === (70700 as ChainId) ||
-        networkOrChainTypeName === (70701 as ChainId)
-      ) {
-        // PoP Apex, PoP Boss
-        return (
-          <NetworkRowPoP
-            chainId={networkOrChainTypeName}
-            style={style}
-            isSelected={networkOrChainTypeName === selectedChainId}
-          />
         );
       }
 
@@ -559,7 +535,7 @@ export const NetworkSelectionContainer = React.memo(
         setSelectedToken(null);
         setQueryParams({ destinationAddress: undefined });
       },
-      [isSource, networks, setNetworks, setSelectedToken, setQueryParams, props, isSwapTransfer],
+      [isSource, networks, setNetworks, setSelectedToken, setQueryParams, isSwapTransfer],
     );
 
     return (
@@ -571,14 +547,13 @@ export const NetworkSelectionContainer = React.memo(
           actionButtonProps={{ hidden: true }}
           isFooterHidden={true}
           className={twMerge(
-            'h-screen overflow-hidden md:h-[calc(100vh_-_220px)] md:max-h-[900px] md:max-w-[500px]',
+            'h-[100dvh] overflow-hidden md:h-[calc(100vh_-_220px)] md:max-h-[900px] md:max-w-[500px]',
             embedMode && 'md:h-full',
           )}
         >
           <SearchPanel>
             <SearchPanel.MainPage className="flex h-full max-w-[500px] flex-col py-4">
               <NetworksPanel
-                type={isSource ? 'source' : 'destination'}
                 chainIds={supportedChainIds}
                 selectedChainId={selectedChainId}
                 close={() => props.onClose(false)}

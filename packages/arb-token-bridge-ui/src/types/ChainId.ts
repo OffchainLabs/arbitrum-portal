@@ -1,4 +1,5 @@
 export enum ChainId {
+  Solana = 1151111081099710,
   // L1
   Ethereum = 1,
   // L1 Testnets
@@ -16,5 +17,7 @@ export enum ChainId {
   L3Local = 333333,
   // Orbit chains
   ApeChain = 33139,
-  Superposition = 55244,
+  RobinhoodChain = 4663,
+  // Orbit Testnets
+  RobinhoodChainTestnet = 46630,
 }

@@ -1,39 +1,41 @@
 import { scaleFrom18DecimalsToNativeTokenDecimals } from '@arbitrum/sdk';
 import { TransactionResponse } from '@ethersproject/providers';
-import { getStepTransaction } from '@lifi/sdk';
+import type { RouteExtended } from '@lifi/sdk';
 import dayjs from 'dayjs';
 import { constants, utils } from 'ethers';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLatest } from 'react-use';
 import { twMerge } from 'tailwind-merge';
 import { BaseError } from 'viem';
-import { useAccount, useConfig } from 'wagmi';
+import { useConfig } from 'wagmi';
 import { shallow } from 'zustand/shallow';
 
+import { useShowUsdgDripCardAfterSubmit } from '@/app-components/UsdgDripCard/useUsdgDripCard';
 import { Tooltip } from '@/app/components/common/Tooltip';
 import { AssetType, DepositGasEstimates } from '@/bridge/hooks/arbTokenBridge.types';
-import { useNativeCurrency } from '@/bridge/hooks/useNativeCurrency';
+import { useNativeCurrency, useNativeCurrencyForTransfer } from '@/bridge/hooks/useNativeCurrency';
 import { useNetworks } from '@/bridge/hooks/useNetworks';
 import { useNetworksRelationship } from '@/bridge/hooks/useNetworksRelationship';
 import { useAddPendingTransactions } from '@/bridge/hooks/useTransactionHistory';
 import { BridgeTransfer, TransferOverrides } from '@/bridge/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/bridge/token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '@/bridge/token-bridge-sdk/CctpTransferStarter';
+import {
+  getExecutedLifiRouteTxHash,
+  getPendingLifiRouteBatchIds,
+} from '@/bridge/util/LifiTransactionStatus';
 import { isEmbeddedBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
-import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 
-import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { DOCS_DOMAIN, GET_HELP_LINK } from '../../constants';
 import { useIsBatchTransferSupported } from '../../hooks/TransferPanel/useIsBatchTransferSupported';
 import { useAccountType } from '../../hooks/useAccountType';
 import { TabParamEnum, tabToIndex, useArbQueryParams } from '../../hooks/useArbQueryParams';
-import { useBalances } from '../../hooks/useBalances';
 import { useError } from '../../hooks/useError';
+import { useIsTrustWalletConnection } from '../../hooks/useIsTrustWalletConnection';
 import { useLifiMergedTransactionCacheStore } from '../../hooks/useLifiMergedTransactionCacheStore';
 import { useMode } from '../../hooks/useMode';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
-import { useSourceChainNativeCurrencyDecimals } from '../../hooks/useSourceChainNativeCurrencyDecimals';
 import { useSwitchNetworkWithConfig } from '../../hooks/useSwitchNetworkWithConfig';
 import { useTokenLists } from '../../hooks/useTokenLists';
 import { useAppState } from '../../state';
@@ -43,33 +45,36 @@ import {
   MergedTransaction,
   WithdrawalStatus,
 } from '../../state/app/state';
-import { normalizeTimestamp } from '../../state/app/utils';
 import { getUsdcTokenAddressFromSourceChainId } from '../../state/cctpState';
 import { OftV2TransferStarter } from '../../token-bridge-sdk/OftV2TransferStarter';
-import { getBridgeTransferProperties } from '../../token-bridge-sdk/utils';
+import { getBridgeTransferProperties, getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { ChainId } from '../../types/ChainId';
 import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
-import { getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
+import { getAnalyticsAccountType, getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
+import { isNovaDestination } from '../../util/NovaUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
+import { isCctpEnabled } from '../../util/featureFlag';
 import { isUserRejectedError } from '../../util/isUserRejectedError';
-import { isValidTransactionRequest } from '../../util/isValidTransactionRequest';
 import { logger } from '../../util/logger';
 import { getNetworkName, isNetwork } from '../../util/networks';
+import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
-import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { useWalletContext } from '../../wallet/WalletContext';
+import { getSigners } from '../../wallet/getSigners';
+import { useRefreshTokenBalances } from '../../wallet/hooks/useTokenBalances';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { useAppContextActions } from '../App/AppContext';
 import { highlightTransactionHistoryDisclaimer } from '../TransactionHistory/TransactionHistoryDisclaimer';
 import { addDepositToCache } from '../TransactionHistory/helpers';
 import { WidgetBuyPanel } from '../Widget/WidgetBuyPanel';
 import { WidgetTransferPanel } from '../Widget/WidgetTransferPanel';
 import { useDialog } from '../common/Dialog';
-import { DialogType, DialogWrapper, useDialog2 } from '../common/Dialog2';
+import { DialogData, DialogType, DialogWrapper, useDialog2 } from '../common/Dialog2';
 import { ExternalLink } from '../common/ExternalLink';
 import { errorToast, warningToast } from '../common/atoms/Toast';
 import { ConnectWalletButton } from './ConnectWalletButton';
-import { getAmountLoss } from './HighSlippageWarningDialog';
 import { MoveFundsButton } from './MoveFundsButton';
 import { ReceiveFundsHeader } from './ReceiveFundsHeader';
 import { Routes } from './Routes/Routes';
@@ -79,6 +84,7 @@ import { TokenImportDialog, useTokenImportDialogStore } from './TokenImportDialo
 import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
 import { TransferPanelMain } from './TransferPanelMain';
 import { ImportTokenModalStatus, getWarningTokenDescription } from './TransferPanelUtils';
+import { getTransferWarningDialogType } from './TransferWarningUtils';
 import {
   convertBridgeSdkToMergedTransaction,
   convertBridgeSdkToPendingDepositTransaction,
@@ -87,10 +93,9 @@ import { useAmountBigNumber } from './hooks/useAmountBigNumber';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
 import { useIsSwapTransfer } from './hooks/useIsSwapTransfer';
 import { useIsTransferAllowed } from './hooks/useIsTransferAllowed';
-import { isLifiRoute, useRouteStore } from './hooks/useRouteStore';
+import { getSelectedRouteContext, isLifiRoute, useRouteStore } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
 
-const signerUndefinedError = 'Signer is undefined';
 const transferNotAllowedError = 'Transfer not allowed';
 
 const networkConnectionWarningToast = () =>
@@ -109,7 +114,14 @@ export function TransferPanel() {
   // Link the amount state directly to the amount in query params -  no need of useState
   // Both `amount` getter and setter will internally be using `useArbQueryParams` functions
   const [
-    { amount, amount2, destinationAddress, token: tokenFromSearchParams, disabledFeatures },
+    {
+      amount,
+      amount2,
+      destinationAddress,
+      token: tokenFromSearchParams,
+      destinationToken,
+      disabledFeatures,
+    },
     setQueryParams,
   ] = useArbQueryParams();
   const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
@@ -121,53 +133,74 @@ export function TransferPanel() {
   const [showSmartContractWalletTooltip, setShowSmartContractWalletTooltip] = useState(false);
   const {
     app: {
-      arbTokenBridge: { token, bridgeTokens },
+      arbTokenBridge: { bridgeTokens },
       warningTokens,
     },
   } = useAppState();
-  const { address: walletAddress, chain, isConnected } = useAccount();
+  const { sourceWallet, destinationWallet } = useWallets();
+  const {
+    account: { address: walletAddress, chainId: sourceWalletChainId },
+    isConnected,
+  } = sourceWallet;
+  const {
+    account: { address: destinationWalletAddress },
+  } = destinationWallet;
   const [selectedToken, setSelectedToken] = useSelectedToken();
+  const hasTrackedBridgePageLoad = useRef(false);
   const { switchChainAsync } = useSwitchNetworkWithConfig({
     isSwitchingNetworkBeforeTx: true,
   });
-  // do not use `useChainId` because it won't detect chains outside of our wagmi config
-  const latestChain = useLatest(chain);
+  const latestChainId = useLatest(sourceWalletChainId);
   const [networks, setNetworks] = useNetworks();
   const latestNetworks = useLatest(networks);
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
   const {
-    current: { childChain, childChainProvider, parentChain, parentChainProvider, isDepositMode },
+    current: { childChain, parentChain, isDepositMode },
   } = useLatest(useNetworksRelationship(latestNetworks.current));
   const { isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
   const isBatchTransferSupported = useIsBatchTransferSupported();
-  const nativeCurrencyDecimalsOnSourceChain = useSourceChainNativeCurrencyDecimals();
+  const { balanceDecimals: nativeCurrencyDecimalsOnSourceChain } = useNativeCurrencyForTransfer();
 
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
 
   const { accountType } = useAccountType();
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
 
-  const { current: signer } = useLatest(useEthersSigner({ chainId: networks.sourceChain.id }));
+  const isTrustWalletConnection = useIsTrustWalletConnection();
+
+  const { signer: evmSigner } = useWalletContext('evm');
   const wagmiConfig = useConfig();
 
   const { setTransferring } = useAppContextActions();
-  const { addPendingTransaction } = useAddPendingTransactions(walletAddress);
+  const { addPendingTransaction, updatePendingTransaction } =
+    useAddPendingTransactions(walletAddress);
   const { selectedRoute, clearRoute, context } = useRouteStore(
     (state) => ({
       selectedRoute: state.selectedRoute,
       clearRoute: state.clearRoute,
-      context: state.context,
+      context: getSelectedRouteContext(state),
     }),
     shallow,
   );
-  const addLifiTransactionToCache = useLifiMergedTransactionCacheStore(
-    (state) => state.addTransaction,
+  const {
+    addLifiTransactionToCache,
+    updateLifiTransactionInCache,
+    removeLifiTransactionFromCache,
+  } = useLifiMergedTransactionCacheStore(
+    (state) => ({
+      addLifiTransactionToCache: state.addTransaction,
+      updateLifiTransactionInCache: state.updateTransaction,
+      removeLifiTransactionFromCache: state.removeTransaction,
+    }),
+    shallow,
   );
 
   const isTransferAllowed = useLatest(useIsTransferAllowed());
 
   const isSwapTransfer = useIsSwapTransfer();
+
+  const showUsdgDripCardAfterSubmit = useShowUsdgDripCardAfterSubmit();
 
   const latestDestinationAddress = useLatest(destinationAddress);
 
@@ -179,8 +212,7 @@ export function TransferPanel() {
 
   const isCustomDestinationTransfer = !!latestDestinationAddress.current;
 
-  const { updateEthParentBalance, updateErc20ParentBalances, updateEthChildBalance } =
-    useBalances();
+  const refreshTokenBalances = useRefreshTokenBalances();
 
   const { destinationAddressError } = useDestinationAddressError();
 
@@ -188,13 +220,70 @@ export function TransferPanel() {
 
   const { handleError } = useError();
 
+  const refreshBalances = async () => {
+    const refreshes: Promise<unknown>[] = [];
+
+    if (walletAddress) {
+      refreshes.push(refreshTokenBalances({ chainId: networks.sourceChain.id, walletAddress }));
+    }
+
+    const recipientAddress = destinationAddress || destinationWalletAddress;
+    if (recipientAddress) {
+      refreshes.push(
+        refreshTokenBalances({
+          chainId: networks.destinationChain.id,
+          walletAddress: recipientAddress,
+        }),
+      );
+    }
+
+    await Promise.all(refreshes);
+  };
+
+  // The panel doesn't wait for the source transaction to confirm, so a slow or failed
+  // confirmation can't keep the transfer in progress. Balances refresh once it confirms.
+  const refreshBalancesAfterConfirmation = (confirmation: Promise<unknown>, label: string) => {
+    confirmation.then(refreshBalances).catch((error: unknown) => {
+      handleError({ error, label, category: 'transaction_confirmation' });
+    });
+  };
+
+  useEffect(() => {
+    if (hasTrackedBridgePageLoad.current) {
+      return;
+    }
+
+    hasTrackedBridgePageLoad.current = true;
+    trackEvent('Bridge Page Loaded', {
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
+      sourceToken: tokenFromSearchParams,
+      destinationToken,
+    });
+  }, [
+    destinationToken,
+    networks.destinationChain.id,
+    networks.sourceChain.id,
+    tokenFromSearchParams,
+  ]);
+
   const resetAmountAndSwitchToTransactionHistoryTab = useCallback(() => {
+    // every submit path ends here once the source transaction is out, so this is the one place
+    // that sees all of them
+    showUsdgDripCardAfterSubmit();
+
+    if (embedMode) {
+      openDialog('widget_transaction_history');
+      setQueryParams({ amount: '', amount2: '' });
+      return;
+    }
+
     setQueryParams({
       tab: tabToIndex[TabParamEnum.TX_HISTORY],
       amount: '',
       amount2: '',
     });
-  }, [setQueryParams]);
+  }, [embedMode, openDialog, setQueryParams, showUsdgDripCardAfterSubmit]);
 
   useEffect(() => {
     if (importTokenModalStatus !== ImportTokenModalStatus.IDLE) {
@@ -244,6 +333,9 @@ export function TransferPanel() {
     );
   }, [bridgeTokens, isLoadingTokenLists, tokenFromSearchParams, tokensFromLists, tokensFromUser]);
 
+  const shouldShowTokenImportDialog =
+    isTokenAlreadyImported === false && typeof tokenFromSearchParams !== 'undefined';
+
   const isBridgingANewStandardToken = useMemo(() => {
     const isUnbridgedToken =
       selectedToken !== null && typeof selectedToken.l2Address === 'undefined';
@@ -277,9 +369,20 @@ export function TransferPanel() {
 
   const { current: amountBigNumber } = useLatest(useAmountBigNumber());
 
-  const confirmDialog = async (dialogType: DialogType) => {
-    const waitForInput = openDialog(dialogType);
+  const confirmDialog = async (dialogType: DialogType, dialogData?: DialogData) => {
+    const waitForInput = openDialog(dialogType, dialogData);
     const [confirmed] = await waitForInput();
+    return confirmed;
+  };
+
+  const confirmTrustWalletUpdate = async () => {
+    if (!isTrustWalletConnection) {
+      return true;
+    }
+
+    const confirmed = await confirmDialog('trust_wallet_update');
+    trackEvent('Trust Wallet Update Confirmation', { confirmed });
+
     return confirmed;
   };
 
@@ -379,7 +482,8 @@ export function TransferPanel() {
 
       case 'tx_ethers': {
         try {
-          const tx = await signer!.sendTransaction(step.payload.txRequest);
+          const signer = await evmSigner.getEthersSigner(latestNetworks.current.sourceChain.id);
+          const tx = await signer.sendTransaction(step.payload.txRequest);
           const txReceipt = await tx.wait();
 
           return { data: txReceipt };
@@ -402,23 +506,27 @@ export function TransferPanel() {
   };
 
   const transferCctp = async () => {
+    if (!isCctpEnabled()) {
+      return warningToast('CCTP V1 transfers are no longer available.');
+    }
+
     if (!selectedToken) {
       return;
     }
     if (!walletAddress) {
       throw new Error(`walletAddress is undefined`);
     }
-    if (!signer) {
-      throw new Error(signerUndefinedError);
-    }
-    if (!isTransferAllowed) {
+    const signer = await evmSigner.getEthersSigner(latestNetworks.current.sourceChain.id);
+    if (!isTransferAllowed.current) {
       throw new Error(transferNotAllowedError);
     }
 
     const destinationAddress = latestDestinationAddress.current;
 
     try {
-      const { sourceChainProvider, destinationChainProvider, sourceChain } = latestNetworks.current;
+      const { sourceChain, destinationChain } = latestNetworks.current;
+      const sourceChainProvider = getProviderForChainId(sourceChain.id);
+      const destinationChainProvider = getProviderForChainId(destinationChain.id);
 
       const cctpTransferStarter = new CctpTransferStarter({
         sourceChainProvider,
@@ -478,7 +586,7 @@ export function TransferPanel() {
       }
 
       trackEvent(isDepositMode ? 'CCTP Deposit' : 'CCTP Withdrawal', {
-        accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
+        accountType: getAnalyticsAccountType(accountType),
         network: childChainName,
         amount: Number(amount),
         complete: false,
@@ -498,7 +606,7 @@ export function TransferPanel() {
         uniqueId: null,
         value: amount,
         depositStatus: DepositStatus.CCTP_DEFAULT_STATE,
-        destination: destinationAddress ?? walletAddress,
+        destination: destinationAddress ?? destinationWalletAddress,
         sender: walletAddress,
         isCctp: true,
         tokenAddress: getUsdcTokenAddressFromSourceChainId(sourceChain.id),
@@ -519,7 +627,15 @@ export function TransferPanel() {
       setTransferring(false);
       resetAmountAndSwitchToTransactionHistoryTab();
       clearRoute();
-    } catch (e) {
+
+      if (!isSmartContractWallet) {
+        refreshBalancesAfterConfirmation(
+          sourceChainProvider.waitForTransaction(depositForBurnTx.hash),
+          'cctp_transfer_confirmation',
+        );
+      }
+    } catch (error) {
+      handleError({ error, label: 'cctp_transfer', category: 'transaction_signing' });
     } finally {
       setTransferring(false);
     }
@@ -527,10 +643,7 @@ export function TransferPanel() {
 
   const transferLifi = async () => {
     try {
-      if (!signer) {
-        throw new Error(signerUndefinedError);
-      }
-      if (!isTransferAllowed) {
+      if (!isTransferAllowed.current) {
         throw new Error(transferNotAllowedError);
       }
       if (!context) {
@@ -539,18 +652,18 @@ export function TransferPanel() {
 
       setTransferring(true);
 
-      /**
-       * If the amount received is less than 90% of the sent amount, we show a warning dialog
-       * We multiply by 100 before dividing to avoid BigNumber stripping the value to 0
-       */
       const { fromAmountUsd, toAmountUsd } = getAmountToPay(context);
-      const { lossPercentage } = getAmountLoss({
-        fromAmount: fromAmountUsd,
-        toAmount: toAmountUsd,
+      const warningDialogType = getTransferWarningDialogType({
+        fromAmount: context.fromAmount,
+        toAmount: context.toAmount,
+        fromToken: context.protocolData.route.fromToken,
+        toToken: context.protocolData.route.toToken,
+        fromAmountUsd,
+        toAmountUsd,
       });
 
-      if (lossPercentage > 10) {
-        const confirmation = await confirmDialog('high_slippage_warning');
+      if (warningDialogType) {
+        const confirmation = await confirmDialog(warningDialogType);
         if (!confirmation) return;
       }
 
@@ -558,124 +671,29 @@ export function TransferPanel() {
         return;
       }
 
-      const { sourceChainProvider, destinationChainProvider } = networks;
-
-      const tokenOverrides = getTokenOverride({
-        fromToken: selectedToken?.address,
+      const lifiTransferStarter = BridgeTransferStarterFactory.create({
         sourceChainId: networks.sourceChain.id,
         destinationChainId: networks.destinationChain.id,
+        lifiRoute: context,
       });
-
-      const { transactionRequest } = await getStepTransaction(context.step);
-      if (!isValidTransactionRequest(transactionRequest)) {
-        return;
-      }
-
-      const destinationChainErc20Address =
-        tokenOverrides.destination?.address || isDepositMode
-          ? selectedToken?.l2Address
-          : selectedToken?.address;
-      const sourceChainErc20Address =
-        tokenOverrides.source?.address || isDepositMode
-          ? selectedToken?.address
-          : selectedToken?.l2Address;
-      const lifiTransferStarter = new LifiTransferStarter({
-        destinationChainProvider,
-        sourceChainProvider,
-        destinationChainErc20Address,
-        sourceChainErc20Address,
-        lifiData: {
-          ...context,
-          transactionRequest,
-        },
-      });
-
-      // Check for allowance
-      if (
-        await lifiTransferStarter.requiresTokenApproval({
-          amount: amountBigNumber,
-          owner: await signer.getAddress(),
-        })
-      ) {
-        const userConfirmation = await confirmDialog('approve_token');
-        if (!userConfirmation) return false;
-
-        if (isSmartContractWallet) {
-          showDelayedSmartContractTxRequest();
-        }
-
-        try {
-          const tx = await lifiTransferStarter.approveToken({
-            signer,
-            amount: amountBigNumber,
-          });
-          if (tx) await tx.wait();
-        } catch (error) {
-          if (isUserRejectedError(error)) {
-            return;
-          }
-          handleError({
-            error,
-            label: 'lifi_approve_token',
-            category: 'token_approval',
-          });
-          errorToast(
-            `Lifi approval transaction failed: ${error instanceof BaseError ? error.shortMessage : (error as Error).message}`,
-          );
-          return;
-        }
-      }
 
       if (isSmartContractWallet) {
         showDelayedSmartContractTxRequest();
       }
 
-      const transfer = await lifiTransferStarter.transfer({
-        amount: amountBigNumber,
-        signer,
-        destinationAddress,
-        wagmiConfig,
-      });
-
-      const assetType = getLifiAssetType({
-        tokenAddress: context.fromAmount.token.address,
-        chainId: networks.sourceChain.id,
-      });
-      const destinationAssetType = getLifiAssetType({
-        tokenAddress: context.toAmount.token.address,
-        chainId: networks.destinationChain.id,
-      });
-
-      trackEvent('Lifi Transfer', {
-        tokenSymbol: context.fromAmount.token.symbol,
-        assetType,
-        destinationTokenSymbol: context.toAmount.token.symbol,
-        destinationAssetType,
-        accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
-        network: getNetworkName(networks.sourceChain.id),
-        amount: Number(amount),
-        sourceChain: getNetworkName(networks.sourceChain.id),
-        destinationChain: getNetworkName(networks.destinationChain.id),
-        tag: selectedRoute,
-        isSwap: isSwapTransfer,
-      });
-
-      resetAmountAndSwitchToTransactionHistoryTab();
-
-      if (isSmartContractWallet) {
-        // show the warning in case of SCW since we cannot show Lifi tx history for SCW
-        setTimeout(() => {
-          highlightTransactionHistoryDisclaimer();
-        }, 100);
-      } else {
+      let cachedLifiTransfer: LifiMergedTransaction | null = null;
+      const createLifiTransfer = (
+        lifiRoute: RouteExtended,
+        txId: string,
+        showInHistory: boolean,
+      ): LifiMergedTransaction => {
         const assetType =
-          !selectedToken ||
-          (selectedToken && addressesEqual(selectedToken.address, constants.AddressZero))
+          !selectedToken || addressesEqual(selectedToken.address, constants.AddressZero)
             ? AssetType.ETH
             : AssetType.ERC20;
 
-        const newTransfer: LifiMergedTransaction = {
-          txId: transfer.sourceChainTransaction.hash,
+        return {
+          txId,
           asset: selectedToken?.symbol || 'ETH',
           assetType,
           blockNum: null,
@@ -696,31 +714,123 @@ export function TransferPanel() {
           childChainId: childChain.id,
           sourceChainId: networks.sourceChain.id,
           destinationChainId: networks.destinationChain.id,
-          toolDetails: context.toolDetails,
-          durationMs: context.durationMs,
-          fromAmount: context.fromAmount,
-          toAmount: context.toAmount,
           destinationTxId: null,
-          transactionRequest,
+          lifiRoute,
+          showInHistory,
         };
-        addPendingTransaction(newTransfer);
-        addLifiTransactionToCache(newTransfer);
-      }
+      };
+      const updateCachedLifiRoute = (lifiRoute: RouteExtended) => {
+        const txHash = getExecutedLifiRouteTxHash(lifiRoute);
 
+        if (!cachedLifiTransfer && !isSmartContractWallet) {
+          if (!txHash && getPendingLifiRouteBatchIds(lifiRoute).length === 0) {
+            return;
+          }
+          const newTransfer = createLifiTransfer(
+            lifiRoute,
+            txHash ?? lifiRoute.id,
+            Boolean(txHash),
+          );
+          cachedLifiTransfer = newTransfer;
+          addLifiTransactionToCache(newTransfer);
+          if (txHash) {
+            addPendingTransaction(newTransfer);
+          }
+          return;
+        }
+
+        if (!cachedLifiTransfer) {
+          return;
+        }
+
+        const becameVisible = cachedLifiTransfer.showInHistory === false && Boolean(txHash);
+        const routeUpdates = {
+          lifiRoute,
+          ...(becameVisible ? { txId: txHash, showInHistory: true } : {}),
+        };
+        cachedLifiTransfer = {
+          ...cachedLifiTransfer,
+          ...routeUpdates,
+        };
+        if (becameVisible) {
+          addPendingTransaction(cachedLifiTransfer);
+        }
+        updatePendingTransaction(cachedLifiTransfer);
+        updateLifiTransactionInCache(cachedLifiTransfer, routeUpdates);
+      };
+
+      const transfer = await lifiTransferStarter.transfer({
+        amount: amountBigNumber,
+        destinationAddress,
+        signers: getSigners(sourceWallet, destinationWallet),
+        switchChainAsync,
+        onApprovalRequest: (approvalRequest) =>
+          confirmDialog('approve_lifi_token', { lifiApproval: { approvalRequest } }),
+        onRouteUpdate: updateCachedLifiRoute,
+        onRouteExecutionError: (error, latestRoute) => {
+          if (isUserRejectedError(error)) {
+            if (cachedLifiTransfer?.showInHistory === false) {
+              removeLifiTransactionFromCache(cachedLifiTransfer);
+              cachedLifiTransfer = null;
+            } else if (latestRoute && getExecutedLifiRouteTxHash(latestRoute)) {
+              updateCachedLifiRoute(latestRoute);
+            }
+            return;
+          }
+
+          if (!getExecutedLifiRouteTxHash(latestRoute)) {
+            return;
+          }
+
+          handleError({
+            error,
+            label: 'lifi_route_execution',
+            category: 'token_transfer',
+          });
+          errorToast(
+            'LiFi transaction execution was interrupted. Check transaction history for its latest status.',
+          );
+        },
+      });
+
+      resetAmountAndSwitchToTransactionHistoryTab();
       clearRoute();
 
-      if (transfer?.sourceChainTransaction?.wait) {
-        await transfer.sourceChainTransaction.wait();
+      if (isSmartContractWallet) {
+        // show the warning in case of SCW since we cannot show Lifi tx history for SCW
+        setTimeout(() => {
+          highlightTransactionHistoryDisclaimer();
+        }, 100);
+      }
 
-        await Promise.all([updateEthParentBalance(), updateEthChildBalance()]);
+      const assetType = getLifiAssetType({
+        tokenAddress: context.fromAmount.token.address,
+        chainId: networks.sourceChain.id,
+      });
+      const destinationAssetType = getLifiAssetType({
+        tokenAddress: context.toAmount.token.address,
+        chainId: networks.destinationChain.id,
+      });
 
-        if (selectedToken) {
-          token.updateTokenData(selectedToken.address);
-        }
+      trackEvent('Lifi Transfer', {
+        tokenSymbol: context.fromAmount.token.symbol,
+        assetType,
+        destinationTokenSymbol: context.toAmount.token.symbol,
+        destinationAssetType,
+        accountType: getAnalyticsAccountType(accountType),
+        network: getNetworkName(networks.sourceChain.id),
+        amount: Number(amount),
+        sourceChain: getNetworkName(networks.sourceChain.id),
+        destinationChain: getNetworkName(networks.destinationChain.id),
+        tag: selectedRoute,
+        isSwap: isSwapTransfer,
+      });
 
-        if (nativeCurrency.isCustom) {
-          await updateErc20ParentBalances([nativeCurrency.address]);
-        }
+      if (!isSmartContractWallet) {
+        refreshBalancesAfterConfirmation(
+          transfer.sourceChainTransaction.wait(),
+          'lifi_source_confirmation',
+        );
       }
     } catch (error) {
       if (isUserRejectedError(error)) {
@@ -744,17 +854,17 @@ export function TransferPanel() {
     if (!selectedToken) {
       return;
     }
-    if (!signer) {
-      throw new Error(signerUndefinedError);
-    }
-    if (!isTransferAllowed) {
+    const signer = await evmSigner.getEthersSigner(latestNetworks.current.sourceChain.id);
+    if (!isTransferAllowed.current) {
       throw new Error(transferNotAllowedError);
     }
 
     setTransferring(true);
 
     try {
-      const { sourceChainProvider, destinationChainProvider } = latestNetworks.current;
+      const { sourceChain, destinationChain } = latestNetworks.current;
+      const sourceChainProvider = getProviderForChainId(sourceChain.id);
+      const destinationChainProvider = getProviderForChainId(destinationChain.id);
 
       if (!(await confirmCustomDestinationAddress())) {
         return;
@@ -815,7 +925,7 @@ export function TransferPanel() {
       trackEvent('OFT Transfer', {
         tokenSymbol: selectedToken.symbol,
         assetType: 'ERC-20',
-        accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
+        accountType: getAnalyticsAccountType(accountType),
         network: getNetworkName(networks.sourceChain.id),
         amount: Number(amount),
         sourceChain: getNetworkName(networks.sourceChain.id),
@@ -852,6 +962,10 @@ export function TransferPanel() {
           value: amount,
           tokenAddress: selectedToken.address,
         });
+        refreshBalancesAfterConfirmation(
+          sourceChainProvider.waitForTransaction(transfer.sourceChainTransaction.hash),
+          'oft_transfer_confirmation',
+        );
       }
 
       clearRoute();
@@ -878,13 +992,11 @@ export function TransferPanel() {
   const transfer = async () => {
     const sourceChainId = latestNetworks.current.sourceChain.id;
 
-    if (!isTransferAllowed) {
+    if (!isTransferAllowed.current) {
       throw new Error(transferNotAllowedError);
     }
 
-    if (!signer) {
-      throw new Error(signerUndefinedError);
-    }
+    const signer = await evmSigner.getEthersSigner(latestNetworks.current.sourceChain.id);
 
     const childChainName = getNetworkName(childChain.id);
 
@@ -1007,8 +1119,8 @@ export function TransferPanel() {
         // token suspension handling
         const isTokenSuspended = !(await isGatewayRegistered({
           erc20ParentChainAddress: selectedToken.address,
-          parentChainProvider,
-          childChainProvider,
+          parentChainProvider: getProviderForChainId(parentChain.id),
+          childChainProvider: getProviderForChainId(childChain.id),
         }));
         if (isTokenSuspended) {
           warningToast(
@@ -1101,7 +1213,7 @@ export function TransferPanel() {
       });
 
       // transaction submitted callback
-      onTxSubmit(transfer);
+      await onTxSubmit(transfer);
     } catch (error) {
       handleError({
         error,
@@ -1128,7 +1240,7 @@ export function TransferPanel() {
       trackEvent(isDepositMode ? 'Deposit' : 'Withdraw', {
         tokenSymbol: selectedToken?.symbol,
         assetType: selectedToken ? 'ERC-20' : 'ETH',
-        accountType: 'EOA',
+        accountType: getAnalyticsAccountType(accountType),
         network: getNetworkName(childChain.id),
         amount: Number(amount),
         amount2: isBatchTransfer ? Number(amount2) : undefined,
@@ -1186,33 +1298,14 @@ export function TransferPanel() {
       );
     }
 
-    if (embedMode) {
-      openDialog('widget_transaction_history');
-    } else {
-      setQueryParams({
-        tab: tabToIndex[TabParamEnum.TX_HISTORY],
-      });
-    }
-
+    resetAmountAndSwitchToTransactionHistoryTab();
     setTransferring(false);
     clearRoute();
-    setQueryParams({
-      amount: '',
-      amount2: '',
-    });
 
-    await (sourceChainTransaction as TransactionResponse).wait();
-
-    // tx confirmed, update balances
-    await Promise.all([updateEthParentBalance(), updateEthChildBalance()]);
-
-    if (selectedToken) {
-      token.updateTokenData(selectedToken.address);
-    }
-
-    if (nativeCurrency.isCustom) {
-      await updateErc20ParentBalances([nativeCurrency.address]);
-    }
+    refreshBalancesAfterConfirmation(
+      (sourceChainTransaction as TransactionResponse).wait(),
+      'arbitrum_transfer_confirmation',
+    );
   };
 
   const trackTransferButtonClick = useCallback(() => {
@@ -1221,7 +1314,7 @@ export function TransferPanel() {
       selectedRoute,
       tokenSymbol: selectedToken?.symbol,
       assetType: selectedToken ? 'ERC-20' : 'ETH',
-      accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
+      accountType: getAnalyticsAccountType(accountType),
       network: childChain.name,
       amount: Number(amount),
       amount2: isBatchTransfer ? Number(amount2) : undefined,
@@ -1234,7 +1327,7 @@ export function TransferPanel() {
     childChain.name,
     isBatchTransfer,
     isDepositMode,
-    isSmartContractWallet,
+    accountType,
     selectedToken,
     isCustomDestinationTransfer,
     selectedRoute,
@@ -1242,7 +1335,7 @@ export function TransferPanel() {
 
   const moveFundsButtonOnClick = async () => {
     const isConnectedToTheWrongChain =
-      latestChain.current?.id !== latestNetworks.current.sourceChain.id;
+      latestChainId.current !== latestNetworks.current.sourceChain.id;
 
     const sourceChainId = latestNetworks.current.sourceChain.id;
     const childChainName = getNetworkName(childChain.id);
@@ -1257,7 +1350,7 @@ export function TransferPanel() {
           type: isDepositMode ? 'Deposit' : 'Withdrawal',
           tokenSymbol: selectedToken?.symbol,
           assetType: selectedToken ? 'ERC-20' : 'ETH',
-          accountType: isSmartContractWallet ? 'Smart Contract' : 'EOA',
+          accountType: getAnalyticsAccountType(accountType),
           network: childChainName,
           amount: Number(amount),
           amount2: isBatchTransfer ? Number(amount2) : undefined,
@@ -1274,11 +1367,11 @@ export function TransferPanel() {
       setTransferring(false);
     }
 
-    if (!isTransferAllowed) {
+    if (!isTransferAllowed.current) {
       return networkConnectionWarningToast();
     }
 
-    if (isDepositMode && latestNetworks.current.destinationChain.id === ChainId.ArbitrumNova) {
+    if (isNovaDestination(latestNetworks.current.destinationChain.id)) {
       const shouldProceedToNova = await confirmNovaDepositWarning();
 
       if (!shouldProceedToNova) {
@@ -1286,19 +1379,27 @@ export function TransferPanel() {
       }
     }
 
-    if (selectedRoute == 'oftV2') {
-      return transferOft();
+    if (!(await confirmTrustWalletUpdate())) {
+      return;
     }
-    if (selectedRoute === 'cctp') {
-      return transferCctp();
+
+    try {
+      if (selectedRoute == 'oftV2') {
+        return await transferOft();
+      }
+      if (selectedRoute === 'cctp') {
+        return await transferCctp();
+      }
+      if (isLifiRoute(selectedRoute)) {
+        return await transferLifi();
+      }
+      if (selectedRoute === 'arbitrum' && isDepositMode && selectedToken) {
+        return await depositToken();
+      }
+      return await transfer();
+    } catch (error) {
+      handleError({ error, label: 'transfer', category: 'transaction_signing' });
     }
-    if (isLifiRoute(selectedRoute)) {
-      return transferLifi();
-    }
-    if (selectedRoute === 'arbitrum' && isDepositMode && selectedToken) {
-      return depositToken();
-    }
-    return transfer();
   };
 
   if (embedMode) {
@@ -1311,7 +1412,7 @@ export function TransferPanel() {
         openDialog={openDialog}
         dialogProps={dialogProps}
         moveFundsButtonOnClick={moveFundsButtonOnClick}
-        isTokenAlreadyImported={isTokenAlreadyImported}
+        shouldShowTokenImportDialog={shouldShowTokenImportDialog}
         tokenFromSearchParams={tokenFromSearchParams}
         tokenImportDialogProps={tokenImportDialogProps}
         closeWithResetTokenImportDialog={closeWithResetTokenImportDialog}
@@ -1371,7 +1472,7 @@ export function TransferPanel() {
           <ConnectWalletButton />
         )}
 
-        {isTokenAlreadyImported === false && tokenFromSearchParams && (
+        {shouldShowTokenImportDialog && tokenFromSearchParams && (
           <TokenImportDialog
             {...tokenImportDialogProps}
             onClose={closeWithResetTokenImportDialog}

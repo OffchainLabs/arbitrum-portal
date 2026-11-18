@@ -1,13 +1,14 @@
 import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
-import { constants } from 'ethers';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ChainId } from '../../types/ChainId';
+import { CommonAddress } from '../../util/CommonAddressUtils';
 import { isLifiEnabled, isOnrampEnabled } from '../../util/featureFlag';
 import { customChainLocalStorageKey } from '../../util/networks';
 import orbitChainsData from '../../util/orbitChainsData.json';
 import {
   isOnrampFeatureEnabled,
+  sanitizeDestinationTokenQueryParam,
   sanitizeTabQueryParam,
   sanitizeTokenQueryParam,
 } from '../../util/queryParamUtils';
@@ -198,6 +199,7 @@ describe('ChainParam custom encoder and decoder', () => {
       expect(ChainParam.encode(ChainId.ArbitrumOne)).toEqual('arbitrum-one');
       expect(ChainParam.encode(ChainId.Sepolia)).toEqual('sepolia');
       expect(ChainParam.encode(ChainId.ArbitrumSepolia)).toEqual('arbitrum-sepolia');
+      expect(ChainParam.encode(ChainId.Solana)).toBeUndefined();
       expect(ChainParam.encode(1234567890)).toBeUndefined();
       localStorage.setItem(
         customChainLocalStorageKey,
@@ -219,6 +221,7 @@ describe('ChainParam custom encoder and decoder', () => {
       expect(ChainParam.decode('arbitrum-one')).toEqual(ChainId.ArbitrumOne);
       expect(ChainParam.decode('sepolia')).toEqual(ChainId.Sepolia);
       expect(ChainParam.decode('arbitrum-sepolia')).toEqual(ChainId.ArbitrumSepolia);
+      expect(ChainParam.decode('solana')).toBeUndefined();
       expect(ChainParam.decode('aaa123')).toBeUndefined();
     });
 
@@ -230,6 +233,7 @@ describe('ChainParam custom encoder and decoder', () => {
       expect(decodeChainId(ChainId.ArbitrumOne)).toEqual(ChainId.ArbitrumOne);
       expect(decodeChainId(ChainId.Sepolia)).toEqual(ChainId.Sepolia);
       expect(decodeChainId(ChainId.ArbitrumSepolia)).toEqual(ChainId.ArbitrumSepolia);
+      expect(decodeChainId(ChainId.Solana)).toBeUndefined();
       expect(ChainParam.decode('1234567890')).toBeUndefined();
       const customChain = createMockOrbitChain({
         chainId: 222222,
@@ -324,11 +328,11 @@ describe('sanitizeTokenQueryParam', () => {
     });
 
     it('should be stripped if the destination chain is an Orbit chain with ETH as the gas token', () => {
-      const rariChainId = 1380012617;
+      const edgeChainId = 3343;
 
       const result = sanitizeTokenQueryParam({
         sourceChainId: ChainId.ArbitrumOne,
-        destinationChainId: rariChainId,
+        destinationChainId: edgeChainId,
         token: 'eth',
       });
       expect(result).toBeUndefined();
@@ -339,9 +343,6 @@ describe('sanitizeTokenQueryParam', () => {
     beforeAll(() => {
       registerCustomArbitrumNetwork(
         orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.ApeChain)!,
-      );
-      registerCustomArbitrumNetwork(
-        orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.Superposition)!,
       );
     });
 
@@ -360,26 +361,10 @@ describe('sanitizeTokenQueryParam', () => {
           token: null,
         });
         expect(resultToEthereum).toEqual(null);
-
-        const resultToSuperposition = sanitizeTokenQueryParam({
-          sourceChainId: ChainId.ApeChain,
-          destinationChainId: ChainId.Superposition,
-          token: null,
-        });
-        expect(resultToSuperposition).toEqual(null);
       });
     });
 
     describe('to ApeChain', () => {
-      it('should return AddressZero for source chains without APE token', () => {
-        const resultFromSuperposition = sanitizeTokenQueryParam({
-          sourceChainId: ChainId.Superposition,
-          destinationChainId: ChainId.ApeChain,
-          token: null,
-        });
-        expect(resultFromSuperposition).toEqual(constants.AddressZero);
-      });
-
       it('should return APE token (null) from other chains', () => {
         const resultFromBase = sanitizeTokenQueryParam({
           sourceChainId: ChainId.Base,
@@ -414,17 +399,81 @@ describe('sanitizeTokenQueryParam', () => {
         });
         expect(result).toEqual(testAddress.toLowerCase());
       });
-
-      it('should preserve specified token address for other LiFi pairs', () => {
-        const testAddress = '0xabcdef1234567890abcdef1234567890abcdef12';
-        const result = sanitizeTokenQueryParam({
-          sourceChainId: ChainId.Base,
-          destinationChainId: ChainId.Superposition,
-          token: testAddress,
-        });
-        expect(result).toEqual(testAddress.toLowerCase());
-      });
     });
+  });
+});
+
+describe('sanitizeDestinationTokenQueryParam', () => {
+  beforeAll(() => {
+    vi.mocked(isLifiEnabled).mockReturnValue(true);
+    registerCustomArbitrumNetwork(
+      orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.RobinhoodChain)!,
+    );
+  });
+
+  describe('`destinationToken=usdg` alias', () => {
+    it('resolves to the Ethereum USDG contract when bridging from Ethereum', () => {
+      expect(
+        sanitizeDestinationTokenQueryParam({
+          destinationToken: 'usdg',
+          sourceChainId: ChainId.Ethereum,
+          destinationChainId: ChainId.RobinhoodChain,
+        }),
+      ).toEqual(CommonAddress.Ethereum.USDG);
+    });
+
+    it('resolves to the Arbitrum One USDG contract when bridging from Arbitrum One', () => {
+      expect(
+        sanitizeDestinationTokenQueryParam({
+          destinationToken: 'usdg',
+          sourceChainId: ChainId.ArbitrumOne,
+          destinationChainId: ChainId.RobinhoodChain,
+        }),
+      ).toEqual(CommonAddress.ArbitrumOne.USDG);
+    });
+
+    it('resolves to the Robinhood USDG contract from any other chain, case-insensitively', () => {
+      expect(
+        sanitizeDestinationTokenQueryParam({
+          destinationToken: 'USDG',
+          sourceChainId: ChainId.Base,
+          destinationChainId: ChainId.RobinhoodChain,
+        }),
+      ).toEqual(CommonAddress.RobinhoodChain.USDG);
+    });
+
+    it('is dropped when the destination is not Robinhood Chain', () => {
+      expect(
+        sanitizeDestinationTokenQueryParam({
+          destinationToken: 'usdg',
+          sourceChainId: ChainId.Ethereum,
+          destinationChainId: ChainId.ArbitrumOne,
+        }),
+      ).toBeUndefined();
+    });
+  });
+
+  it('falls back to the regular token sanitization for addresses', () => {
+    expect(
+      sanitizeDestinationTokenQueryParam({
+        destinationToken: CommonAddress.RobinhoodChain.USDe,
+        sourceChainId: ChainId.ArbitrumOne,
+        destinationChainId: ChainId.RobinhoodChain,
+      }),
+    ).toEqual(CommonAddress.RobinhoodChain.USDe);
+    expect(
+      sanitizeDestinationTokenQueryParam({
+        destinationToken: undefined,
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    ).toEqual(
+      sanitizeTokenQueryParam({
+        token: undefined,
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+      }),
+    );
   });
 });
 

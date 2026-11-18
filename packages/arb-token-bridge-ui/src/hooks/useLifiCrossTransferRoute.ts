@@ -1,26 +1,19 @@
 import { useDeferredValue, useMemo } from 'react';
 import useSWR from 'swr';
-import { Address } from 'viem';
 
-import {
-  LifiCrosschainTransfersRoute,
-  LifiParams,
-} from '@/bridge/app/api/crosschain-transfers/lifi';
+import type { LifiParams, PreferredLifiRoutes } from '@/bridge/app/api/crosschain-transfers/lifi';
 
 import { getAPIBaseUrl } from '../util';
+import { parseAddressForChain } from '../util/AddressUtils';
 
 export type UseLifiCrossTransfersRouteParams = Pick<
   LifiParams,
-  | 'fromAmount'
-  | 'fromToken'
-  | 'toToken'
-  | 'slippage'
-  | 'fromAddress'
-  | 'denyBridges'
-  | 'denyExchanges'
+  'fromAmount' | 'fromToken' | 'toToken' | 'slippage' | 'denyBridges' | 'denyExchanges'
 > & {
   enabled?: boolean;
-  toAddress: Address | undefined;
+  // Plain strings: the hook checks each address against its chain before fetching
+  fromAddress?: string;
+  toAddress: string | undefined;
   fromChainId: number;
   toChainId: number;
 };
@@ -38,9 +31,13 @@ export const useLifiCrossTransfersRoute = ({
   denyExchanges,
   slippage,
 }: UseLifiCrossTransfersRouteParams) => {
+  // After a network switch, an address can briefly belong to the other ecosystem
+  const hasValidAddresses =
+    (!fromAddress || parseAddressForChain(fromAddress, fromChainId) !== undefined) &&
+    (!toAddress || parseAddressForChain(toAddress, toChainId) !== undefined);
   const key = useMemo(
     () =>
-      enabled && fromAmount !== '0'
+      enabled && fromAmount !== '0' && hasValidAddresses
         ? ([
             fromAmount,
             fromToken,
@@ -58,6 +55,7 @@ export const useLifiCrossTransfersRoute = ({
     [
       enabled,
       fromAmount,
+      hasValidAddresses,
       fromToken,
       toToken,
       fromChainId,
@@ -104,10 +102,10 @@ export const useLifiCrossTransfersRoute = ({
       }
 
       if (_denyBridges && _denyBridges.length > 0) {
-        _denyBridges.map((denyBridge) => urlParams.append('denyBridges', denyBridge));
+        _denyBridges.forEach((denyBridge) => urlParams.append('denyBridges', denyBridge));
       }
       if (_denyExchanges && _denyExchanges.length > 0) {
-        _denyExchanges.map((denyExchange) => urlParams.append('denyExchanges', denyExchange));
+        _denyExchanges.forEach((denyExchange) => urlParams.append('denyExchanges', denyExchange));
       }
       if (_slippage) {
         urlParams.set('slippage', _slippage.toString());
@@ -125,7 +123,7 @@ export const useLifiCrossTransfersRoute = ({
           throw new Error(data.message);
         }
 
-        return data as Promise<{ data: LifiCrosschainTransfersRoute[] }>;
+        return data as { data: PreferredLifiRoutes };
       });
 
       return response.data;
@@ -141,6 +139,7 @@ export const useLifiCrossTransfersRoute = ({
 
   return {
     ...swrResult,
+    data: !hasValidAddresses || swrResult.error ? undefined : swrResult.data,
     isLoading: isUpdating || swrResult.isLoading,
   };
 };

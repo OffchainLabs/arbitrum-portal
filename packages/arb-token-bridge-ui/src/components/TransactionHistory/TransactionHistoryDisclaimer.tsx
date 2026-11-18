@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
-import { useAccount } from 'wagmi';
 
 import { useAccountType } from '../../hooks/useAccountType';
-import { useBalance } from '../../hooks/useBalance';
-import { useLifiTransactionHistory } from '../../hooks/useLifiTransactionHistory';
 import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../../util/CommonAddressUtils';
+import { useWalletContext } from '../../wallet/WalletContext';
+import { useTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { ExternalLink } from '../common/ExternalLink';
 
 export const highlightTransactionHistoryDisclaimer = () => {
@@ -21,23 +20,22 @@ export const highlightTransactionHistoryDisclaimer = () => {
 };
 
 export function TransactionHistoryDisclaimer() {
-  const { address: walletAddress } = useAccount();
-  const { accountType } = useAccountType();
-  const { data: lifiTransactions } = useLifiTransactionHistory({
-    walletAddress,
-  });
-
   const {
-    erc20: [mainnetBalances],
-  } = useBalance({
+    account: { address: walletAddress },
+  } = useWalletContext('evm');
+  const { accountType } = useAccountType(walletAddress ?? '');
+
+  const { data: mainnetBalances } = useTokenBalances({
     chainId: ChainId.Ethereum,
     walletAddress,
+    tokenAddresses: [CommonAddress.Ethereum.USDT],
+    refreshInterval: 0,
   });
-  const {
-    erc20: [arbOneBalances],
-  } = useBalance({
+  const { data: arbOneBalances } = useTokenBalances({
     chainId: ChainId.ArbitrumOne,
     walletAddress,
+    tokenAddresses: [CommonAddress.ArbitrumOne.USDT],
+    refreshInterval: 0,
   });
 
   const showOftDisclaimer = useMemo(() => {
@@ -45,14 +43,13 @@ export function TransactionHistoryDisclaimer() {
     const arbOneUsdtBalance = arbOneBalances?.[CommonAddress.ArbitrumOne.USDT];
 
     const userHasUsdtBalance =
-      (mainnetUsdtBalance && mainnetUsdtBalance.gt(0)) ||
-      (arbOneUsdtBalance && arbOneUsdtBalance.gt(0));
+      (mainnetUsdtBalance !== undefined && mainnetUsdtBalance > 0n) ||
+      (arbOneUsdtBalance !== undefined && arbOneUsdtBalance > 0n);
 
     return userHasUsdtBalance && accountType === 'smart-contract-wallet';
   }, [mainnetBalances, arbOneBalances, accountType]);
 
-  const showLifiDisclaimer =
-    accountType === 'smart-contract-wallet' || (lifiTransactions && lifiTransactions.length > 0);
+  const showLifiDisclaimer = accountType === 'smart-contract-wallet';
 
   if (!showOftDisclaimer && !showLifiDisclaimer) {
     return null;
@@ -65,38 +62,22 @@ export function TransactionHistoryDisclaimer() {
     >
       <span className="font-bold">Don&apos;t see your transaction?</span>
       <ul className="list-disc pl-4">
-        {showLifiDisclaimer &&
-          (lifiTransactions && lifiTransactions.length > 0 ? (
-            <li>
-              LiFi transactions can be found on{' '}
-              <ExternalLink
-                href={
-                  walletAddress
-                    ? `https://scan.li.fi/wallet/${walletAddress}`
-                    : 'https://scan.li.fi'
-                }
-                className="arb-hover inline-flex underline"
-              >
-                LifiScanner
-              </ExternalLink>
-              .
-            </li>
-          ) : (
-            <li>
-              LiFi transactions inititated by Smart-contract wallets can be found on{' '}
-              <ExternalLink
-                href={
-                  walletAddress
-                    ? `https://arbiscan.io/address/${walletAddress}`
-                    : 'https://arbiscan.io'
-                }
-                className="arb-hover inline-flex underline"
-              >
-                Arbiscan
-              </ExternalLink>
-              .
-            </li>
-          ))}
+        {showLifiDisclaimer && (
+          <li>
+            LiFi transactions initiated by Smart-contract wallets can be found on{' '}
+            <ExternalLink
+              href={
+                walletAddress
+                  ? `https://arbiscan.io/address/${walletAddress}`
+                  : 'https://arbiscan.io'
+              }
+              className="arb-hover inline-flex underline"
+            >
+              Arbiscan
+            </ExternalLink>
+            .
+          </li>
+        )}
         {showOftDisclaimer && (
           <li>
             LayerZero USDT transfers initiated by Smart-contract wallets can be found on{' '}

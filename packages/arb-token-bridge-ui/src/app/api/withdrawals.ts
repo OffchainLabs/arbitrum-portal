@@ -1,15 +1,12 @@
 import { gql } from '@apollo/client';
 import { NextRequest, NextResponse } from 'next/server';
 
-import {
-  getL2SubgraphClient,
-  getSourceFromSubgraphClient,
-} from '../../api-utils/ServerSubgraphUtils';
+import { type SubgraphSource, getL2SubgraphClient } from '../../api-utils/ServerSubgraphUtils';
 import { WithdrawalFromSubgraph } from '../../util/withdrawals/fetchWithdrawalsFromSubgraph';
-import { isIndexerApiExperimentEnabled, proxyToIndexer } from './indexer';
+import { isIndexerEnabledForRequest, proxyToIndexer } from './indexer';
 
 type WithdrawalResponse = {
-  meta?: { source: string | null };
+  meta?: { source: SubgraphSource };
   data: WithdrawalFromSubgraph[];
   message?: string; // in case of any error
 };
@@ -17,7 +14,7 @@ type WithdrawalResponse = {
 export async function GET(request: NextRequest): Promise<NextResponse<WithdrawalResponse>> {
   try {
     const { searchParams } = new URL(request.url);
-    if (isIndexerApiExperimentEnabled(request)) {
+    if (isIndexerEnabledForRequest(request)) {
       return proxyToIndexer(request, '/api/bridge-history/withdrawals');
     }
     const sender = searchParams.get('sender') || undefined;
@@ -56,9 +53,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<Withdrawal
     ${search ? `l2TxHash_contains: "${search}"` : ''}
     `;
 
-    let subgraphClient;
+    let subgraph;
     try {
-      subgraphClient = getL2SubgraphClient(Number(l2ChainId));
+      subgraph = getL2SubgraphClient(Number(l2ChainId));
     } catch (error: any) {
       // catch attempt to query unsupported networks and throw a 400
       return NextResponse.json(
@@ -70,7 +67,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Withdrawal
       );
     }
 
-    const subgraphResult = await subgraphClient.query({
+    const subgraphResult = await subgraph.client.query({
       query: gql`{
         withdrawals(
           where: {            
@@ -135,7 +132,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Withdrawal
 
     return NextResponse.json(
       {
-        meta: { source: getSourceFromSubgraphClient(subgraphClient) },
+        meta: { source: subgraph.source },
         data: transactions,
       },
       { status: 200 },

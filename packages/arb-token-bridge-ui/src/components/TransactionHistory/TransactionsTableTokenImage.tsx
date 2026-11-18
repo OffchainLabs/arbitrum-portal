@@ -5,8 +5,11 @@ import EthereumLogoRoundLight from '@/images/EthereumLogoRoundLight.svg';
 import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { useTokenLists } from '../../hooks/useTokenLists';
 import { MergedTransaction } from '../../state/app/state';
+import { normalizeAddress } from '../../util/AddressUtils';
 import { TokenListWithId } from '../../util/TokenListUtils';
+import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { orbitChains } from '../../util/orbitChainsList';
+import { isCrossEcosystemTransfer } from '../../wallet/getWalletEcosystem';
 
 // TODO: cache
 function createTokenLogoMapFromTokenLists(tokenLists: TokenListWithId[] | undefined) {
@@ -16,7 +19,7 @@ function createTokenLogoMapFromTokenLists(tokenLists: TokenListWithId[] | undefi
   const arrayOfTokens = tokenLists.flatMap((tkn) => tkn.tokens) || [];
   return arrayOfTokens.reduce(
     (acc, tkn) => {
-      acc[tkn.address.toLowerCase()] = tkn.logoURI;
+      acc[normalizeAddress(tkn.address)] = tkn.logoURI;
       return acc;
     },
     {} as { [key in string]: string | undefined },
@@ -30,13 +33,18 @@ export const TransactionsTableTokenImage = ({ tx }: { tx: MergedTransaction }) =
   const tokenAddressToLogoSrcMap = createTokenLogoMapFromTokenLists(tokenLists.data);
 
   const tokenLogoSrc = tx.tokenAddress
-    ? tokenAddressToLogoSrcMap[tx.tokenAddress.toLowerCase()]
+    ? tokenAddressToLogoSrcMap[normalizeAddress(tx.tokenAddress)]
     : undefined;
 
   if (tx.assetType === AssetType.ETH) {
     const orbitChain = orbitChains[tx.childChainId];
+    const sourceNativeTokenLogoSrc = getBridgeUiConfigForChain(tx.sourceChainId).nativeTokenData
+      ?.logoUrl;
 
-    const nativeTokenLogoSrc = orbitChain?.bridgeUiConfig.nativeTokenData?.logoUrl;
+    // Across ecosystems the asset is the source chain's native token, whatever the child chain's
+    const nativeTokenLogoSrc = isCrossEcosystemTransfer(tx)
+      ? sourceNativeTokenLogoSrc
+      : (orbitChain?.bridgeUiConfig.nativeTokenData?.logoUrl ?? sourceNativeTokenLogoSrc);
 
     if (nativeTokenLogoSrc) {
       return (

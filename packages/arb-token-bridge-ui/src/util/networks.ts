@@ -9,17 +9,25 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
+import type { CoreEvmChainId } from '../wallet/ecosystems/evm';
+import { findEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils';
 import { Erc20Data, fetchErc20Data } from './TokenUtils';
 import { getBridgeUiConfigForChain } from './bridgeUiConfig';
 import { loadEnvironmentVariableWithFallback } from './index';
 import { logger } from './logger';
 import {
+  getChainMetadata,
+  registerCustomChainMetadata,
+  removeCustomChainMetadata,
+} from './networkMetadata';
+import {
   defaultL2Network,
   defaultL3CustomGasTokenNetwork,
   defaultL3Network,
 } from './networksNitroTestnode';
 import { getOrbitChains, orbitChains } from './orbitChainsList';
+import { getAuthenticatedAlchemyRpcUrl } from './rpc/alchemy';
 import { getRpcUrl } from './rpc/getRpcUrl';
 
 /** The network that you reference when calling `block.number` in solidity */
@@ -198,6 +206,7 @@ export function saveCustomChainToLocalStorage(newCustomChain: ChainWithRpcUrl) {
   const newCustomChains = [...getCustomChainsFromLocalStorage(), newCustomChain];
 
   storage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
+  registerCustomChainMetadata(newCustomChain);
 }
 
 export function removeCustomChainFromLocalStorage(chainId: number) {
@@ -209,6 +218,7 @@ export function removeCustomChainFromLocalStorage(chainId: number) {
   );
 
   storage.setItem(customChainLocalStorageKey, JSON.stringify(newCustomChains));
+  removeCustomChainMetadata(chainId);
 }
 
 export const supportedCustomOrbitParentChains = [
@@ -240,7 +250,7 @@ export const localL3NetworkRpcUrl = loadEnvironmentVariableWithFallback({
   fallback: 'http://127.0.0.1:3347',
 });
 
-const defaultRpcUrls: { [chainId: number]: string } = {
+const defaultRpcUrls = {
   // L1 Mainnet
   [ChainId.Ethereum]: loadEnvironmentVariableWithFallback({
     env: process.env.NEXT_PUBLIC_RPC_URL_ETHEREUM,
@@ -273,7 +283,7 @@ const defaultRpcUrls: { [chainId: number]: string } = {
     env: process.env.NEXT_PUBLIC_RPC_URL_BASE_SEPOLIA,
     fallback: getRpcUrl(ChainId.BaseSepolia),
   }),
-};
+} satisfies Record<CoreEvmChainId, string>;
 
 export const rpcURLs: { [chainId: number]: string } =
   !isProductionEnvironment || isE2eTestingEnvironment
@@ -303,6 +313,12 @@ export const getExplorerUrl = (chainId: ChainId) => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return explorerUrls[chainId] ?? explorerUrls[ChainId.Ethereum]!; //defaults to etherscan, can never be null
 };
+
+export function getAccountExplorerUrl(chainId: number, address: string) {
+  // unknown chains fall back to the EVM explorer path, like `getExplorerUrl` falls back to Etherscan
+  const accountPath = findEcosystemConfig(chainId)?.explorerAccountPath ?? 'address';
+  return `${getExplorerUrl(chainId)}/${accountPath}/${encodeURIComponent(address)}`;
+}
 
 export const getL1BlockTime = (chainId: number) => {
   const chain = getChainByChainId(getBlockNumberReferenceChainIdByChainId({ chainId }));
@@ -345,11 +361,6 @@ export const l2MoonGatewayAddresses: { [chainId: number]: string } = {
   [ChainId.ArbitrumNova]: '0xA430a792c14d3E49d9D00FD7B4BA343F516fbB81',
 };
 
-export const l2UsdcGatewayAddresses: { [chainId: number]: string } = {
-  // Superposition
-  [ChainId.Superposition]: '0xF70ae1Af7D49dA0f7D66Bb55469caC9da336181b',
-};
-
 export const l2UsdsGatewayAddresses: { [chainId: number]: string } = {
   [ChainId.ArbitrumOne]: '0x13F7F24CA959359a4D710D32c715D4bce273C793',
 };
@@ -387,19 +398,9 @@ export async function registerLocalNetwork() {
 }
 
 function isTestnetChain(chainId: ChainId) {
-  const l1Network = l1Networks[chainId];
-  if (l1Network) {
-    return l1Network.isTestnet;
-  }
-
-  const baseNetwork = baseNetworks[chainId];
-  if (baseNetwork) {
-    return baseNetwork.isTestnet;
-  }
-
   try {
-    return getArbitrumNetwork(chainId).isTestnet;
-  } catch (error) {
+    return getChainMetadata(chainId).testnet === true;
+  } catch {
     // users could have data in local storage for chains that aren't supported anymore, avoid app error
     return true;
   }
@@ -501,10 +502,11 @@ export function isAlchemyChain(chainId: number) {
 }
 
 export function mapCustomChainToNetworkData(chain: ChainWithRpcUrl) {
+  registerCustomChainMetadata(chain);
   // custom chain details need to be added to various objects to make it work with the UI
   //
   // add RPC
-  rpcURLs[chain.chainId] = chain.rpcUrl;
+  rpcURLs[chain.chainId] = getAuthenticatedAlchemyRpcUrl(chain.chainId, chain.rpcUrl);
   // explorer URL
   explorerUrls[chain.chainId] = chain.explorerUrl;
 }
@@ -548,17 +550,59 @@ export function getChildChainIds(chain: ArbitrumNetwork | BlockNumberReferenceNe
   return Array.from(new Set(childChainIds));
 }
 
+// Orbit chains surfaced in the Core Chains section of the UI (they remain Orbit chains for
+// all bridging logic). NOTE: this list also drives the transaction history's default
+// "All Core Chains" scope (see util/chainFilter.ts), which is fetched for every user on
+// page load — only add chains whose history is indexed (subgraph or tx-history indexer),
+// otherwise the default view falls back to RPC-scanning them.
+const uiCoreChainIds: number[] = [ChainId.RobinhoodChain, ChainId.RobinhoodChainTestnet];
+
+// Whether a chain is shown in the Core Chains UI section. Superset of isCoreChain that also
+// includes Orbit chains we want to surface as core (e.g. Robinhood Chain).
+export function isCoreChainForDisplay(chainId: number) {
+  return isNetwork(chainId).isCoreChain || uiCoreChainIds.includes(chainId);
+}
+
+// monitoring alert routing only — independent of the uiCoreChainIds display grouping above
+const enterpriseChainIds: number[] = [ChainId.RobinhoodChain];
+
+export function isEnterpriseChain(chainId: number) {
+  return enterpriseChainIds.includes(chainId);
+}
+
+// Core chains not listed here sort after these, by ascending chainId.
+const coreChainSortOrder: number[] = [
+  ChainId.Ethereum,
+  ChainId.Local,
+  ChainId.Sepolia,
+  ChainId.ArbitrumOne,
+  ChainId.RobinhoodChain,
+  ChainId.ArbitrumNova,
+  ChainId.ArbitrumLocal,
+  ChainId.ArbitrumSepolia,
+  ChainId.RobinhoodChainTestnet,
+];
+
+function getCoreChainRank(chainId: number) {
+  const index = coreChainSortOrder.indexOf(chainId);
+  return index === -1 ? coreChainSortOrder.length : index;
+}
+
 /**
  * Sorts an array of chain IDs in ascending order (default) but keep core chains on top.
  * This is helpful e.g. when we grab the default chain which is the first chain on top.
  */
 export function sortChainIds(chainIds: number[]) {
   return chainIds.sort((a, b) => {
-    const { isCoreChain: isCoreChainA } = isNetwork(a);
-    const { isCoreChain: isCoreChainB } = isNetwork(b);
+    const isCoreChainA = isCoreChainForDisplay(a);
+    const isCoreChainB = isCoreChainForDisplay(b);
 
     if (isCoreChainA && isCoreChainB) {
-      // Both are core chains, sort in ascending order
+      const rankA = getCoreChainRank(a);
+      const rankB = getCoreChainRank(b);
+      if (rankA !== rankB) {
+        return rankA - rankB;
+      }
       return a - b;
     } else if (isCoreChainA) {
       // Only A is core chain, it should come first

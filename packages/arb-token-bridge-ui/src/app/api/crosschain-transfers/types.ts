@@ -12,35 +12,42 @@ export type QueryParams = {
 
 export type Token = Pick<LiFiToken, 'symbol' | 'decimals' | 'address' | 'logoURI'>;
 
-export type RouteGas = { gasCost: string | undefined; gasToken: Token };
-export type BridgeFee = { fee: string | undefined; token: Token };
+export type RouteTool = {
+  key: string;
+  name: string;
+  logoURI: string;
+};
+
+export type AmountWithToken = {
+  amount: string;
+  amountUSD: string;
+  token: Token;
+  chainId?: number;
+};
+
+export type RouteCost = {
+  amount: string;
+  amountUSD?: string;
+  token: Token;
+  chainId: number;
+  estimate?: string;
+  details: {
+    id: string;
+    label: string;
+    via: string;
+    iconURI?: string;
+  };
+};
 
 /** This interface is meant to be extended by the different API, it's not meant to be consummed by the bridge  */
 export interface CrosschainTransfersRouteBase {
   durationMs: number;
-  gas: {
-    amount: string;
-    amountUSD: string;
-    token: Token;
-  };
-  fee: {
-    amount: string;
-    amountUSD: string;
-    token: Token;
-  };
-  fromAmount: {
-    amount: string;
-    amountUSD: string;
-    token: Token;
-  };
-  toAmount: {
-    amount: string;
-    amountUSD: string;
-    token: Token;
-  };
+  gas: RouteCost[];
+  fee: RouteCost[];
+  fromAmount: AmountWithToken;
+  toAmount: AmountWithToken;
   fromChainId: number;
   toChainId: number;
   fromAddress?: string;
   toAddress?: string;
-  spenderAddress: string;
 }

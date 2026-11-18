@@ -11,6 +11,7 @@ import {
 import { getUniqueIdOrHashFromEvent } from '../../hooks/useArbTokenBridge';
 import { Transaction } from '../../types/Transactions';
 import { addressesEqual } from '../../util/AddressUtils';
+import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { DepositStatus, MergedTransaction } from './state';
 
 export const TX_DATE_FORMAT = 'MMM DD, YYYY';
@@ -46,24 +47,39 @@ export const getDepositStatus = (tx: Transaction | MergedTransaction) => {
     return DepositStatus.L1_PENDING;
   }
 
-  const isNativeTokenTransferToSameAddress =
-    tx.assetType === AssetType.ETH && !isCustomDestinationAddressTx(tx);
-
   const { parentToChildMsgData: l1ToL2MsgData } = tx;
   if (!l1ToL2MsgData) {
     return DepositStatus.L2_PENDING;
   }
+
+  // A native token deposit message has no redeem step, so `FUNDS_DEPOSITED_ON_CHILD` already means
+  // the funds arrived. A retryable ticket carrying the native token keeps them in escrow until it
+  // is redeemed, and it can perfectly well be addressed to the sender: that is what every native
+  // token deposit from this UI does, as they all go through `ethBridger.depositTo`. So the kind of
+  // message cannot be inferred from `assetType` and the destination address.
+  const isNativeTokenDepositMessage = l1ToL2MsgData.isNativeTokenDepositMessage;
+
   switch (l1ToL2MsgData.status) {
     case ParentToChildMessageStatus.NOT_YET_CREATED:
       return DepositStatus.L2_PENDING;
     case ParentToChildMessageStatus.CREATION_FAILED:
       return DepositStatus.CREATION_FAILED;
-    case ParentToChildMessageStatus.EXPIRED:
-      return isNativeTokenTransferToSameAddress ? DepositStatus.L2_SUCCESS : DepositStatus.EXPIRED;
-    case ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD: {
-      return isNativeTokenTransferToSameAddress
+    case ParentToChildMessageStatus.EXPIRED: {
+      // Expiry refunds the native call value on the child chain. When that refund goes to the
+      // sender and the sender is also the intended recipient, the transfer has achieved its goal.
+      const isRefundedToDestination =
+        tx.assetType === AssetType.ETH &&
+        !!tx.sender &&
+        !!tx.destination &&
+        addressesEqual(tx.sender, tx.destination) &&
+        addressesEqual(l1ToL2MsgData.callValueRefundAddress, tx.destination);
+
+      return isNativeTokenDepositMessage || isRefundedToDestination
         ? DepositStatus.L2_SUCCESS
-        : DepositStatus.L2_FAILURE;
+        : DepositStatus.EXPIRED;
+    }
+    case ParentToChildMessageStatus.FUNDS_DEPOSITED_ON_CHILD: {
+      return isNativeTokenDepositMessage ? DepositStatus.L2_SUCCESS : DepositStatus.L2_FAILURE;
     }
     case ParentToChildMessageStatus.REDEEMED:
       return DepositStatus.L2_SUCCESS;
@@ -203,33 +219,6 @@ export function isCustomDestinationAddressTx(
 
 export const isDepositReadyToRedeem = (tx: MergedTransaction) => {
   return isDeposit(tx) && tx.depositStatus === DepositStatus.L2_FAILURE;
-};
-
-export const normalizeTimestamp = (date: number | string) => {
-  // because we get timestamps in different formats from subgraph/event-logs/useTxn hook, we need 1 standard format.
-  const TIMESTAMP_LENGTH = 13;
-  let timestamp = date;
-
-  if (typeof date === 'string') {
-    timestamp = isNaN(Number(date))
-      ? dayjs(new Date(date)).unix() // for ISOstring type of dates -> dayjs timestamp
-      : Number(date); // for timestamp type of date -> dayjs timestamp
-  }
-
-  const timestampString = String(timestamp);
-
-  if (timestampString.length === TIMESTAMP_LENGTH) {
-    // correct timestamp length
-    return Number(timestampString);
-  }
-
-  if (timestampString.length < TIMESTAMP_LENGTH) {
-    // add zeros at the end until correct timestamp length
-    return Number(timestampString.padEnd(TIMESTAMP_LENGTH, '0'));
-  }
-
-  // remove end digits until correct timestamp length
-  return Number(timestampString.slice(0, TIMESTAMP_LENGTH));
 };
 
 export const getStandardizedTime = (standardizedTimestamp: number) => {

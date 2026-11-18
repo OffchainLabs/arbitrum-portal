@@ -8,11 +8,8 @@ import { EarnPagination } from '@/app-components/earn/EarnPagination';
 import { EarnTransactionHistoryTable } from '@/app-components/earn/EarnTransactionHistoryTable';
 import { useEarnTransactionHistory } from '@/app-hooks/earn/useEarnTransactionHistory';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
-import {
-  getStandardizedDate,
-  getStandardizedTime,
-  normalizeTimestamp,
-} from '@/bridge/state/app/utils';
+import { getStandardizedDate, getStandardizedTime } from '@/bridge/state/app/utils';
+import { normalizeTimestamp } from '@/bridge/util/normalizeTimestamp';
 import { type EarnChainId } from '@/earn-api/types';
 
 import type { TransactionDetails } from './EarnTransactionDetailsPopup';

@@ -23,54 +23,37 @@ const usdcCases: RouteTokenCase[] = [
     sourceToken: tokenExpectationsByChain.ApeChain.USDCe,
     destinationToken: tokenExpectationsByChain.Ethereum.USDC,
   },
-  {
-    sourceChain: 'ethereum',
-    destinationChain: 'superposition',
-    sourceToken: tokenExpectationsByChain.Ethereum.USDC,
-    destinationToken: tokenExpectationsByChain.Superposition.USDCe,
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'ethereum',
-    sourceToken: tokenExpectationsByChain.Superposition.USDCe,
-    destinationToken: tokenExpectationsByChain.Ethereum.USDC,
-  },
-  {
-    sourceChain: 'apechain',
-    destinationChain: 'superposition',
-    sourceToken: tokenExpectationsByChain.ApeChain.USDCe,
-    destinationToken: tokenExpectationsByChain.Superposition.USDCe,
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'apechain',
-    sourceToken: tokenExpectationsByChain.Superposition.USDCe,
-    destinationToken: tokenExpectationsByChain.ApeChain.USDCe,
-  },
 ];
+
+async function assertUsdcRouteTokens({
+  sourceChain,
+  destinationChain,
+  sourceToken,
+  destinationToken,
+}: RouteTokenCase) {
+  await renderTransferPanel({
+    sourceChain,
+    destinationChain,
+  });
+
+  await setSourceToken(sourceToken);
+  await setDestinationToken(destinationToken);
+
+  await expectTokenButtonContent({
+    isDestination: false,
+    tokenExpectation: sourceToken,
+  });
+  await expectTokenButtonContent({
+    isDestination: true,
+    tokenExpectation: destinationToken,
+  });
+}
 
 describe.sequential('TransferPanel LiFi Integration - USDC', () => {
   setupTransferPanelLifiIntegrationSuite();
 
   it.each(usdcCases)(
     'renders expected source and destination tokens for USDC transfer: $sourceChain -> $destinationChain',
-    async ({ sourceChain, destinationChain, sourceToken, destinationToken }) => {
-      await renderTransferPanel({
-        sourceChain,
-        destinationChain,
-      });
-
-      await setSourceToken(sourceToken);
-      await setDestinationToken(destinationToken);
-
-      await expectTokenButtonContent({
-        isDestination: false,
-        tokenExpectation: sourceToken,
-      });
-      await expectTokenButtonContent({
-        isDestination: true,
-        tokenExpectation: destinationToken,
-      });
-    },
+    assertUsdcRouteTokens,
   );
 });

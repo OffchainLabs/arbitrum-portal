@@ -1,16 +1,20 @@
 import { BigNumber } from '@ethersproject/bignumber';
+import { useDebounce } from '@uidotdev/usehooks';
+import { getCallsStatus } from '@wagmi/core';
 import dayjs from 'dayjs';
 import pLimit from 'p-limit';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import useSWRInfinite from 'swr/infinite';
-import { useAccount } from 'wagmi';
+import { useAccount, useConfig } from 'wagmi';
 import { create } from 'zustand';
 
 import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
+import { useTxHashSearchState } from '../components/TransactionHistory/TransactionHistorySearchBar';
 import {
   getDepositsWithoutStatusesFromCache,
+  getLifiTransferDisplayStatus,
   getUpdatedCctpTransfer,
   getUpdatedEthDeposit,
   getUpdatedLifiTransfer,
@@ -22,20 +26,51 @@ import {
   isSameTransaction,
   isTxPending,
 } from '../components/TransactionHistory/helpers';
-import { MergedTransaction } from '../state/app/state';
-import { normalizeTimestamp, transformDeposit, transformWithdrawal } from '../state/app/utils';
+import { useTxHistoryChainFilter } from '../components/TransactionHistory/useTransactionHistoryChainFilter';
+import { LifiMergedTransaction, MergedTransaction } from '../state/app/state';
+import { transformDeposit, transformWithdrawal } from '../state/app/utils';
 import { useCctpFetching } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
 import { Transaction } from '../types/Transactions';
-import { Address, addressesEqual, findFirstBlockWithNonce, getNonce } from '../util/AddressUtils';
+import {
+  Address,
+  addressesEqual,
+  findFirstBlockWithNonce,
+  getNonce,
+  isValidTransactionId,
+  normalizeAddress,
+  normalizeTransactionId,
+} from '../util/AddressUtils';
+import { trackEvent } from '../util/AnalyticsUtils';
 import { backOff } from '../util/ExponentialBackoffUtils';
+import { getLifiRouteHistorySteps, getLifiTransactionSnapshot } from '../util/LifiRouteUtils';
+import {
+  LIFI_TRANSFER_PROCESS_TYPES,
+  getExecutedLifiRouteTxHash,
+  getPendingLifiRouteBatchIds,
+  isPendingLifiProcessId,
+  isValidLifiTransactionHash,
+  rejectLifiRouteBatchId,
+  resolveLifiRouteBatchId,
+} from '../util/LifiTransactionStatus';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
-import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
+import {
+  fetchLatestIndexedBlockNumber,
+  shouldIncludeReceivedTxs,
+  shouldIncludeSentTxs,
+} from '../util/SubgraphUtils';
+import { BATCH_FETCH_BLOCKS } from '../util/chainBlockRanges';
+import { TxHistoryChainFilter, getChainFilterKey, matchesChainFilter } from '../util/chainFilter';
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
 import { updateAdditionalDepositData } from '../util/deposits/helpers';
-import { isExperimentalFeatureEnabled } from '../util/index';
+import { getNetworksRelationship } from '../util/getNetworksRelationship';
+import { isBundleRejectedError } from '../util/isUserRejectedError';
 import { logger } from '../util/logger';
-import { getChains, getChildChainIds, isNetwork } from '../util/networks';
+import { getExplorerUrl, isNetwork } from '../util/networks';
+import { normalizeTimestamp } from '../util/normalizeTimestamp';
+import { ChainPairFetch, getFailedChainPairs } from '../util/txHistory/chainPairFetches';
+import { fetchTransactionsByTxHash } from '../util/txHistory/fetchTransactionsByTxHash';
+import { ChainPair, getMultiChainFetchList, getTxHistoryRoutes } from '../util/txHistoryRoutes';
 import { FetchWithdrawalsParams, fetchWithdrawals } from '../util/withdrawals/fetchWithdrawals';
 import { WithdrawalFromSubgraph } from '../util/withdrawals/fetchWithdrawalsFromSubgraph';
 import {
@@ -45,23 +80,26 @@ import {
   mapTokenWithdrawalFromEventLogsToL2ToL1EventResult,
   mapWithdrawalFromSubgraphToL2ToL1EventResult,
 } from '../util/withdrawals/helpers';
+import { useWalletContext } from '../wallet/WalletContext';
+import { ecosystems } from '../wallet/ecosystems';
 import { AssetType, L2ToL1EventResultPlus, WithdrawalInitiated } from './arbTokenBridge.types';
+import { canFetchTransactionHistory } from './canFetchTransactionHistory';
 import { useAccountType } from './useAccountType';
 import { DisabledFeatures } from './useArbQueryParams';
 import { useDisabledFeatures } from './useDisabledFeatures';
 import { useIsTestnetMode } from './useIsTestnetMode';
-import { useLifiMergedTransactionCacheStore } from './useLifiMergedTransactionCacheStore';
+import {
+  getCachedLifiTransactions,
+  useLifiMergedTransactionCacheStore,
+} from './useLifiMergedTransactionCacheStore';
+import { useLifiTransactionHistory } from './useLifiTransactionHistory';
 import {
   getUpdatedOftTransfer,
   updateAdditionalLayerZeroData,
   useOftTransactionHistory,
 } from './useOftTransactionHistory';
 
-const BATCH_FETCH_BLOCKS: { [key: number]: number } = {
-  33139: 5_000_000, // ApeChain
-  1628: 10_000, // T-REX
-  228: 10_000, // Mind Network
-};
+const LIFI_BATCH_STATUS_POLL_INTERVAL_MS = 1_000;
 
 export type UseTransactionHistoryResult = {
   transactions: MergedTransaction[];
@@ -72,22 +110,48 @@ export type UseTransactionHistoryResult = {
   pause: () => void;
   resume: () => void;
   addPendingTransaction: (tx: MergedTransaction) => void;
+  updateTransaction: (tx: MergedTransaction) => void;
   updatePendingTransaction: (tx: MergedTransaction) => Promise<void>;
 };
-
-export type ChainPair = { parentChainId: ChainId; childChainId: ChainId };
 
 export type Deposit = Transaction;
 
 export type Withdrawal = WithdrawalFromSubgraph | WithdrawalInitiated | EthWithdrawal;
 
 type DepositOrWithdrawal = Deposit | Withdrawal;
+
 export type Transfer = DepositOrWithdrawal | MergedTransaction;
 
 type ForceFetchReceivedStore = {
   forceFetchReceived: boolean;
   setForceFetchReceived: (forceFetchReceived: boolean) => void;
 };
+
+type LifiBatchResolution =
+  | { kind: 'pending' }
+  | { kind: 'rejected' }
+  | { kind: 'retry' }
+  | { kind: 'resolved'; transaction: LifiMergedTransaction };
+
+function rejectLifiBatchTransaction(
+  transaction: LifiMergedTransaction,
+  batchId: string,
+): LifiMergedTransaction | undefined {
+  if (!transaction.lifiRoute) {
+    return undefined;
+  }
+
+  const acceptedTxHash = getExecutedLifiRouteTxHash(transaction.lifiRoute);
+  if (!acceptedTxHash) {
+    return undefined;
+  }
+
+  return {
+    ...transaction,
+    txId: transaction.txId === batchId ? acceptedTxHash : transaction.txId,
+    lifiRoute: rejectLifiRouteBatchId({ route: transaction.lifiRoute, batchId }),
+  };
+}
 
 export const useForceFetchReceived = create<ForceFetchReceivedStore>((set) => ({
   forceFetchReceived: false,
@@ -119,28 +183,7 @@ function getTransactionTimestamp(tx: Transfer) {
 }
 
 function sortByTimestampDescending(a: Transfer, b: Transfer) {
-  return getTransactionTimestamp(a) > getTransactionTimestamp(b) ? -1 : 1;
-}
-
-function getMultiChainFetchList(): ChainPair[] {
-  return getChains().flatMap((chain) => {
-    // We only grab child chains because we don't want duplicates and we need the parent chain
-    // Although the type is correct here we default to an empty array for custom networks backwards compatibility
-    const childChainIds = getChildChainIds(chain);
-
-    const isParentChain = childChainIds.length > 0;
-
-    if (!isParentChain) {
-      // Skip non-parent chains
-      return [];
-    }
-
-    // For each destination chain, map to an array of ChainPair objects
-    return childChainIds.map((childChainId) => ({
-      parentChainId: chain.chainId,
-      childChainId: childChainId,
-    }));
-  });
+  return getTransactionTimestamp(b) - getTransactionTimestamp(a);
 }
 
 function isWithdrawalFromSubgraph(tx: Withdrawal): tx is WithdrawalFromSubgraph {
@@ -207,7 +250,7 @@ async function transformTransaction(tx: Transfer): Promise<MergedTransaction> {
 }
 
 function getTxIdFromTransaction(tx: Transfer) {
-  if (isCctpTransfer(tx) || isOftTransfer(tx)) {
+  if (isCctpTransfer(tx) || isOftTransfer(tx) || isLifiTransfer(tx)) {
     return tx.txId;
   }
   if (isDeposit(tx)) {
@@ -227,6 +270,11 @@ function getCacheKeyFromTransaction(tx: Transfer) {
   if (!txId) {
     return undefined;
   }
+
+  if (isLifiTransfer(tx)) {
+    return `lifi-${tx.sourceChainId}-${tx.destinationChainId}-${normalizeTransactionId(txId)}`;
+  }
+
   const base = `${tx.parentChainId}-${txId.toLowerCase()}`;
 
   // For token withdrawals from event logs, include _l2ToL1Id to preserve batch events
@@ -244,20 +292,166 @@ function getCacheKeyFromTransaction(tx: Transfer) {
   return base;
 }
 
+const UNKNOWN_LIFI_TOKEN_SYMBOL = 'Unknown';
+
+function mergeLifiTransaction({
+  existingTx,
+  incomingTx,
+}: {
+  existingTx: LifiMergedTransaction;
+  incomingTx: LifiMergedTransaction;
+}): LifiMergedTransaction {
+  const existingSnapshot = getLifiTransactionSnapshot(existingTx);
+  const incomingSnapshot = getLifiTransactionSnapshot(incomingTx);
+  if (!existingSnapshot || !incomingSnapshot) {
+    return getLifiTransferDisplayStatus({
+      ...existingTx,
+      ...incomingTx,
+      lifiRoute: existingTx.lifiRoute ?? incomingTx.lifiRoute,
+    });
+  }
+
+  const { parentChainId, childChainId, isDepositMode } = getNetworksRelationship({
+    sourceChainId: incomingTx.sourceChainId,
+    destinationChainId: incomingTx.destinationChainId,
+  });
+  const incomingFromToken =
+    incomingSnapshot.fromAmount.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL
+      ? undefined
+      : incomingSnapshot.fromAmount.token;
+  const incomingToAmount =
+    incomingTx.toAmount?.token.symbol === UNKNOWN_LIFI_TOKEN_SYMBOL
+      ? undefined
+      : incomingTx.toAmount;
+  const routeStepCount =
+    existingTx.lifiRoute?.steps.length ?? existingTx.lifiRouteSteps?.length ?? 0;
+  const hasRouteHistory = routeStepCount > 0;
+  const preserveRouteAmounts = routeStepCount > 1;
+  const preserveToAmount = hasRouteHistory && (!!existingTx.lifiRoute || preserveRouteAmounts);
+  const existingToAmount = hasRouteHistory ? existingSnapshot.toAmount : existingTx.toAmount;
+  const incomingTool = incomingSnapshot.toolsDetails[0];
+  const existingTool = existingSnapshot.toolsDetails[0];
+
+  return getLifiTransferDisplayStatus({
+    ...existingTx,
+    ...incomingTx,
+    txId: hasRouteHistory ? existingTx.txId : incomingTx.txId,
+    parentChainId,
+    childChainId,
+    direction: isDepositMode ? 'deposit' : 'withdraw',
+    isWithdrawal: !isDepositMode,
+    resolvedAt: incomingTx.resolvedAt ?? existingTx.resolvedAt,
+    destinationTxId: incomingTx.destinationTxId ?? existingTx.destinationTxId,
+    durationMs: Number.isFinite(incomingSnapshot.durationMs)
+      ? incomingSnapshot.durationMs
+      : existingSnapshot.durationMs,
+    fromAmount: preserveRouteAmounts
+      ? existingSnapshot.fromAmount
+      : {
+          amount: incomingSnapshot.fromAmount.amount || existingSnapshot.fromAmount.amount,
+          amountUSD:
+            incomingSnapshot.fromAmount.amountUSD || existingSnapshot.fromAmount.amountUSD || '0',
+          token: {
+            address: incomingFromToken?.address || existingSnapshot.fromAmount.token.address || '',
+            decimals:
+              incomingFromToken?.decimals || existingSnapshot.fromAmount.token.decimals || 0,
+            logoURI: incomingFromToken?.logoURI || existingSnapshot.fromAmount.token.logoURI || '',
+            symbol:
+              incomingFromToken?.symbol ||
+              existingSnapshot.fromAmount.token.symbol ||
+              UNKNOWN_LIFI_TOKEN_SYMBOL,
+          },
+        },
+    toAmount: preserveToAmount ? existingSnapshot.toAmount : (incomingToAmount ?? existingToAmount),
+    toolsDetails: hasRouteHistory
+      ? existingSnapshot.toolsDetails
+      : [
+          {
+            key: incomingTool.key || existingTool.key || '',
+            name: incomingTool.name || existingTool.name || '',
+            logoURI: incomingTool.logoURI || existingTool.logoURI || '',
+          },
+        ],
+    lifiRoute: existingTx.lifiRoute ?? incomingTx.lifiRoute,
+  });
+}
+
+function getLifiRouteIdentities(txs: Transfer[]) {
+  const identities = new Map<string, string>();
+  for (const tx of txs) {
+    if (!isLifiTransfer(tx)) continue;
+    const identity = getCacheKeyFromTransaction(tx);
+    if (!identity) continue;
+    const steps = tx.lifiRoute ? getLifiRouteHistorySteps(tx.lifiRoute) : (tx.lifiRouteSteps ?? []);
+    for (const step of steps) {
+      const toChainId = step.displaySteps.at(-1)?.toAmount.chainId ?? tx.destinationChainId;
+      for (const process of step.execution?.process ?? []) {
+        if (
+          LIFI_TRANSFER_PROCESS_TYPES.has(process.type) &&
+          !isPendingLifiProcessId(process) &&
+          isValidLifiTransactionHash(process.txHash)
+        ) {
+          identities.set(
+            `lifi-${step.fromChainId}-${toChainId}-${normalizeTransactionId(process.txHash)}`,
+            identity,
+          );
+        }
+      }
+    }
+  }
+  return identities;
+}
+
 // remove the duplicates from the transactions passed
 function dedupeTransactions(txs: Transfer[]) {
-  return Array.from(new Map(txs.map((tx) => [getCacheKeyFromTransaction(tx), tx])).values());
+  const identities = getLifiRouteIdentities(txs);
+  const transactionsByCacheKey = new Map<string | undefined, Transfer>();
+
+  for (const tx of txs) {
+    const key = getCacheKeyFromTransaction(tx);
+    const cacheKey = key ? (identities.get(key) ?? key) : key;
+    const existingTx = transactionsByCacheKey.get(cacheKey);
+
+    if (existingTx && isLifiTransfer(existingTx) && isLifiTransfer(tx)) {
+      transactionsByCacheKey.set(cacheKey, mergeLifiTransaction({ existingTx, incomingTx: tx }));
+      continue;
+    }
+
+    transactionsByCacheKey.set(cacheKey, tx);
+  }
+
+  return Array.from(transactionsByCacheKey.values());
+}
+
+export function getDedupedTransactionsForPagination({
+  fetchedTransactions,
+  cachedDeposits,
+  cachedLifiTransactions,
+}: {
+  fetchedTransactions: Transfer[];
+  cachedDeposits: Transfer[];
+  cachedLifiTransactions: Transfer[];
+}) {
+  return dedupeTransactions([
+    ...cachedLifiTransactions,
+    ...fetchedTransactions,
+    ...cachedDeposits,
+  ]).sort(sortByTimestampDescending);
 }
 
 function getMergedTransactionIdentity(tx: MergedTransaction) {
-  const normalizedTxId = tx.txId?.toLowerCase();
+  const normalizedTxId = normalizeTransactionId(tx.txId);
+
+  if (isLifiTransfer(tx)) {
+    return `lifi-${tx.sourceChainId}-${tx.destinationChainId}-${normalizedTxId}`;
+  }
+
   return `${tx.parentChainId}-${tx.childChainId}-${normalizedTxId}`;
 }
 
 function isTransactionForAddress(tx: MergedTransaction, address?: Address) {
   // make sure txs are for the current account, we can have a mismatch when switching accounts for a bit
-  const normalizedAddress = address?.toLowerCase();
-  return [tx.sender?.toLowerCase(), tx.destination?.toLowerCase()].includes(normalizedAddress);
+  return addressesEqual(tx.sender, address) || addressesEqual(tx.destination, address);
 }
 
 export function mergeTransactions({
@@ -270,6 +464,15 @@ export function mergeTransactions({
   fetchedTransactions?: MergedTransaction[][];
 }) {
   const flattenedFetchedTransactions = fetchedTransactions.flat();
+  const identities = getLifiRouteIdentities(
+    [...newTransactions, ...flattenedFetchedTransactions].filter((tx) =>
+      isTransactionForAddress(tx, address),
+    ),
+  );
+  const getIdentity = (tx: MergedTransaction) => {
+    const identity = getMergedTransactionIdentity(tx);
+    return identities.get(identity) ?? identity;
+  };
   const fetchedByIdentity = new Map<string, MergedTransaction[]>();
 
   for (const tx of flattenedFetchedTransactions) {
@@ -277,8 +480,20 @@ export function mergeTransactions({
       continue;
     }
 
-    const identity = getMergedTransactionIdentity(tx);
+    const identity = getIdentity(tx);
     const existingTransactions = fetchedByIdentity.get(identity) ?? [];
+
+    if (isLifiTransfer(tx)) {
+      const [existingTx] = existingTransactions;
+      fetchedByIdentity.set(
+        identity,
+        existingTx && isLifiTransfer(existingTx)
+          ? [mergeLifiTransaction({ existingTx, incomingTx: tx })]
+          : [tx],
+      );
+      continue;
+    }
+
     fetchedByIdentity.set(identity, [...existingTransactions, tx]);
   }
 
@@ -287,15 +502,26 @@ export function mergeTransactions({
       return false;
     }
 
-    const fetchedTransactionsWithSameIdentity =
-      fetchedByIdentity.get(getMergedTransactionIdentity(tx)) ?? [];
+    const fetchedTransactionsWithSameIdentity = fetchedByIdentity.get(getIdentity(tx)) ?? [];
+    const [fetchedTx] = fetchedTransactionsWithSameIdentity;
 
-    return !fetchedTransactionsWithSameIdentity.some((fetchedTx) =>
-      isSameTransaction(
-        { ...fetchedTx, txId: fetchedTx.txId.toLowerCase() },
-        { ...tx, txId: tx.txId.toLowerCase() },
-      ),
-    );
+    if (isLifiTransfer(tx) && fetchedTx && isLifiTransfer(fetchedTx)) {
+      fetchedByIdentity.set(getIdentity(tx), [
+        mergeLifiTransaction({ existingTx: tx, incomingTx: fetchedTx }),
+      ]);
+      return false;
+    }
+
+    return !fetchedTransactionsWithSameIdentity.some((fetchedTx) => {
+      if (isLifiTransfer(fetchedTx) && isLifiTransfer(tx)) {
+        return getIdentity(fetchedTx) === getIdentity(tx);
+      }
+
+      return isSameTransaction(
+        { ...fetchedTx, txId: normalizeTransactionId(fetchedTx.txId) },
+        { ...tx, txId: normalizeTransactionId(tx.txId) },
+      );
+    });
   });
 
   return [...Array.from(fetchedByIdentity.values()).flat(), ...pendingOnlyTransactions].sort(
@@ -308,7 +534,7 @@ export async function fetchWithdrawalsInBatches(
     batchSizeBlocks?: number;
   },
 ): Promise<Withdrawal[]> {
-  const latestBlockNumber = await params.l2Provider.getBlockNumber();
+  const latestBlockNumber = params.toBlock ?? (await params.l2Provider.getBlockNumber());
 
   let fromBlock = params.fromBlock ?? 1;
   const toBlock = params.toBlock ?? latestBlockNumber;
@@ -340,10 +566,10 @@ export async function fetchWithdrawalsInBatches(
     // for that block (~log2(latestBlock) RPCs) and use it as the lower bound
     // to skip empty pre-history.
     //
-    // Only do this when BATCH_FETCH_BLOCKS is small. On chains like ApeChain
-    // (5M batch size, ~8 total batches), the ~25 sequential probe calls cost
-    // more than they save. On Mind/T-REX (10k batch size, hundreds/thousands
-    // of batches), the savings dominate.
+    // Only do this when BATCH_FETCH_BLOCKS is small. With a batch size in the
+    // millions (~a handful of total batches), the ~25 sequential probe calls
+    // cost more than they save. On chains with a small batch size (hundreds or
+    // thousands of batches), the savings dominate.
     const SMALL_BATCH_SIZE_THRESHOLD = 100_000;
     const batchSizeIsSmall =
       typeof params.batchSizeBlocks === 'number' &&
@@ -366,6 +592,7 @@ export async function fetchWithdrawalsInBatches(
 
   const batchSizeBlocks = params.batchSizeBlocks ?? 5_000_000;
   const batchCount = Math.ceil((toBlock - fromBlock) / batchSizeBlocks);
+  const lastIndexedBlock = await fetchLatestIndexedBlockNumber(childChainId);
 
   // Max parallel fetches to avoid 429 errors
   const limit = pLimit(10);
@@ -381,6 +608,7 @@ export async function fetchWithdrawalsInBatches(
         ...params,
         fromBlock: fromBlockForBatch,
         toBlock: toBlockForBatch,
+        lastIndexedBlock,
       });
       performance.mark(`withdrawal batch end chainId:${childChainId} ${i}/${batchCount}`);
       return result;
@@ -398,7 +626,7 @@ export async function fetchWithdrawalsInBatches(
 export const useAddPendingTransactions = (address: Address | undefined) => {
   const { data: newTransactionsData, mutate: mutateNewTransactionsData } = useSWRImmutable<
     MergedTransaction[]
-  >(address ? ['new_tx_list', address] : null);
+  >(address ? ['new_tx_list', normalizeAddress(address)] : null);
 
   const addPendingTransaction = useCallback(
     (tx: MergedTransaction) => {
@@ -411,8 +639,24 @@ export const useAddPendingTransactions = (address: Address | undefined) => {
           return [tx];
         }
 
-        return [tx, ...currentNewTransactions];
+        return [
+          tx,
+          ...currentNewTransactions.filter((currentTx) => !isSameTransaction(currentTx, tx)),
+        ];
       });
+    },
+    [mutateNewTransactionsData],
+  );
+
+  const updatePendingTransaction = useCallback(
+    (tx: MergedTransaction) => {
+      mutateNewTransactionsData(
+        (currentNewTransactions) =>
+          currentNewTransactions?.map((currentTx) =>
+            isSameTransaction(currentTx, tx) ? tx : currentTx,
+          ),
+        false,
+      );
     },
     [mutateNewTransactionsData],
   );
@@ -421,38 +665,46 @@ export const useAddPendingTransactions = (address: Address | undefined) => {
     newTransactionsData,
     mutateNewTransactionsData,
     addPendingTransaction,
+    updatePendingTransaction,
   };
 };
 
 /**
  * Fetches transaction history only for deposits and withdrawals, without their statuses.
+ * `chainFilter` is the debounced filter owned by `useTransactionHistory`, so the SWR keys
+ * and the fetcher always see the same settled value.
  */
-const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
-  const { chain } = useAccount();
+const useTransactionHistoryWithoutStatuses = (
+  address: Address | undefined,
+  chainFilter: TxHistoryChainFilter,
+) => {
+  const { account } = useWalletContext('evm');
   const [isTestnetMode] = useIsTestnetMode();
-  const { accountType, isLoading: isLoadingAccountType } = useAccountType(address);
+  const evmAddress = address && ecosystems.evm.address.isValid(address) ? address : undefined;
+  const { accountType, isLoading: isLoadingAccountType } = useAccountType(evmAddress ?? '');
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
   const { isFeatureDisabled } = useDisabledFeatures();
   const isTxHistoryEnabled = !isFeatureDisabled(DisabledFeatures.TX_HISTORY);
-  const isIndexerExperimentEnabled = isExperimentalFeatureEnabled('indexer');
 
   const forceFetchReceived = useForceFetchReceived((state) => state.forceFetchReceived);
 
+  const chainFilterKey = getChainFilterKey(chainFilter);
+
   const cctpTransfersMainnet = useCctpFetching({
-    walletAddress: address,
+    walletAddress: evmAddress,
     l1ChainId: ChainId.Ethereum,
     l2ChainId: ChainId.ArbitrumOne,
     pageNumber: 0,
-    pageSize: isTxHistoryEnabled && !isIndexerExperimentEnabled ? 1000 : 0,
+    pageSize: isTxHistoryEnabled ? 1000 : 0,
     type: 'all',
   });
 
   const cctpTransfersTestnet = useCctpFetching({
-    walletAddress: address,
+    walletAddress: evmAddress,
     l1ChainId: ChainId.Sepolia,
     l2ChainId: ChainId.ArbitrumSepolia,
     pageNumber: 0,
-    pageSize: isTxHistoryEnabled && !isIndexerExperimentEnabled ? 1000 : 0,
+    pageSize: isTxHistoryEnabled ? 1000 : 0,
     type: 'all',
   });
 
@@ -476,27 +728,62 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     cctpTransfersTestnet.isLoadingDeposits ||
     cctpTransfersTestnet.isLoadingWithdrawals;
 
+  // Scoped to the mode being displayed: both hooks always run, so combining all
+  // four would let a testnet indexer outage blank out mainnet history.
+  const activeCctpTransfers = isTestnetMode ? cctpTransfersTestnet : cctpTransfersMainnet;
+  const cctpError = activeCctpTransfers.depositsError ?? activeCctpTransfers.withdrawalsError;
+
   const { transactions: oftTransfers, isLoading: oftLoading } = useOftTransactionHistory({
-    walletAddress: isTxHistoryEnabled && !isIndexerExperimentEnabled ? address : undefined,
+    walletAddress: isTxHistoryEnabled ? evmAddress : undefined,
     isTestnet: isTestnetMode,
   });
+  const { data: lifiHistoryTransfers, isLoading: lifiHistoryLoading } = useLifiTransactionHistory({
+    walletAddress:
+      isTxHistoryEnabled && !isSmartContractWallet && !isTestnetMode ? address : undefined,
+  });
 
-  const { data: failedChainPairs, mutate: addFailedChainPair } = useSWRImmutable<ChainPair[]>(
-    address ? ['failed_chain_pairs', address] : null,
-  );
+  const connectedChainId = account.chainId;
+  const canFetch = canFetchTransactionHistory({
+    address: evmAddress,
+    isLoadingAccountType,
+    isTxHistoryEnabled,
+    isSmartContractWallet,
+    connectedChainId,
+  });
+  // SCW history is network-specific, so scope the cache by the connected chain
+  // to revalidate on network switch. EOA history is network-agnostic.
+  const smartContractWalletChainScope = isSmartContractWallet ? connectedChainId : undefined;
 
+  // Each pair's failure is cached with the list it emptied, so the warning
+  // always describes the list on screen.
   const fetcher = useCallback(
-    (type: 'deposits' | 'withdrawals') => {
-      if (!chain) {
+    async (type: 'deposits' | 'withdrawals'): Promise<ChainPairFetch<DepositOrWithdrawal>[]> => {
+      if (!canFetch) {
         return [];
       }
 
       return Promise.all(
         getMultiChainFetchList()
           .filter((chainPair) => {
+            // Only fetch chain pairs touching a selected chain — the same rule
+            // as the display filter, so the fetch list and the shown
+            // transactions can't disagree.
+            if (
+              !matchesChainFilter({
+                filter: chainFilter,
+                sourceChainId: chainPair.parentChainId,
+                destinationChainId: chainPair.childChainId,
+              })
+            ) {
+              return false;
+            }
+
             if (isSmartContractWallet) {
+              if (typeof connectedChainId === 'undefined') {
+                return false;
+              }
               // only fetch txs from the connected network
-              return [chainPair.parentChainId, chainPair.childChainId].includes(chain.id);
+              return [chainPair.parentChainId, chainPair.childChainId].includes(connectedChainId);
             }
 
             return isNetwork(chainPair.parentChainId).isTestnet === isTestnetMode;
@@ -505,7 +792,7 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
             // SCW address is tied to a specific network
             // that's why we need to limit shown txs either to sent or received funds
             // otherwise we'd display funds for a different network, which could be someone else's account
-            const isConnectedToParentChain = chainPair.parentChainId === chain.id;
+            const isConnectedToParentChain = chainPair.parentChainId === connectedChainId;
 
             const includeSentTxs = shouldIncludeSentTxs({
               type,
@@ -527,9 +814,9 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
               const fetcherFn = type === 'deposits' ? fetchDeposits : withdrawalFn;
 
               // else, fetch deposits or withdrawals
-              return await fetcherFn({
-                sender: includeSentTxs ? address : undefined,
-                receiver: includeReceivedTxs ? address : undefined,
+              const transfers = await fetcherFn({
+                sender: includeSentTxs ? evmAddress : undefined,
+                receiver: includeReceivedTxs ? evmAddress : undefined,
                 l1Provider: getProviderForChainId(chainPair.parentChainId),
                 parentChainId: chainPair.parentChainId,
                 l2Provider: getProviderForChainId(chainPair.childChainId),
@@ -538,50 +825,39 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
                 forceFetchReceived,
                 batchSizeBlocks,
               });
+
+              return { chainPair, transfers, failed: false };
             } catch {
-              addFailedChainPair((prevFailedChainPairs) => {
-                if (!prevFailedChainPairs) {
-                  return [chainPair];
-                }
-                if (
-                  typeof prevFailedChainPairs.find(
-                    (prevPair) =>
-                      prevPair.parentChainId === chainPair.parentChainId &&
-                      prevPair.childChainId === chainPair.childChainId,
-                  ) !== 'undefined'
-                ) {
-                  // already added
-                  return prevFailedChainPairs;
-                }
-
-                return [...prevFailedChainPairs, chainPair];
-              });
-
-              return [];
+              return { chainPair, transfers: [], failed: true };
             }
           }),
       );
     },
     [
-      address,
-      isTestnetMode,
-      addFailedChainPair,
-      isSmartContractWallet,
-      chain,
+      evmAddress,
+      canFetch,
+      connectedChainId,
       forceFetchReceived,
-      isIndexerExperimentEnabled,
+      isSmartContractWallet,
+      isTestnetMode,
+      chainFilter,
     ],
   );
-
-  const shouldFetch = address && !isLoadingAccountType && isTxHistoryEnabled;
 
   const {
     data: depositsData,
     error: depositsError,
     isLoading: depositsLoading,
   } = useSWRImmutable(
-    shouldFetch
-      ? ['tx_list', 'deposits', address, isTestnetMode, isIndexerExperimentEnabled]
+    canFetch
+      ? [
+          'tx_list',
+          'deposits',
+          evmAddress,
+          isTestnetMode,
+          smartContractWalletChainScope,
+          chainFilterKey,
+        ]
       : null,
     () => fetcher('deposits'),
   );
@@ -591,62 +867,219 @@ const useTransactionHistoryWithoutStatuses = (address: Address | undefined) => {
     error: withdrawalsError,
     isLoading: withdrawalsLoading,
   } = useSWRImmutable(
-    shouldFetch
+    canFetch
       ? [
           'tx_list',
           'withdrawals',
-          address,
+          evmAddress,
           isTestnetMode,
           forceFetchReceived,
-          isIndexerExperimentEnabled,
+          smartContractWalletChainScope,
+          chainFilterKey,
         ]
       : null,
     () => fetcher('withdrawals'),
   );
 
-  const deposits = (depositsData || []).flat();
+  const deposits = (depositsData || []).flatMap((fetch) => fetch.transfers);
 
-  const withdrawals = (withdrawalsData || []).flat();
+  const withdrawals = (withdrawalsData || []).flatMap((fetch) => fetch.transfers);
+  const lifiHistoryTransactions = lifiHistoryTransfers || [];
+
+  // CCTP, OFT and LiFi are fetched by single API calls rather than the scoped
+  // chain-pair fan-out, so filter them here — before pagination — to keep
+  // unrelated transfers from consuming page slots and per-tx mapping work.
+  const matchesSelectedChains = (tx: MergedTransaction) =>
+    matchesChainFilter({
+      filter: chainFilter,
+      sourceChainId: tx.sourceChainId,
+      destinationChainId: tx.destinationChainId,
+    });
 
   // merge deposits and withdrawals and sort them by date
   const transactions: Transfer[] = [
     ...deposits,
     ...withdrawals,
-    ...(isTestnetMode ? combinedCctpTestnetTransfers : combinedCctpMainnetTransfers),
-    ...oftTransfers,
+    ...(isTestnetMode ? combinedCctpTestnetTransfers : combinedCctpMainnetTransfers).filter(
+      matchesSelectedChains,
+    ),
+    ...oftTransfers.filter(matchesSelectedChains),
+    ...lifiHistoryTransactions.filter(matchesSelectedChains),
   ].flat();
 
   return {
     data: transactions,
     loading:
-      isLoadingAccountType || depositsLoading || withdrawalsLoading || cctpLoading || oftLoading,
-    error: depositsError ?? withdrawalsError,
-    failedChainPairs: failedChainPairs || [],
+      isLoadingAccountType ||
+      depositsLoading ||
+      withdrawalsLoading ||
+      cctpLoading ||
+      oftLoading ||
+      lifiHistoryLoading,
+    error: depositsError ?? withdrawalsError ?? cctpError,
+    failedChainPairs: getFailedChainPairs([...(depositsData || []), ...(withdrawalsData || [])]),
   };
 };
+
+const trackedTxHashSearches = new Set<string>();
+
+/**
+ * Resolves a source chain tx hash directly from its receipt instead of
+ * fetching the full address history, so it stays fast on chains where that
+ * fetch requires long event-log scans (e.g. Edu Chain). Only the chains
+ * selected in the chain filter are searched.
+ */
+function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
+  const [isTestnetMode] = useIsTestnetMode();
+  const { sanitizedTxHash: txHash } = useTxHashSearchState();
+
+  const { data, error, isLoading, mutate } = useSWRImmutable(
+    typeof txHash !== 'undefined' && isValidTransactionId(txHash)
+      ? ([
+          normalizeTransactionId(txHash),
+          isTestnetMode,
+          getChainFilterKey(chainFilter),
+          'txHashSearch',
+        ] as const)
+      : null,
+    async ([_txHash, _isTestnetMode]) => {
+      const matchesFilter = (chainPair: ChainPair) =>
+        matchesChainFilter({
+          filter: chainFilter,
+          sourceChainId: chainPair.parentChainId,
+          destinationChainId: chainPair.childChainId,
+        });
+
+      const chainPairs = getMultiChainFetchList().filter(
+        (chainPair) =>
+          matchesFilter(chainPair) &&
+          isNetwork(chainPair.parentChainId).isTestnet === _isTestnetMode,
+      );
+      // the probe set spans every route type, so it is wider than the canonical pairs
+      const probeChainIds = [
+        ...new Set(
+          getTxHistoryRoutes({ isTestnetMode: _isTestnetMode })
+            .filter(matchesFilter)
+            .flatMap((chainPair) => [chainPair.parentChainId, chainPair.childChainId]),
+        ),
+      ];
+
+      const transfers = await fetchTransactionsByTxHash({
+        txHash: _txHash,
+        chainPairs,
+        probeChainIds,
+        isTestnetMode: _isTestnetMode,
+      });
+
+      const transactions = await Promise.all(
+        transfers.map((transfer) =>
+          transformTransaction(transfer).catch((transformError) => {
+            captureSentryErrorWithExtraData({
+              error: transformError,
+              originFunction: 'useTransactionHistoryByTxHash transformTransaction',
+            });
+            return null;
+          }),
+        ),
+      );
+
+      const results = transactions
+        .filter((tx): tx is MergedTransaction => tx !== null)
+        // CCTP/OFT/LiFi lookups are not chain-pair scoped, so apply the
+        // chain filter to their results, same as the address history does
+        .filter((tx) =>
+          isCctpTransfer(tx) || isOftTransfer(tx) || isLifiTransfer(tx)
+            ? matchesChainFilter({
+                filter: chainFilter,
+                sourceChainId: tx.sourceChainId,
+                destinationChainId: tx.destinationChainId,
+              })
+            : true,
+        )
+        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+
+      // once per hash, so refetches and status polls do not count again
+      if (!trackedTxHashSearches.has(_txHash)) {
+        trackedTxHashSearches.add(_txHash);
+        trackEvent('Tx Hash Search Result', {
+          found: results.length > 0,
+          sourceChainId: results[0]?.sourceChainId,
+          isTestnetMode: _isTestnetMode,
+        });
+      }
+
+      return results;
+    },
+    {
+      shouldRetryOnError: false,
+    },
+  );
+
+  return {
+    transactions: data ?? [],
+    loading: isLoading,
+    completed: true,
+    error,
+    failedChainPairs: [],
+    pause: () => {},
+    resume: () => {},
+    addPendingTransaction: () => {},
+    updateTransaction: (newTx: MergedTransaction) => {
+      void mutate(
+        (transactions) => transactions?.map((tx) => (isSameTransaction(tx, newTx) ? newTx : tx)),
+        false,
+      );
+    },
+    updatePendingTransaction: async () => {
+      await mutate();
+    },
+  };
+}
 
 /**
  * Maps additional info to previously fetches transaction history, starting with the earliest data.
  * This is done in small batches to safely meet RPC limits.
  */
 export const useTransactionHistory = (
-  address: Address | undefined,
+  searchedAddress: Address | undefined,
   // TODO: look for a solution to this. It's used for now so that useEffect that handles pagination runs only a single instance.
-  { runFetcher = false } = {},
+  { runFetcher: runFetcherProp = false } = {},
 ): UseTransactionHistoryResult => {
+  // a tx hash search disables the address pipeline and returns the hash result
+  const { isTxHashSearch } = useTxHashSearchState();
+  const address = isTxHashSearch ? undefined : searchedAddress;
+  const runFetcher = !isTxHashSearch && runFetcherProp;
   const [isTestnetMode] = useIsTestnetMode();
-  const { chain } = useAccount();
-  const { accountType, isLoading: isLoadingAccountType } = useAccountType(address);
+  const { account } = useWalletContext('evm');
+  const { connector } = useAccount();
+  const wagmiConfig = useConfig();
+  const connectedAddress = account.address;
+  const evmAddress = address && ecosystems.evm.address.isValid(address) ? address : undefined;
+  const { accountType, isLoading: isLoadingAccountType } = useAccountType(evmAddress ?? '');
   const isSmartContractWallet = accountType === 'smart-contract-wallet';
 
   const { isFeatureDisabled } = useDisabledFeatures();
   const isTxHistoryEnabled = !isFeatureDisabled(DisabledFeatures.TX_HISTORY);
 
+  const chainFilter = useTxHistoryChainFilter();
+  // Debounced so rapid switching in the open filter popover coalesces into a
+  // single fetch fan-out. The debounce lives here — next to the instant filter
+  // it lags behind — so the settling window below can be derived from both.
+  const debouncedChainFilter = useDebounce(chainFilter, 500);
+  const txHashSearchResult = useTransactionHistoryByTxHash(debouncedChainFilter);
+  const debouncedChainFilterKey = getChainFilterKey(debouncedChainFilter);
+  // While the debounce settles, fetch inputs (debounced) and display filtering
+  // (instant) disagree; surface that window as loading so the table shows a
+  // loader instead of a settled empty state.
+  const isChainFilterSettling = debouncedChainFilterKey !== getChainFilterKey(chainFilter);
+
   const lifiTransactions = useLifiMergedTransactionCacheStore((state) => state.transactions);
   const updateLifiTransactionInCache = useLifiMergedTransactionCacheStore(
     (state) => state.updateTransaction,
   );
-  const { connector } = useAccount();
+  const removeLifiTransactionFromCache = useLifiMergedTransactionCacheStore(
+    (state) => state.removeTransaction,
+  );
   // max number of transactions mapped in parallel
   const MAX_BATCH_SIZE = 3;
   // Pause fetching after specified number of days. User can resume fetching to get another batch.
@@ -660,7 +1093,7 @@ export const useTransactionHistory = (
     loading: isLoadingTxsWithoutStatus,
     error,
     failedChainPairs,
-  } = useTransactionHistoryWithoutStatuses(address);
+  } = useTransactionHistoryWithoutStatuses(address, debouncedChainFilter);
 
   const getCacheKey = useCallback(
     (pageNumber: number, prevPageTxs: MergedTransaction[]) => {
@@ -671,19 +1104,29 @@ export const useTransactionHistory = (
         }
       }
 
+      // The filter key is part of the key because the cached deposits and LiFi
+      // transactions reach the page builder via closure: a filter change must
+      // rebuild the pages even when the fetched `data` is content-identical.
       return address && !isLoadingTxsWithoutStatus && !isLoadingAccountType
-        ? (['complete_tx_list', address, pageNumber, data] as const)
+        ? (['complete_tx_list', address, pageNumber, data, debouncedChainFilterKey] as const)
         : null;
     },
-    [address, isLoadingTxsWithoutStatus, data, isLoadingAccountType],
+    [address, isLoadingTxsWithoutStatus, data, isLoadingAccountType, debouncedChainFilterKey],
   );
 
   const depositsFromCache = useMemo(() => {
-    if (isLoadingAccountType || !chain || !isTxHistoryEnabled) {
+    if (isLoadingAccountType || !account.chainId || !isTxHistoryEnabled) {
       return [];
     }
     return getDepositsWithoutStatusesFromCache(address)
       .filter((tx) => isNetwork(tx.parentChainId).isTestnet === isTestnetMode)
+      .filter((tx) =>
+        matchesChainFilter({
+          filter: chainFilter,
+          sourceChainId: tx.parentChainId,
+          destinationChainId: tx.childChainId,
+        }),
+      )
       .filter((tx) => {
         const chainPairExists = getMultiChainFetchList().some((chainPair) => {
           return (
@@ -700,11 +1143,11 @@ export const useTransactionHistory = (
         }
 
         if (isSmartContractWallet) {
-          if (!chain) {
+          if (!account.chainId) {
             return false;
           }
           // only include txs for the connected network
-          return tx.parentChainId === chain.id;
+          return tx.parentChainId === account.chainId;
         }
         return true;
       });
@@ -713,21 +1156,30 @@ export const useTransactionHistory = (
     isTestnetMode,
     isLoadingAccountType,
     isSmartContractWallet,
-    chain,
+    account.chainId,
     isTxHistoryEnabled,
+    chainFilter,
   ]);
 
   const lifiTransactionsFromCache = useMemo(() => {
     if (
-      !useLifiMergedTransactionCacheStore.persist.hasHydrated ||
+      !useLifiMergedTransactionCacheStore.persist.hasHydrated() ||
       !address ||
       !isTxHistoryEnabled
     ) {
       return [];
     }
 
-    return lifiTransactions[address] || [];
-  }, [address, lifiTransactions, isTxHistoryEnabled]);
+    return getCachedLifiTransactions(lifiTransactions, address).filter(
+      (tx) =>
+        tx.showInHistory !== false &&
+        matchesChainFilter({
+          filter: chainFilter,
+          sourceChainId: tx.sourceChainId,
+          destinationChainId: tx.destinationChainId,
+        }),
+    );
+  }, [address, lifiTransactions, isTxHistoryEnabled, chainFilter]);
 
   const {
     data: txPages,
@@ -742,14 +1194,14 @@ export const useTransactionHistory = (
     ([, , _page, _data]) => {
       // we get cached data and dedupe here because we need to ensure _data never mutates
       // otherwise, if we added a new tx to cache, it would return a new reference and cause the SWR key to update, resulting in refetching
-      const dataWithCache = _data.concat(depositsFromCache);
-
       // duplicates may occur when txs are taken from the local storage
       // we don't use Set because it wouldn't dedupe objects with different reference (we fetch them from different sources)
-      // Lifi transactions don't need deduping from other transactions, they are only fetched from localStorage
-      const dedupedTransactions = dedupeTransactions(dataWithCache)
-        .concat(lifiTransactionsFromCache)
-        .sort(sortByTimestampDescending);
+      // LiFi history is fetched from the API and local cache; putting cache first lets fresher API records win.
+      const dedupedTransactions = getDedupedTransactionsForPagination({
+        fetchedTransactions: _data,
+        cachedDeposits: depositsFromCache,
+        cachedLifiTransactions: lifiTransactionsFromCache,
+      });
 
       const startIndex = _page * MAX_BATCH_SIZE;
       const endIndex = startIndex + MAX_BATCH_SIZE;
@@ -783,15 +1235,33 @@ export const useTransactionHistory = (
     useAddPendingTransactions(address);
 
   const transactions: MergedTransaction[] = useMemo(() => {
+    // The fetch inputs are scoped with the debounced selection, so this filter
+    // keeps already-built pages consistent with the instant selection during
+    // the debounce window. Transfers initiated this session (newTransactions)
+    // are exempt so a just-submitted transfer is always visible.
+    const filteredTxPages = txPages?.map((txPage) =>
+      txPage.filter((tx) =>
+        matchesChainFilter({
+          filter: chainFilter,
+          sourceChainId: tx.sourceChainId,
+          destinationChainId: tx.destinationChainId,
+        }),
+      ),
+    );
+
     return mergeTransactions({
       address,
       newTransactions: newTransactionsData,
-      fetchedTransactions: txPages,
+      fetchedTransactions: filteredTxPages,
     });
-  }, [newTransactionsData, txPages, address]);
+  }, [newTransactionsData, txPages, address, chainFilter]);
 
   const updateCachedTransaction = useCallback(
     (newTx: MergedTransaction) => {
+      if (isLifiTransfer(newTx)) {
+        updateLifiTransactionInCache(newTx);
+      }
+
       // check if tx is a new transaction initiated by the user, and update it
       const foundInNewTransactions =
         typeof newTransactionsData?.find((oldTx) => isSameTransaction(oldTx, newTx)) !==
@@ -804,14 +1274,11 @@ export const useTransactionHistory = (
             return { ...(isSameTransaction(oldTx, newTx) ? newTx : oldTx) };
           }),
         );
-        if (isLifiTransfer(newTx)) {
-          updateLifiTransactionInCache(newTx);
-        }
-        return;
       }
 
-      // tx not found in the new user initiated transaction list
-      // look in the paginated historical data
+      // the same tx can also exist in the paginated history (txPages, seeded from the
+      // localStorage deposits cache), and mergeTransactions displays that copy, so it
+      // must be updated too
       mutateTxPages((prevTxPages) => {
         if (!prevTxPages) {
           return;
@@ -847,14 +1314,165 @@ export const useTransactionHistory = (
           ...prevTxPages.slice(pageNumberToUpdate + 1),
         ];
 
-        if (isLifiTransfer(newTx)) {
-          updateLifiTransactionInCache(newTx);
-        }
         return newTxPages;
       }, false);
     },
     [mutateNewTransactionsData, mutateTxPages, newTransactionsData, updateLifiTransactionInCache],
   );
+
+  const removeCachedTransaction = useCallback(
+    (tx: LifiMergedTransaction) => {
+      removeLifiTransactionFromCache(tx);
+      mutateNewTransactionsData(
+        (transactions) => transactions?.filter((existing) => !isSameTransaction(existing, tx)),
+        false,
+      );
+      mutateTxPages(
+        (pages) =>
+          pages?.map((transactions) =>
+            transactions.filter((existing) => !isSameTransaction(existing, tx)),
+          ),
+        false,
+      );
+    },
+    [mutateNewTransactionsData, mutateTxPages, removeLifiTransactionFromCache],
+  );
+
+  const resolveLifiBatch = useCallback(
+    async (transaction: LifiMergedTransaction, batchId: string): Promise<LifiBatchResolution> => {
+      if (!connector || !transaction.lifiRoute) {
+        return { kind: 'retry' };
+      }
+
+      try {
+        const callsStatus = await getCallsStatus(wagmiConfig, { connector, id: batchId });
+        if (callsStatus.status === 'pending') {
+          return { kind: 'pending' };
+        }
+
+        const txHash = callsStatus.receipts?.at(-1)?.transactionHash;
+        if (
+          !txHash ||
+          callsStatus.status !== 'success' ||
+          callsStatus.receipts?.some((receipt) => receipt.status === 'reverted')
+        ) {
+          return { kind: 'rejected' };
+        }
+
+        const txLink = `${getExplorerUrl(callsStatus.chainId ?? transaction.sourceChainId)}/tx/${txHash}`;
+        const lifiRoute = resolveLifiRouteBatchId({
+          route: transaction.lifiRoute,
+          batchId,
+          txHash,
+          txLink,
+        });
+        return {
+          kind: 'resolved',
+          transaction: {
+            ...transaction,
+            txId: transaction.showInHistory === false ? txHash : transaction.txId,
+            showInHistory: true,
+            lifiRoute,
+          },
+        };
+      } catch (error) {
+        return { kind: isBundleRejectedError(error) ? 'rejected' : 'retry' };
+      }
+    },
+    [connector, wagmiConfig],
+  );
+
+  const reconcileLifiBatchTransaction = useCallback(
+    async (tx: LifiMergedTransaction, signal: AbortSignal) => {
+      const batchIds = getPendingLifiRouteBatchIds(tx.lifiRoute);
+      if (
+        batchIds.length === 0 ||
+        !tx.lifiRoute ||
+        !address ||
+        !connectedAddress ||
+        !addressesEqual(address, connectedAddress)
+      ) {
+        return;
+      }
+
+      let updatedTransaction = tx;
+      for (const batchId of batchIds) {
+        // eslint-disable-next-line no-await-in-loop -- Each batch updates the route used by the next.
+        const resolution = await resolveLifiBatch(updatedTransaction, batchId);
+        if (signal.aborted) {
+          return;
+        }
+        if (resolution.kind === 'resolved') {
+          updatedTransaction = resolution.transaction;
+        } else if (resolution.kind === 'rejected') {
+          const rejectedTransaction = rejectLifiBatchTransaction(updatedTransaction, batchId);
+          if (!rejectedTransaction) {
+            removeCachedTransaction(tx);
+            return;
+          }
+          updatedTransaction = rejectedTransaction;
+        }
+      }
+
+      if (updatedTransaction !== tx) {
+        if (tx.showInHistory === false && updatedTransaction.showInHistory !== false) {
+          addPendingTransaction(updatedTransaction);
+        }
+        updateCachedTransaction(updatedTransaction);
+      }
+    },
+    [
+      addPendingTransaction,
+      address,
+      connectedAddress,
+      removeCachedTransaction,
+      resolveLifiBatch,
+      updateCachedTransaction,
+    ],
+  );
+
+  useEffect(() => {
+    if (!runFetcher || !isTxHistoryEnabled || !connector) {
+      return;
+    }
+    const transactionsWithPendingBatches = address
+      ? getCachedLifiTransactions(lifiTransactions, address).filter(
+          (tx) => getPendingLifiRouteBatchIds(tx.lifiRoute).length > 0,
+        )
+      : [];
+    if (transactionsWithPendingBatches.length === 0) {
+      return;
+    }
+
+    const controller = new AbortController();
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const reconcileTransactions = async () => {
+      await Promise.all(
+        transactionsWithPendingBatches.map((tx) =>
+          reconcileLifiBatchTransaction(tx, controller.signal),
+        ),
+      );
+      if (!controller.signal.aborted) {
+        timeoutId = setTimeout(reconcileTransactions, LIFI_BATCH_STATUS_POLL_INTERVAL_MS);
+      }
+    };
+
+    void reconcileTransactions();
+
+    return () => {
+      controller.abort();
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [
+    address,
+    connector,
+    isTxHistoryEnabled,
+    lifiTransactions,
+    reconcileLifiBatchTransaction,
+    runFetcher,
+  ]);
 
   const updatePendingTransaction = useCallback(
     async (tx: MergedTransaction) => {
@@ -877,8 +1495,20 @@ export const useTransactionHistory = (
       }
 
       if (isLifiTransfer(tx)) {
-        const updatedLifiTransfer = await getUpdatedLifiTransfer(tx);
-        updateCachedTransaction(updatedLifiTransfer);
+        const cachedTransaction = getCachedLifiTransactions(
+          useLifiMergedTransactionCacheStore.getState().transactions,
+          tx.sender ?? '',
+        ).find((existing) => isSameTransaction(existing, tx));
+        const updatedLifiTransfer = await getUpdatedLifiTransfer(cachedTransaction ?? tx);
+        const currentTransaction = getCachedLifiTransactions(
+          useLifiMergedTransactionCacheStore.getState().transactions,
+          tx.sender ?? '',
+        ).find((existing) => isSameTransaction(existing, tx));
+        // SDK updates can arrive while the status request is in flight.
+        if (currentTransaction !== cachedTransaction) {
+          return;
+        }
+        updateCachedTransaction(getLifiTransferDisplayStatus(updatedLifiTransfer));
         return;
       }
 
@@ -903,19 +1533,15 @@ export const useTransactionHistory = (
     [updateCachedTransaction],
   );
 
+  // `setPage` changes with the loaded data and the chain filter, which must not reset pagination
+  const setPageRef = useRef(setPage);
+  setPageRef.current = setPage;
   useEffect(() => {
-    if (!runFetcher || !connector) {
-      return;
-    }
-    connector.onAccountsChanged = (accounts: string[]) => {
-      // reset state on account change
-      if (accounts.length > 0) {
-        setPage(1);
-        setPauseCount(0);
-        setFetching(true);
-      }
-    };
-  }, [connector, runFetcher, setPage]);
+    if (!runFetcher || !address) return;
+    setPageRef.current(1);
+    setPauseCount(0);
+    setFetching(true);
+  }, [address, runFetcher]);
 
   useEffect(() => {
     if (!txPages || !fetching || !runFetcher || isValidating) {
@@ -929,6 +1555,12 @@ export const useTransactionHistory = (
       return;
     }
 
+    // `keepPreviousData` shows the previous address's pages until the new ones load
+    const newestTx = firstPage[0];
+    if (newestTx && !isTransactionForAddress(newestTx, address)) {
+      return;
+    }
+
     // if a full page is fetched, we need to fetch more
     const shouldFetchNextPage = lastPage.length === MAX_BATCH_SIZE;
 
@@ -937,7 +1569,6 @@ export const useTransactionHistory = (
       return;
     }
 
-    const newestTx = firstPage[0];
     const oldestTx = lastPage[lastPage.length - 1];
 
     if (!newestTx || !oldestTx) {
@@ -959,7 +1590,7 @@ export const useTransactionHistory = (
     if (page === txPages.length) {
       setPage((prevPage) => prevPage + 1);
     }
-  }, [txPages, setPage, page, pauseCount, fetching, runFetcher, isValidating]);
+  }, [txPages, setPage, page, pauseCount, fetching, runFetcher, isValidating, address]);
 
   useEffect(() => {
     if (typeof error !== 'undefined') {
@@ -988,6 +1619,10 @@ export const useTransactionHistory = (
     setPage((prevPage) => prevPage + 1);
   }
 
+  if (isTxHashSearch) {
+    return txHashSearchResult;
+  }
+
   if (isLoadingTxsWithoutStatus || error) {
     return {
       transactions: newTransactionsData || [],
@@ -998,19 +1633,21 @@ export const useTransactionHistory = (
       pause,
       resume,
       addPendingTransaction,
+      updateTransaction: updateCachedTransaction,
       updatePendingTransaction,
     };
   }
 
   return {
     transactions,
-    loading: isLoadingFirstPage || isLoadingMore,
-    completed,
+    loading: isLoadingFirstPage || isLoadingMore || isChainFilterSettling,
+    completed: completed && !isChainFilterSettling,
     error: txPagesError ?? error,
     failedChainPairs,
     pause,
     resume,
     addPendingTransaction,
+    updateTransaction: updateCachedTransaction,
     updatePendingTransaction,
   };
 };

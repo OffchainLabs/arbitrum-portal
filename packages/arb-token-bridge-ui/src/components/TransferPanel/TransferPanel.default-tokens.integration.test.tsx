@@ -1,5 +1,8 @@
-import { describe, it } from 'vitest';
+import { constants } from 'ethers';
+import { describe, expect, it, vi } from 'vitest';
 
+import * as lifiCrossTransfers from '../../hooks/useLifiCrossTransferRoute';
+import { ChainId } from '../../types/ChainId';
 import { CommonAddress } from '../../util/CommonAddressUtils';
 import {
   type RouteTokenCase,
@@ -12,11 +15,11 @@ import {
   nativeApeTokenExpectation,
   nativeEthTokenExpectation,
   renderTransferPanel,
+  setDestinationToken,
+  setSourceToken,
   setupTransferPanelLifiIntegrationSuite,
   tokenExpectationsByChain,
   usdtArbitrumOneRowTokenExpectation,
-  wethSuperpositionRowTokenExpectation,
-  wethTokenExpectation,
 } from './TransferPanel.integration.helpers';
 
 type DefaultTokenCase = {
@@ -26,9 +29,44 @@ type DefaultTokenCase = {
   destinationToken: TokenExpectation;
   expectedSourcePanelTokens: TokenPanelExpectations;
   expectedDestinationPanelTokens: TokenPanelExpectations;
+  /** Leading rows of the source panel, for routes that pin tokens. */
+  expectedSourcePanelOrder?: string[];
+  /** Leading rows of the destination panel, for chains that pin tokens. */
+  expectedDestinationPanelOrder?: string[];
+};
+
+// The Ethereum pair falls back to Ethereum's logo; the Robinhood pair uses Robinhood's logo.
+const ethereumUsdgTokenExpectation = {
+  ...tokenExpectationsByChain.Ethereum.USDG,
+  logoURI:
+    'https://static.debank.com/image/eth_token/logo_url/0xe343167631d89b6ffc58b88d6b7fb0228795491d/4cbeae5d28b9db12bcf655fae7a328bb.png',
+};
+const arbitrumUsdgTokenExpectation = {
+  ...tokenExpectationsByChain.RobinhoodChain.USDG,
+  contract: CommonAddress.ArbitrumOne.USDG,
+};
+const arbitrumUsdgWithEthereumLogo = {
+  ...arbitrumUsdgTokenExpectation,
+  logoURI: ethereumUsdgTokenExpectation.logoURI,
 };
 
 const defaultTokenCases: DefaultTokenCase[] = [
+  {
+    sourceChain: 'robinhood-chain',
+    destinationChain: 'apechain',
+    sourceToken: apeTokenExpectation,
+    destinationToken: apeTokenExpectation,
+    expectedSourcePanelTokens: [nativeApeTokenExpectation],
+    expectedDestinationPanelTokens: [nativeApeTokenExpectation],
+  },
+  {
+    sourceChain: 'apechain',
+    destinationChain: 'robinhood-chain',
+    sourceToken: apeTokenExpectation,
+    destinationToken: apeTokenExpectation,
+    expectedSourcePanelTokens: [nativeApeTokenExpectation],
+    expectedDestinationPanelTokens: [nativeApeTokenExpectation],
+  },
   {
     sourceChain: 'base',
     destinationChain: 'apechain',
@@ -40,21 +78,6 @@ const defaultTokenCases: DefaultTokenCase[] = [
       tokenExpectationsByChain.ApeChain.USDCe,
       tokenExpectationsByChain.ApeChain.USDT,
       tokenExpectationsByChain.ApeChain.WETH,
-    ],
-  },
-  {
-    sourceChain: 'base',
-    destinationChain: 'superposition',
-    sourceToken: ethTokenExpectation,
-    destinationToken: ethTokenExpectation,
-    expectedSourcePanelTokens: [nativeEthTokenExpectation],
-    expectedDestinationPanelTokens: [
-      nativeEthTokenExpectation,
-      tokenExpectationsByChain.Superposition.USDCe,
-      {
-        ...tokenExpectationsByChain.Superposition.WETH,
-        logoURI: wethSuperpositionRowTokenExpectation.logoURI,
-      },
     ],
   },
   {
@@ -91,21 +114,6 @@ const defaultTokenCases: DefaultTokenCase[] = [
     ],
   },
   {
-    sourceChain: 'arbitrum-one',
-    destinationChain: 'superposition',
-    sourceToken: ethTokenExpectation,
-    destinationToken: ethTokenExpectation,
-    expectedSourcePanelTokens: [nativeEthTokenExpectation],
-    expectedDestinationPanelTokens: [
-      nativeEthTokenExpectation,
-      tokenExpectationsByChain.Superposition.USDCe,
-      {
-        ...tokenExpectationsByChain.Superposition.WETH,
-        logoURI: wethSuperpositionRowTokenExpectation.logoURI,
-      },
-    ],
-  },
-  {
     sourceChain: 'apechain',
     destinationChain: 'arbitrum-one',
     sourceToken: apeTokenExpectation,
@@ -113,38 +121,10 @@ const defaultTokenCases: DefaultTokenCase[] = [
     expectedSourcePanelTokens: [nativeApeTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeApeTokenExpectation,
-      {
-        ...tokenExpectationsByChain.ArbitrumOne.USDC,
-        contract: CommonAddress.ApeChain.USDCe,
-      },
-      {
-        ...tokenExpectationsByChain.ArbitrumOne.USDT,
-        contract: CommonAddress.ApeChain.USDT,
-      },
-      {
-        ...tokenExpectationsByChain.ArbitrumOne.WETH,
-        contract: CommonAddress.ApeChain.WETH,
-      },
+      tokenExpectationsByChain.ArbitrumOne.USDC,
+      tokenExpectationsByChain.ArbitrumOne.USDT,
+      tokenExpectationsByChain.ArbitrumOne.WETH,
       nativeEthTokenExpectation,
-    ],
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'arbitrum-one',
-    sourceToken: ethTokenExpectation,
-    destinationToken: ethTokenExpectation,
-    expectedSourcePanelTokens: [nativeEthTokenExpectation],
-    expectedDestinationPanelTokens: [
-      nativeEthTokenExpectation,
-      {
-        ...tokenExpectationsByChain.ArbitrumOne.USDC,
-        contract: CommonAddress.Superposition.USDCe,
-      },
-      {
-        ...tokenExpectationsByChain.ArbitrumOne.WETH,
-        logoURI: wethSuperpositionRowTokenExpectation.logoURI,
-        contract: CommonAddress.Superposition.WETH,
-      },
     ],
   },
   {
@@ -168,38 +148,78 @@ const defaultTokenCases: DefaultTokenCase[] = [
     expectedSourcePanelTokens: [nativeApeTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeApeTokenExpectation,
-      {
-        ...tokenExpectationsByChain.Ethereum.USDC,
-        contract: CommonAddress.ApeChain.USDCe,
-      },
-      {
-        ...tokenExpectationsByChain.Ethereum.USDT,
-        contract: CommonAddress.ApeChain.USDT,
-      },
-      {
-        ...tokenExpectationsByChain.Ethereum.WETH,
-        contract: CommonAddress.ApeChain.WETH,
-      },
+      tokenExpectationsByChain.Ethereum.USDC,
+      tokenExpectationsByChain.Ethereum.USDT,
+      tokenExpectationsByChain.Ethereum.WETH,
       nativeEthTokenExpectation,
     ],
   },
   {
     sourceChain: 'ethereum',
-    destinationChain: 'superposition',
+    destinationChain: 'robinhood-chain',
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
+    expectedSourcePanelTokens: [nativeEthTokenExpectation, tokenExpectationsByChain.Ethereum.USDG],
+    expectedSourcePanelOrder: ['ETH', 'USDG'],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      tokenExpectationsByChain.RobinhoodChain.WETH,
+      tokenExpectationsByChain.RobinhoodChain.USDe,
+      tokenExpectationsByChain.RobinhoodChain.USDG,
+    ],
+    expectedDestinationPanelOrder: ['ETH', 'USDG'],
+  },
+  {
+    sourceChain: 'arbitrum-one',
+    destinationChain: 'robinhood-chain',
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
+    expectedSourcePanelTokens: [nativeEthTokenExpectation, arbitrumUsdgTokenExpectation],
+    expectedSourcePanelOrder: ['ETH', 'USDG'],
+    expectedDestinationPanelTokens: [
+      nativeEthTokenExpectation,
+      tokenExpectationsByChain.RobinhoodChain.WETH,
+      tokenExpectationsByChain.RobinhoodChain.USDe,
+      tokenExpectationsByChain.RobinhoodChain.USDG,
+    ],
+    expectedDestinationPanelOrder: ['ETH', 'USDG'],
+  },
+  {
+    sourceChain: 'ethereum',
+    destinationChain: 'arbitrum-one',
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
+    expectedSourcePanelTokens: [nativeEthTokenExpectation, ethereumUsdgTokenExpectation],
+    expectedSourcePanelOrder: ['ETH', 'USDG'],
+    expectedDestinationPanelTokens: [nativeEthTokenExpectation, arbitrumUsdgWithEthereumLogo],
+    expectedDestinationPanelOrder: ['ETH', 'USDG'],
+  },
+  {
+    sourceChain: 'arbitrum-one',
+    destinationChain: 'ethereum',
+    sourceToken: ethTokenExpectation,
+    destinationToken: ethTokenExpectation,
+    expectedSourcePanelTokens: [nativeEthTokenExpectation, arbitrumUsdgWithEthereumLogo],
+    expectedSourcePanelOrder: ['ETH', 'USDG'],
+    expectedDestinationPanelTokens: [nativeEthTokenExpectation, ethereumUsdgTokenExpectation],
+    expectedDestinationPanelOrder: ['ETH', 'USDG'],
+  },
+  {
+    sourceChain: 'base',
+    destinationChain: 'robinhood-chain',
     sourceToken: ethTokenExpectation,
     destinationToken: ethTokenExpectation,
     expectedSourcePanelTokens: [nativeEthTokenExpectation],
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
-      tokenExpectationsByChain.Superposition.USDCe,
-      {
-        ...tokenExpectationsByChain.Superposition.WETH,
-        logoURI: wethSuperpositionRowTokenExpectation.logoURI,
-      },
+      tokenExpectationsByChain.RobinhoodChain.WETH,
+      tokenExpectationsByChain.RobinhoodChain.USDe,
+      tokenExpectationsByChain.RobinhoodChain.USDG,
     ],
+    expectedDestinationPanelOrder: ['ETH', 'USDG'],
   },
   {
-    sourceChain: 'superposition',
+    sourceChain: 'robinhood-chain',
     destinationChain: 'ethereum',
     sourceToken: ethTokenExpectation,
     destinationToken: ethTokenExpectation,
@@ -207,82 +227,193 @@ const defaultTokenCases: DefaultTokenCase[] = [
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
       {
-        ...tokenExpectationsByChain.Ethereum.USDC,
-        contract: CommonAddress.Superposition.USDCe,
-      },
-      {
-        ...tokenExpectationsByChain.Ethereum.WETH,
-        logoURI: wethSuperpositionRowTokenExpectation.logoURI,
-        contract: CommonAddress.Superposition.WETH,
+        ...tokenExpectationsByChain.RobinhoodChain.WETH,
+        contract: CommonAddress.Ethereum.WETH,
       },
     ],
   },
   {
-    sourceChain: 'apechain',
-    destinationChain: 'superposition',
-    sourceToken: apeTokenExpectation,
+    sourceChain: 'robinhood-chain',
+    destinationChain: 'arbitrum-one',
+    sourceToken: ethTokenExpectation,
     destinationToken: ethTokenExpectation,
-    expectedSourcePanelTokens: [nativeApeTokenExpectation],
+    expectedSourcePanelTokens: [
+      nativeEthTokenExpectation,
+      tokenExpectationsByChain.RobinhoodChain.USDG,
+    ],
+    expectedSourcePanelOrder: ['ETH', 'USDG'],
     expectedDestinationPanelTokens: [
       nativeEthTokenExpectation,
-      tokenExpectationsByChain.ApeChain.USDCe,
       {
-        ...tokenExpectationsByChain.Superposition.WETH,
-        contract: CommonAddress.ApeChain.WETH,
+        ...tokenExpectationsByChain.RobinhoodChain.WETH,
+        contract: CommonAddress.ArbitrumOne.WETH,
       },
+      arbitrumUsdgTokenExpectation,
     ],
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'apechain',
-    sourceToken: ethTokenExpectation,
-    destinationToken: wethTokenExpectation,
-    expectedSourcePanelTokens: [nativeEthTokenExpectation],
-    expectedDestinationPanelTokens: [
-      tokenExpectationsByChain.ApeChain.WETH,
-      nativeApeTokenExpectation,
-      tokenExpectationsByChain.ApeChain.USDCe,
-    ],
+    expectedDestinationPanelOrder: ['ETH', 'USDG'],
   },
 ];
+
+async function assertDefaultTokenCase({
+  sourceChain,
+  destinationChain,
+  sourceToken,
+  destinationToken,
+  expectedSourcePanelTokens,
+  expectedDestinationPanelTokens,
+  expectedSourcePanelOrder,
+  expectedDestinationPanelOrder,
+}: DefaultTokenCase) {
+  await renderTransferPanel({
+    sourceChain,
+    destinationChain,
+  });
+
+  await expectTokenButtonContent({
+    isDestination: false,
+    tokenExpectation: sourceToken,
+  });
+  await expectTokenButtonContent({
+    isDestination: true,
+    tokenExpectation: destinationToken,
+  });
+
+  await expectTokenPanelContent({
+    isDestination: false,
+    symbolsToContain: expectedSourcePanelTokens.map(({ symbol }) => symbol),
+    symbolsInOrder: expectedSourcePanelOrder,
+    tokenExpectations: expectedSourcePanelTokens,
+  });
+  await expectTokenPanelContent({
+    isDestination: true,
+    symbolsToContain: expectedDestinationPanelTokens.map(({ symbol }) => symbol),
+    symbolsInOrder: expectedDestinationPanelOrder,
+    tokenExpectations: expectedDestinationPanelTokens,
+  });
+}
 
 describe.sequential('TransferPanel LiFi Integration - Default Token', () => {
   setupTransferPanelLifiIntegrationSuite();
 
-  it.each(defaultTokenCases)(
-    'opens source and destination token panels with expected entries for default token transfer: $sourceChain -> $destinationChain',
-    async ({
-      sourceChain,
-      destinationChain,
-      sourceToken,
-      destinationToken,
-      expectedSourcePanelTokens,
-      expectedDestinationPanelTokens,
-    }) => {
+  it.each([
+    {
+      sourceName: 'Ethereum',
+      sourceChain: 'ethereum',
+      sourceChainId: ChainId.Ethereum,
+      usdc: CommonAddress.Ethereum.USDC,
+    },
+    {
+      sourceName: 'Arbitrum One',
+      sourceChain: 'arbitrum-one',
+      sourceChainId: ChainId.ArbitrumOne,
+      usdc: CommonAddress.ArbitrumOne.USDC,
+    },
+  ] as const)(
+    'defaults $sourceName USDC to ETH on Robinhood when no supported USDC pair exists',
+    async ({ sourceChain, sourceChainId, usdc }) => {
+      const quoteSpy = vi.spyOn(lifiCrossTransfers, 'useLifiCrossTransfersRoute');
+      const sourceUsdc = {
+        ...tokenExpectationsByChain.Ethereum.USDC,
+        contract: usdc,
+        logoURI:
+          'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
+      };
+
       await renderTransferPanel({
         sourceChain,
-        destinationChain,
+        destinationChain: 'robinhood-chain',
+      });
+      await setSourceToken(sourceUsdc);
+      expect(quoteSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          fromChainId: sourceChainId,
+          fromToken: usdc,
+          toChainId: ChainId.RobinhoodChain,
+          toToken: constants.AddressZero,
+        }),
+      );
+      await expectTokenButtonContent({
+        isDestination: true,
+        tokenExpectation: ethTokenExpectation,
+      });
+      await expectTokenPanelContent({
+        isDestination: true,
+        symbolsToContain: ['ETH', 'USDG'],
+        symbolsToExclude: ['USDC'],
+        tokenExpectations: [
+          nativeEthTokenExpectation,
+          tokenExpectationsByChain.RobinhoodChain.USDG,
+        ],
+      });
+      // Fails from swr 2.4.2 on: the destination token picker doesn't reopen after a token
+      // was chosen. That's why swr is pinned to exactly 2.4.1 in packages/app and
+      // packages/arb-token-bridge-ui. 2.4.2 only changed vercel/swr#4252 (double-unsubscribe
+      // guard) and vercel/swr#4271 (suspense status). The cause on our side isn't known yet.
+      await setDestinationToken(tokenExpectationsByChain.RobinhoodChain.USDG);
+      await expectTokenButtonContent({
+        isDestination: true,
+        tokenExpectation: tokenExpectationsByChain.RobinhoodChain.USDG,
+      });
+      expect(quoteSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({ toToken: CommonAddress.RobinhoodChain.USDG }),
+      );
+      await setDestinationToken(nativeEthTokenExpectation);
+      await expectTokenButtonContent({
+        isDestination: true,
+        tokenExpectation: ethTokenExpectation,
+      });
+      quoteSpy.mockRestore();
+    },
+  );
+
+  it.each(defaultTokenCases)(
+    'opens source and destination token panels with expected entries for default token transfer: $sourceChain -> $destinationChain',
+    assertDefaultTokenCase,
+  );
+
+  it.each([
+    {
+      sourceChain: 'arbitrum-one' as const,
+      chainId: ChainId.ArbitrumOne,
+      address: CommonAddress.ArbitrumOne.USDC,
+    },
+    {
+      sourceChain: 'ethereum' as const,
+      chainId: ChainId.Ethereum,
+      address: CommonAddress.Ethereum.USDC,
+    },
+  ])(
+    'defaults a saved $sourceChain USDC destination to ETH on Robinhood',
+    async ({ sourceChain, chainId, address }) => {
+      const quoteSpy = vi.spyOn(lifiCrossTransfers, 'useLifiCrossTransfersRoute');
+      await renderTransferPanel({
+        sourceChain,
+        destinationChain: 'robinhood-chain',
+        token: address,
+        destinationToken: address,
       });
 
       await expectTokenButtonContent({
         isDestination: false,
-        tokenExpectation: sourceToken,
+        tokenExpectation: {
+          symbol: 'USDC',
+          logoURI:
+            'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
+        },
       });
       await expectTokenButtonContent({
         isDestination: true,
-        tokenExpectation: destinationToken,
+        tokenExpectation: ethTokenExpectation,
       });
-
-      await expectTokenPanelContent({
-        isDestination: false,
-        symbolsToContain: expectedSourcePanelTokens.map(({ symbol }) => symbol),
-        tokenExpectations: expectedSourcePanelTokens,
-      });
-      await expectTokenPanelContent({
-        isDestination: true,
-        symbolsToContain: expectedDestinationPanelTokens.map(({ symbol }) => symbol),
-        tokenExpectations: expectedDestinationPanelTokens,
-      });
+      expect(quoteSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          fromChainId: chainId,
+          fromToken: address,
+          toChainId: ChainId.RobinhoodChain,
+          toToken: constants.AddressZero,
+        }),
+      );
+      quoteSpy.mockRestore();
     },
   );
 });

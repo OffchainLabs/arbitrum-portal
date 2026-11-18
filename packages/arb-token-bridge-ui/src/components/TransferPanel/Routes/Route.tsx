@@ -1,14 +1,13 @@
 import { ClockIcon, InformationCircleIcon, UserIcon } from '@heroicons/react/24/outline';
-import dayjs from 'dayjs';
 import { BigNumber, constants, utils } from 'ethers';
 import React, { PropsWithChildren } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
 
-import { BridgeFee, RouteGas } from '../../../app/api/crosschain-transfers/types';
+import { RouteCost, RouteTool, Token } from '../../../app/api/crosschain-transfers/types';
 import { useIsBatchTransferSupported } from '../../../hooks/TransferPanel/useIsBatchTransferSupported';
-import { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
+import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useETHPrice } from '../../../hooks/useETHPrice';
 import { useMode } from '../../../hooks/useMode';
@@ -16,10 +15,13 @@ import { NativeCurrency, useNativeCurrency } from '../../../hooks/useNativeCurre
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
+import { minutesToHumanReadableTime } from '../../../hooks/useTransferDuration';
+import { addressesEqual } from '../../../util/AddressUtils';
 import { shortenAddress } from '../../../util/CommonUtils';
 import { formatAmount, formatUSD } from '../../../util/NumberUtils';
 import { getUsdValueForAmount } from '../../../util/TokenPriceUtils';
 import { getConfirmationTime } from '../../../util/WithdrawalUtils';
+import { getChainMetadata } from '../../../util/networkMetadata';
 import { isNetwork } from '../../../util/networks';
 import { useAppContextState } from '../../App/AppContext';
 import { SafeImage } from '../../common/SafeImage';
@@ -28,21 +30,34 @@ import { TokenLogo } from '../TokenLogo';
 import { useTokensFromLists } from '../TokenSearchUtils';
 import { RouteType, SetRoute } from '../hooks/useRouteStore';
 
-export type BadgeType = 'security-guaranteed' | 'best-deal' | 'fastest';
+export type BadgeType = 'security-guaranteed' | 'best-deal' | 'fastest' | 'multi-step';
 export type RouteProps = {
   type: RouteType;
   amountReceived: string;
   durationMs: number;
   isLoadingGasEstimate: boolean;
   overrideToken?: ERC20BridgeToken;
-  gasCost: RouteGas[] | undefined;
-  bridgeFee?: BridgeFee;
+  gasCost: RouteCost[] | undefined;
+  bridgeFee?: RouteCost[];
   bridge: string;
   bridgeIconURI: string;
-  tag?: BadgeType | BadgeType[];
+  routeTools?: RouteTool[];
+  routeSteps?: RouteStep[];
+  tag?: BadgeType[];
   selected: boolean;
   onSelectedRouteClick: SetRoute;
   isDisabled?: boolean;
+};
+
+export type RouteStep = {
+  id: string;
+  label: string;
+  via: string;
+  iconURI?: string;
+  fromAmount: string;
+  fromToken: Token;
+  toAmount: string;
+  toToken: Token;
 };
 
 // Badge Components
@@ -87,14 +102,14 @@ function getBadgeFromBadgeType(badgeType: BadgeType) {
         </Tag>
       );
     }
+    case 'multi-step': {
+      return (
+        <Tag className="bg-lavender text-black" key="multi-step">
+          Multi-step
+        </Tag>
+      );
+    }
   }
-}
-
-function getBadges(badgeTypes: BadgeType | BadgeType[]) {
-  if (Array.isArray(badgeTypes)) {
-    return badgeTypes.map(getBadgeFromBadgeType);
-  }
-  return getBadgeFromBadgeType(badgeTypes);
 }
 
 const DelimiterDot = () => <div className="h-1 w-1 rounded-full bg-white" />;
@@ -129,7 +144,8 @@ const RouteAmount = ({
         <div className="flex flex-row items-center gap-3">
           <TokenLogo
             className="h-8 w-8 min-w-8"
-            srcOverride={'logoURI' in token ? token.logoURI : null}
+            isDestination
+            srcOverride={'type' in token ? (token.logoURI ?? '') : null}
             fallback={<div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />}
           />
           <div className="flex flex-col">
@@ -149,6 +165,7 @@ const RouteAmount = ({
           <div className="flex flex-row items-center gap-3 text-base">
             <TokenLogo
               className="h-8 w-8 min-w-8"
+              isDestination
               srcOverride={null}
               fallback={<div className="h-8 w-8 min-w-8 rounded-full bg-gray-dark/70" />}
             />
@@ -181,7 +198,7 @@ const RouteDuration = ({ durationMs, fastWithdrawalActive }: RouteDurationProps)
   <div className="flex items-center">
     <ClockIcon width={18} height={18} className="-ml-[1px]" />
     <span className="ml-1 whitespace-nowrap">
-      {dayjs().add(durationMs, 'millisecond').fromNow(true)}
+      {minutesToHumanReadableTime(durationMs / 60_000)}
     </span>
     {fastWithdrawalActive && (
       <div className="flex items-center">
@@ -201,45 +218,310 @@ const RouteDuration = ({ durationMs, fastWithdrawalActive }: RouteDurationProps)
 type RouteBridgeProps = {
   bridge: string;
   bridgeIconURI: string;
+  routeTools?: RouteTool[];
+  routeSteps?: RouteStep[];
 };
 
-const RouteBridge = ({ bridge, bridgeIconURI }: RouteBridgeProps) => (
-  <div className="flex min-w-0 items-center">
-    <SafeImage
-      src={bridgeIconURI}
-      width={15}
-      height={15}
-      alt="bridge"
-      className="max-h-[15px] max-w-[15px] rounded-full"
-      fallback={<div className="h-[15px] w-[15px] min-w-[15px] rounded-full bg-gray-dark/70" />}
-    />
-    <div className="truncate">
-      <span className="ml-1 whitespace-nowrap">{bridge}</span>
+const feeBreakdownTooltipClassName =
+  'max-w-none rounded-lg border border-white/10 px-4 py-3 text-white shadow-[0_0_40px_rgba(0,0,0,0.75)]';
+
+function BreakdownTooltipContent({
+  title,
+  children,
+  footer,
+}: PropsWithChildren<{
+  title: string;
+  footer?: React.ReactNode;
+}>) {
+  return (
+    <div className="w-[310px] max-w-[calc(100vw_-_48px)] text-left">
+      <div className="text-[11px] uppercase leading-4 text-white/50">{title}</div>
+      <div className="mt-2 border-t border-white/10 pt-2">
+        <div className="space-y-3">{children}</div>
+        {footer}
+      </div>
     </div>
-  </div>
-);
+  );
+}
+
+function BreakdownTooltipItem({
+  iconURI,
+  label,
+  via,
+  showVia = true,
+  children,
+}: PropsWithChildren<{
+  iconURI?: string;
+  label: string;
+  via: string;
+  showVia?: boolean;
+}>) {
+  return (
+    <div className="flex gap-2">
+      <SafeImage
+        src={iconURI}
+        width={16}
+        height={16}
+        alt=""
+        className="mt-[2px] h-4 w-4 min-w-4 rounded-full"
+        fallback={<div className="mt-[2px] h-4 w-4 min-w-4 rounded-full bg-lavender" />}
+      />
+      <div className="min-w-0 flex-1">
+        <div className="text-[13px] leading-4 text-white">{label}</div>
+        {showVia && <div className="text-[13px] leading-4 text-white">via {via}</div>}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function RouteDetailsTooltipContent({ items }: { items: RouteStep[] }) {
+  return (
+    <BreakdownTooltipContent title="ROUTE">
+      {items.map((item) => {
+        const fromAmount = formatRouteStepAmount(item.fromAmount, item.fromToken);
+        const toAmount = formatRouteStepAmount(item.toAmount, item.toToken);
+
+        return (
+          <BreakdownTooltipItem
+            key={item.id}
+            iconURI={item.iconURI}
+            label={item.label}
+            via={item.via}
+          >
+            {fromAmount && toAmount && (
+              <div className="mt-0.5 text-[12px] leading-4 text-white/50">
+                {fromAmount} → {toAmount}
+              </div>
+            )}
+          </BreakdownTooltipItem>
+        );
+      })}
+    </BreakdownTooltipContent>
+  );
+}
+
+const RouteBridge = ({ bridge, bridgeIconURI, routeTools, routeSteps }: RouteBridgeProps) => {
+  const tools =
+    routeTools && routeTools.length > 0
+      ? routeTools
+      : [{ key: 'default-route-tool', name: bridge, logoURI: bridgeIconURI }];
+
+  const content = (
+    <div
+      className="flex min-w-0 items-center gap-1 text-xs text-white"
+      aria-label={`Route tools: ${tools.map((tool) => tool.name).join(', ')}`}
+    >
+      <span>via</span>
+      {tools.map((tool, toolIndex) => (
+        <React.Fragment key={tool.key}>
+          {toolIndex > 0 && <span>+</span>}
+          <SafeImage
+            src={tool.logoURI}
+            width={15}
+            height={15}
+            alt=""
+            className="h-[15px] max-h-[15px] w-[15px] min-w-[15px] max-w-[15px] rounded-full"
+            fallback={
+              <div className="h-[15px] w-[15px] min-w-[15px] rounded-full bg-gray-dark/70" />
+            }
+          />
+        </React.Fragment>
+      ))}
+    </div>
+  );
+
+  if (!routeSteps || routeSteps.length === 0) {
+    return content;
+  }
+
+  return (
+    <Tooltip
+      as="div"
+      content={<RouteDetailsTooltipContent items={routeSteps} />}
+      wrapperClassName="inline-flex min-w-0"
+      contentProps={{ className: feeBreakdownTooltipClassName }}
+    >
+      {content}
+    </Tooltip>
+  );
+};
+
+function formatRouteStepAmount(amount: string, token: Token) {
+  const formattedAmount = formatAmount(BigNumber.from(amount), {
+    decimals: token.decimals,
+  });
+
+  return `${formattedAmount} ${token.symbol}`;
+}
+
+function getRouteCostUSD({
+  cost,
+  ethToUSD,
+  tokensFromLists,
+}: {
+  cost: RouteCost;
+  ethToUSD: (eth: number) => number;
+  tokensFromLists?: ContractStorage<ERC20BridgeToken>;
+}) {
+  if (typeof cost.amountUSD !== 'undefined') {
+    return Number(cost.amountUSD);
+  }
+
+  const isEthNativeCost = getChainMetadata(cost.chainId).nativeCurrency.symbol === 'ETH';
+  if (addressesEqual(cost.token.address, constants.AddressZero) && isEthNativeCost) {
+    return ethToUSD(Number(utils.formatEther(BigNumber.from(cost.amount))));
+  }
+
+  const tokenPriceUSD = tokensFromLists?.[cost.token.address.toLowerCase()]?.priceUSD;
+  if (typeof tokenPriceUSD === 'number') {
+    return (
+      Number(utils.formatUnits(BigNumber.from(cost.amount), cost.token.decimals)) * tokenPriceUSD
+    );
+  }
+
+  return undefined;
+}
+
+type RouteCostDisplay = {
+  cost: RouteCost;
+  amountUSD: number | undefined;
+  formattedAmount: string;
+};
+
+function getRouteCostsDisplay({
+  costs,
+  ethToUSD,
+  showUSDValueForFees,
+  tokensFromLists,
+}: {
+  costs: RouteCost[];
+  ethToUSD: (eth: number) => number;
+  showUSDValueForFees: boolean;
+  tokensFromLists: ContractStorage<ERC20BridgeToken>;
+}) {
+  const items: RouteCostDisplay[] = costs.map((cost) => ({
+    cost,
+    amountUSD: showUSDValueForFees
+      ? getRouteCostUSD({ cost, ethToUSD, tokensFromLists })
+      : undefined,
+    formattedAmount: formatAmount(BigNumber.from(cost.amount), {
+      decimals: cost.token.decimals,
+      symbol: cost.token.symbol,
+    }),
+  }));
+  const hasTotalUSD =
+    items.length > 0 && items.every((item) => typeof item.amountUSD !== 'undefined');
+  const totalUSD = hasTotalUSD
+    ? items.reduce((total, item) => total + Number(item.amountUSD), 0)
+    : undefined;
+  const summary =
+    showUSDValueForFees && typeof totalUSD !== 'undefined'
+      ? `~${formatUSD(totalUSD)}`
+      : items.map((item) => item.formattedAmount).join(' and ') || 'N/A';
+
+  return { items, summary, totalUSD };
+}
+
+function FeeBreakdownTooltipContent({
+  title,
+  items,
+  totalAmountUSD,
+  showVia = true,
+}: {
+  title: string;
+  items: RouteCostDisplay[];
+  totalAmountUSD: number | undefined;
+  showVia?: boolean;
+}) {
+  return (
+    <BreakdownTooltipContent
+      title={title}
+      footer={
+        typeof totalAmountUSD !== 'undefined' ? (
+          <div className="mt-3 flex items-center justify-between gap-4 text-[13px] leading-4">
+            <span className="text-white/90">Total cost</span>
+            <span className="font-semibold text-white">~{formatUSD(totalAmountUSD)}</span>
+          </div>
+        ) : undefined
+      }
+    >
+      {items.map(({ cost, amountUSD, formattedAmount }) => {
+        const formattedAmountUSD =
+          typeof amountUSD !== 'undefined' ? `~${formatUSD(amountUSD).replace(' USD', '')}` : null;
+
+        return (
+          <BreakdownTooltipItem
+            key={cost.details.id}
+            iconURI={cost.details.iconURI}
+            label={cost.details.label}
+            via={cost.details.via}
+            showVia={showVia}
+          >
+            <div className="mt-0.5 text-[12px] leading-4 text-white/50">
+              {formattedAmount}
+              {formattedAmountUSD && ` (${formattedAmountUSD})`}
+            </div>
+          </BreakdownTooltipItem>
+        );
+      })}
+    </BreakdownTooltipContent>
+  );
+}
 
 // Route Fees Component
 type RouteFeesProps = {
   isLoadingGasEstimate: boolean;
-  gasCost: RouteGas[] | undefined;
-  gasEth?: RouteGas | false;
-  bridgeFee?: BridgeFee;
-  showUSDValueForBridgeFee: boolean;
+  gasCost: RouteCost[] | undefined;
+  bridgeFee?: RouteCost[];
+  showUSDValueForFees: boolean;
+  tokensFromLists: ContractStorage<ERC20BridgeToken>;
 };
 
 const RouteFees = ({
   isLoadingGasEstimate,
   gasCost,
-  gasEth,
   bridgeFee,
-  showUSDValueForBridgeFee,
+  showUSDValueForFees,
+  tokensFromLists,
 }: RouteFeesProps) => {
   const { ethToUSD } = useETHPrice();
+  const gasCosts = gasCost ?? [];
+  const bridgeFees = bridgeFee ?? [];
+  const gasCostDisplay = getRouteCostsDisplay({
+    costs: gasCosts,
+    ethToUSD,
+    showUSDValueForFees,
+    tokensFromLists,
+  });
+  const bridgeFeeDisplay = bridgeFees.length
+    ? getRouteCostsDisplay({
+        costs: bridgeFees,
+        ethToUSD,
+        showUSDValueForFees,
+        tokensFromLists,
+      })
+    : undefined;
 
   return (
     <>
-      <Tooltip content={'The gas fees paid to operate the network'}>
+      <Tooltip
+        content={
+          gasCosts.length > 0 ? (
+            <FeeBreakdownTooltipContent
+              title="Gas fee breakdown"
+              items={gasCostDisplay.items}
+              totalAmountUSD={gasCostDisplay.totalUSD}
+            />
+          ) : (
+            'The gas fees paid to operate the network'
+          )
+        }
+        wrapperClassName="inline-flex"
+        contentProps={{
+          className: gasCosts.length > 0 ? feeBreakdownTooltipClassName : undefined,
+        }}
+      >
         <div className="flex items-center">
           <SafeImage
             src="/icons/gas.svg"
@@ -251,23 +533,9 @@ const RouteFees = ({
           <span className="ml-1">
             {isLoadingGasEstimate ? (
               <Loader size="small" color="white" />
-            ) : gasCost ? (
-              <div className="flex items-center gap-1" aria-label="Route gas">
-                {gasCost
-                  .map(({ gasCost, gasToken }) =>
-                    formatAmount(BigNumber.from(gasCost), {
-                      decimals: gasToken.decimals,
-                      symbol: gasToken.symbol,
-                    }),
-                  )
-                  .join(' and ')}
-                {gasEth && (
-                  <div className="text-xs tabular-nums opacity-80">
-                    (
-                    {formatUSD(ethToUSD(Number(utils.formatEther(BigNumber.from(gasEth.gasCost)))))}
-                    )
-                  </div>
-                )}
+            ) : gasCosts.length > 0 ? (
+              <div className="tabular-nums" aria-label="Route gas">
+                {gasCostDisplay.summary}
               </div>
             ) : (
               <div aria-label="Route gas">{'N/A'}</div>
@@ -276,33 +544,35 @@ const RouteFees = ({
         </div>
       </Tooltip>
 
-      {bridgeFee && <DelimiterDot />}
-
-      {bridgeFee && (
-        <Tooltip content={'The fee the bridge takes'}>
-          <div className="flex items-center gap-1">
-            <SafeImage
-              src="/icons/bridge.svg"
-              width={18}
-              height={18}
-              alt="bridge fee"
-              fallback={<div className="h-4 w-4 min-w-4 rounded-full bg-gray-dark/70" />}
-            />
-            <div className="flex flex-row items-center gap-1">
-              <span>
-                {formatAmount(BigNumber.from(bridgeFee.fee), {
-                  decimals: bridgeFee.token.decimals,
-                  symbol: bridgeFee.token.symbol,
-                })}
-              </span>
-              {showUSDValueForBridgeFee && (
-                <div className="text-xs tabular-nums opacity-80">
-                  ({formatUSD(ethToUSD(Number(utils.formatEther(BigNumber.from(bridgeFee.fee)))))})
-                </div>
-              )}
+      {bridgeFeeDisplay && (
+        <>
+          <DelimiterDot />
+          <Tooltip
+            content={
+              <FeeBreakdownTooltipContent
+                title="Bridge fee breakdown"
+                items={bridgeFeeDisplay.items}
+                totalAmountUSD={bridgeFeeDisplay.totalUSD}
+                showVia={false}
+              />
+            }
+            wrapperClassName="inline-flex"
+            contentProps={{ className: feeBreakdownTooltipClassName }}
+          >
+            <div className="flex items-center gap-1">
+              <SafeImage
+                src="/icons/bridge.svg"
+                width={18}
+                height={18}
+                alt="bridge fee"
+                fallback={<div className="h-4 w-4 min-w-4 rounded-full bg-gray-dark/70" />}
+              />
+              <div className="tabular-nums" aria-label="Route bridge fee">
+                {bridgeFeeDisplay.summary}
+              </div>
             </div>
-          </div>
-        </Tooltip>
+          </Tooltip>
+        </>
       )}
     </>
   );
@@ -310,13 +580,13 @@ const RouteFees = ({
 
 // Route Badge Component
 type RouteBadgeProps = {
-  tag?: BadgeType | BadgeType[];
+  tag?: BadgeType[];
 };
 
 const RouteBadge = ({ tag }: RouteBadgeProps) => {
   if (!tag) return null;
 
-  return <div className="flex gap-1">{getBadges(tag)}</div>;
+  return <div className="flex gap-1">{tag.map(getBadgeFromBadgeType)}</div>;
 };
 
 // Main Route Component
@@ -332,6 +602,8 @@ export const Route = React.memo(
     gasCost,
     selected,
     bridgeFee,
+    routeTools,
+    routeSteps,
     tag,
     onSelectedRouteClick,
     isDisabled: isDisabledOverride = false,
@@ -341,16 +613,16 @@ export const Route = React.memo(
     } = useAppContextState();
     const isDisabled = isDisabledOverride || isTransferring;
     const [networks] = useNetworks();
-    const { childChainProvider, isDepositMode } = useNetworksRelationship(networks);
+    const { childChain, isDepositMode } = useNetworksRelationship(networks);
     const childNativeCurrency = useNativeCurrency({
-      provider: childChainProvider,
+      chainId: childChain.id,
     });
     const [_token] = useSelectedToken();
     const [{ amount2, destinationAddress }] = useArbQueryParams();
     const isBatchTransferSupported = useIsBatchTransferSupported();
     const [{ theme }] = useArbQueryParams();
     const { ethPrice } = useETHPrice();
-    const tokensFromLists = useTokensFromLists();
+    const { data: tokensFromLists } = useTokensFromLists();
 
     const token = overrideToken || _token || childNativeCurrency;
 
@@ -383,15 +655,6 @@ export const Route = React.memo(
     const { fastWithdrawalActive } = !isDepositMode
       ? getConfirmationTime(networks.sourceChain.id)
       : { fastWithdrawalActive: false };
-
-    const gasEth =
-      (!isTestnet &&
-        gasCost &&
-        gasCost.find(({ gasToken }) => gasToken.address === constants.AddressZero)) ||
-      undefined;
-
-    const showUSDValueForBridgeFee =
-      (!isTestnet && bridgeFee && bridgeFee.token.address === constants.AddressZero) || false;
 
     return (
       <button
@@ -433,9 +696,13 @@ export const Route = React.memo(
           />
 
           <div className="flex flex-wrap gap-3 overflow-hidden">
-            <div className="flex flex-nowrap items-center gap-1">
-              <span className="text-sm text-white/50">via</span>{' '}
-              <RouteBridge bridge={bridge} bridgeIconURI={bridgeIconURI} />
+            <div className="flex flex-nowrap items-center">
+              <RouteBridge
+                bridge={bridge}
+                bridgeIconURI={bridgeIconURI}
+                routeTools={routeTools}
+                routeSteps={routeSteps}
+              />
             </div>
             <RouteBadge tag={tag} />
           </div>
@@ -449,9 +716,9 @@ export const Route = React.memo(
           <RouteFees
             isLoadingGasEstimate={isLoadingGasEstimate}
             gasCost={gasCost}
-            gasEth={gasEth}
             bridgeFee={bridgeFee}
-            showUSDValueForBridgeFee={showUSDValueForBridgeFee}
+            showUSDValueForFees={!isTestnet}
+            tokensFromLists={tokensFromLists}
           />
 
           {/* if custom destination address is the receiver, explicitly show it */}

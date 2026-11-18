@@ -11,11 +11,11 @@ import { useSetInputAmount } from '../../../hooks/TransferPanel/useSetInputAmoun
 import { AmountQueryParamEnum, useArbQueryParams } from '../../../hooks/useArbQueryParams';
 import { useETHPrice } from '../../../hooks/useETHPrice';
 import { useMode } from '../../../hooks/useMode';
-import { useNativeCurrency } from '../../../hooks/useNativeCurrency';
+import { useNativeCurrency, useNativeCurrencyForTransfer } from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
-import { useSourceChainNativeCurrencyDecimals } from '../../../hooks/useSourceChainNativeCurrencyDecimals';
+import { getNativeCurrencyPrice } from '../../../services/nativeCurrency';
 import { formatUSD } from '../../../util/NumberUtils';
 import { getUsdValueForAmount } from '../../../util/TokenPriceUtils';
 import { getNetworkName } from '../../../util/networks';
@@ -35,8 +35,8 @@ import { useNativeCurrencyBalances } from './useNativeCurrencyBalances';
 
 function Amount2ToggleButton() {
   const [networks] = useNetworks();
-  const { childChainProvider } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { childChain } = useNetworksRelationship(networks);
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const { showAmount2Input } = useAmount2InputVisibility();
 
   return (
@@ -67,11 +67,6 @@ export const useAmount2InputVisibility = create<{
 
 const Input1 = React.memo(() => {
   const [networks] = useNetworks();
-  const { childChainProvider } = useNetworksRelationship(networks);
-  const sourceNativeCurrency = useNativeCurrency({
-    provider: networks.sourceChainProvider,
-  });
-  const destinationNativeCurrency = useNativeCurrency({ provider: childChainProvider });
   const { ethPrice } = useETHPrice();
   const [{ amount }] = useArbQueryParams();
   const { setAmount } = useSetInputAmount();
@@ -79,7 +74,13 @@ const Input1 = React.memo(() => {
   const decimals = useSelectedTokenDecimals();
   const { errorMessages } = useTransferReadiness();
   const [selectedToken] = useSelectedToken();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
+  const nativeCurrency = useNativeCurrencyForTransfer({ tokenAddress: selectedToken?.address });
+  const nativeCurrencyPrice = getNativeCurrencyPrice({
+    ...nativeCurrency,
+    tokensFromLists,
+    ethPrice,
+  });
 
   const isMaxAmount = amount === AmountQueryParamEnum.MAX;
 
@@ -119,14 +120,6 @@ const Input1 = React.memo(() => {
   }, [selectedToken?.address, networks.sourceChain.id, networks.destinationChain.id]);
 
   const usdValue = useMemo(() => {
-    const nativeCurrency =
-      !selectedToken && destinationNativeCurrency.isCustom
-        ? destinationNativeCurrency
-        : sourceNativeCurrency;
-    const nativeCurrencyPrice = nativeCurrency.isCustom
-      ? tokensFromLists[nativeCurrency.address.toLowerCase()]?.priceUSD
-      : ethPrice;
-
     const value = getUsdValueForAmount({
       amount,
       selectedToken,
@@ -136,14 +129,7 @@ const Input1 = React.memo(() => {
     });
 
     return value ? formatUSD(value) : null;
-  }, [
-    amount,
-    destinationNativeCurrency,
-    ethPrice,
-    selectedToken,
-    sourceNativeCurrency,
-    tokensFromLists,
-  ]);
+  }, [amount, selectedToken, nativeCurrency, nativeCurrencyPrice, tokensFromLists]);
 
   return (
     <TransferPanelMainInput
@@ -162,17 +148,12 @@ const Input1 = React.memo(() => {
 Input1.displayName = 'Input1';
 
 const Input2 = React.memo(() => {
-  const { showAmount2Input } = useAmount2InputVisibility();
-
-  const [networks] = useNetworks();
-  const { childChainProvider } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
-  const tokensFromLists = useTokensFromLists();
+  const nativeCurrency = useNativeCurrencyForTransfer();
+  const { data: tokensFromLists } = useTokensFromLists();
   const { ethPrice } = useETHPrice();
   const [{ amount2 }] = useArbQueryParams();
   const { setAmount2 } = useSetInputAmount();
   const { maxAmount2 } = useMaxAmount();
-  const isBatchTransferSupported = useIsBatchTransferSupported();
   const { errorMessages } = useTransferReadiness();
 
   const isMaxAmount2 = amount2 === AmountQueryParamEnum.MAX;
@@ -182,12 +163,6 @@ const Input2 = React.memo(() => {
       setAmount2(maxAmount2);
     }
   }, [amount2, maxAmount2, isMaxAmount2, setAmount2]);
-
-  useEffect(() => {
-    if (isBatchTransferSupported && Number(amount2) > 0) {
-      showAmount2Input();
-    }
-  }, [isBatchTransferSupported, amount2, showAmount2Input]);
 
   const amount2MaxButtonOnClick = useCallback(() => {
     if (typeof maxAmount2 !== 'undefined') {
@@ -202,7 +177,7 @@ const Input2 = React.memo(() => {
     [setAmount2],
   );
   const nativeCurrencyBalances = useNativeCurrencyBalances();
-  const nativeCurrencyDecimalsOnSourceChain = useSourceChainNativeCurrencyDecimals();
+  const nativeCurrencyDecimalsOnSourceChain = nativeCurrency.balanceDecimals;
 
   const tokenButtonOptionsAmount2 = useMemo(
     () => ({
@@ -226,9 +201,11 @@ const Input2 = React.memo(() => {
   );
 
   const usdValue = useMemo(() => {
-    const nativeCurrencyPrice = nativeCurrency.isCustom
-      ? tokensFromLists[nativeCurrency.address.toLowerCase()]?.priceUSD
-      : ethPrice;
+    const nativeCurrencyPrice = getNativeCurrencyPrice({
+      ...nativeCurrency,
+      tokensFromLists,
+      ethPrice,
+    });
     const value = getUsdValueForAmount({
       amount: amount2,
       selectedToken: null,
@@ -259,18 +236,28 @@ Input2.displayName = 'Input2';
 
 export function SourceNetworkBox() {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, isDepositMode } = useNetworksRelationship(networks);
+  const { childChain, isDepositMode } = useNetworksRelationship(networks);
   const [selectedToken] = useSelectedToken();
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
   const [dialogProps, openDialog] = useDialog2();
   const openSourceNetworkSelectionDialog = () => {
     openDialog('source_network_selection');
   };
-  const { isAmount2InputVisible } = useAmount2InputVisibility();
+  const { isAmount2InputVisible, showAmount2Input } = useAmount2InputVisibility();
   const isBatchTransferSupported = useIsBatchTransferSupported();
   const isCctpTransfer = useIsCctpTransfer();
-  const isOft = useIsOftV2Transfer();
+  const { isOft } = useIsOftV2Transfer();
   const { embedMode } = useMode();
+  const [{ amount2 }] = useArbQueryParams();
+
+  // Must run from an always-mounted component: the input only renders once it's open,
+  // so it can't open itself for an amount2 deep-link (incl. the "max" value).
+  const hasBatchAmount = amount2 === AmountQueryParamEnum.MAX || Number(amount2) > 0;
+  useEffect(() => {
+    if (isBatchTransferSupported && hasBatchAmount && !isAmount2InputVisible) {
+      showAmount2Input();
+    }
+  }, [isBatchTransferSupported, hasBatchAmount, isAmount2InputVisible, showAmount2Input]);
 
   return (
     <>

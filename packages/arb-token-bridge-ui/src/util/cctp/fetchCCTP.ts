@@ -1,6 +1,6 @@
 import { utils } from 'ethers';
 
-import { getAPIBaseUrl, sanitizeQueryParams } from '..';
+import { assertOk, getAPIBaseUrl, sanitizeQueryParams } from '..';
 import { CompletedCCTPTransfer, PendingCCTPTransfer, Response } from '../../app/api/cctp/[type]';
 import { ChainId } from '../../types/ChainId';
 
@@ -83,6 +83,11 @@ async function fetchCCTP({
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });
+
+  // The error body carries empty `pending`/`completed` arrays of its own, so
+  // reading them would render an indexer outage as "you have no CCTP history".
+  // Throw instead and let the tx history show its error state.
+  await assertOk(response, `[fetchCCTP] /api/cctp/${type}`);
 
   const parsedResponse: Response = await response.json();
   const { pending, completed } = parsedResponse.data;

@@ -1,8 +1,7 @@
-import { TransactionRequest } from '@lifi/sdk';
+import { RouteExtended } from '@lifi/sdk';
 import { BigNumber } from 'ethers';
 
-import { AmountWithToken } from '@/token-bridge-sdk/LifiTransferStarter';
-
+import type { AmountWithToken, RouteTool } from '../../app/api/crosschain-transfers/types';
 import {
   ArbTokenBridge,
   AssetType,
@@ -13,7 +12,7 @@ import {
   ParentToChildMessageData,
   TxnType,
 } from '../../types/Transactions';
-import { Address } from '../../util/AddressUtils';
+import { Address, EvmAddress } from '../../util/AddressUtils';
 import { CCTPSupportedChainId } from '../cctpState';
 
 export enum DepositStatus {
@@ -37,13 +36,35 @@ export enum WithdrawalStatus {
   REFUNDED = 'Refunded', // Lifi only
 }
 
-export type MergedTransactionLifiData = {
-  toolDetails: { key: string; name: string; logoURI: string };
-  durationMs: number;
-  fromAmount: AmountWithToken;
-  toAmount: AmountWithToken;
+type LifiRouteStepExecution = NonNullable<RouteExtended['steps'][number]['execution']>;
+export type LifiRouteHistoryStep = {
+  id: string;
+  fromChainId: number;
+  requiresApproval?: boolean;
+  displaySteps: Array<{
+    toolDetails: RouteTool;
+    toAmount: AmountWithToken;
+  }>;
+  execution?: {
+    status?: LifiRouteStepExecution['status'];
+    process: Array<
+      Pick<LifiRouteStepExecution['process'][number], 'type' | 'status' | 'txHash' | 'txLink'> & {
+        txType?: string;
+      }
+    >;
+  };
+};
+
+type MergedTransactionLifiData = {
+  toolsDetails?: RouteTool[];
+  durationMs?: number;
+  fromAmount?: AmountWithToken;
+  toAmount?: AmountWithToken;
+  receivedAmount?: AmountWithToken;
   destinationTxId: string | null;
-  transactionRequest: TransactionRequest;
+  lifiExplorerLink?: string;
+  lifiRoute?: RouteExtended;
+  lifiRouteSteps?: LifiRouteHistoryStep[];
 };
 export interface BaseMergedTransaction {
   // TODO: https://github.com/OffchainLabs/arbitrum-token-bridge/blob/master/packages/arb-token-bridge-ui/src/util/withdrawals/helpers.ts#L31
@@ -76,7 +97,7 @@ export interface BaseMergedTransaction {
   destinationChainId: number;
   cctpData?: {
     sourceChainId?: CCTPSupportedChainId;
-    attestationHash?: Address | null;
+    attestationHash?: EvmAddress | null;
     messageBytes?: string | null;
     receiveMessageTransactionHash?: Address | null;
     receiveMessageTimestamp?: number | null;
@@ -87,6 +108,7 @@ export interface LifiMergedTransaction
   extends Omit<BaseMergedTransaction, 'isLifi'>,
     MergedTransactionLifiData {
   isLifi: true;
+  showInHistory?: boolean;
   destinationStatus: WithdrawalStatus;
 }
 

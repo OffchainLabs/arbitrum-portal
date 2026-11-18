@@ -3,14 +3,24 @@ import posthog from 'posthog-js';
 
 import { RouteType } from '../components/TransferPanel/hooks/useRouteStore';
 import { ChainId } from '../types/ChainId';
+import type { AccountType as WalletAccountType } from './AccountUtils';
 import { addressesEqual } from './AddressUtils';
 import { isProductionEnvironment } from './CommonUtils';
 import { FastBridgeNames, SpecialTokenSymbol } from './fastBridges';
 
-type AccountType = 'EOA' | 'Smart Contract';
+type AccountType = 'EOA' | 'Delegated EOA' | 'Smart Contract';
 type AssetType = 'ETH' | 'ERC-20';
 type TransferDirection = 'Deposit' | 'Withdrawal';
 type FastBridgeName = `${FastBridgeNames}`;
+type TokenPickerSide = 'source' | 'destination';
+// mirrors RetryableLookupResult['type'], kept separate so the reported values stay stable
+type RetryableLookupOutcome =
+  | 'retryables'
+  | 'noRetryables'
+  | 'ethDeposit'
+  | 'classicTransaction'
+  | 'transactionNotFound'
+  | 'lookupFailed';
 
 export type SimplifiedRouteType = Extract<RouteType, 'arbitrum' | 'oftV2' | 'cctp' | 'lifi'>;
 type AnalyticsEventMap = {
@@ -42,6 +52,7 @@ type AnalyticsEventMap = {
     amount: number;
   };
   'Connect Wallet Click': { walletName: string };
+  'Trust Wallet Update Confirmation': { confirmed: boolean };
   'Fast Bridge Click': {
     bridge: FastBridgeName;
     tokenSymbol?: SpecialTokenSymbol.USDC;
@@ -64,10 +75,26 @@ type AnalyticsEventMap = {
     version: number;
   };
   'Redeem Retryable': { network: string };
+  'Redeem Retryable Error': { network: string };
+  'Check Retryable Status Click': { network: string; isTestnetMode: boolean };
+  'Check Retryable Status Result': {
+    network: string;
+    result: RetryableLookupOutcome;
+    ticketCount: number;
+  };
   'Search Tx for Address Click': {
     isTestnetMode: boolean;
     isConnectedAddress: boolean;
   };
+  'Search Tx for Tx Hash Click': {
+    isTestnetMode: boolean;
+  };
+  'Tx Hash Search Result': {
+    found: boolean;
+    sourceChainId?: number;
+    isTestnetMode: boolean;
+  };
+  'Tx History Network Filter': { network: string };
   'Tx Error: Get Help Click': {
     network: string;
     transactionType: SimplifiedRouteType;
@@ -119,9 +146,61 @@ type AnalyticsEventMap = {
   'Onramp Service Click': {
     service: string;
   };
+  'Bridge Page Loaded': {
+    sourceChainId: number;
+    destinationChainId: number;
+    sourceToken?: string;
+    destinationToken?: string;
+  };
+  'Token Picker Opened': {
+    side: TokenPickerSide;
+    sourceChainId: number;
+    destinationChainId: number;
+    isConnected: boolean;
+  };
+  'Token Search Performed': {
+    side: TokenPickerSide;
+    sourceChainId: number;
+    destinationChainId: number;
+    isConnected: boolean;
+    query: string;
+  };
+  'Token Selected': {
+    side: TokenPickerSide;
+    sourceChainId: number;
+    destinationChainId: number;
+    isConnected: boolean;
+    tokenAddress: string;
+    hasBalance: boolean;
+  };
+  'USDG Suggestion Banner': {
+    action: 'shown' | 'switched' | 'dismissed';
+    sourceChainId: number;
+    destinationChainId: number;
+    sourceTokenAddress?: string;
+    destinationTokenAddress?: string;
+  };
+  'OFT Onchain Fallback Block': {
+    parentChainId: number;
+    childChainId: number;
+    tokenAddress: string;
+    isLayerZeroMetadataLoaded: boolean;
+  };
+  'USDG DRIP Card': {
+    action: 'shown' | 'dismissed' | 'learn_more_clicked';
+  };
 };
 
 type AnalyticsEvent = keyof AnalyticsEventMap;
+
+export function getAnalyticsAccountType(
+  walletAccountType: WalletAccountType | undefined,
+): AccountType {
+  if (walletAccountType === 'smart-contract-wallet') {
+    return 'Smart Contract';
+  }
+  return walletAccountType === 'delegated-account' ? 'Delegated EOA' : 'EOA';
+}
 
 export function getLifiAssetType({
   tokenAddress,

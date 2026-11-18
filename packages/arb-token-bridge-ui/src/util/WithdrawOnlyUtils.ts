@@ -6,8 +6,19 @@ import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { ChainId } from '../types/ChainId';
 import { isNetwork } from '../util/networks';
+import { addressesEqual } from './AddressUtils';
+import { trackEvent } from './AnalyticsUtils';
 import { CommonAddress } from './CommonAddressUtils';
-import { isTokenArbitrumOneUSDCe, isTokenArbitrumSepoliaUSDCe } from './TokenUtils';
+import {
+  getL2ERC20Address,
+  isTokenArbitrumOneUSDCe,
+  isTokenArbitrumSepoliaUSDCe,
+} from './TokenUtils';
+import {
+  getLayerZeroMetadata,
+  getLayerZeroOftInfoFromMetadata,
+  isKnownLayerZeroToken,
+} from './layerZeroMetadata';
 
 export type WithdrawOnlyToken = {
   symbol: string;
@@ -261,6 +272,21 @@ export const withdrawOnlyTokens: { [chainId: number]: WithdrawOnlyToken[] } = {
     },
   ],
   [ChainId.ArbitrumNova]: [],
+  [ChainId.RobinhoodChain]: [
+    {
+      symbol: 'USDC',
+      l2CustomAddr: '',
+      l1Address: CommonAddress.Ethereum.USDC,
+      l2Address: '0x80e0e24718dbFcad49ECAA6F1e6C89A190586cA8',
+    },
+    {
+      // USDT reaches Robinhood Chain via LayerZero (USDT0); block the canonical route.
+      symbol: 'USDT',
+      l2CustomAddr: '',
+      l1Address: CommonAddress.Ethereum.USDT,
+      l2Address: '0xE246BC49b0598d7Cd9f0eAD48B885034f1254380',
+    },
+  ],
   // Plume
   98866: [
     {
@@ -284,7 +310,8 @@ export const withdrawOnlyTokens: { [chainId: number]: WithdrawOnlyToken[] } = {
   ],
 };
 
-async function isLayerZeroToken(parentChainErc20Address: string, parentChainId: number) {
+// On-chain OFT probe — fallback for tokens not yet in the LayerZero metadata.
+async function isOftTokenOnChain(parentChainErc20Address: string, parentChainId: number) {
   const parentProvider = getProviderForChainId(parentChainId);
 
   // https://github.com/LayerZero-Labs/LayerZero-v2/blob/592625b9e5967643853476445ffe0e777360b906/packages/layerzero-v2/evm/oapp/contracts/oft/OFT.sol#L37
@@ -302,18 +329,145 @@ async function isLayerZeroToken(parentChainErc20Address: string, parentChainId: 
   }
 }
 
-/**
- *
- * @param erc20L1Address
- * @param childChainId
- */
-export async function isWithdrawOnlyToken({
+const trackedOftFallbackBlocks = new Set<string>();
+
+// Measures how often the on-chain probe catches an OFT the LayerZero metadata misses.
+function trackOftFallbackBlock({
+  parentChainErc20Address,
+  parentChainId,
+  childChainId,
+  isLayerZeroMetadataLoaded,
+}: {
+  parentChainErc20Address: string;
+  parentChainId: number;
+  childChainId: number;
+  isLayerZeroMetadataLoaded: boolean;
+}) {
+  const key = `${parentChainId}:${childChainId}:${parentChainErc20Address.toLowerCase()}`;
+  if (trackedOftFallbackBlocks.has(key)) {
+    return;
+  }
+  trackedOftFallbackBlocks.add(key);
+
+  trackEvent('OFT Onchain Fallback Block', {
+    parentChainId,
+    childChainId,
+    tokenAddress: parentChainErc20Address.toLowerCase(),
+    isLayerZeroMetadataLoaded,
+  });
+}
+
+async function getCanonicalChildTokenAddress({
   parentChainErc20Address,
   parentChainId,
   childChainId,
 }: {
   parentChainErc20Address: string;
   parentChainId: number;
+  childChainId: number;
+}): Promise<string | null> {
+  try {
+    return await getL2ERC20Address({
+      erc20L1Address: parentChainErc20Address,
+      l1Provider: getProviderForChainId(parentChainId),
+      l2Provider: getProviderForChainId(childChainId),
+    });
+  } catch (error) {
+    return null;
+  }
+}
+
+// Allow when the canonical deposit lands on a token LayerZero recognizes on the
+// destination (this token's own deployment, or another real listed token — e.g.
+// ARB, whose L2 token LayerZero lists but doesn't peg to its L1 address). Block
+// only when it lands on an unrecognized counterfactual AND a real OFT deployment
+// exists to route through instead; a plain ERC20 LayerZero merely tracks (e.g.
+// FRAX) has no OFT alternative, so blocking would just strand it.
+export function isCanonicalDepositBlocked({
+  canonicalChildTokenAddress,
+  canonicalIsKnownLayerZeroToken,
+  hasOftChildDeployment,
+}: {
+  canonicalChildTokenAddress: string | null;
+  canonicalIsKnownLayerZeroToken: boolean;
+  hasOftChildDeployment: boolean;
+}): boolean {
+  // No canonical route to the destination (e.g. USDT has no gateway).
+  if (
+    !canonicalChildTokenAddress ||
+    addressesEqual(canonicalChildTokenAddress, ethers.constants.AddressZero)
+  ) {
+    return true;
+  }
+
+  // Canonical deposit lands on a token LayerZero recognizes → safe to allow.
+  if (canonicalIsKnownLayerZeroToken) {
+    return false;
+  }
+
+  return hasOftChildDeployment;
+}
+
+export async function isBlockedOftDeposit({
+  parentChainErc20Address,
+  parentChainId,
+  childChainId,
+}: {
+  parentChainErc20Address: string;
+  parentChainId: number;
+  childChainId: number;
+}) {
+  const metadata = await getLayerZeroMetadata();
+  const { isOft, hasOftChildDeployment } = getLayerZeroOftInfoFromMetadata(metadata, {
+    parentChainId,
+    parentTokenAddress: parentChainErc20Address,
+    childChainId,
+  });
+
+  // Not listed in the LayerZero metadata — fall back to the on-chain probe.
+  if (!isOft) {
+    const isOftOnChain = await isOftTokenOnChain(parentChainErc20Address, parentChainId);
+    if (isOftOnChain) {
+      trackOftFallbackBlock({
+        parentChainErc20Address,
+        parentChainId,
+        childChainId,
+        isLayerZeroMetadataLoaded: metadata !== null,
+      });
+    }
+    return isOftOnChain;
+  }
+
+  const canonicalChildTokenAddress = await getCanonicalChildTokenAddress({
+    parentChainErc20Address,
+    parentChainId,
+    childChainId,
+  });
+
+  const canonicalIsKnownLayerZeroToken = canonicalChildTokenAddress
+    ? await isKnownLayerZeroToken({
+        chainId: childChainId,
+        tokenAddress: canonicalChildTokenAddress,
+      })
+    : false;
+
+  return isCanonicalDepositBlocked({
+    canonicalChildTokenAddress,
+    canonicalIsKnownLayerZeroToken,
+    hasOftChildDeployment,
+  });
+}
+
+/**
+ *
+ * @param parentChainErc20Address
+ * @param childChainId
+ */
+export function isWithdrawOnlyToken({
+  parentChainErc20Address,
+  childChainId,
+}: {
+  parentChainErc20Address: string;
   childChainId: number;
 }) {
   // disable USDC.e deposits for Orbit chains
@@ -330,10 +484,6 @@ export async function isWithdrawOnlyToken({
     .includes(parentChainErc20Address.toLowerCase());
 
   if (inWithdrawOnlyList) {
-    return true;
-  }
-
-  if (await isLayerZeroToken(parentChainErc20Address, parentChainId)) {
     return true;
   }
 

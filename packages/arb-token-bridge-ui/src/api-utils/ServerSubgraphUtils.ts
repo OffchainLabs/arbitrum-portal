@@ -3,6 +3,7 @@ import ApolloLinkTimeout from 'apollo-link-timeout';
 
 import { ChainId } from '../types/ChainId';
 import { logger } from '../util/logger';
+import { getIndexerApiUrl } from './ServerIndexerUtils';
 
 /**
  * The API key to be used for calls to The Graph Network.
@@ -13,63 +14,37 @@ const selfHostedSubgraphApiKey = process.env.SELF_HOSTED_SUBGRAPH_API_KEY;
 
 type SubgraphKey = keyof typeof subgraphs;
 
-type TheGraphNetworkSubgraphId = (typeof subgraphs)[SubgraphKey]['theGraphNetworkSubgraphId'];
+// Labels, never URLs — our endpoints stay behind the API. Routes report one of
+// these, so no endpoint of ours can be assigned to `meta.source` at all.
+export type SubgraphSource = SubgraphKey | 'arbitrum-indexer';
+
+/** An Apollo client paired with the label to report it as. */
+type SourcedClient = {
+  client: ApolloClient<NormalizedCacheObject>;
+  source: SubgraphSource;
+};
+
+type Subgraph =
+  | { kind: 'self-hosted'; name: string }
+  | { kind: 'graph-network'; subgraphId: string };
 
 const subgraphs = {
-  // CCTP Mainnet Subgraphs
-  'cctp-ethereum': {
-    selfHostedSubgraph: '',
-    theGraphNetworkSubgraphId: 'E6iPLnDGEgrcc4gu9uiHJxENSRAAzTvUJqQqJcHZqJT1',
-  },
-  'cctp-arbitrum-one': {
-    selfHostedSubgraph: '',
-    theGraphNetworkSubgraphId: '9DgSggKVrvfi4vdyYTdmSBuPgDfm3D7zfLZ1qaQFjYYW',
-  },
-  // CCTP Testnet Subgraphs
-  'cctp-sepolia': {
-    selfHostedSubgraph: '',
-    theGraphNetworkSubgraphId: '4gSU1PTxjYPWk2TXPX2fusjuXrBFHC7kCZrbhrhaF9V5',
-  },
-  'cctp-arbitrum-sepolia': {
-    selfHostedSubgraph: '',
-    theGraphNetworkSubgraphId: '4Dp9ENSFDKfeBsmZeSyATKKrhxC2EKzbC3bZvTHpU1DB',
-  },
-  // L1 Mainnet Subgraphs
-  'l1-arbitrum-one': {
-    selfHostedSubgraph: '',
-    theGraphNetworkSubgraphId: 'F2N4nGH86Y5Bk2vPo15EVRSTz2wbtz7BGRe8DDJqMPG4',
-  },
   'l1-arbitrum-nova': {
-    selfHostedSubgraph: '',
-    theGraphNetworkSubgraphId: '6Xvyjk9r91N3DSRQP6UZ1Lkbou567hFxLSWt2Tsv5AWp',
+    kind: 'graph-network',
+    subgraphId: '6Xvyjk9r91N3DSRQP6UZ1Lkbou567hFxLSWt2Tsv5AWp',
   },
-  // L1 Testnet Subgraphs
-  'l1-arbitrum-sepolia': {
-    selfHostedSubgraph: '',
-    theGraphNetworkSubgraphId: 'GF6Ez7sY2gef8EoXrR76X6iFa41wf38zh4TXZkDkL5Z9',
-  },
-  // L2 Mainnet Subgraphs
-  'l2-arbitrum-one': {
-    selfHostedSubgraph: '',
-    theGraphNetworkSubgraphId: '9eFk14Tms68qBN7YwL6kFuk9e2BVRqkX6gXyjzLR3tuj',
-  },
-  // L2 Nova Subgraphs
   'l2-arbitrum-nova': {
-    selfHostedSubgraph: 'arbitrum-nova/layer2-token-gateway',
-    theGraphNetworkSubgraphId: '',
+    kind: 'self-hosted',
+    name: 'arbitrum-nova/layer2-token-gateway',
   },
-  // L2 Testnet Subgraphs
-  'l2-arbitrum-sepolia': {
-    selfHostedSubgraph: '',
-    theGraphNetworkSubgraphId: 'AaUuKWWuQbCXbvRkXpVDEpw9B7oVicYrovNyMLPZtLPw',
-  },
-} as const;
+} satisfies Record<string, Subgraph>;
 
-function createApolloClient(uri: string) {
+function createApolloClient(uri: string, headers?: Record<string, string>) {
   const timeoutLink = new ApolloLinkTimeout();
   const httpLink = timeoutLink.concat(
     new HttpLink({
       uri,
+      headers,
       fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }),
     }),
   );
@@ -91,9 +66,11 @@ function createSelfHostedSubgraphClient(subgraphName: string) {
   );
 }
 
-function createTheGraphNetworkClient(subgraphId: TheGraphNetworkSubgraphId) {
+function createTheGraphNetworkClient(subgraphId: string) {
   if (typeof theGraphNetworkApiKey === 'undefined' || theGraphNetworkApiKey === '') {
-    throw new Error(`[createTheGraphNetworkClient] missing "GRAPH_NETWORK_API_KEY" env variable"`);
+    throw new Error(
+      `[createTheGraphNetworkClient] missing "THE_GRAPH_NETWORK_API_KEY" env variable`,
+    );
   }
 
   return createApolloClient(
@@ -101,80 +78,66 @@ function createTheGraphNetworkClient(subgraphId: TheGraphNetworkSubgraphId) {
   );
 }
 
-function createSubgraphClient(key: SubgraphKey) {
-  logger.debug(`[createSubgraphClient] key=${key}`);
+function createSubgraphClient(key: SubgraphKey): SourcedClient {
+  const subgraph = subgraphs[key];
+  logger.debug(`[createSubgraphClient] key=${key} kind=${subgraph.kind}`);
 
-  const { theGraphNetworkSubgraphId, selfHostedSubgraph } = subgraphs[key];
-
-  if (selfHostedSubgraph !== '') {
-    return createSelfHostedSubgraphClient(selfHostedSubgraph);
-  }
-
-  logger.debug(
-    `[createSubgraphClient] using subgraph "${theGraphNetworkSubgraphId}" on the graph network`,
-  );
-  return createTheGraphNetworkClient(theGraphNetworkSubgraphId);
+  return { client: createClientFor(subgraph), source: key };
 }
 
-export function getCctpSubgraphClient(chainId: number) {
-  switch (chainId) {
-    case ChainId.Ethereum:
-      return createSubgraphClient('cctp-ethereum');
+function createClientFor(subgraph: Subgraph): ApolloClient<NormalizedCacheObject> {
+  switch (subgraph.kind) {
+    case 'self-hosted':
+      return createSelfHostedSubgraphClient(subgraph.name);
 
-    case ChainId.ArbitrumOne:
-      return createSubgraphClient('cctp-arbitrum-one');
-
-    case ChainId.Sepolia:
-      return createSubgraphClient('cctp-sepolia');
-
-    case ChainId.ArbitrumSepolia:
-      return createSubgraphClient('cctp-arbitrum-sepolia');
-
-    default:
-      throw new Error(`[getCctpSubgraphClient] unsupported chain: ${chainId}`);
+    case 'graph-network':
+      return createTheGraphNetworkClient(subgraph.subgraphId);
   }
 }
 
-export function getL1SubgraphClient(l2ChainId: number) {
+const cctpChainIds: readonly ChainId[] = [
+  ChainId.Ethereum,
+  ChainId.ArbitrumOne,
+  ChainId.Sepolia,
+  ChainId.ArbitrumSepolia,
+];
+
+/**
+ * The indexer's replica of the Circle CCTP v1 subgraphs, now the only source of
+ * CCTP history. A chain missing from `INDEXER_API_URL_BY_CHAIN` throws rather
+ * than degrading, which the route turns into a 500.
+ */
+export function getCctpSubgraphClient(chainId: number): ApolloClient<NormalizedCacheObject> {
+  if (!cctpChainIds.includes(chainId)) {
+    throw new Error(`[getCctpSubgraphClient] unsupported chain: ${chainId}`);
+  }
+
+  const indexerApiBaseUrl = getIndexerApiUrl(chainId);
+
+  if (typeof indexerApiBaseUrl === 'undefined') {
+    throw new Error(`[getCctpSubgraphClient] no indexer configured for chain: ${chainId}`);
+  }
+
+  // /api/v1 only: the replica postdates the indexer's API versioning, no alias.
+  return createApolloClient(`${indexerApiBaseUrl}/api/v1/cctp/graphql/${chainId}`);
+}
+
+export function getL1SubgraphClient(l2ChainId: number): SourcedClient {
   switch (l2ChainId) {
-    case ChainId.ArbitrumOne:
-      return createSubgraphClient('l1-arbitrum-one');
-
     case ChainId.ArbitrumNova:
       return createSubgraphClient('l1-arbitrum-nova');
-
-    case ChainId.ArbitrumSepolia:
-      return createSubgraphClient('l1-arbitrum-sepolia');
 
     default:
       throw new Error(`[getL1SubgraphClient] unsupported chain: ${l2ChainId}`);
   }
 }
 
-export function getL2SubgraphClient(l2ChainId: number) {
+export function getL2SubgraphClient(l2ChainId: number): SourcedClient {
   switch (l2ChainId) {
-    case ChainId.ArbitrumOne:
-      return createSubgraphClient('l2-arbitrum-one');
-
     case ChainId.ArbitrumNova:
       return createSubgraphClient('l2-arbitrum-nova');
-
-    case ChainId.ArbitrumSepolia:
-      return createSubgraphClient('l2-arbitrum-sepolia');
 
     default:
       throw new Error(`[getL2SubgraphClient] unsupported chain: ${l2ChainId}`);
   }
-}
-
-export function getSourceFromSubgraphClient(
-  subgraphClient: ApolloClient<NormalizedCacheObject>,
-): string | null {
-  const uri = (subgraphClient.link as any).options?.uri;
-
-  if (typeof uri === 'undefined') {
-    return null;
-  }
-
-  return new URL(uri).origin;
 }

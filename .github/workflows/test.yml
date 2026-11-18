@@ -15,7 +15,9 @@ on:
 
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#concurrency
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Draft and ready runs use separate groups. A run for a push made while the PR was a draft
+  # can start after the PR is marked ready, and would otherwise cancel the ready run.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.pull_request.draft && 'draft' || 'ready' }}
   cancel-in-progress: true
 
 jobs:
@@ -47,6 +49,8 @@ jobs:
       NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }}
       NEXT_PUBLIC_FEATURE_FLAG_LIFI: ${{ secrets.NEXT_PUBLIC_FEATURE_FLAG_LIFI }}
       THE_GRAPH_NETWORK_API_KEY: ${{ secrets.THE_GRAPH_NETWORK_API_KEY }}
+      INDEXER_API_URL_BY_CHAIN: ${{ secrets.INDEXER_API_URL_BY_CHAIN }}
+      NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS: '4663,46630'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -65,6 +69,8 @@ jobs:
         with:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
@@ -96,6 +102,8 @@ jobs:
         with:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
@@ -124,13 +132,15 @@ jobs:
         with:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Run audit
         run: pnpm audit:ci
 
+  # Runs on draft PRs too, without waiting for the build
   check-formatting:
     name: 'Check Formatting'
-    needs: [build, check-files]
     runs-on: ubuntu-4
     env: *app_env
     steps:
@@ -151,9 +161,12 @@ jobs:
         with:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: ${{ github.ref == 'refs/heads/master' }}
 
-      - name: Restore build artifacts
-        uses: ./.github/actions/restore-build-artifacts
+      # `tsc` reads the portal data
+      - name: Fetch portal data
+        run: pnpm --filter portal fetch:data
 
       - name: Check formatting with Prettier
         run: pnpm prettier:check

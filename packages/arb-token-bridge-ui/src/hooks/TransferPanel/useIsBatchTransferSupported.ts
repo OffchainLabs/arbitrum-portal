@@ -12,7 +12,7 @@ export const useIsBatchTransferSupported = () => {
   const { isDepositMode, isLifi } = useNetworksRelationship(networks);
   const isArbitrumCanonicalTransfer = useIsArbitrumCanonicalTransfer();
   const [selectedToken] = useSelectedToken();
-  const isOftTransfer = useIsOftV2Transfer();
+  const { isOft: isOftTransfer } = useIsOftV2Transfer();
   const { isFeatureDisabled } = useDisabledFeatures();
 
   if (isFeatureDisabled(DisabledFeatures.BATCH_TRANSFERS)) {

@@ -1,7 +1,7 @@
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 const sender = '0x2Ce910fBba65B454bBAf6A18c952A70f3bcd8299';
-const l2Provider = new StaticJsonRpcProvider('https://arb1.arbitrum.io/rpc');
+const l2Provider = new StaticJsonRpcProvider('https://arb1.arbitrum.io/rpc', 42161);
 const l2ChainId = 42161;
 
 const baseQuery = {

@@ -181,7 +181,7 @@ export function OpportunitiesTable({
 }: OpportunitiesTableProps) {
   const posthog = usePostHog();
   const [expandedCategories, setExpandedCategories] = useState<Set<OpportunityCategory>>(new Set());
-  const [sortColumn, setSortColumn] = useState<SortColumn>(groupByCategory ? 'tvl' : 'holdings');
+  const [sortColumn, setSortColumn] = useState<SortColumn>(groupByCategory ? 'apy' : 'holdings');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const compareMetric = useCallback(

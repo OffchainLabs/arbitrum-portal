@@ -25,54 +25,68 @@ const swapCases: RouteTokenCase[] = [
     destinationToken: nativeEthTokenExpectation,
   },
   {
-    sourceChain: 'ethereum',
-    destinationChain: 'superposition',
-    sourceToken: tokenExpectationsByChain.Ethereum.USDC,
-    destinationToken: nativeEthTokenExpectation,
-  },
-  {
-    sourceChain: 'superposition',
-    destinationChain: 'ethereum',
-    sourceToken: tokenExpectationsByChain.Superposition.USDCe,
-    destinationToken: nativeEthTokenExpectation,
-  },
-  {
     sourceChain: 'apechain',
-    destinationChain: 'superposition',
-    sourceToken: tokenExpectationsByChain.ApeChain.USDCe,
+    destinationChain: 'robinhood-chain',
+    sourceToken: tokenExpectationsByChain.ApeChain.WETH,
     destinationToken: nativeEthTokenExpectation,
   },
   {
-    sourceChain: 'superposition',
-    destinationChain: 'apechain',
-    sourceToken: tokenExpectationsByChain.Superposition.USDCe,
-    destinationToken: tokenExpectationsByChain.ApeChain.WETH,
+    sourceChain: 'ethereum',
+    destinationChain: 'robinhood-chain',
+    sourceToken: tokenExpectationsByChain.Ethereum.USDe,
+    destinationToken: nativeEthTokenExpectation,
+  },
+  {
+    sourceChain: 'ethereum',
+    destinationChain: 'robinhood-chain',
+    // the Ethereum USDG contract is not Ethereum's native stablecoin, so no badge on this side
+    sourceToken: { ...tokenExpectationsByChain.Ethereum.USDG, absentBadge: 'Native stablecoin' },
+    destinationToken: nativeEthTokenExpectation,
+  },
+  {
+    sourceChain: 'arbitrum-one',
+    destinationChain: 'robinhood-chain',
+    sourceToken: tokenExpectationsByChain.ArbitrumOne.USDe,
+    destinationToken: nativeEthTokenExpectation,
+  },
+  {
+    sourceChain: 'base',
+    destinationChain: 'robinhood-chain',
+    sourceToken: tokenExpectationsByChain.Base.USDe,
+    destinationToken: nativeEthTokenExpectation,
   },
 ];
 
-describe.sequential('TransferPanel LiFi Integration - Swap (USDC -> ETH/WETH)', () => {
+async function assertSwapRouteTokens({
+  sourceChain,
+  destinationChain,
+  sourceToken,
+  destinationToken,
+}: RouteTokenCase) {
+  await renderTransferPanel({
+    sourceChain,
+    destinationChain,
+  });
+
+  await setSourceToken(sourceToken);
+  await setDestinationToken(destinationToken);
+
+  await expectTokenButtonContent({
+    isDestination: false,
+    tokenExpectation: sourceToken,
+  });
+
+  await expectTokenButtonContent({
+    isDestination: true,
+    tokenExpectation: destinationToken,
+  });
+}
+
+describe.sequential('TransferPanel LiFi Integration - Swap', () => {
   setupTransferPanelLifiIntegrationSuite();
 
   it.each(swapCases)(
-    'renders expected source and destination tokens for swap (USDC -> ETH/WETH): $sourceChain -> $destinationChain',
-    async ({ sourceChain, destinationChain, sourceToken, destinationToken }) => {
-      await renderTransferPanel({
-        sourceChain,
-        destinationChain,
-      });
-
-      await setSourceToken(sourceToken);
-      await setDestinationToken(destinationToken);
-
-      await expectTokenButtonContent({
-        isDestination: false,
-        tokenExpectation: sourceToken,
-      });
-
-      await expectTokenButtonContent({
-        isDestination: true,
-        tokenExpectation: destinationToken,
-      });
-    },
+    'renders expected source and destination tokens for swap: $sourceChain -> $destinationChain',
+    assertSwapRouteTokens,
   );
 });

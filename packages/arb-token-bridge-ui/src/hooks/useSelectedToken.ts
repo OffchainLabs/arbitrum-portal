@@ -1,9 +1,7 @@
-import { Provider } from '@ethersproject/providers';
-import { constants, utils } from 'ethers';
 import { useCallback } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
-import { getChainIdFromProvider, getProviderForChainId } from '@/token-bridge-sdk/utils';
+import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import {
   useTokensFromLists,
@@ -11,7 +9,9 @@ import {
 } from '../components/TransferPanel/TokenSearchUtils';
 import { useAppState } from '../state';
 import { ChainId } from '../types/ChainId';
+import { isValidAddressForChain } from '../util/AddressUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
+import { resolveDestinationSelection, selectUsdcToken } from '../util/TokenSelectionUtils';
 import {
   getL2ERC20Address,
   isTokenArbitrumOneNativeUSDC,
@@ -21,8 +21,9 @@ import {
   isTokenSepoliaUSDC,
 } from '../util/TokenUtils';
 import { logger } from '../util/logger';
-import { isNetwork } from '../util/networks';
+import { getDestinationChainIds, isNetwork } from '../util/networks';
 import { sanitizeNullSelectedToken } from '../util/queryParamUtils';
+import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { ERC20BridgeToken, TokenType } from './arbTokenBridge.types';
 import { useArbQueryParams } from './useArbQueryParams';
 import { useNetworks } from './useNetworks';
@@ -43,17 +44,17 @@ const commonUSDC: ERC20BridgeToken = {
 
 export const useSelectedToken = (): [
   ERC20BridgeToken | null,
-  (erc20ParentAddress: string | null) => void,
+  (erc20ParentAddress: string | null, tokenOverride?: ERC20BridgeToken) => void,
 ] => {
   const [{ token: tokenFromSearchParams }, setQueryParams] = useArbQueryParams();
   const [networks] = useNetworks();
-  const { childChain, parentChain } = useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
   const {
     app: {
       arbTokenBridge: { bridgeTokens },
     },
   } = useAppState();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
   const tokensFromUser = useTokensFromUser();
 
   const { data: usdcToken } = useSWRImmutable(
@@ -74,26 +75,20 @@ export const useSelectedToken = (): [
       }
 
       // USDC for lifi chains, use bridgeTokens
-      if (
-        _destinationChainId === ChainId.ApeChain ||
-        _destinationChainId === ChainId.Superposition
-      ) {
+      if (_destinationChainId === ChainId.ApeChain) {
         return null;
       }
 
-      const parentProvider = getProviderForChainId(_parentChainId);
-      const childProvider = getProviderForChainId(_childChainId);
-
       return getUsdcToken({
         tokenAddress: _tokenAddress,
-        parentProvider,
-        childProvider,
+        parentChainId: _parentChainId,
+        childChainId: _childChainId,
       });
     },
   );
 
   const setSelectedToken = useCallback(
-    (erc20ParentAddress: string | null) => {
+    (erc20ParentAddress: string | null, tokenOverride?: ERC20BridgeToken) => {
       return setQueryParams((latestQuery) => {
         try {
           const sanitizedTokenAddress = sanitizeNullSelectedToken({
@@ -101,60 +96,58 @@ export const useSelectedToken = (): [
             destinationChainId: latestQuery.destinationChain,
             erc20ParentAddress,
           });
-
-          if (sanitizedTokenAddress) {
-            return {
-              token: sanitizedTokenAddress,
-              destinationToken: sanitizedTokenAddress,
-            };
-          }
-
-          /**
-           * ApeChain to Superposition, return zero address for Superposition if we're transfering APE token
-           */
-          if (
-            latestQuery.sourceChain === ChainId.ApeChain &&
-            latestQuery.destinationChain === ChainId.Superposition
-          ) {
-            return {
-              token: sanitizeTokenAddress(erc20ParentAddress),
-              destinationToken: constants.AddressZero,
-            };
-          }
-
-          return {
-            token: sanitizeTokenAddress(erc20ParentAddress),
-            destinationToken: sanitizeTokenAddress(erc20ParentAddress),
-          };
+          const tokenAddress =
+            sanitizedTokenAddress ??
+            sanitizeTokenAddress(erc20ParentAddress, networks.sourceChain.id);
+          const tokenStorageAddress =
+            erc20ParentAddress?.toLowerCase() ?? tokenAddress?.toLowerCase() ?? '';
+          const token =
+            tokenOverride ||
+            tokensFromUser[tokenStorageAddress] ||
+            tokensFromLists[tokenStorageAddress];
+          const destination = resolveDestinationSelection({
+            sourceToken: token ?? null,
+            sourceTokenAddress: tokenAddress,
+            destinationTokenLookupKey: tokenAddress,
+            isDepositMode,
+            sourceChainId: networks.sourceChain.id,
+            destinationChainId: networks.destinationChain.id,
+          });
+          return { token: tokenAddress, destinationToken: destination.lookupKey };
         } catch (error) {
           logger.error('Error sanitizing token address:', error);
           return { token: undefined, destinationToken: undefined };
         }
       });
     },
-    [setQueryParams],
+    [
+      isDepositMode,
+      networks.destinationChain.id,
+      networks.sourceChain.id,
+      setQueryParams,
+      tokensFromLists,
+      tokensFromUser,
+    ],
   );
-
-  const selectedToken = tokenFromSearchParams
-    ? usdcToken ||
-      bridgeTokens?.[tokenFromSearchParams] ||
-      tokensFromUser[tokenFromSearchParams] ||
-      tokensFromLists[tokenFromSearchParams] ||
-      null
-    : null;
 
   if (!tokenFromSearchParams) {
     return [null, setSelectedToken] as const;
   }
 
+  const storedToken =
+    bridgeTokens?.[tokenFromSearchParams] ??
+    tokensFromUser[tokenFromSearchParams] ??
+    tokensFromLists[tokenFromSearchParams];
+  const selectedToken = selectUsdcToken({ usdcToken, storedToken });
+
   return [selectedToken, setSelectedToken] as const;
 };
 
-function sanitizeTokenAddress(tokenAddress: string | null): string | undefined {
+function sanitizeTokenAddress(tokenAddress: string | null, chainId: number): string | undefined {
   if (!tokenAddress) {
     return undefined;
   }
-  if (utils.isAddress(tokenAddress)) {
+  if (isValidAddressForChain(tokenAddress, chainId)) {
     return tokenAddress;
   }
   return undefined;
@@ -162,15 +155,17 @@ function sanitizeTokenAddress(tokenAddress: string | null): string | undefined {
 
 export async function getUsdcToken({
   tokenAddress,
-  parentProvider,
-  childProvider,
+  parentChainId,
+  childChainId,
 }: {
   tokenAddress: string;
-  parentProvider: Provider;
-  childProvider: Provider;
+  parentChainId: number;
+  childChainId: number;
 }): Promise<ERC20BridgeToken | null> {
-  const parentChainId = await getChainIdFromProvider(parentProvider);
-  const childChainId = await getChainIdFromProvider(childProvider);
+  // Arbitrum USDC routing doesn't reach LiFi-only chains
+  if (getEcosystemConfig(parentChainId).isLifiOnly || getEcosystemConfig(childChainId).isLifiOnly) {
+    return null;
+  }
 
   const {
     isEthereumMainnet: isParentChainEthereumMainnet,
@@ -225,13 +220,23 @@ export async function getUsdcToken({
     (isTokenMainnetUSDC(tokenAddress) && isParentChainEthereumMainnet) ||
     (isTokenSepoliaUSDC(tokenAddress) && isParentChainSepolia)
   ) {
+    // The UI also uses parent/child terminology for LiFi sibling-chain routes.
+    // Only a real canonical pair can resolve USDC through the child gateway.
+    if (!getDestinationChainIds(parentChainId).includes(childChainId)) {
+      return {
+        ...commonUSDC,
+        address: tokenAddress,
+        lifiOnlyChainId: parentChainId,
+      };
+    }
+
     let childChainUsdcAddress;
     try {
       childChainUsdcAddress = (
         await getL2ERC20Address({
           erc20L1Address: tokenAddress,
-          l1Provider: parentProvider,
-          l2Provider: childProvider,
+          l1Provider: getProviderForChainId(parentChainId),
+          l2Provider: getProviderForChainId(childChainId),
         })
       ).toLowerCase();
     } catch {

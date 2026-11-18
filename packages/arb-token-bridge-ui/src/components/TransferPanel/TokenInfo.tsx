@@ -4,7 +4,12 @@ import { twMerge } from 'tailwind-merge';
 import { getTokenOverride } from '../../app/api/crosschain-transfers/utils';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useNetworks } from '../../hooks/useNetworks';
+import { normalizeAddress } from '../../util/AddressUtils';
 import { shortenAddress } from '../../util/CommonUtils';
+import {
+  ARB_ONE_NATIVE_USDC_TOKEN,
+  ARB_SEPOLIA_NATIVE_USDC_TOKEN,
+} from '../../util/TokenSelectionUtils';
 import {
   isTokenArbitrumOneNativeUSDC,
   isTokenArbitrumSepoliaNativeUSDC,
@@ -12,7 +17,6 @@ import {
 import { getExplorerUrl } from '../../util/networks';
 import { ExternalLink } from '../common/ExternalLink';
 import { SafeImage } from '../common/SafeImage';
-import { ARB_ONE_NATIVE_USDC_TOKEN, ARB_SEPOLIA_NATIVE_USDC_TOKEN } from './TokenSearch';
 import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
 
 export function TokenLogoFallback({ className }: { className?: string }) {
@@ -37,7 +41,7 @@ export const TokenInfo = ({
 }) => {
   const [networks] = useNetworks();
   const tokensFromUser = useTokensFromUser();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
 
   const tokenOverride = getTokenOverride({
     fromToken: token?.address,
@@ -45,11 +49,10 @@ export const TokenInfo = ({
     destinationChainId: networks.destinationChain.id,
   }).source;
 
-  const tokenAddressLowercased =
-    tokenOverride?.address.toLowerCase() || token?.address.toLowerCase();
+  const tokenAddress = normalizeAddress(tokenOverride?.address || token?.address);
 
   const tokenLogo = useMemo(() => {
-    if (!tokenAddressLowercased) {
+    if (!tokenAddress) {
       return undefined;
     }
 
@@ -57,19 +60,20 @@ export const TokenInfo = ({
       return tokenOverride.logoURI;
     }
 
-    if (isTokenArbitrumOneNativeUSDC(tokenAddressLowercased)) {
+    if (isTokenArbitrumOneNativeUSDC(tokenAddress)) {
       return ARB_ONE_NATIVE_USDC_TOKEN.logoURI;
     }
 
-    if (isTokenArbitrumSepoliaNativeUSDC(tokenAddressLowercased)) {
+    if (isTokenArbitrumSepoliaNativeUSDC(tokenAddress)) {
       return ARB_SEPOLIA_NATIVE_USDC_TOKEN.logoURI;
     }
 
     return (
-      tokensFromLists[tokenAddressLowercased]?.logoURI ||
-      tokensFromUser[tokenAddressLowercased]?.logoURI
+      tokensFromLists[tokenAddress]?.logoURI ||
+      tokensFromUser[tokenAddress]?.logoURI ||
+      token?.logoURI
     );
-  }, [tokenAddressLowercased, tokensFromLists, tokensFromUser, tokenOverride]);
+  }, [token?.logoURI, tokenAddress, tokensFromLists, tokensFromUser, tokenOverride]);
 
   return (
     <div className="flex flex-row items-center space-x-3">
@@ -84,12 +88,12 @@ export const TokenInfo = ({
           <span className="text-base">{token?.symbol}</span>
           <span className="text-xs text-white/70">{token?.name}</span>
         </div>
-        {tokenAddressLowercased && (
+        {tokenAddress && (
           <ExternalLink
-            href={`${getExplorerUrl(networks.sourceChain.id)}/token/${tokenAddressLowercased}`}
+            href={`${getExplorerUrl(networks.sourceChain.id)}/token/${tokenAddress}`}
             className="arb-hover text-xs underline"
           >
-            {showFullAddress ? tokenAddressLowercased : shortenAddress(tokenAddressLowercased)}
+            {showFullAddress ? tokenAddress : shortenAddress(tokenAddress)}
           </ExternalLink>
         )}
       </div>

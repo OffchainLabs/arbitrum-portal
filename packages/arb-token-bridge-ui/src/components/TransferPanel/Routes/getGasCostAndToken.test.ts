@@ -1,4 +1,4 @@
-import { constants } from 'ethers';
+import { constants, utils } from 'ethers';
 import { describe, expect, test } from 'vitest';
 
 import { GasEstimationStatus } from '../../../hooks/TransferPanel/useGasSummary';
@@ -6,6 +6,7 @@ import { NativeCurrency } from '../../../hooks/useNativeCurrency';
 import { getGasCostAndToken } from './getGasCostAndToken';
 
 describe('getGasCostAndToken', () => {
+  const toWei = (amount: number) => utils.parseUnits(amount.toFixed(18), 18).toString();
   const mockNativeCurrency: NativeCurrency & { address: string } = {
     name: 'ETH',
     symbol: 'ETH',
@@ -21,6 +22,10 @@ describe('getGasCostAndToken', () => {
     isCustom: true,
     address: '0x0000000000000000000000000000000000000222',
   };
+  const childChainName = 'Arbitrum One';
+  const parentChainName = 'Ethereum';
+  const childChainId = 42161;
+  const parentChainId = 1;
 
   describe('should return isLoading true', () => {
     const expected = {
@@ -58,6 +63,10 @@ describe('getGasCostAndToken', () => {
           getGasCostAndToken({
             childChainNativeCurrency: mockNativeCurrency,
             parentChainNativeCurrency: mockNativeCurrency,
+            childChainId,
+            parentChainId,
+            childChainName,
+            parentChainName,
             gasSummaryStatus: status as GasEstimationStatus,
             estimatedChildChainGasFees,
             estimatedParentChainGasFees,
@@ -146,6 +155,10 @@ describe('getGasCostAndToken', () => {
           getGasCostAndToken({
             childChainNativeCurrency: childCurrency,
             parentChainNativeCurrency: parentCurrency,
+            childChainId,
+            parentChainId,
+            childChainName,
+            parentChainName,
             gasSummaryStatus: 'success',
             estimatedChildChainGasFees,
             estimatedParentChainGasFees,
@@ -155,8 +168,15 @@ describe('getGasCostAndToken', () => {
           isLoading: false,
           gasCost: [
             {
-              gasCost: estimatedParentChainGasFees + estimatedChildChainGasFees,
-              gasToken: childCurrency,
+              amount: toWei(estimatedParentChainGasFees + estimatedChildChainGasFees),
+              token: childCurrency,
+              chainId: childChainId,
+              details: {
+                id: 'arbitrum-gas-total',
+                label: `${parentChainName} and ${childChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
           ],
         });
@@ -170,17 +190,20 @@ describe('getGasCostAndToken', () => {
         parentCurrency: mockNativeCurrency,
         childCurrency: mockCustomNativeCurrency,
         estimatedParentChainGasFees: 201,
-        estimatedChildChainGasFees: 305,
+        estimatedChildChainGasFees: 0,
         expected: {
           isLoading: false,
           gasCost: [
             {
-              gasCost: 201,
-              gasToken: mockNativeCurrency,
-            },
-            {
-              gasCost: 305,
-              gasToken: mockCustomNativeCurrency,
+              amount: toWei(201),
+              token: mockNativeCurrency,
+              chainId: parentChainId,
+              details: {
+                id: 'arbitrum-gas-parent',
+                label: `${parentChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
           ],
         },
@@ -194,31 +217,26 @@ describe('getGasCostAndToken', () => {
           isLoading: false,
           gasCost: [
             {
-              gasCost: 201,
-              gasToken: mockNativeCurrency,
+              amount: toWei(201),
+              token: mockNativeCurrency,
+              chainId: parentChainId,
+              details: {
+                id: 'arbitrum-gas-parent',
+                label: `${parentChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
             {
-              gasCost: 305,
-              gasToken: mockCustomNativeCurrency,
-            },
-          ],
-        },
-      },
-      {
-        parentCurrency: mockCustomNativeCurrency,
-        childCurrency: mockNativeCurrency,
-        estimatedParentChainGasFees: 634,
-        estimatedChildChainGasFees: 234,
-        expected: {
-          isLoading: false,
-          gasCost: [
-            {
-              gasCost: 634,
-              gasToken: mockCustomNativeCurrency,
-            },
-            {
-              gasCost: 234,
-              gasToken: mockNativeCurrency,
+              amount: toWei(305),
+              token: mockCustomNativeCurrency,
+              chainId: childChainId,
+              details: {
+                id: 'arbitrum-gas-child',
+                label: `${childChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
           ],
         },
@@ -232,12 +250,59 @@ describe('getGasCostAndToken', () => {
           isLoading: false,
           gasCost: [
             {
-              gasCost: 634,
-              gasToken: mockCustomNativeCurrency,
+              amount: toWei(634),
+              token: mockCustomNativeCurrency,
+              chainId: parentChainId,
+              details: {
+                id: 'arbitrum-gas-parent',
+                label: `${parentChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
             {
-              gasCost: 234,
-              gasToken: mockNativeCurrency,
+              amount: toWei(234),
+              token: mockNativeCurrency,
+              chainId: childChainId,
+              details: {
+                id: 'arbitrum-gas-child',
+                label: `${childChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
+            },
+          ],
+        },
+      },
+      {
+        parentCurrency: mockCustomNativeCurrency,
+        childCurrency: mockNativeCurrency,
+        estimatedParentChainGasFees: 634,
+        estimatedChildChainGasFees: 234,
+        expected: {
+          isLoading: false,
+          gasCost: [
+            {
+              amount: toWei(634),
+              token: mockCustomNativeCurrency,
+              chainId: parentChainId,
+              details: {
+                id: 'arbitrum-gas-parent',
+                label: `${parentChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
+            },
+            {
+              amount: toWei(234),
+              token: mockNativeCurrency,
+              chainId: childChainId,
+              details: {
+                id: 'arbitrum-gas-child',
+                label: `${childChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
           ],
         },
@@ -260,6 +325,10 @@ describe('getGasCostAndToken', () => {
           getGasCostAndToken({
             childChainNativeCurrency: childCurrency,
             parentChainNativeCurrency: parentCurrency,
+            childChainId,
+            parentChainId,
+            childChainName,
+            parentChainName,
             gasSummaryStatus: 'success',
             estimatedChildChainGasFees,
             estimatedParentChainGasFees,
@@ -281,8 +350,15 @@ describe('getGasCostAndToken', () => {
           isLoading: false,
           gasCost: [
             {
-              gasCost: 305,
-              gasToken: mockCustomNativeCurrency,
+              amount: toWei(305),
+              token: mockCustomNativeCurrency,
+              chainId: childChainId,
+              details: {
+                id: 'arbitrum-gas-child',
+                label: `${childChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
           ],
         },
@@ -296,8 +372,15 @@ describe('getGasCostAndToken', () => {
           isLoading: false,
           gasCost: [
             {
-              gasCost: 234,
-              gasToken: mockNativeCurrency,
+              amount: toWei(234),
+              token: mockNativeCurrency,
+              chainId: childChainId,
+              details: {
+                id: 'arbitrum-gas-child',
+                label: `${childChainName} gas fee`,
+                via: 'Arbitrum Bridge',
+                iconURI: '/icons/arbitrum.svg',
+              },
             },
           ],
         },
@@ -319,6 +402,10 @@ describe('getGasCostAndToken', () => {
           getGasCostAndToken({
             childChainNativeCurrency: childCurrency,
             parentChainNativeCurrency: parentCurrency,
+            childChainId,
+            parentChainId,
+            childChainName,
+            parentChainName,
             gasSummaryStatus: 'success',
             estimatedChildChainGasFees,
             estimatedParentChainGasFees,

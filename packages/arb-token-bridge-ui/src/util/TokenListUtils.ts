@@ -1,10 +1,11 @@
-import { TokenList } from '@uniswap/token-lists';
+import { TokenInfo, TokenList } from '@uniswap/token-lists';
 import axios from 'axios';
 import { ImageProps } from 'next/image';
 
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
-import { ArbTokenBridge } from '../hooks/arbTokenBridge.types';
+import { ArbTokenBridge, ERC20BridgeToken, TokenType } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
+import { normalizeAddress } from './AddressUtils';
 import { logger } from './logger';
 import { getOrbitChains } from './orbitChainsList';
 
@@ -16,16 +17,83 @@ const UniswapLogo = '/images/lists/uniswap.png';
 export const SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID = 'SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID';
 export const LIFI_TRANSFER_LIST_ID = 'lifi-token-list';
 
+export type TokenBridgeInfo = Record<string, { tokenAddress: string }>;
+
+export function getTokenBridgeInfo(token: TokenInfo): TokenBridgeInfo | undefined {
+  const bridgeInfo = token.extensions?.bridgeInfo;
+  if (!bridgeInfo || typeof bridgeInfo !== 'object') {
+    return undefined;
+  }
+
+  return bridgeInfo as TokenBridgeInfo;
+}
+
+export function tokenListTokenToBridgeToken({
+  token,
+  listId,
+  parentChainId,
+  childChainId,
+}: {
+  token: TokenInfo;
+  listId: string;
+  parentChainId: number;
+  childChainId: number;
+}): ERC20BridgeToken | undefined {
+  if (![parentChainId, childChainId].includes(token.chainId)) {
+    return undefined;
+  }
+
+  const bridgeInfo = getTokenBridgeInfo(token);
+  const parentAddress = normalizeAddress(bridgeInfo?.[String(parentChainId)]?.tokenAddress);
+  const isLifiToken = listId === LIFI_TRANSFER_LIST_ID;
+  const isChildToken = token.chainId === childChainId;
+  const address = normalizeAddress(token.address);
+
+  if (isChildToken && !parentAddress && !isLifiToken) {
+    return undefined;
+  }
+
+  return {
+    name: token.name,
+    symbol: token.symbol,
+    type: TokenType.ERC20,
+    address: parentAddress ?? address,
+    l2Address: isChildToken ? address : undefined,
+    decimals: token.decimals,
+    logoURI: token.logoURI,
+    listIds: new Set([listId]),
+    lifiOnlyChainId: isLifiToken && !parentAddress ? token.chainId : undefined,
+    priceUSD:
+      typeof token.extensions?.priceUSD === 'string'
+        ? Number(token.extensions.priceUSD)
+        : undefined,
+  };
+}
+
+export function isTokenAvailableOnChain(
+  token: ERC20BridgeToken | undefined,
+  chainId: number,
+): boolean {
+  return token?.lifiOnlyChainId === undefined || token.lifiOnlyChainId === chainId;
+}
+
+export function isLifiOnlyToken(
+  token: ERC20BridgeToken | null | undefined,
+): token is ERC20BridgeToken & { lifiOnlyChainId: number } {
+  return token?.lifiOnlyChainId !== undefined;
+}
+
 export interface BridgeTokenList {
   // string is required here to avoid duplicates when mapping orbit chains to tokenlists
   id: string;
   originChainID: number;
-  url: string;
+  url?: string;
   name: string;
   isDefault: boolean;
   isArbitrumTokenTokenList?: boolean;
   logoURI: ImageProps['src'];
   parentChainID?: number; // For LiFi token lists, stores the parent chain ID
+  tokenList?: TokenList;
 }
 
 export const BRIDGE_TOKEN_LISTS: BridgeTokenList[] = [
@@ -142,8 +210,8 @@ export const BRIDGE_TOKEN_LISTS: BridgeTokenList[] = [
     acc.push({
       id: `${chain.chainId}_uniswap`,
       originChainID: chain.chainId,
-      url: `https://tokenlist.arbitrum.io/ArbTokenLists/${chain.chainId}_arbed_uniswap_labs.json`,
-      name: `${chain.name} Arbed Uniswap List`,
+      url: `https://tokenlist.arbitrum.io/ArbTokenLists/${chain.chainId}_arbed.json`,
+      name: `${chain.name} Token List`,
       isDefault: true,
       logoURI: UniswapLogo,
     });
@@ -226,7 +294,7 @@ export const addBridgeTokenListToBridge = (
   bridgeTokenList: BridgeTokenList,
   arbTokenBridge: ArbTokenBridge,
 ) => {
-  fetchTokenListFromURL(bridgeTokenList.url).then(({ data: tokenList }) => {
+  fetchBridgeTokenList(bridgeTokenList).then(({ data: tokenList }) => {
     if (!tokenList) {
       return;
     }
@@ -235,9 +303,27 @@ export const addBridgeTokenListToBridge = (
   });
 };
 
-export async function fetchTokenListFromURL(tokenListURL: string): Promise<{
+export type TokenListFetchResult = {
   data: TokenList | undefined;
-}> {
+  /** HTTP status code when the server answered a failed request. */
+  status?: number;
+};
+
+export async function fetchBridgeTokenList(
+  bridgeTokenList: BridgeTokenList,
+): Promise<TokenListFetchResult> {
+  if (bridgeTokenList.tokenList) {
+    return { data: bridgeTokenList.tokenList };
+  }
+
+  if (!bridgeTokenList.url) {
+    return { data: undefined };
+  }
+
+  return fetchTokenListFromURL(bridgeTokenList.url);
+}
+
+export async function fetchTokenListFromURL(tokenListURL: string): Promise<TokenListFetchResult> {
   try {
     const { data } = await axios.get(tokenListURL, {
       headers: {
@@ -248,6 +334,9 @@ export async function fetchTokenListFromURL(tokenListURL: string): Promise<{
     return { data };
   } catch (error) {
     logger.warn('Token List URL Invalid', tokenListURL);
-    return { data: undefined };
+    return {
+      data: undefined,
+      status: axios.isAxiosError(error) ? error.response?.status : undefined,
+    };
   }
 }

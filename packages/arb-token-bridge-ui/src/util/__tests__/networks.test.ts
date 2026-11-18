@@ -8,6 +8,7 @@ import {
   getBlockNumberReferenceChainIdByChainId,
   getDestinationChainIds,
   getSupportedChainIds,
+  sortChainIds,
 } from '../networks';
 import { orbitMainnets, orbitTestnets } from '../orbitChainsList';
 
@@ -55,14 +56,14 @@ beforeAll(() => {
 
   registerCustomArbitrumNetwork(xaiTestnet);
 
-  const uniteTestnetChainId = 888991;
-  const uniteTestnet = orbitTestnets[uniteTestnetChainId];
+  const worldMobileTestnetChainId = 323432;
+  const worldMobileTestnet = orbitTestnets[worldMobileTestnetChainId];
 
-  if (!uniteTestnet) {
-    throw new Error(`Could not find Unite Testnet in the Orbit chains list.`);
+  if (!worldMobileTestnet) {
+    throw new Error(`Could not find World Mobile Testnet in the Orbit chains list.`);
   }
 
-  registerCustomArbitrumNetwork(uniteTestnet);
+  registerCustomArbitrumNetwork(worldMobileTestnet);
 
   const apeChain = orbitMainnets[ChainId.ApeChain];
 
@@ -71,14 +72,6 @@ beforeAll(() => {
   }
 
   registerCustomArbitrumNetwork(apeChain);
-
-  const superposition = orbitMainnets[ChainId.Superposition];
-
-  if (!superposition) {
-    throw new Error(`Could not find Superposition in the Orbit chains list.`);
-  }
-
-  registerCustomArbitrumNetwork(superposition);
 });
 
 describe('getBlockNumberReferenceChainIdByChainId', () => {
@@ -259,11 +252,15 @@ describe('getDestinationChainIds', () => {
     expect(defaultChainId).toBe(ChainId.ArbitrumOne);
     expect(isAscending(nonDefaultChainIds)).toBe(true);
 
-    const [arbitrumOne, arbitrumNova, ...orbitChains] = getDestinationChainIds(ChainId.Ethereum, {
-      includeLifiEnabledChainPairs: true,
-    });
+    const [arbitrumOne, robinhoodChain, arbitrumNova, ...orbitChains] = getDestinationChainIds(
+      ChainId.Ethereum,
+      {
+        includeLifiEnabledChainPairs: true,
+      },
+    );
 
     expect(arbitrumOne).toBe(ChainId.ArbitrumOne);
+    expect(robinhoodChain).toBe(ChainId.RobinhoodChain);
     expect(arbitrumNova).toBe(ChainId.ArbitrumNova);
     expect(isAscending(orbitChains)).toBe(true);
   });
@@ -276,11 +273,12 @@ describe('getDestinationChainIds', () => {
     expect(defaultChainId).toBe(ChainId.Ethereum);
     expect(isAscending(nonDefaultChainIds)).toBe(true);
 
-    const [ethereum, ...orbitChains] = getDestinationChainIds(ChainId.ArbitrumOne, {
+    const [ethereum, robinhoodChain, ...orbitChains] = getDestinationChainIds(ChainId.ArbitrumOne, {
       includeLifiEnabledChainPairs: true,
     });
 
     expect(ethereum).toBe(ChainId.Ethereum);
+    expect(robinhoodChain).toBe(ChainId.RobinhoodChain);
     expect(isAscending(orbitChains)).toBe(true);
   });
 
@@ -307,7 +305,7 @@ describe('getDestinationChainIds', () => {
     const defaultChainId = destinationChainIds[0];
     const nonDefaultChainIds = destinationChainIds.slice(1);
 
-    expect(defaultChainId).toBe(888991);
+    expect(defaultChainId).toBe(323432);
     expect(isAscending(nonDefaultChainIds)).toBe(true);
   });
 
@@ -333,13 +331,13 @@ describe('getDestinationChainIds', () => {
         disableTransfersToNonArbitrumChains: true,
         includeLifiEnabledChainPairs: false,
       });
-      expect(result).toEqual([3333, ChainId.ApeChain, ChainId.Superposition]);
+      expect(result).toEqual([3333, ChainId.ApeChain]);
 
       const result2 = getDestinationChainIds(ChainId.ArbitrumOne, {
         disableTransfersToNonArbitrumChains: true,
         includeLifiEnabledChainPairs: true,
       });
-      expect(result2).toEqual([3333, ChainId.ApeChain, ChainId.Superposition]);
+      expect(result2).toEqual([ChainId.RobinhoodChain, 3333, ChainId.ApeChain]);
     });
   });
 
@@ -349,13 +347,13 @@ describe('getDestinationChainIds', () => {
         disableTransfersToNonArbitrumChains: false,
         includeLifiEnabledChainPairs: false,
       });
-      expect(result).toEqual([ChainId.Ethereum, 3333, ChainId.ApeChain, ChainId.Superposition]);
+      expect(result).toEqual([ChainId.Ethereum, 3333, ChainId.ApeChain]);
 
       const result2 = getDestinationChainIds(ChainId.ArbitrumOne, {
         disableTransfersToNonArbitrumChains: false,
         includeLifiEnabledChainPairs: true,
       });
-      expect(result2).toEqual([1, 3333, ChainId.ApeChain, ChainId.Superposition]);
+      expect(result2).toEqual([1, ChainId.RobinhoodChain, 3333, ChainId.ApeChain]);
 
       const result3 = getDestinationChainIds(ChainId.ApeChain, {
         disableTransfersToNonArbitrumChains: false,
@@ -371,26 +369,26 @@ describe('getDestinationChainIds', () => {
         disableTransfersToNonArbitrumChains: true,
         includeLifiEnabledChainPairs: true,
       });
-      expect(result).toEqual([3333, ChainId.ApeChain, ChainId.Superposition]);
+      expect(result).toEqual([ChainId.RobinhoodChain, 3333, ChainId.ApeChain]);
 
       // disableTransfersToNonArbitrumChains takes precedence over includeLifiEnabledChainPairs
       const result2 = getDestinationChainIds(ChainId.ArbitrumOne, {
         disableTransfersToNonArbitrumChains: false,
         includeLifiEnabledChainPairs: true,
       });
-      expect(result2).toEqual([ChainId.Ethereum, 3333, ChainId.ApeChain, ChainId.Superposition]);
+      expect(result2).toEqual([ChainId.Ethereum, ChainId.RobinhoodChain, 3333, ChainId.ApeChain]);
 
       const result3 = getDestinationChainIds(ChainId.ApeChain, {
         disableTransfersToNonArbitrumChains: true,
         includeLifiEnabledChainPairs: true,
       });
-      expect(result3).toEqual([ChainId.ArbitrumOne, ChainId.Superposition]);
+      expect(result3).toEqual([ChainId.ArbitrumOne, ChainId.RobinhoodChain]);
 
       const result4 = getDestinationChainIds(ChainId.ApeChain, {
         disableTransfersToNonArbitrumChains: false,
         includeLifiEnabledChainPairs: true,
       });
-      expect(result4).toEqual([ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.Superposition]);
+      expect(result4).toEqual([ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.RobinhoodChain]);
     });
   });
 
@@ -400,14 +398,14 @@ describe('getDestinationChainIds', () => {
         disableTransfersToNonArbitrumChains: true,
         includeLifiEnabledChainPairs: false,
       });
-      expect(result).toEqual([3333, ChainId.ApeChain, ChainId.Superposition]);
+      expect(result).toEqual([3333, ChainId.ApeChain]);
 
       // disableTransfersToNonArbitrumChains takes precedence over includeLifiEnabledChainPairs
       const result2 = getDestinationChainIds(ChainId.ArbitrumOne, {
         disableTransfersToNonArbitrumChains: false,
         includeLifiEnabledChainPairs: false,
       });
-      expect(result2).toEqual([ChainId.Ethereum, 3333, ChainId.ApeChain, ChainId.Superposition]);
+      expect(result2).toEqual([ChainId.Ethereum, 3333, ChainId.ApeChain]);
 
       const result3 = getDestinationChainIds(ChainId.ApeChain, {
         disableTransfersToNonArbitrumChains: true,
@@ -421,5 +419,34 @@ describe('getDestinationChainIds', () => {
       });
       expect(result4).toEqual([ChainId.ArbitrumOne]);
     });
+  });
+});
+
+describe('sortChainIds core chain priority', () => {
+  it('ranks Robinhood Chain above Arbitrum Nova but below Arbitrum One', () => {
+    const sorted = sortChainIds([
+      ChainId.ArbitrumNova,
+      ChainId.RobinhoodChain,
+      ChainId.ArbitrumOne,
+      ChainId.Ethereum,
+    ]);
+
+    expect(sorted).toEqual([
+      ChainId.Ethereum,
+      ChainId.ArbitrumOne,
+      ChainId.RobinhoodChain,
+      ChainId.ArbitrumNova,
+    ]);
+  });
+
+  it('keeps Arbitrum One as the default destination from Ethereum, not Robinhood Chain', () => {
+    const sortedFromEthereum = sortChainIds([
+      ChainId.RobinhoodChain,
+      ChainId.ArbitrumOne,
+      ChainId.ArbitrumNova,
+    ]);
+
+    expect(sortedFromEthereum[0]).toBe(ChainId.ArbitrumOne);
+    expect(sortedFromEthereum[0]).not.toBe(ChainId.RobinhoodChain);
   });
 });

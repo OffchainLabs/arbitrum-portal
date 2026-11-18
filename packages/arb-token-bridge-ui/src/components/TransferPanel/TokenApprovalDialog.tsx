@@ -1,11 +1,9 @@
 import { BigNumber, constants, utils } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useAccount, useChainId } from 'wagmi';
-import { shallow } from 'zustand/shallow';
+import { useChainId } from 'wagmi';
 
 import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
 import { CctpTransferStarter } from '@/token-bridge-sdk/CctpTransferStarter';
-import { LifiTransferStarter } from '@/token-bridge-sdk/LifiTransferStarter';
 import { getCctpContracts } from '@/token-bridge-sdk/cctp';
 
 import { TOKEN_APPROVAL_ARTICLE_LINK, ether } from '../../constants';
@@ -16,6 +14,7 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { OftV2TransferStarter } from '../../token-bridge-sdk/OftV2TransferStarter';
 import { getOftV2TransferConfig } from '../../token-bridge-sdk/oftUtils';
+import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { shortenTxHash } from '../../util/CommonUtils';
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
 import {
@@ -23,42 +22,42 @@ import {
   fetchErc20ParentChainGatewayAddress,
 } from '../../util/TokenUtils';
 import { getExplorerUrl, isNetwork } from '../../util/networks';
-import { useEthersSigner } from '../../util/wagmi/useEthersSigner';
+import { useWalletContext } from '../../wallet/WalletContext';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { Checkbox } from '../common/Checkbox';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { ExternalLink } from '../common/ExternalLink';
 import { NoteBox } from '../common/NoteBox';
 import { TokenInfo } from './TokenInfo';
-import { isLifiRoute, useRouteStore } from './hooks/useRouteStore';
+import { useRouteStore } from './hooks/useRouteStore';
 
 export type TokenApprovalDialogProps = UseDialogProps & {
   token: ERC20BridgeToken | null;
 };
 
 export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
-  const { address: walletAddress } = useAccount();
+  const {
+    sourceWallet: {
+      account: { address: walletAddress },
+    },
+  } = useWallets();
   const { isOpen, token, onClose } = props;
 
   const { ethToUSD } = useETHPrice();
 
   const [networks] = useNetworks();
-  const { sourceChain, destinationChain, sourceChainProvider, destinationChainProvider } = networks;
-  const { childChainProvider, parentChain, parentChainProvider, isDepositMode } =
-    useNetworksRelationship(networks);
+  const { sourceChain, destinationChain } = networks;
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
+  const sourceChainProvider = getProviderForChainId(sourceChain.id);
+  const destinationChainProvider = getProviderForChainId(destinationChain.id);
+  const parentChainProvider = getProviderForChainId(parentChain.id);
+  const childChainProvider = getProviderForChainId(childChain.id);
   const { isEthereumMainnet, isTestnet } = isNetwork(parentChain.id);
-  const provider = isDepositMode ? parentChainProvider : childChainProvider;
-  const gasPrice = useGasPrice({ provider });
+  const gasPrice = useGasPrice({ chainId: sourceChain.id });
   const chainId = useChainId();
-  const signer = useEthersSigner({ chainId });
-  const { selectedRoute, context } = useRouteStore(
-    (state) => ({
-      selectedRoute: state.selectedRoute,
-      context: state.context,
-    }),
-    shallow,
-  );
+  const { signer: evmSigner } = useWalletContext('evm');
+  const selectedRoute = useRouteStore((state) => state.selectedRoute);
   const isCctp = selectedRoute === 'cctp';
-  const isLifi = isLifiRoute(selectedRoute);
   const isOft = selectedRoute === 'oftV2';
 
   const [checked, setChecked] = useState(false);
@@ -94,23 +93,11 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
       }
 
       let gasEstimate;
+      // Without a connected wallet on this chain, there's no approval to estimate
+      const signer = await evmSigner.getEthersSigner(chainId).catch(() => undefined);
 
       if (!signer) {
         gasEstimate = constants.Zero;
-      } else if (isLifi) {
-        if (!context) {
-          throw new Error('Missing context data for Lifi transfer.');
-        }
-        const lifiTransferStarter = new LifiTransferStarter({
-          sourceChainProvider,
-          destinationChainProvider,
-          lifiData: context,
-          sourceChainErc20Address: token.address,
-        });
-        gasEstimate = await lifiTransferStarter.approveTokenEstimateGas({
-          signer,
-          amount: constants.MaxUint256,
-        });
       } else if (isCctp) {
         const cctpTransferStarter = new CctpTransferStarter({
           sourceChainProvider,
@@ -153,7 +140,7 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
     isOpen,
     isDepositMode,
     isTestnet,
-    signer,
+    evmSigner,
     walletAddress,
     token?.address,
     token?.l2Address,
@@ -164,21 +151,10 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
     chainId,
     isCctp,
     isOft,
-    isLifi,
-    context,
   ]);
 
   useEffect(() => {
     const getContractAddress = async function () {
-      if (isLifi) {
-        if (!context) {
-          throw new Error('Missing context data for Lifi transfer.');
-        }
-
-        setContractAddress(context.spenderAddress);
-        return;
-      }
-
       if (isOft) {
         const oftTransferConfig = getOftV2TransferConfig({
           sourceChainId: sourceChain.id,
@@ -233,8 +209,6 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
     sourceChain.id,
     destinationChain.id,
     isOft,
-    isLifi,
-    context,
   ]);
 
   const closeWithReset = useCallback(
@@ -244,12 +218,6 @@ export function TokenApprovalDialog(props: TokenApprovalDialogProps) {
     },
     [onClose],
   );
-
-  useEffect(() => {
-    if (isLifi && !context) {
-      closeWithReset(false);
-    }
-  }, [context, closeWithReset, isLifi]);
 
   return (
     <Dialog

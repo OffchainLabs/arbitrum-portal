@@ -1,6 +1,6 @@
 'use client';
 
-import { createConfig } from '@lifi/sdk';
+import { ChainId as LiFiChainId, createConfig } from '@lifi/sdk';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
@@ -14,14 +14,23 @@ import { ArbQueryParamProvider } from '@/bridge/hooks/useArbQueryParams';
 import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/CommonUtils';
 import { registerLocalNetwork } from '@/bridge/util/networks';
 import { wagmiConfig } from '@/bridge/util/wagmi/setup';
+import { WalletProvider } from '@/bridge/wallet/WalletProvider';
+import { solanaRpcUrl } from '@/bridge/wallet/solana/network';
 
 import { initializeDayjs } from '../../../initialization';
+import {
+  POSTHOG_DEVICE_PROPERTY_DENYLIST,
+  POSTHOG_MASKED_QUERY_PARAMS,
+  sanitizePostHogEvent,
+} from '../../../utils/posthog';
 
 if (typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-    api_host: 'https://app.posthog.com',
+    api_host: 'https://us.i.posthog.com',
     cookieless_mode: 'always',
     loaded: (posthog) => {
+      posthog.register({ $geoip_disable: true });
+
       if (process.env.NODE_ENV !== 'production') {
         posthog.debug();
       }
@@ -29,6 +38,12 @@ if (typeof process.env.NEXT_PUBLIC_POSTHOG_KEY === 'string') {
     persistence: 'memory',
     autocapture: false,
     disable_session_recording: true,
+    capture_heatmaps: false,
+    disableDeviceModel: true,
+    property_denylist: POSTHOG_DEVICE_PROPERTY_DENYLIST,
+    mask_personal_data_properties: true,
+    custom_personal_data_properties: POSTHOG_MASKED_QUERY_PARAMS,
+    before_send: sanitizePostHogEvent,
   });
 }
 
@@ -39,7 +54,7 @@ const integratorId =
 
 const queryClient = new QueryClient();
 
-createConfig({ integrator: integratorId });
+createConfig({ integrator: integratorId, rpcUrls: { [LiFiChainId.SOL]: [solanaRpcUrl] } });
 initializeDayjs();
 
 if (!isProductionEnvironment || isE2eTestingEnvironment) {
@@ -52,9 +67,11 @@ export function AppProviders({ children }: PropsWithChildren) {
       <ArbQueryParamProvider>
         <WagmiProvider config={wagmiConfig}>
           <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-              <AppContextProvider>{children}</AppContextProvider>
-            </TooltipProvider>
+            <WalletProvider>
+              <TooltipProvider>
+                <AppContextProvider>{children}</AppContextProvider>
+              </TooltipProvider>
+            </WalletProvider>
           </QueryClientProvider>
         </WagmiProvider>
       </ArbQueryParamProvider>

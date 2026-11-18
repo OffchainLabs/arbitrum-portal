@@ -3,9 +3,8 @@ import { utils } from 'ethers';
 
 import { defaultErc20Decimals } from '../../defaults';
 import { AssetType } from '../../hooks/arbTokenBridge.types';
-import { fetchNativeCurrency } from '../../hooks/useNativeCurrency';
+import { fetchEvmNativeCurrency } from '../../services/evm/nativeCurrency';
 import { Transaction } from '../../types/Transactions';
-import { logger } from '../logger';
 import {
   FetchDepositsFromSubgraphResult,
   fetchDepositsFromSubgraph,
@@ -47,15 +46,11 @@ export const fetchDeposits = async ({
   const l1ChainId = (await l1Provider.getNetwork()).chainId;
   const l2ChainId = (await l2Provider.getNetwork()).chainId;
 
-  const nativeCurrency = await fetchNativeCurrency({ provider: l2Provider });
+  const nativeCurrency = await fetchEvmNativeCurrency({ provider: l2Provider });
 
   if (!fromBlock) {
     fromBlock = 0;
   }
-
-  let depositsFromSubgraph: FetchDepositsFromSubgraphResult[] = [];
-  let ethDepositsToCustomDestinationFromSubgraph: FetchEthDepositsToCustomDestinationFromSubgraphResult[] =
-    [];
 
   const subgraphParams = {
     sender,
@@ -68,24 +63,16 @@ export const fetchDeposits = async ({
     searchString,
   };
 
-  try {
-    depositsFromSubgraph = await fetchDepositsFromSubgraph(subgraphParams);
-  } catch (error: any) {
-    logger.info('Error fetching deposits from subgraph', error);
-  }
+  const [depositsFromSubgraph, ethDepositsToCustomDestinationFromSubgraph] = await Promise.all([
+    fetchDepositsFromSubgraph(subgraphParams),
+    fetchEthDepositsToCustomDestinationFromSubgraph(subgraphParams),
+  ]);
 
-  try {
-    ethDepositsToCustomDestinationFromSubgraph =
-      await fetchEthDepositsToCustomDestinationFromSubgraph(subgraphParams);
-  } catch (error: any) {
-    logger.info('Error fetching native token deposits to custom destination from subgraph', error);
-  }
+  const showDeposit = (deposit: { isClassic: boolean }) =>
+    process.env.NEXT_PUBLIC_SHOW_CLASSIC_DEPOSITS === 'false' ? !deposit.isClassic : true;
 
-  // filter out classic deposits
   const mappedDepositsFromSubgraph: Transaction[] = depositsFromSubgraph
-    .filter((deposit) =>
-      process.env.NEXT_PUBLIC_SHOW_CLASSIC_DEPOSITS === 'false' ? !deposit.isClassic : true,
-    )
+    .filter(showDeposit)
     .map((tx: FetchDepositsFromSubgraphResult) => {
       const isEthDeposit = tx.type === 'EthDeposit';
 
@@ -135,8 +122,9 @@ export const fetchDeposits = async ({
     });
 
   const mappedEthDepositsToCustomDestinationFromSubgraph: Transaction[] =
-    ethDepositsToCustomDestinationFromSubgraph.map(
-      (tx: FetchEthDepositsToCustomDestinationFromSubgraphResult) => {
+    ethDepositsToCustomDestinationFromSubgraph
+      .filter(showDeposit)
+      .map((tx: FetchEthDepositsToCustomDestinationFromSubgraphResult) => {
         return {
           type: 'deposit-l1',
           status: 'pending',
@@ -154,13 +142,12 @@ export const fetchDeposits = async ({
           l2NetworkID: String(l2ChainId),
           blockNumber: Number(tx.blockCreatedAt),
           timestampCreated: tx.timestamp,
-          isClassic: false,
+          isClassic: tx.isClassic,
 
           childChainId: l2ChainId,
           parentChainId: l1ChainId,
         };
-      },
-    );
+      });
 
   return [...mappedDepositsFromSubgraph, ...mappedEthDepositsToCustomDestinationFromSubgraph].sort(
     (a, b) => Number(b.timestampCreated) - Number(a.timestampCreated),

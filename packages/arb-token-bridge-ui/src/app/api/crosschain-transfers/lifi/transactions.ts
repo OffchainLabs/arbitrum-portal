@@ -1,0 +1,332 @@
+import { LiFiErrorCode, SDKError, createConfig, getStatus, getTransactionHistory } from '@lifi/sdk';
+import type { ExtendedTransactionInfo, StatusResponse } from '@lifi/types';
+import { constants, utils } from 'ethers';
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+import { AssetType } from '../../../../hooks/arbTokenBridge.types';
+import { DepositStatus, WithdrawalStatus } from '../../../../state/app/state';
+import {
+  addressesEqual,
+  isValidAddress,
+  isValidTransactionId,
+} from '../../../../util/AddressUtils';
+import { getLifiTransferStatus } from '../../../../util/LifiTransactionStatus';
+import { getNetworksRelationship } from '../../../../util/getNetworksRelationship';
+import { normalizeTimestamp } from '../../../../util/normalizeTimestamp';
+import { ecosystems } from '../../../../wallet/ecosystems';
+import { LIFI_INTEGRATOR_IDS } from '../lifi';
+import type { RouteTool, Token } from '../types';
+
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+};
+
+const UNKNOWN_DESTINATION_TOKEN: Token = {
+  address: constants.AddressZero,
+  decimals: 0,
+  logoURI: '',
+  symbol: 'Unknown',
+};
+
+type LifiTransactionHistoryAmount = {
+  amount: string;
+  amountUSD: string;
+  token: Token;
+};
+
+export type LifiTransactionHistoryItem = {
+  txId: string;
+  asset: string;
+  assetType: AssetType;
+  blockNum: null;
+  createdAt: number | null;
+  direction: 'deposit' | 'withdraw';
+  isWithdrawal: boolean;
+  resolvedAt: number | null;
+  status: WithdrawalStatus;
+  destinationStatus: WithdrawalStatus;
+  uniqueId: null;
+  value: string;
+  depositStatus: DepositStatus.LIFI_DEFAULT_STATE;
+  destination: string;
+  sender: string;
+  isLifi: true;
+  tokenAddress: string;
+  parentChainId: number;
+  childChainId: number;
+  sourceChainId: number;
+  destinationChainId: number;
+  toolsDetails: RouteTool[];
+  durationMs: number;
+  fromAmount: LifiTransactionHistoryAmount;
+  toAmount?: LifiTransactionHistoryAmount;
+  receivedAmount?: LifiTransactionHistoryAmount;
+  destinationTxId: string | null;
+  lifiExplorerLink?: string;
+};
+
+export type LifiTransactionHistoryResponse =
+  | {
+      message: string;
+      data: null;
+    }
+  | {
+      data: LifiTransactionHistoryItem[];
+    };
+
+function getIntegratorId(request: NextRequest): string {
+  const referer = request.headers.get('referer');
+  const isEmbedMode = referer && referer.includes('/bridge/embed');
+  return isEmbedMode ? LIFI_INTEGRATOR_IDS.EMBED : LIFI_INTEGRATOR_IDS.NORMAL;
+}
+
+function getIncludedSteps(statusResponse: StatusResponse) {
+  if (!('includedSteps' in statusResponse.sending)) {
+    return [];
+  }
+
+  return statusResponse.sending.includedSteps ?? [];
+}
+
+const quoteSchema = z.object({
+  action: z.object({
+    toToken: z.object({
+      address: z.string(),
+      decimals: z.number().int().nonnegative(),
+      symbol: z.string(),
+      logoURI: z.string().optional(),
+    }),
+  }),
+  estimate: z.object({
+    toAmount: z.string().regex(/^\d+$/),
+    toAmountUSD: z.string().optional(),
+  }),
+});
+
+export function transformLifiHistoryTransaction({
+  wallet,
+  statusResponse,
+}: {
+  wallet: string;
+  statusResponse: StatusResponse;
+}): LifiTransactionHistoryItem | null {
+  if (!statusResponse.sending.txHash) {
+    return null;
+  }
+
+  const includedSteps = getIncludedSteps(statusResponse);
+  const firstStep = includedSteps[0];
+  const lastStep = includedSteps[includedSteps.length - 1];
+  const sending = statusResponse.sending as Partial<ExtendedTransactionInfo>;
+  const receiving =
+    'receiving' in statusResponse
+      ? (statusResponse.receiving as Partial<ExtendedTransactionInfo>)
+      : undefined;
+  const parsedQuote = quoteSchema.safeParse(
+    'quote' in statusResponse ? statusResponse.quote : undefined,
+  );
+  const quote = parsedQuote.success ? parsedQuote.data : undefined;
+  const sourceChainId = Number(sending.chainId || firstStep?.fromToken.chainId);
+  const destinationChainId = Number(
+    receiving ? receiving.chainId || lastStep?.toToken.chainId : lastStep?.toToken.chainId,
+  );
+  const isPending = statusResponse.status === 'PENDING';
+  const isRefunded = statusResponse.status === 'DONE' && statusResponse.substatus === 'REFUNDED';
+
+  if (!sourceChainId || !destinationChainId) {
+    return null;
+  }
+
+  // Ignore earn transactions (same chain swap)
+  if (sourceChainId === destinationChainId && !isRefunded) {
+    return null;
+  }
+
+  const fromToken = sending.token || firstStep?.fromToken;
+  const toToken =
+    receiving?.token || lastStep?.toToken || (isPending ? UNKNOWN_DESTINATION_TOKEN : undefined);
+  const fromAmount = sending.amount || firstStep?.fromAmount;
+  const toAmount = receiving?.amount || lastStep?.toAmount || (isPending ? '0' : undefined);
+  const toolDetails =
+    firstStep?.toolDetails ??
+    ('tool' in statusResponse
+      ? {
+          key: statusResponse.tool,
+          logoURI: '',
+          name: statusResponse.tool,
+        }
+      : null);
+
+  if (!fromToken || !toToken || !fromAmount || !toAmount || !toolDetails) {
+    return null;
+  }
+
+  const createdAt = sending.timestamp ? normalizeTimestamp(sending.timestamp) : null;
+  const resolvedAt = receiving?.timestamp ? normalizeTimestamp(receiving.timestamp) : null;
+  const { status, destinationStatus, destinationTxId } = getLifiTransferStatus(statusResponse);
+  // Use the same parent/child resolution as the UI (`useNetworksRelationship`) so a
+  // transfer is keyed identically whether it comes from the local cache or this API,
+  // otherwise dedup fails and the transfer shows twice in history.
+  const { parentChainId, childChainId, isDepositMode } = getNetworksRelationship({
+    sourceChainId,
+    destinationChainId,
+  });
+  const isWithdrawal = !isDepositMode;
+  const quotedAmount = quote
+    ? {
+        amount: quote.estimate.toAmount,
+        amountUSD: quote.estimate.toAmountUSD ?? '0',
+        token: quote.action.toToken,
+      }
+    : undefined;
+
+  return {
+    txId: statusResponse.sending.txHash,
+    asset: fromToken.symbol,
+    assetType: addressesEqual(fromToken.address, constants.AddressZero)
+      ? AssetType.ETH
+      : AssetType.ERC20,
+    blockNum: null,
+    createdAt,
+    direction: isWithdrawal ? 'withdraw' : 'deposit',
+    isWithdrawal,
+    resolvedAt,
+    status,
+    destinationStatus,
+    uniqueId: null,
+    value: utils.formatUnits(fromAmount, fromToken.decimals),
+    depositStatus: DepositStatus.LIFI_DEFAULT_STATE,
+    destination: 'toAddress' in statusResponse ? statusResponse.toAddress : wallet,
+    sender: 'fromAddress' in statusResponse ? statusResponse.fromAddress : wallet,
+    isLifi: true,
+    tokenAddress: fromToken.address,
+    parentChainId,
+    childChainId,
+    sourceChainId,
+    destinationChainId,
+    toolsDetails: [toolDetails],
+    durationMs: createdAt && resolvedAt ? Math.max(resolvedAt - createdAt, 0) : 0,
+    fromAmount: {
+      amount: fromAmount,
+      amountUSD: sending.amountUSD ?? '0',
+      token: fromToken,
+    },
+    toAmount: quotedAmount,
+    receivedAmount:
+      receiving?.amount && receiving.token
+        ? {
+            amount: receiving.amount,
+            amountUSD: receiving.amountUSD ?? '0',
+            token: receiving.token,
+          }
+        : undefined,
+    destinationTxId,
+    lifiExplorerLink:
+      'lifiExplorerLink' in statusResponse ? statusResponse.lifiExplorerLink : undefined,
+  };
+}
+
+export function transformLifiHistoryTransactions({
+  wallet,
+  statusResponses,
+}: {
+  wallet: string;
+  statusResponses: StatusResponse[];
+}): LifiTransactionHistoryItem[] {
+  return statusResponses
+    .map((statusResponse) => {
+      try {
+        return transformLifiHistoryTransaction({ wallet, statusResponse });
+      } catch {
+        return null;
+      }
+    })
+    .filter((tx): tx is LifiTransactionHistoryItem => tx !== null);
+}
+
+async function getLifiTransactionById(
+  request: NextRequest,
+  txHash: string,
+): Promise<NextResponse<LifiTransactionHistoryResponse>> {
+  // EVM transactions are found through the wallet history
+  if (!isValidTransactionId(txHash) || ecosystems.evm.transactionId.isValid(txHash)) {
+    return NextResponse.json(
+      { message: 'txHash is not a valid transaction ID', data: null },
+      { status: 400, headers: NO_STORE_HEADERS },
+    );
+  }
+
+  createConfig({
+    integrator: getIntegratorId(request),
+    apiKey: process.env.LIFI_KEY,
+  });
+
+  try {
+    const statusResponse = await getStatus({ txHash });
+    // `getStatus` returns transfers from any integrator, so drop the ones not made in the bridge
+    const integrator =
+      'metadata' in statusResponse ? statusResponse.metadata.integrator : undefined;
+    if (integrator && !Object.values<string>(LIFI_INTEGRATOR_IDS).includes(integrator)) {
+      return NextResponse.json({ data: [] }, { headers: NO_STORE_HEADERS });
+    }
+    return NextResponse.json(
+      { data: transformLifiHistoryTransactions({ wallet: '', statusResponses: [statusResponse] }) },
+      { headers: NO_STORE_HEADERS },
+    );
+  } catch (error: unknown) {
+    // LiFi answers 404 when it has no transfer for this ID
+    if (error instanceof SDKError && error.code === LiFiErrorCode.NotFound) {
+      return NextResponse.json({ data: [] }, { headers: NO_STORE_HEADERS });
+    }
+    return NextResponse.json(
+      {
+        message: error instanceof Error ? error.message : 'Failed to fetch LiFi transaction',
+        data: null,
+      },
+      { status: 500, headers: NO_STORE_HEADERS },
+    );
+  }
+}
+
+export async function GET(
+  request: NextRequest,
+): Promise<NextResponse<LifiTransactionHistoryResponse>> {
+  const { searchParams } = new URL(request.url);
+  const wallet = searchParams.get('wallet');
+  const txHash = searchParams.get('txHash');
+
+  if (txHash) {
+    return getLifiTransactionById(request, txHash);
+  }
+
+  if (!wallet || !isValidAddress(wallet)) {
+    return NextResponse.json(
+      { message: 'wallet is not a valid address', data: null },
+      { status: 400, headers: NO_STORE_HEADERS },
+    );
+  }
+
+  const integrator = getIntegratorId(request);
+  createConfig({
+    integrator,
+    apiKey: process.env.LIFI_KEY,
+  });
+
+  const fromTimestamp = Math.floor((Date.now() - 10 * 365 * 24 * 60 * 60 * 1000) / 1000);
+  const response = await getTransactionHistory({
+    wallet,
+    status: 'ALL',
+    fromTimestamp,
+  });
+
+  return NextResponse.json(
+    {
+      data: transformLifiHistoryTransactions({
+        wallet,
+        statusResponses: response.transfers ?? [],
+      }),
+    },
+    { headers: NO_STORE_HEADERS },
+  );
+}

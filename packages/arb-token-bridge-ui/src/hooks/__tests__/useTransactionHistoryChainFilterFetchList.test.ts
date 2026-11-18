@@ -1,0 +1,209 @@
+/**
+ * Verifies the chain filter narrows the RPC fetch list — the core promise of
+ * tx-history chain filtering. `fetchDeposits` is mocked to capture exactly
+ * which chain pairs the fetcher fans out to for a given selection.
+ */
+import { StaticJsonRpcProvider } from '@ethersproject/providers';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { createElement } from 'react';
+import { SWRConfig } from 'swr';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { useTransactionHistoryChainFilterStore } from '../../components/TransactionHistory/useTransactionHistoryChainFilterStore';
+import { ChainId } from '../../types/ChainId';
+import { Address } from '../../util/AddressUtils';
+import { fetchDeposits } from '../../util/deposits/fetchDeposits';
+import { isCoreChainForDisplay, isNetwork } from '../../util/networks';
+import { getMultiChainFetchList } from '../../util/txHistoryRoutes';
+import { useTransactionHistory } from '../useTransactionHistory';
+
+const ADDRESS = '0x1111111111111111111111111111111111111111' as Address;
+
+vi.mock('wagmi', async (importActual) => ({
+  ...(await importActual()),
+  useConfig: () => ({}),
+  useAccount: () => ({ isConnected: true, chain: { id: 1 }, connector: null }),
+}));
+
+vi.mock('next/navigation', async (importActual) => ({
+  ...(await importActual()),
+  usePathname: vi.fn().mockReturnValue('/bridge'),
+}));
+
+vi.mock('../useArbQueryParams', async (importActual) => ({
+  ...(await importActual()),
+  useArbQueryParams: vi
+    .fn()
+    .mockReturnValue([{ sourceChain: 1, destinationChain: 42161, disabledFeatures: [] }, vi.fn()]),
+}));
+
+// no CCTP API in tests; its fetch error would mask the history result
+vi.mock('../../state/cctpState', async (importActual) => ({
+  ...(await importActual()),
+  useCctpFetching: () => ({
+    deposits: undefined,
+    withdrawals: undefined,
+    isLoadingDeposits: false,
+    isLoadingWithdrawals: false,
+    mutateDeposits: vi.fn(),
+    mutateWithdrawals: vi.fn(),
+    setPendingTransfer: vi.fn(),
+  }),
+}));
+
+vi.mock('../../util/deposits/fetchDeposits', () => ({
+  fetchDeposits: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('../../util/withdrawals/fetchWithdrawals', async (importActual) => ({
+  ...(await importActual()),
+  fetchWithdrawals: vi.fn().mockResolvedValue([]),
+}));
+
+function fetchedDepositPairs(): string[] {
+  return vi.mocked(fetchDeposits).mock.calls.map(([params]) => {
+    const parentChainId = (params.l1Provider as StaticJsonRpcProvider).network.chainId;
+    const childChainId = (params.l2Provider as StaticJsonRpcProvider).network.chainId;
+    return `${parentChainId}-${childChainId}`;
+  });
+}
+
+function mainnetPairsMatching(predicate: (parent: number, child: number) => boolean): string[] {
+  return getMultiChainFetchList()
+    .filter((pair) => !isNetwork(pair.parentChainId).isTestnet)
+    .filter((pair) => predicate(pair.parentChainId, pair.childChainId))
+    .map((pair) => `${pair.parentChainId}-${pair.childChainId}`);
+}
+
+// A statically registered mainnet longtail (non-core) child chain, whichever
+// the registry currently has. Orbit chains register at runtime, so they may
+// not appear in the test environment's fetch list.
+function getLongtailPair() {
+  return getMultiChainFetchList()
+    .filter((pair) => !isNetwork(pair.parentChainId).isTestnet)
+    .find((pair) => !isCoreChainForDisplay(pair.childChainId));
+}
+
+async function renderAndWaitForFetch() {
+  renderHook(() => useTransactionHistory(ADDRESS, { runFetcher: true }));
+  await waitFor(() => expect(fetchDeposits).toHaveBeenCalled(), { timeout: 30_000 });
+}
+
+describe.sequential('useTransactionHistory fetch list narrowing', () => {
+  beforeEach(() => {
+    useTransactionHistoryChainFilterStore.setState({ selection: null });
+    vi.mocked(fetchDeposits).mockClear();
+  });
+
+  it('the default All Core Chains selection fetches only the pairs with both endpoints core', async () => {
+    await renderAndWaitForFetch();
+
+    const pairs = fetchedDepositPairs();
+    const expected = mainnetPairsMatching(
+      (parent, child) => isCoreChainForDisplay(parent) && isCoreChainForDisplay(child),
+    );
+
+    expect(pairs.sort()).toEqual(expected.sort());
+    expect(pairs).toContain(`${ChainId.Ethereum}-${ChainId.ArbitrumOne}`);
+  }, 40_000);
+
+  it('a core-chains selection fetches only those chains’ pairs with other core chains', async () => {
+    useTransactionHistoryChainFilterStore.setState({
+      selection: { chainIds: [ChainId.Ethereum], isTestnetMode: false },
+    });
+    await renderAndWaitForFetch();
+
+    expect(fetchedDepositPairs().sort()).toEqual(
+      mainnetPairsMatching(
+        (parent, child) =>
+          (parent === ChainId.Ethereum || child === ChainId.Ethereum) &&
+          isCoreChainForDisplay(parent) &&
+          isCoreChainForDisplay(child),
+      ).sort(),
+    );
+  }, 40_000);
+
+  it('a multi-chain core selection fetches the pairs touching any selected chain', async () => {
+    const selectedChainIds = [ChainId.ArbitrumOne, ChainId.ArbitrumNova];
+    useTransactionHistoryChainFilterStore.setState({
+      selection: { chainIds: selectedChainIds, isTestnetMode: false },
+    });
+    await renderAndWaitForFetch();
+
+    expect(fetchedDepositPairs().sort()).toEqual(
+      mainnetPairsMatching(
+        (parent, child) =>
+          (selectedChainIds.includes(parent) || selectedChainIds.includes(child)) &&
+          isCoreChainForDisplay(parent) &&
+          isCoreChainForDisplay(child),
+      ).sort(),
+    );
+  }, 40_000);
+
+  it('a longtail-chain selection fetches only the pairs touching that chain', async (ctx) => {
+    const longtailPair = getLongtailPair();
+    if (!longtailPair) {
+      return ctx.skip();
+    }
+
+    const longtailChainId = longtailPair.childChainId;
+    useTransactionHistoryChainFilterStore.setState({
+      selection: { chainIds: [longtailChainId], isTestnetMode: false },
+    });
+    await renderAndWaitForFetch();
+
+    expect(fetchedDepositPairs().sort()).toEqual(
+      mainnetPairsMatching(
+        (parent, child) => parent === longtailChainId || child === longtailChainId,
+      ).sort(),
+    );
+  }, 40_000);
+});
+
+describe.sequential('useTransactionHistory failed chain pairs', () => {
+  beforeEach(() => {
+    useTransactionHistoryChainFilterStore.setState({ selection: null });
+    vi.mocked(fetchDeposits).mockReset();
+  });
+
+  it('keeps a failure for the selection whose cached list it emptied', async () => {
+    const onePair = { parentChainId: ChainId.Ethereum, childChainId: ChainId.ArbitrumOne };
+    let failOne = true;
+    vi.mocked(fetchDeposits).mockImplementation(async (params) => {
+      const parentChainId = (params.l1Provider as StaticJsonRpcProvider).network.chainId;
+      const childChainId = (params.l2Provider as StaticJsonRpcProvider).network.chainId;
+      if (
+        failOne &&
+        parentChainId === onePair.parentChainId &&
+        childChainId === onePair.childChainId
+      ) {
+        throw new Error('/api/deposits failed with 502');
+      }
+      return [];
+    });
+
+    const { result } = renderHook(() => useTransactionHistory(ADDRESS, { runFetcher: true }), {
+      wrapper: ({ children }) =>
+        createElement(SWRConfig, { value: { provider: () => new Map() } }, children),
+    });
+    await waitFor(() => expect(result.current.failedChainPairs).toContainEqual(onePair), {
+      timeout: 30_000,
+    });
+
+    failOne = false;
+    vi.mocked(fetchDeposits).mockClear();
+    act(() => {
+      useTransactionHistoryChainFilterStore.setState({
+        selection: { chainIds: [ChainId.ArbitrumOne], isTestnetMode: false },
+      });
+    });
+    await waitFor(() => expect(fetchDeposits).toHaveBeenCalled(), { timeout: 30_000 });
+    await waitFor(() => expect(result.current.failedChainPairs).toEqual([]));
+
+    // back on the first selection its cached list still lacks One deposits
+    act(() => {
+      useTransactionHistoryChainFilterStore.setState({ selection: null });
+    });
+    await waitFor(() => expect(result.current.failedChainPairs).toContainEqual(onePair));
+  }, 40_000);
+});

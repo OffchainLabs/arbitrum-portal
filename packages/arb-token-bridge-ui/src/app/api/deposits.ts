@@ -1,15 +1,12 @@
 import { gql } from '@apollo/client';
 import { NextRequest, NextResponse } from 'next/server';
 
-import {
-  getL1SubgraphClient,
-  getSourceFromSubgraphClient,
-} from '../../api-utils/ServerSubgraphUtils';
+import { type SubgraphSource, getL1SubgraphClient } from '../../api-utils/ServerSubgraphUtils';
 import { FetchDepositsFromSubgraphResult } from '../../util/deposits/fetchDepositsFromSubgraph';
-import { isIndexerApiExperimentEnabled, proxyToIndexer } from './indexer';
+import { isIndexerEnabledForRequest, proxyToIndexer } from './indexer';
 
 type DepositsResponse = {
-  meta?: { source: string | null };
+  meta?: { source: SubgraphSource };
   data: FetchDepositsFromSubgraphResult[];
   message?: string; // in case of any error
 };
@@ -17,7 +14,7 @@ type DepositsResponse = {
 export async function GET(request: NextRequest): Promise<NextResponse<DepositsResponse>> {
   try {
     const { searchParams } = new URL(request.url);
-    if (isIndexerApiExperimentEnabled(request)) {
+    if (isIndexerEnabledForRequest(request)) {
       return proxyToIndexer(request, '/api/bridge-history/deposits');
     }
     const sender = searchParams.get('sender') || undefined;
@@ -56,9 +53,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<DepositsRe
     ${search ? `transactionHash_contains: "${search}"` : ''}
     `;
 
-    let subgraphClient;
+    let subgraph;
     try {
-      subgraphClient = getL1SubgraphClient(Number(l2ChainId));
+      subgraph = getL1SubgraphClient(Number(l2ChainId));
     } catch (error: any) {
       // catch attempt to query unsupported networks and throw a 400
       return NextResponse.json(
@@ -70,7 +67,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<DepositsRe
       );
     }
 
-    const subgraphResult = await subgraphClient.query({
+    const subgraphResult = await subgraph.client.query({
       query: gql(`{
         deposits(
           where: {            
@@ -111,7 +108,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<DepositsRe
 
     return NextResponse.json(
       {
-        meta: { source: getSourceFromSubgraphClient(subgraphClient) },
+        meta: { source: subgraph.source },
         data: transactions,
       },
       { status: 200 },

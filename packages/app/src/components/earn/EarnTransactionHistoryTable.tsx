@@ -10,10 +10,10 @@ import { twMerge } from 'tailwind-merge';
 import { OpportunityCategory } from '@/app-types/earn/vaults';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { ARBITRUM_LOGO } from '@/bridge/constants';
-import { normalizeTimestamp } from '@/bridge/state/app/utils';
 import { shortenTxHash } from '@/bridge/util/CommonUtils';
 import { formatAmount } from '@/bridge/util/NumberUtils';
 import { getExplorerUrl } from '@/bridge/util/networks';
+import { normalizeTimestamp } from '@/bridge/util/normalizeTimestamp';
 import { ExternalLink } from '@/components/ExternalLink';
 import type { EarnChainId } from '@/earn-api/types';
 

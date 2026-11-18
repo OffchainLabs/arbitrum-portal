@@ -11,7 +11,7 @@ import { trackEvent } from '../util/AnalyticsUtils';
 import { getRetryableTicket } from '../util/RetryableUtils';
 import { isUserRejectedError } from '../util/isUserRejectedError';
 import { getNetworkName } from '../util/networks';
-import { useEthersSigner } from '../util/wagmi/useEthersSigner';
+import { useWalletContext } from '../wallet/WalletContext';
 import { useTransactionHistory } from './useTransactionHistory';
 
 export type UseRedeemRetryableResult = {
@@ -23,7 +23,7 @@ export function useRedeemRetryable(
   tx: MergedTransaction,
   address: Address | undefined,
 ): UseRedeemRetryableResult {
-  const signer = useEthersSigner({ chainId: tx.destinationChainId });
+  const { signer: evmSigner } = useWalletContext('evm');
   const { updatePendingTransaction } = useTransactionHistory(address);
 
   const destinationNetworkName = getNetworkName(tx.destinationChainId);
@@ -37,9 +37,7 @@ export function useRedeemRetryable(
     try {
       setIsRedeeming(true);
 
-      if (!signer) {
-        throw 'Signer is undefined';
-      }
+      const signer = await evmSigner.getEthersSigner(tx.destinationChainId);
 
       const retryableTicket = await getRetryableTicket({
         parentChainTxHash: tx.txId,
@@ -83,7 +81,7 @@ export function useRedeemRetryable(
     } finally {
       setIsRedeeming(false);
     }
-  }, [isRedeeming, destinationNetworkName, signer, tx, updatePendingTransaction]);
+  }, [isRedeeming, destinationNetworkName, evmSigner, tx, updatePendingTransaction]);
 
   return { redeem, isRedeeming };
 }

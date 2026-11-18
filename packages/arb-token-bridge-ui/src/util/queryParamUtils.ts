@@ -10,10 +10,12 @@ import {
   getChainQueryParamForChain,
   isValidChainQueryParam,
 } from '../types/ChainQueryParam';
-import { getDestinationChainIds, isSupportedChainId } from './chainUtils';
+import { isValidAddress, normalizeAddress } from './AddressUtils';
+import { getUsdgDestinationTokenAddress, isUsdgQueryParamAlias } from './RobinhoodStablecoinUtils';
+import { isSupportedChainId } from './chainUtils';
 import { isLifiEnabled, isOnrampEnabled } from './featureFlag';
 import { LOG_LEVELS, LogLevel } from './logger';
-import { isNetwork } from './networks';
+import { getDestinationChainIds, isNetwork } from './networks';
 import { orbitChains } from './orbitChainsList';
 
 export interface ThemeConfig {
@@ -301,25 +303,33 @@ export const LogLevelParam: QueryParamConfig<LogLevel> = {
   },
 };
 
+function normalizeTokenQueryValue(token: string | undefined): string | undefined {
+  const normalizedAddress = normalizeAddress(token);
+
+  return normalizedAddress && !isValidAddress(normalizedAddress)
+    ? normalizedAddress.toLowerCase()
+    : normalizedAddress;
+}
+
 export const TokenQueryParam = {
   encode: (token: string | undefined) => {
-    return token?.toLowerCase();
+    return normalizeTokenQueryValue(token);
   },
   decode: (token: string | (string | null)[] | null | undefined) => {
     const tokenStr = token?.toString();
     // We are not checking for a valid address because we handle it in the UI
     // by showing an invalid token dialog
-    return tokenStr?.toLowerCase();
+    return normalizeTokenQueryValue(tokenStr);
   },
 };
 
 export const DestinationTokenQueryParam = {
   encode: (token: string | undefined) => {
-    return token?.toLowerCase();
+    return normalizeTokenQueryValue(token);
   },
   decode: (token: string | (string | null)[] | null | undefined) => {
     const tokenStr = token?.toString();
-    return tokenStr?.toLowerCase();
+    return normalizeTokenQueryValue(tokenStr);
   },
 };
 
@@ -470,11 +480,6 @@ export function sanitizeNullSelectedToken({
       return erc20ParentAddress;
     }
 
-    // Superposition doesn't have ApeToken, so we default to AddressZero only when ApeChain is the destination
-    if (sourceChainId === ChainId.Superposition && destinationChainId === ChainId.ApeChain) {
-      return constants.AddressZero;
-    }
-
     // All other LiFi pairs: default to null (native token of destination chain)
     return null;
   }
@@ -513,19 +518,19 @@ export const sanitizeTokenQueryParam = ({
   sourceChainId: number | undefined;
   destinationChainId: number | undefined;
 }) => {
-  const tokenLowercased = token?.toLowerCase();
+  const normalizedToken = normalizeTokenQueryValue(token ?? undefined);
 
-  if (!tokenLowercased) {
+  if (!normalizedToken) {
     const sanitizedTokenAddress = sanitizeNullSelectedToken({
       sourceChainId,
       destinationChainId,
-      erc20ParentAddress: tokenLowercased || null,
+      erc20ParentAddress: normalizedToken || null,
     });
 
     return sanitizedTokenAddress;
   }
   if (!destinationChainId) {
-    return tokenLowercased;
+    return normalizedToken;
   }
 
   const orbitChain = orbitChains[destinationChainId];
@@ -537,11 +542,34 @@ export const sanitizeTokenQueryParam = ({
 
   // token=eth doesn't need to be set if ETH is the native gas token
   // we strip it for clarity
-  if (tokenLowercased === 'eth' && !isOrbitChainWithCustomGasToken) {
+  if (normalizedToken === 'eth' && !isOrbitChainWithCustomGasToken) {
     return undefined;
   }
 
-  return tokenLowercased;
+  return normalizedToken;
+};
+
+/**
+ * `destinationToken` follows the same rules as `token`, plus the `usdg` literal, which resolves to
+ * the USDG address for the chain pair so partners can deep link into a USDG swap.
+ */
+export const sanitizeDestinationTokenQueryParam = ({
+  destinationToken,
+  sourceChainId,
+  destinationChainId,
+}: {
+  destinationToken: string | null | undefined;
+  sourceChainId: number | undefined;
+  destinationChainId: number | undefined;
+}) => {
+  if (isUsdgQueryParamAlias(destinationToken)) {
+    if (sourceChainId && destinationChainId === ChainId.RobinhoodChain) {
+      return getUsdgDestinationTokenAddress(sourceChainId);
+    }
+    return undefined;
+  }
+
+  return sanitizeTokenQueryParam({ token: destinationToken, sourceChainId, destinationChainId });
 };
 
 export const isOnrampFeatureEnabled = ({ disabledFeatures }: { disabledFeatures: string[] }) => {

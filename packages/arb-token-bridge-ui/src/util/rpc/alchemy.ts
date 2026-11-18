@@ -2,6 +2,23 @@ import { loadEnvironmentVariableWithFallback } from '..';
 import { ChainId } from '../../types/ChainId';
 import { ProductionChainId } from './getRpcUrl';
 
+// Orbit chains whitelisted to use our authenticated Alchemy RPC instead of their throttled public one.
+const authenticatedAlchemyOrbitRpcUrls: { [chainId: number]: string } = {
+  869: 'https://worldmobilechain-mainnet.g.alchemy.com/v2', // World Mobile Chain
+};
+
+export function getAuthenticatedAlchemyRpcUrl(chainId: number, fallbackRpcUrl: string): string {
+  const baseUrl = authenticatedAlchemyOrbitRpcUrls[chainId];
+  const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY?.trim();
+
+  // only upgrade the throttled public Alchemy endpoint; leave any custom RPC alone
+  if (!baseUrl || !alchemyKey || !fallbackRpcUrl.includes('.g.alchemy.com/public')) {
+    return fallbackRpcUrl;
+  }
+
+  return `${baseUrl}/${alchemyKey}`;
+}
+
 export function getAlchemyKeyFromEnv(chainId: ProductionChainId): string {
   const defaultAlchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_KEY;
 
@@ -52,7 +69,10 @@ export function getAlchemyKeyFromEnv(chainId: ProductionChainId): string {
     // Orbit chains
     case ChainId.ApeChain:
       return '';
-    case ChainId.Superposition:
+    case ChainId.RobinhoodChain:
+      return '';
+
+    case ChainId.RobinhoodChainTestnet:
       return '';
   }
 }
@@ -85,7 +105,10 @@ export function getAlchemyRpcUrl(
       return `https://base-sepolia.g.alchemy.com/v2/${alchemyKey}`;
     case ChainId.ApeChain:
       return '';
-    case ChainId.Superposition:
+    case ChainId.RobinhoodChain:
+      return '';
+
+    case ChainId.RobinhoodChainTestnet:
       return '';
   }
 }

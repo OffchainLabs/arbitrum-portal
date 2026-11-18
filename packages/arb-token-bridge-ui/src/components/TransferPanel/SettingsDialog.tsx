@@ -111,7 +111,7 @@ export const SettingsDialog = React.memo((props: UseDialogProps) => {
   const { data: tools, isLoading: isLoadingTools } = useTools();
   const [networks] = useNetworks();
   const [selectedToken] = useSelectedToken();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
   const { slippage, setSlippage, storeDisabledBridges, setDisabledBridgesToStore } =
     useLifiSettingsStore(
       (state) => ({

@@ -13,13 +13,13 @@ import { Column, Table, TableCellDataGetter } from 'react-virtualized';
 import { twMerge } from 'tailwind-merge';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
-import { ChainPair, UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
+import { UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { isTokenDeposit } from '../../state/app/utils';
 import { getNetworkName } from '../../util/networks';
+import { ChainPair } from '../../util/txHistoryRoutes';
 import { EmptyTransactionHistory } from './EmptyTransactionHistory';
 import { PendingDepositWarning } from './PendingDepositWarning';
 import { TransactionsTableRow } from './TransactionsTableRow';
@@ -29,8 +29,7 @@ export const BatchTransferNativeTokenTooltip = ({
   children,
   tx,
 }: PropsWithChildren<{ tx: MergedTransaction }>) => {
-  const childProvider = getProviderForChainId(tx.childChainId);
-  const nativeCurrency = useNativeCurrency({ provider: childProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: tx.childChainId });
 
   return (
     <Tooltip
@@ -89,6 +88,10 @@ const FailedChainPairsTooltip = ({ failedChainPairs }: { failedChainPairs: Chain
     return null;
   }
 
+  const warningLabel = `We were unable to fetch data for the following chain pairs: ${failedChainPairs
+    .map((pair) => `${getNetworkName(pair.parentChainId)} to ${getNetworkName(pair.childChainId)}`)
+    .join(', ')}`;
+
   return (
     <Tooltip
       content={
@@ -106,7 +109,14 @@ const FailedChainPairsTooltip = ({ failedChainPairs }: { failedChainPairs: Chain
         </div>
       }
     >
-      <ExclamationCircleIcon height={20} className="text-error" />
+      <span
+        role="img"
+        aria-label={warningLabel}
+        className="inline-flex"
+        data-testid="failed-chain-pairs-warning"
+      >
+        <ExclamationCircleIcon height={20} className="text-error" aria-hidden="true" />
+      </span>
     </Tooltip>
   );
 };
@@ -124,6 +134,7 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
     error,
     failedChainPairs,
     resume,
+    updateTransaction,
     selectedTabIndex,
     oldestTxTimeAgoString,
   } = props;
@@ -182,13 +193,18 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
 
   if (isTxHistoryEmpty) {
     return (
-      <EmptyTransactionHistory
-        loading={loading}
-        isError={typeof error !== 'undefined'}
-        paused={paused}
-        resume={resume}
-        tabType={isPendingTab ? 'pending' : 'settled'}
-      />
+      <>
+        {/* an outage leaves nothing to list, so the warning has to render here too */}
+        <FailedChainPairsTooltip failedChainPairs={failedChainPairs} />
+        <EmptyTransactionHistory
+          loading={loading}
+          // with a chain unchecked, "no transactions" could be a lie
+          isError={typeof error !== 'undefined' || failedChainPairs.length > 0}
+          paused={paused}
+          resume={resume}
+          tabType={isPendingTab ? 'pending' : 'settled'}
+        />
+      </>
     );
   }
 
@@ -256,6 +272,7 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
             <div key={key} style={style}>
               <TransactionsTableRow
                 tx={tx}
+                updateTransaction={updateTransaction}
                 className={twMerge(
                   isLastRow && 'border-b-0',
                   isTopmostPendingTx && secondsPassed <= 30 && 'animate-blink bg-highlight',

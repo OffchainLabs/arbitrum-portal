@@ -2,13 +2,16 @@ import { constants } from 'ethers';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { create } from 'zustand';
 
+import { isUnmatchedLifiTokenAllowed } from '../../app/api/crosschain-transfers/constants';
 import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useERC20L1Address } from '../../hooks/useERC20L1Address';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
+import { getValidatedTokenData } from '../../services/tokenMetadata';
 import { useAppState } from '../../state';
-import { erc20DataToErc20BridgeToken, fetchErc20Data, isValidErc20 } from '../../util/TokenUtils';
+import { isLifiOnlyToken } from '../../util/TokenListUtils';
+import { erc20DataToErc20BridgeToken } from '../../util/TokenUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { NoteBox } from '../common/NoteBox';
 import { Loader } from '../common/atoms/Loader';
@@ -61,20 +64,31 @@ export function TokenImportDialog({
   } = useAppState();
   const [, setSelectedToken] = useSelectedToken();
   const [networks] = useNetworks();
-  const { childChainProvider, parentChainProvider } = useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
+  const allowsUnmatchedTokenImport = isUnmatchedLifiTokenAllowed(
+    networks.sourceChain.id,
+    tokenAddress,
+  );
+  const sourceTokenAddress = tokenAddress.toLowerCase();
 
   const tokensFromUser = useTokensFromUser();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
 
   const [status, setStatus] = useState<ImportStatus>(ImportStatus.LOADING);
   const [isImportingToken, setIsImportingToken] = useState<boolean>(false);
   const [tokenToImport, setTokenToImport] = useState<ERC20BridgeToken>();
   const isOpen = useTokenImportDialogStore((state) => state.isOpen);
   const [isDialogVisible, setIsDialogVisible] = useState(false);
-  const { data: l1Address, isLoading: isL1AddressLoading } = useERC20L1Address({
+  const {
+    data: l1Address,
+    hasParentAddress,
+    isLoading: isParentAddressLoading,
+  } = useERC20L1Address({
     eitherL1OrL2Address: tokenAddress,
-    l2Provider: childChainProvider,
+    l2ChainId: childChain.id,
   });
+  const addressToImport = l1Address ?? sourceTokenAddress;
+  const isUnmatchedTokenImport = allowsUnmatchedTokenImport && isLifiOnlyToken(tokenToImport);
 
   // we use a different state to handle dialog visibility to trigger the entry transition,
   // otherwise if we only used isOpen then the transition would never trigger because
@@ -99,19 +113,33 @@ export function TokenImportDialog({
     }
   }, [status]);
 
-  const getL1TokenDataFromL1Address = useCallback(async () => {
-    if (!l1Address) {
-      return;
+  const getTokenData = useCallback(async () => {
+    if (!hasParentAddress && !isDepositMode && allowsUnmatchedTokenImport) {
+      try {
+        const data = await getValidatedTokenData(sourceTokenAddress, networks.sourceChain.id);
+        return {
+          ...erc20DataToErc20BridgeToken(data),
+          address: sourceTokenAddress,
+          l2Address: sourceTokenAddress,
+          lifiOnlyChainId: networks.sourceChain.id,
+        };
+      } catch {
+        // The URL may contain a parent-chain address while the source is the child chain.
+        // Fall through to preserve canonical imports using that address.
+      }
     }
 
-    const erc20Params = { address: l1Address, provider: parentChainProvider };
-
-    if (!(await isValidErc20(erc20Params))) {
-      throw new Error(`${l1Address} is not a valid ERC-20 token`);
-    }
-
-    return fetchErc20Data(erc20Params);
-  }, [parentChainProvider, l1Address]);
+    const data = await getValidatedTokenData(addressToImport, parentChain.id);
+    return erc20DataToErc20BridgeToken(data);
+  }, [
+    addressToImport,
+    allowsUnmatchedTokenImport,
+    hasParentAddress,
+    isDepositMode,
+    networks.sourceChain.id,
+    parentChain.id,
+    sourceTokenAddress,
+  ]);
 
   const searchForTokenInLists = useCallback(
     (erc20L1Address: string): TokenListSearchResult => {
@@ -151,14 +179,16 @@ export function TokenImportDialog({
 
   const selectToken = useCallback(
     async (_token: ERC20BridgeToken) => {
-      await token.updateTokenData(_token.address);
-      setSelectedToken(_token.address);
+      if (!isLifiOnlyToken(_token)) {
+        await token.updateTokenData(_token.address);
+      }
+      setSelectedToken(_token.address, _token);
     },
     [token, setSelectedToken],
   );
 
   useEffect(() => {
-    if (!isOpen || isImportingToken) {
+    if (!isOpen || isImportingToken || isParentAddressLoading) {
       return;
     }
 
@@ -166,17 +196,12 @@ export function TokenImportDialog({
       return;
     }
 
-    if (!isL1AddressLoading && !l1Address) {
-      setStatus(ImportStatus.ERROR);
-      return;
-    }
-
-    if (l1Address) {
-      if (l1Address === constants.AddressZero) {
+    if (addressToImport) {
+      if (addressToImport === constants.AddressZero) {
         return;
       }
 
-      const searchResult1 = searchForTokenInLists(l1Address);
+      const searchResult1 = searchForTokenInLists(addressToImport);
 
       if (searchResult1.found) {
         setStatus(searchResult1.status);
@@ -187,69 +212,62 @@ export function TokenImportDialog({
     }
 
     // Can't find the address provided, so we look further
-    getL1TokenDataFromL1Address()
-      .then((data) => {
-        if (!data) {
+    getTokenData()
+      .then((tokenData) => {
+        if (!tokenData) {
           return;
         }
 
         // We couldn't find the address within our lists
         setStatus(ImportStatus.UNKNOWN);
-        setTokenToImport(erc20DataToErc20BridgeToken(data));
+        setTokenToImport(tokenData);
       })
       .catch(() => {
         setStatus(ImportStatus.ERROR);
       });
   }, [
-    tokenAddress,
+    addressToImport,
     bridgeTokens,
-    getL1TokenDataFromL1Address,
-    isL1AddressLoading,
+    getTokenData,
+    isParentAddressLoading,
     isOpen,
-    l1Address,
     searchForTokenInLists,
     isImportingToken,
   ]);
 
   async function storeNewToken(newToken: string) {
-    return token.add(newToken).catch((ex: Error) => {
+    try {
+      await (isUnmatchedTokenImport
+        ? token.addLifiTokenForChain(newToken, networks.sourceChain.id)
+        : token.add(newToken));
+    } catch (ex) {
       setStatus(ImportStatus.ERROR);
 
-      if (ex.name === 'TokenDisabledError') {
+      if (ex instanceof Error && ex.name === 'TokenDisabledError') {
         warningToast('This token is currently paused in the bridge');
       }
-    });
+      throw ex;
+    }
   }
 
   function handleTokenImport() {
-    if (typeof bridgeTokens === 'undefined') {
-      return;
-    }
-
-    if (isImportingToken) {
+    if (typeof bridgeTokens === 'undefined' || isImportingToken || !tokenToImport) {
       return;
     }
 
     setIsImportingToken(true);
 
-    if (!l1Address) {
-      return;
-    }
-
-    if (typeof bridgeTokens[l1Address] !== 'undefined') {
+    if (typeof bridgeTokens[addressToImport] !== 'undefined') {
       // Token is already added to the bridge
       onClose(true);
-      selectToken(tokenToImport!);
+      selectToken(tokenToImport);
     } else {
       // Token is not added to the bridge, so we add it
-      storeNewToken(l1Address)
-        .then(() => {
-          if (tokenToImport) {
-            selectToken(tokenToImport);
-          }
-        })
+      storeNewToken(addressToImport)
+        .then(() => selectToken(tokenToImport))
         .catch(() => {
           setStatus(ImportStatus.ERROR);
+          setIsImportingToken(false);
         });
     }
   }

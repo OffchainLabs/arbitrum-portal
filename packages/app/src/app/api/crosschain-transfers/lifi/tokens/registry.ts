@@ -1,37 +1,121 @@
-import { CoinKey, ChainId as LiFiChainId, type Token as LiFiToken, getTokens } from '@lifi/sdk';
+import { CoinKey, ChainId as LiFiChainId, type Token as LifiSdkToken, getTokens } from '@lifi/sdk';
 import { unstable_cache } from 'next/cache';
 
-import { allowedLifiSourceChainIds } from '@/bridge/app/api/crosschain-transfers/constants';
+import {
+  allowedLifiSourceChainIds,
+  isUnmatchedLifiTokenAllowed,
+} from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
 type CustomTokenConfig = {
   coinKey: string;
   addresses: Partial<Record<number, string>>;
 };
 
+const VIRTUAL_COIN_KEY = 'VIRTUAL' as CoinKey;
+const VIRTUAL_LOGO_URI =
+  'https://static.debank.com/image/eth_token/logo_url/0x44ff8620b8ca30902395a7bd3f2407e1a091bf73/cbb70834d9442214c846833e47648255.png';
+
+const USDG_COIN_KEY = 'USDG' as CoinKey;
+const USDG_LOGO_URI =
+  'https://static.debank.com/image/eth_token/logo_url/0xe343167631d89b6ffc58b88d6b7fb0228795491d/4cbeae5d28b9db12bcf655fae7a328bb.png';
+
 const CUSTOM_TOKENS: CustomTokenConfig[] = [
+  {
+    coinKey: VIRTUAL_COIN_KEY,
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.VIRTUAL,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.VIRTUAL,
+    },
+  },
   {
     coinKey: 'PYUSD',
     addresses: {
-      [ChainId.Ethereum]: '0x6c3ea9036406852006290770bedfcaba0e23a0e8',
-      [ChainId.ArbitrumOne]: '0x46850ad61c2b7d64d08c9c754f45254596696984',
+      [ChainId.Ethereum]: CommonAddress.Ethereum.PYUSD,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.PYUSD,
     },
   },
   {
     coinKey: 'ENA',
     addresses: {
-      [ChainId.Ethereum]: '0x57e114b691db790c35207b2e685d4a43181e6061',
-      [ChainId.Base]: '0x58538e6a46e07434d7e7375bc268d3cb839c0133',
-      [ChainId.ArbitrumOne]: '0x58538e6a46e07434d7e7375bc268d3cb839c0133',
+      [ChainId.Ethereum]: CommonAddress.Ethereum.ENA,
+      [ChainId.Base]: CommonAddress.Base.ENA,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.ENA,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.ENA,
+    },
+  },
+  {
+    coinKey: 'USDe',
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.USDe,
+      [ChainId.Base]: CommonAddress.Base.USDe,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.USDe,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.USDe,
+    },
+  },
+  {
+    coinKey: 'sUSDe',
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.sUSDe,
+      [ChainId.Base]: CommonAddress.Base.sUSDe,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.sUSDe,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.sUSDe,
+    },
+  },
+  {
+    coinKey: USDG_COIN_KEY,
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.USDG,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.USDG,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.USDG,
+    },
+  },
+  {
+    coinKey: 'spUSDG',
+    addresses: {
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.spUSDG,
+    },
+  },
+  {
+    coinKey: 'weETH',
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.WEETH,
+      [ChainId.Base]: CommonAddress.Base.WEETH,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.WEETH,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.WEETH,
+    },
+  },
+  {
+    coinKey: 'syrupUSDG',
+    addresses: {
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.SyrupUSDG,
+    },
+  },
+  {
+    coinKey: 'wstETH',
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.WSTETH,
+      [ChainId.Base]: CommonAddress.Base.WSTETH,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.WSTETH,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.WSTETH,
     },
   },
   {
     coinKey: 'USDT',
     addresses: {
-      [ChainId.Ethereum]: '0xdac17f958d2ee523a2206206994597c13d831ec7',
-      [ChainId.Base]: '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',
-      [ChainId.ArbitrumOne]: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
-      [ChainId.ApeChain]: '0x674843C06FF83502ddb4D37c2E09C01cdA38cbc8',
+      [ChainId.Ethereum]: CommonAddress.Ethereum.USDT,
+      [ChainId.Base]: CommonAddress.Base.USDT,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.USDT,
+      [ChainId.ApeChain]: CommonAddress.ApeChain.USDT,
+    },
+  },
+  {
+    coinKey: 'SFI',
+    addresses: {
+      [ChainId.Ethereum]: CommonAddress.Ethereum.SFI,
+      [ChainId.ArbitrumOne]: CommonAddress.ArbitrumOne.SFI,
+      [ChainId.RobinhoodChain]: CommonAddress.RobinhoodChain.SFI,
     },
   },
 ];
@@ -48,15 +132,31 @@ for (const customToken of CUSTOM_TOKENS) {
 }
 
 const EXCLUDED_ADDRESSES: Partial<Record<number, Set<string>>> = {
+  [ChainId.Ethereum]: new Set([
+    // LiFi marks this PulseChain-wrapped token as CoinKey.WETH, which duplicates canonical Ethereum WETH in child token lists.
+    '0xb1a7f8b3ada1cbd7752c1306725b07d2f8b4e726',
+  ]),
   [ChainId.ArbitrumOne]: new Set([
     '0x74885b4d524d497261259b38900f54e6dbad2210', // Old Ape token
     '0xb9c8f0d3254007ee4b98970b94544e473cd610ec', // Old QiDao token
   ]),
+  [ChainId.RobinhoodChain]: new Set([
+    CommonAddress.RobinhoodChain.VIRTUAL_CANONICAL,
+    // LiFi lists two tokens with the "USDG" symbol on Robinhood Chain. This one is named
+    // "Paxos USDG" on chain, has no LiFi coinKey and a supply of about 1,100 USDG. The live one is
+    // "Global Dollar" at CommonAddress.RobinhoodChain.USDG (0x5fc5360d...16f1d168), LiFi coinKey
+    // USDG, mapped in CUSTOM_TOKENS above. Excluding this one keeps a single USDG row.
+    '0x0a3b763d66c0e8c7555c986a3701e1dc1bf3954f',
+  ]),
 };
 
-export type LifiTokenWithCoinKey = LiFiToken & { coinKey: CoinKey };
+export type LifiToken = Omit<LifiSdkToken, 'chainId' | 'priceUSD'> & {
+  chainId: number;
+  priceUSD?: string;
+};
+export type LifiTokenWithCoinKey = LifiToken & { coinKey: CoinKey };
 
-function isExcludedToken(token: LiFiToken, chainId: number): boolean {
+function isExcludedToken(token: LifiSdkToken, chainId: number): boolean {
   return EXCLUDED_ADDRESSES[chainId]?.has(token.address.toLowerCase()) ?? false;
 }
 
@@ -65,7 +165,7 @@ function isExcludedToken(token: LiFiToken, chainId: number): boolean {
  * Also normalizes bridged token variants (USDCe) to their native equivalents (USDC) on specific chains.
  * Returns null if token has no coinKey and isn't in CUSTOM_TOKENS.
  */
-function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCoinKey | null {
+function assignCustomCoinKey(token: LifiSdkToken, chainId: number): LifiTokenWithCoinKey | null {
   const normalizedAddress = token.address.toLowerCase();
   const customCoinKey = CUSTOM_TOKEN_LOOKUP.get(chainId)?.get(normalizedAddress);
   if (customCoinKey) {
@@ -76,10 +176,7 @@ function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCo
     const tokenWithCoinKey = token as LifiTokenWithCoinKey;
 
     // Normalize USDCe to USDC on chains that use bridged USDC
-    if (
-      tokenWithCoinKey.coinKey === CoinKey.USDCe &&
-      (chainId === ChainId.ApeChain || chainId === ChainId.Superposition)
-    ) {
+    if (tokenWithCoinKey.coinKey === CoinKey.USDCe && chainId === ChainId.ApeChain) {
       return { ...tokenWithCoinKey, coinKey: CoinKey.USDC };
     }
 
@@ -91,6 +188,15 @@ function assignCustomCoinKey(token: LiFiToken, chainId: number): LifiTokenWithCo
 
 function assignLogoURI(token: LifiTokenWithCoinKey): LifiTokenWithCoinKey {
   switch (token.coinKey) {
+    case VIRTUAL_COIN_KEY: {
+      token.logoURI = VIRTUAL_LOGO_URI;
+      return token;
+    }
+    case USDG_COIN_KEY: {
+      // LiFi has no logo for Arbitrum One USDG
+      token.logoURI ||= USDG_LOGO_URI;
+      return token;
+    }
     case CoinKey.ETH: {
       token.logoURI = '/images/EthereumLogoRound.svg';
       return token;
@@ -117,7 +223,7 @@ function normalizeTokenMetadata(token: LifiTokenWithCoinKey): LifiTokenWithCoinK
 }
 
 export interface LifiTokenRegistry {
-  tokensByChain: Record<number, LifiTokenWithCoinKey[]>;
+  tokensByChain: Record<number, LifiToken[]>;
   tokensByChainAndCoinKey: Record<number, Record<string, LifiTokenWithCoinKey>>;
 }
 
@@ -125,6 +231,7 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
   const response = await getTokens({
     chains: allowedLifiSourceChainIds as unknown as LiFiChainId[],
   });
+
   if (!response.tokens) {
     return {
       tokensByChain: {},
@@ -138,27 +245,47 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
   for (const chainId of allowedLifiSourceChainIds) {
     const tokensGroupedByCoinKey: Partial<Record<CoinKey, LifiTokenWithCoinKey>> = {};
 
-    const filteredTokens = (response.tokens[chainId] ?? []).reduce<LifiTokenWithCoinKey[]>(
-      (acc, token) => {
-        // Exclude tokens on the exclude list
-        if (isExcludedToken(token, chainId)) return acc;
+    const filteredTokens = (response.tokens[chainId] ?? []).reduce<LifiToken[]>((acc, token) => {
+      // Exclude tokens on the exclude list
+      if (isExcludedToken(token, chainId)) return acc;
 
-        const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
-        if (!tokenWithCoinKey) return acc;
-
-        const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
-        const normalizedToken = normalizeTokenMetadata(tokenWithLogoURI);
-
-        tokensGroupedByCoinKey[normalizedToken.coinKey] ??= normalizedToken;
-        acc.push(normalizedToken);
+      const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
+      if (!tokenWithCoinKey) {
+        if (isUnmatchedLifiTokenAllowed(chainId, token.address)) {
+          acc.push(token);
+        }
         return acc;
-      },
-      [],
-    );
+      }
+
+      const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
+      const normalizedToken = normalizeTokenMetadata(tokenWithLogoURI);
+
+      tokensGroupedByCoinKey[normalizedToken.coinKey] ??= normalizedToken;
+      acc.push(normalizedToken);
+      return acc;
+    }, []);
 
     tokensByChain[chainId] = filteredTokens;
     tokensByChainAndCoinKey[chainId] = tokensGroupedByCoinKey;
   }
+
+  const canonicalVirtual: LifiTokenWithCoinKey = {
+    address: CommonAddress.RobinhoodChain.VIRTUAL_CANONICAL,
+    chainId: ChainId.RobinhoodChain,
+    coinKey: VIRTUAL_COIN_KEY,
+    decimals: 18,
+    name: 'Virtual Protocol',
+    symbol: 'VIRTUAL',
+  };
+
+  tokensByChain[ChainId.RobinhoodChain] = [
+    ...(tokensByChain[ChainId.RobinhoodChain] ?? []),
+    canonicalVirtual,
+  ];
+  tokensByChainAndCoinKey[ChainId.RobinhoodChain] = {
+    ...(tokensByChainAndCoinKey[ChainId.RobinhoodChain] ?? {}),
+    [VIRTUAL_COIN_KEY]: canonicalVirtual,
+  };
 
   return { tokensByChain, tokensByChainAndCoinKey };
 };

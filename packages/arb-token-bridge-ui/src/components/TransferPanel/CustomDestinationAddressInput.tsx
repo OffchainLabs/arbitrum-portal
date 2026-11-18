@@ -1,17 +1,15 @@
 import { ArrowDownTrayIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
-import { isAddress } from 'ethers/lib/utils';
 import { useCallback, useState } from 'react';
 import useSWRImmutable from 'swr/immutable';
 import { twMerge } from 'tailwind-merge';
-import { useAccount } from 'wagmi';
 
 import { useAccountType } from '../../hooks/useAccountType';
 import { useArbQueryParams } from '../../hooks/useArbQueryParams';
 import { useNetworks } from '../../hooks/useNetworks';
-import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
-import { AccountType } from '../../util/AccountUtils';
-import { addressIsSmartContract } from '../../util/AddressUtils';
-import { getExplorerUrl } from '../../util/networks';
+import { getDestinationAddressWarning } from '../../services/destinationAddress';
+import { normalizeAddressForChain, parseAddressForChain } from '../../util/AddressUtils';
+import { getAccountExplorerUrl } from '../../util/networks';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { ExternalLink } from '../common/ExternalLink';
 import { useDestinationAddressError } from './hooks/useDestinationAddressError';
 
@@ -21,49 +19,16 @@ export enum DestinationAddressErrors {
   DENYLISTED_ADDRESS = 'The address you entered is a known contract address, and sending funds to it would likely result in losing said funds. If you think this is a mistake, please contact our support.',
 }
 
-enum DestinationAddressWarnings {
-  CONTRACT_ADDRESS = 'The destination address is a contract address. Please make sure it is the right address.',
-}
-
-async function getDestinationAddressWarning({
-  destinationAddress,
-  accountType,
-  destinationChainId,
-}: {
-  destinationAddress: string | undefined;
-  accountType: AccountType;
-  destinationChainId: number;
-}) {
-  if (!destinationAddress) {
-    return null;
-  }
-
-  if (!isAddress(destinationAddress)) {
-    return null;
-  }
-
-  const destinationIsSmartContract = await addressIsSmartContract(
-    destinationAddress,
-    destinationChainId,
-  );
-
-  // checks if trying to send to a contract address, only checks EOA
-  if (
-    (accountType === 'externally-owned-account' || accountType === 'delegated-account') &&
-    destinationIsSmartContract
-  ) {
-    return DestinationAddressWarnings.CONTRACT_ADDRESS;
-  }
-
-  // no warning
-  return null;
-}
-
 export const CustomDestinationAddressInput = () => {
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, parentChain, parentChainProvider, isDepositMode } =
-    useNetworksRelationship(networks);
-  const { address } = useAccount();
+  const {
+    sourceWallet: {
+      account: { address: senderAddress },
+    },
+    destinationWallet: {
+      account: { address },
+    },
+  } = useWallets();
   const { accountType, isLoading: isLoadingAccountType } = useAccountType();
   const [{ destinationAddress: destinationAddressFromQueryParams }, setQueryParams] =
     useArbQueryParams();
@@ -78,29 +43,25 @@ export const CustomDestinationAddressInput = () => {
 
   const validateAndSubmitDestinationAddress = useCallback(
     (address: string) => {
-      if (error || !address || !isAddress(address)) {
+      const parsedAddress = parseAddressForChain(address, networks.destinationChain.id);
+      if (error || !parsedAddress) {
         // Clear query params if there's an error
         setLocalDestinationAddress('');
         setQueryParams({ destinationAddress: undefined });
       } else {
         // if valid, commit to query params
-        setQueryParams({ destinationAddress: address });
+        setQueryParams({ destinationAddress: parsedAddress });
       }
     },
-    [error, setQueryParams, setLocalDestinationAddress],
+    [error, networks.destinationChain.id, setQueryParams, setLocalDestinationAddress],
   );
 
   const { data: warning } = useSWRImmutable(
-    localDestinationAddress && !isLoadingAccountType && typeof accountType !== 'undefined'
+    localDestinationAddress && senderAddress && !isLoadingAccountType
       ? [
           localDestinationAddress,
           accountType,
           networks.destinationChain.id,
-          isDepositMode,
-          childChainProvider,
-          parentChainProvider,
-          childChain.id,
-          parentChain.id,
           'useDestinationAddressWarning',
         ]
       : null,
@@ -152,7 +113,10 @@ export const CustomDestinationAddressInput = () => {
           value={localDestinationAddress}
           spellCheck={false}
           onChange={(e) => {
-            const newValue = e.target.value?.toLowerCase().trim();
+            const newValue = normalizeAddressForChain(
+              e.target.value.trim(),
+              networks.destinationChain.id,
+            );
             setLocalDestinationAddress(newValue);
           }}
           onBlur={() => {
@@ -168,9 +132,7 @@ export const CustomDestinationAddressInput = () => {
       {localDestinationAddress && !error && (
         <ExternalLink
           className="arb-hover flex w-fit items-center text-sm font-medium text-white/50"
-          href={`${getExplorerUrl(
-            isDepositMode ? childChain.id : parentChain.id,
-          )}/address/${localDestinationAddress}`}
+          href={getAccountExplorerUrl(networks.destinationChain.id, localDestinationAddress)}
         >
           <ArrowDownTrayIcon height={12} strokeWidth={3} className="mr-1 -rotate-90" />
           View account in explorer

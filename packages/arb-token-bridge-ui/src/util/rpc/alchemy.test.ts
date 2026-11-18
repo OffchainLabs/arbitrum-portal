@@ -21,7 +21,8 @@ it('successfully returns the correct url for the provided chain and key', () => 
     [ChainId.BaseSepolia]: getAlchemyRpcUrl(ChainId.BaseSepolia, key),
     // Orbit chains
     [ChainId.ApeChain]: getAlchemyRpcUrl(ChainId.ApeChain, key),
-    [ChainId.Superposition]: getAlchemyRpcUrl(ChainId.Superposition, key),
+    [ChainId.RobinhoodChain]: getAlchemyRpcUrl(ChainId.RobinhoodChain, key),
+    [ChainId.RobinhoodChainTestnet]: getAlchemyRpcUrl(ChainId.RobinhoodChainTestnet, key),
   };
 
   expect(result).toMatchInlineSnapshot(`
@@ -32,7 +33,8 @@ it('successfully returns the correct url for the provided chain and key', () => 
       "42161": "https://arb-mainnet.g.alchemy.com/v2/123456",
       "421614": "https://arb-sepolia.g.alchemy.com/v2/123456",
       "42170": "https://arbnova-mainnet.g.alchemy.com/v2/123456",
-      "55244": "",
+      "4663": "",
+      "46630": "",
       "8453": "https://base-mainnet.g.alchemy.com/v2/123456",
       "84532": "https://base-sepolia.g.alchemy.com/v2/123456",
     }

@@ -1,6 +1,7 @@
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { usePathname, useSearchParams } from 'next/navigation';
 
+import { UsdgDripCard } from '@/app-components/UsdgDripCard/UsdgDripCard';
 import { useTokenListPriceUpdater } from '@/bridge/hooks/useTokenListPriceUpdater';
 import { isBridgeBuyOrSubpages } from '@/bridge/util/pathnameUtils';
 import { TabParamEnum, isOnrampFeatureEnabled } from '@/bridge/util/queryParamUtils';
@@ -12,7 +13,6 @@ import { RecoverFunds } from '../RecoverFunds';
 import { TransactionHistory } from '../TransactionHistory/TransactionHistory';
 import { TransferPanel } from '../TransferPanel/TransferPanel';
 import { SettingsDialog } from '../common/SettingsDialog';
-import { useBalanceUpdater } from '../syncers/useBalanceUpdater';
 import { ArbitrumStats, statsLocalStorageKey } from './ArbitrumStats';
 
 export function MainContent() {
@@ -23,12 +23,15 @@ export function MainContent() {
   const showBuyPanel = isOnrampFeatureEnabled({ disabledFeatures });
   useTokenListPriceUpdater();
 
-  useBalanceUpdater();
-
   const { embedMode } = useMode();
 
   if (embedMode) {
-    return <TransferPanel />;
+    return (
+      <>
+        <TransferPanel />
+        <UsdgDripCard />
+      </>
+    );
   }
 
   // Determine which content to show based on route and query params
@@ -58,6 +61,9 @@ export function MainContent() {
 
       {/* Settings panel */}
       <SettingsDialog />
+
+      {/* Lives outside the panels so it stays open when a submit switches to the history tab */}
+      <UsdgDripCard />
 
       {/* Toggle-able Stats for nerds */}
       {isArbitrumStatsVisible && <ArbitrumStats />}

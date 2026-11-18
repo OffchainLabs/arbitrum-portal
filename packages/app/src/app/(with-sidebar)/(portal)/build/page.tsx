@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 
 import { PageTabs } from '@/app-components/AppShell/components/PageTabs';
+import { RetryableTicketsLinkCard } from '@/app-components/RetryableRedeemer/RetryableTicketsLinkCard';
 import { toolsTabs } from '@/portal/common/pageTabConfig';
 import { ArbitrumStatus } from '@/portal/common/types';
 import { BuildSection } from '@/portal/components/Build/BuildSection';
@@ -67,6 +68,8 @@ export default async function BuildPage() {
         <hr className="-mt-4 border-white/40" />
 
         <NetworkStatus status={status} />
+
+        <RetryableTicketsLinkCard entryPoint="Build Page" />
 
         <Explorers />
       </div>

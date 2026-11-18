@@ -1,7 +1,6 @@
 import { constants } from 'ethers';
 import React, { ChangeEventHandler, useCallback, useEffect, useMemo, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { useAccount } from 'wagmi';
 
 import { useSelectedTokenBalances } from '../../hooks/TransferPanel/useSelectedTokenBalances';
 import { useSelectedTokenDecimals } from '../../hooks/TransferPanel/useSelectedTokenDecimals';
@@ -14,6 +13,7 @@ import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { addressesEqual } from '../../util/AddressUtils';
 import { formatAmount } from '../../util/NumberUtils';
 import { truncateExtraDecimals } from '../../util/NumberUtils';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { Button } from '../common/Button';
 import { ExternalLink } from '../common/ExternalLink';
 import { Loader } from '../common/atoms/Loader';
@@ -59,13 +59,13 @@ function SourceChainTokenBalance({
 }) {
   const [selectedToken] = useSelectedToken();
   const [networks] = useNetworks();
-  const { isDepositMode, childChainProvider } = useNetworksRelationship(networks);
+  const { isDepositMode, childChain } = useNetworksRelationship(networks);
   const selectedTokenDecimals = useSelectedTokenDecimals();
 
   const nativeCurrencyBalances = useNativeCurrencyBalances();
   const selectedTokenBalances = useSelectedTokenBalances();
 
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
 
   /**
    * If token is ETH (lifi), show ETH balance on source chain
@@ -209,7 +209,9 @@ export const TransferPanelMainInput = React.memo(
     options,
     ...rest
   }: TransferPanelMainInputProps) => {
-    const { isConnected } = useAccount();
+    const {
+      sourceWallet: { isConnected },
+    } = useWallets();
     const [localValue, setLocalValue] = useState(value);
     const selectedTokenDecimals = useSelectedTokenDecimals();
     const sanitizedAmount = sanitizeAmountQueryParam(

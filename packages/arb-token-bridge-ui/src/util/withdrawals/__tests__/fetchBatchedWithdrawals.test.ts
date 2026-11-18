@@ -3,9 +3,16 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { fetchWithdrawalsInBatches } from '../../../hooks/useTransactionHistory';
 import * as addressUtils from '../../AddressUtils';
+import { fetchLatestIndexedBlockNumber } from '../../SubgraphUtils';
 import { initializeBridgeNetworks } from '../../networks';
 import * as fetchModule from '../fetchWithdrawals';
 import { getQueryCoveringClassicAndNitroWithResults } from './fetchWithdrawalsTestHelpers';
+
+vi.mock('../../SubgraphUtils', () => ({
+  fetchLatestIndexedBlockNumber: vi.fn().mockResolvedValue(123),
+}));
+
+const fetchLatestIndexedBlockNumberMock = vi.mocked(fetchLatestIndexedBlockNumber);
 
 const validResult = [
   expect.objectContaining({
@@ -24,7 +31,11 @@ const validResult = [
 
 describe.sequential('fetchWithdrawalsInBatches multiple calls', () => {
   it('calls fetchWithdrawals correct number of times and returns valid data', async () => {
-    const mock = vi.spyOn(fetchModule, 'fetchWithdrawals');
+    const mock = vi
+      .spyOn(fetchModule, 'fetchWithdrawals')
+      .mockResolvedValueOnce(validResult.slice(0, 2) as any)
+      .mockResolvedValueOnce(validResult.slice(2, 3) as any)
+      .mockResolvedValueOnce(validResult.slice(3) as any);
 
     const result = await fetchWithdrawalsInBatches({
       parentChainId: 1,
@@ -33,6 +44,8 @@ describe.sequential('fetchWithdrawalsInBatches multiple calls', () => {
     });
 
     expect(mock).toHaveBeenCalledTimes(3);
+    expect(fetchLatestIndexedBlockNumberMock).toHaveBeenCalledTimes(1);
+    expect(mock).toHaveBeenCalledWith(expect.objectContaining({ lastIndexedBlock: 123 }));
     expect(result).toHaveLength(4);
     expect(result).toEqual(expect.arrayContaining(validResult));
 
@@ -42,7 +55,7 @@ describe.sequential('fetchWithdrawalsInBatches multiple calls', () => {
 
 describe.sequential('fetchWithdrawalsInBatches single call', () => {
   it('calls a large range once and returns valid data', async () => {
-    const mock = vi.spyOn(fetchModule, 'fetchWithdrawals');
+    const mock = vi.spyOn(fetchModule, 'fetchWithdrawals').mockResolvedValue(validResult as any);
 
     const result = await fetchWithdrawalsInBatches({
       parentChainId: 1,
@@ -53,6 +66,8 @@ describe.sequential('fetchWithdrawalsInBatches single call', () => {
     expect(mock).toHaveBeenCalledTimes(1);
     expect(result).toHaveLength(4);
     expect(result).toEqual(expect.arrayContaining(validResult));
+
+    mock.mockRestore();
   });
 });
 
@@ -74,11 +89,11 @@ describe.sequential(
 );
 
 describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orbit chains', () => {
-  // Register Mind/T-REX as Orbit chains for isNetwork().isOrbitChain checks
+  // Register JASMY/T-REX as Orbit chains for isNetwork().isOrbitChain checks
   initializeBridgeNetworks();
 
   const SENDER = '0x2Ce910fBba65B454bBAf6A18c952A70f3bcd8299';
-  const MIND_CHAIN_ID = 228;
+  const JASMY_CHAIN_ID = 680;
   const TREX_CHAIN_ID = 1628;
 
   function createMockProvider({
@@ -118,7 +133,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
     const latestBlock = 60_000_000;
     const firstNonZeroBlock = 50_000_000;
     const provider = createMockProvider({
-      chainId: MIND_CHAIN_ID,
+      chainId: JASMY_CHAIN_ID,
       latestBlock,
       firstNonZeroBlock,
     });
@@ -173,10 +188,10 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
     fetchSpy.mockRestore();
   });
 
-  it('skips the binary search when batch size is above the threshold (e.g. ApeChain)', async () => {
+  it('skips the binary search when batch size is above the threshold', async () => {
     const latestBlock = 38_000_000;
     const provider = createMockProvider({
-      chainId: MIND_CHAIN_ID,
+      chainId: JASMY_CHAIN_ID,
       latestBlock,
       firstNonZeroBlock: 30_000_000,
     });
@@ -205,7 +220,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
     const latestBlock = 60_000_000;
     const firstNonZeroBlock = 50_000_000;
     const provider = createMockProvider({
-      chainId: MIND_CHAIN_ID,
+      chainId: JASMY_CHAIN_ID,
       latestBlock,
       firstNonZeroBlock,
     });
@@ -232,7 +247,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
 
   it('skips the binary search when sender !== receiver', async () => {
     const provider = createMockProvider({
-      chainId: MIND_CHAIN_ID,
+      chainId: JASMY_CHAIN_ID,
       latestBlock: 60_000_000,
       firstNonZeroBlock: 50_000_000,
     });
@@ -259,7 +274,7 @@ describe.sequential('fetchWithdrawalsInBatches binary-search optimization on Orb
 
   it('skips the binary search and the senderNonce gate when forceFetchReceived is true', async () => {
     const provider = createMockProvider({
-      chainId: MIND_CHAIN_ID,
+      chainId: JASMY_CHAIN_ID,
       latestBlock: 60_000_000,
       firstNonZeroBlock: 50_000_000,
     });

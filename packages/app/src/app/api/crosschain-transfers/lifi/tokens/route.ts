@@ -34,12 +34,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
   const parentChainId = parseChainParam(searchParams.get('parentChainId'));
   const childChainId = parseChainParam(searchParams.get('childChainId'));
 
-  const isInvalidChainId = parentChainId === null || childChainId === null;
-  const isInvalidSourceChain = !allowedLifiSourceChainIds.includes(parentChainId!);
-  const isInvalidDestinationChain = !allowedLifiDestinationChainIds.includes(childChainId!);
-  const isInvalidLifiRoute = !lifiDestinationChainIds[parentChainId!]?.includes(childChainId!);
-
-  if (isInvalidChainId || isInvalidSourceChain || isInvalidDestinationChain || isInvalidLifiRoute) {
+  if (
+    parentChainId === null ||
+    childChainId === null ||
+    !allowedLifiSourceChainIds.includes(parentChainId) ||
+    !allowedLifiDestinationChainIds.includes(childChainId) ||
+    !lifiDestinationChainIds[parentChainId]?.includes(childChainId)
+  ) {
     return NextResponse.json(
       {
         ...BASE_TOKEN_LIST,
@@ -58,13 +59,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
     const { tokensByChain, tokensByChainAndCoinKey } = await getLifiTokenRegistry();
 
     const parentTokens = tokensByChain[parentChainId] ?? [];
-    const childTokensByCoinKey = tokensByChainAndCoinKey[childChainId];
+    const childTokens = tokensByChain[childChainId] ?? [];
+    const childTokensByCoinKey = tokensByChainAndCoinKey[childChainId] ?? {};
 
-    if (
-      !parentTokens.length ||
-      !childTokensByCoinKey ||
-      Object.keys(childTokensByCoinKey).length === 0
-    ) {
+    if (!parentTokens.length && !childTokens.length) {
       return NextResponse.json(
         {
           ...BASE_TOKEN_LIST,
@@ -81,6 +79,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<TokenList>
 
     const tokens = groupChildTokensAndParentTokens({
       parentTokens,
+      childTokens,
       childTokensByCoinKey,
       parentChainId,
       childChainId,

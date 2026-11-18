@@ -57,13 +57,17 @@ The Bridge app requires environment variables for full functionality:
 
    **Optional features (enable as needed):**
    - `NEXT_PUBLIC_FEATURE_FLAG_LIFI = true` (Enable LiFi integration)
+   - `NEXT_PUBLIC_FEATURE_FLAG_CCTP = true` (Enable CCTP V1 transfer initiation)
    - `LIFI_KEY = your-lifi-key` (Get from [LiFi dashboard](https://portal.li.fi/))
 
    - `NEXT_PUBLIC_FEATURE_FLAG_ONRAMP = true / false` (Enable onramp functionality)
-   - `NEXT_PUBLIC_FEATURE_FLAG_ONRAMP_SERVICES_ENABLED = moonpay` (Specify onramp services)
+   - `NEXT_PUBLIC_FEATURE_FLAG_ONRAMP_SERVICES_ENABLED = moonpay` (Specify onramp services rendered as an embedded widget. When `moonpay` is omitted, MoonPay falls back to a regular on-ramp card that links out to moonpay.com.)
 
+   Only required when `moonpay` is listed in `NEXT_PUBLIC_FEATURE_FLAG_ONRAMP_SERVICES_ENABLED`:
    - `NEXT_PUBLIC_MOONPAY_PK = your-moonpay-public-key` (Get from [MoonPay dashboard](https://dashboard.moonpay.com/))
    - `MOONPAY_SK = your-moonpay-secret-key` (Get from [MoonPay dashboard](https://dashboard.moonpay.com/))
+
+   Note: these are build-time inlined, so changing them requires a restart in dev and a redeploy in production.
 
 ## Testing
 
@@ -118,7 +122,4 @@ E2E tests are only available for the Bridge app and require a local Nitro test n
 
    # Orbit chain tests
    $ pnpm test:e2e:orbit
-
-   # CCTP Bridging tests
-   $ pnpm test:e2e:cctp
    ```

@@ -11,10 +11,10 @@ import { useEarnTransactionNetworkFee } from '@/app-hooks/earn/useEarnTransactio
 import { Dialog } from '@/bridge/components/common/Dialog';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
 import { ARBITRUM_LOGO } from '@/bridge/constants';
-import { normalizeTimestamp } from '@/bridge/state/app/utils';
 import { ChainId } from '@/bridge/types/ChainId';
 import { formatAmount, formatUSD } from '@/bridge/util/NumberUtils';
 import { getExplorerUrl, getNetworkName } from '@/bridge/util/networks';
+import { normalizeTimestamp } from '@/bridge/util/normalizeTimestamp';
 import { ExternalLink } from '@/components/ExternalLink';
 import type { EarnChainId } from '@/earn-api/types';
 

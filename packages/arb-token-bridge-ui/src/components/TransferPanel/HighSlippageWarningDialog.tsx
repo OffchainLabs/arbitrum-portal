@@ -1,30 +1,39 @@
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import { BigNumber } from 'ethers';
+import { useEffect } from 'react';
 
-import { Token } from '@/bridge/app/api/crosschain-transfers/types';
+import { RouteCost, Token } from '@/bridge/app/api/crosschain-transfers/types';
 
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
 import { Dialog, UseDialogProps } from '../common/Dialog';
-import { useRouteStore } from './hooks/useRouteStore';
+import { getAmountLoss } from './TransferWarningUtils';
+import { getSelectedRouteContext, useRouteStore } from './hooks/useRouteStore';
 import { getAmountToPay } from './useTransferReadiness';
 
-type AmountProps = {
-  amount: string | BigNumber;
-  token: Token;
-  showToken?: true;
-};
-function Amount({ token, showToken, amount }: AmountProps) {
-  if (showToken) {
-    return <span>{formatAmount(BigNumber.from(amount), token)}</span>;
+type AmountProps =
+  | {
+      amount: string | number | BigNumber;
+      token: Token;
+      showToken: true;
+    }
+  | {
+      amount: string | number | BigNumber;
+      showToken?: false;
+    };
+function Amount(props: AmountProps) {
+  if (props.showToken) {
+    return <span>{formatAmount(BigNumber.from(props.amount), props.token)}</span>;
   }
 
-  return <span>{formatUSD(Number(amount))}</span>;
+  return <span>{formatUSD(Number(props.amount))}</span>;
 }
 
-export function getAmountLoss({ fromAmount, toAmount }: { fromAmount: number; toAmount: number }) {
-  const diff = fromAmount - toAmount;
-  const lossPercentage = Number(((diff / fromAmount) * 100).toFixed(2));
-  return { diff, lossPercentage };
+function toAmountProps(costs: RouteCost[]): AmountProps[] {
+  return costs.map((cost) =>
+    typeof cost.amountUSD === 'undefined'
+      ? { amount: cost.amount, token: cost.token, showToken: true }
+      : { amount: cost.amountUSD },
+  );
 }
 
 function LineWrapper({ title, amountProps }: { amountProps: AmountProps[]; title: string }) {
@@ -32,9 +41,9 @@ function LineWrapper({ title, amountProps }: { amountProps: AmountProps[]; title
     <div className="flex items-center justify-between px-2 text-sm">
       <span>{title}</span>
       <div className="flex gap-1">
-        {amountProps.map(({ amount, token, showToken }, index) => (
-          <span key={token.address}>
-            <Amount amount={amount} token={token} showToken={showToken} />
+        {amountProps.map((amount, index) => (
+          <span key={`${amount.showToken ? amount.token.address : 'usd'}-${index}`}>
+            <Amount {...amount} />
             {amountProps.length > 1 && index < amountProps.length - 1 && <span>, </span>}
           </span>
         ))}
@@ -44,14 +53,20 @@ function LineWrapper({ title, amountProps }: { amountProps: AmountProps[]; title
 }
 
 export function HighSlippageWarningDialog(props: UseDialogProps) {
-  const context = useRouteStore((state) => state.context);
+  const context = useRouteStore((state) => getSelectedRouteContext(state));
+  const { onClose } = props;
+
+  useEffect(() => {
+    if (!context) {
+      onClose(false);
+    }
+  }, [context, onClose]);
 
   if (!context) {
-    props.onClose(false);
     return null;
   }
 
-  const { fromAmountUsd, toAmountUsd, amounts } = getAmountToPay(context);
+  const { amounts, fromAmountUsd, toAmountUsd } = getAmountToPay(context);
 
   const { diff, lossPercentage } = getAmountLoss({
     fromAmount: fromAmountUsd,
@@ -68,43 +83,28 @@ export function HighSlippageWarningDialog(props: UseDialogProps) {
           Slippage
         </div>
       }
-      onClose={(confirmed: boolean) => {
-        props.onClose(confirmed);
-      }}
       className="!max-w-[420px]"
     >
       <div className="mt-4 text-sm">
-        Slippage for this transaction is {lossPercentage.toString()}%, that&apos;s quite high.
+        Slippage for this transaction is {lossPercentage}%, that&apos;s quite high.
       </div>
 
       <div className="my-4 flex flex-col gap-2 text-sm">
         <LineWrapper
           title="Sending"
-          amountProps={Object.keys(amounts).map((address) => ({
-            amount: amounts[address]!.amount,
-            token: amounts[address]!.token,
+          amountProps={Object.values(amounts).map((amountToPay) => ({
+            amount: amountToPay.amount,
+            token: amountToPay.token,
             showToken: true,
           }))}
         />
-        <LineWrapper
-          title="Gas fees"
-          amountProps={[{ amount: context.gas.amountUSD, token: context.gas.token }]}
-        />
-        <LineWrapper
-          title="Protocol fees"
-          amountProps={[
-            {
-              amount: context.fee.amountUSD,
-              token: context.fee.token,
-            },
-          ]}
-        />
+        <LineWrapper title="Gas fees" amountProps={toAmountProps(context.gas)} />
+        <LineWrapper title="Protocol fees" amountProps={toAmountProps(context.fee)} />
         <LineWrapper
           title="Receiving"
           amountProps={[
             {
-              amount: context.toAmount.amountUSD,
-              token: context.toAmount.token,
+              amount: toAmountUsd,
             },
           ]}
         />
@@ -112,8 +112,13 @@ export function HighSlippageWarningDialog(props: UseDialogProps) {
         <div className="flex items-center justify-between rounded bg-orange-dark px-2 py-1 font-bold text-orange">
           <span>Value lost</span>
           <span>
-            -{lossPercentage.toString()}% (
-            <Amount amount={diff.toString()} token={context.toAmount.token} />)
+            -{lossPercentage}%
+            {diff > 0 && (
+              <>
+                {' ('}
+                <Amount amount={diff} />)
+              </>
+            )}
           </span>
         </div>
 

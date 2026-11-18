@@ -1,11 +1,27 @@
 import { constants } from 'ethers';
-import { describe, expect, it, test } from 'vitest';
+import { describe, expect, it, test, vi } from 'vitest';
 
 import { APE_TOKEN_LOGO, WETH_TOKEN_LOGO } from '../../../constants';
 import { ContractStorage, ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
 import { ChainId } from '../../../types/ChainId';
+import { addressesEqual } from '../../../util/AddressEquality';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { getTokenOverride, isLifiTransfer, isValidLifiTransfer } from './utils';
+
+// The only real allowlist entry (Base USDC) is also matched by `isUsdcToken`, so the allowlist path
+// can't be observed on its own. This adds a non-USDC address to exercise it.
+const MOCK_ALLOWLISTED_BASE_TOKEN = '0x00000000000000000000000000000000000000ff';
+
+vi.mock('./constants', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./constants')>();
+
+  return {
+    ...actual,
+    isUnmatchedLifiTokenAllowed: (chainId: number, address: string) =>
+      actual.isUnmatchedLifiTokenAllowed(chainId, address) ||
+      (chainId === ChainId.Base && addressesEqual(address, MOCK_ALLOWLISTED_BASE_TOKEN)),
+  };
+});
 
 function generateTestCases({
   sourceChainId,
@@ -14,7 +30,7 @@ function generateTestCases({
   sourceChainId: ChainId;
   usdcAddress: string;
 }) {
-  return [ChainId.ApeChain, ChainId.Superposition, ChainId.ArbitrumOne, ChainId.Ethereum]
+  return [ChainId.ApeChain, ChainId.ArbitrumOne, ChainId.Ethereum]
     .filter((chain) => sourceChainId !== chain)
     .map((destinationChainId) => [
       {
@@ -35,16 +51,14 @@ function generateTestCases({
 }
 
 function generateBaseWithdrawTestCases() {
-  return [ChainId.ApeChain, ChainId.Superposition, ChainId.ArbitrumOne, ChainId.Ethereum]
+  return [ChainId.ApeChain, ChainId.ArbitrumOne, ChainId.Ethereum]
     .map((sourceChainId) => {
       const usdcToken =
         sourceChainId === ChainId.ApeChain
           ? CommonAddress.Base.USDC
-          : sourceChainId === ChainId.Superposition
-            ? CommonAddress.Superposition.USDCe
-            : sourceChainId === ChainId.Ethereum
-              ? CommonAddress.Ethereum.USDC
-              : CommonAddress.ArbitrumOne.USDC;
+          : sourceChainId === ChainId.Ethereum
+            ? CommonAddress.Ethereum.USDC
+            : CommonAddress.ArbitrumOne.USDC;
       return [
         {
           fromToken: usdcToken,
@@ -64,7 +78,7 @@ function generateBaseWithdrawTestCases() {
 }
 
 function generateBaseDepositTestCases() {
-  return [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.Superposition]
+  return [ChainId.ArbitrumOne, ChainId.ApeChain]
     .map((destinationChainId) => [
       {
         fromToken: CommonAddress.Base.USDC,
@@ -74,6 +88,40 @@ function generateBaseDepositTestCases() {
       {
         fromToken: constants.AddressZero,
         sourceChainId: ChainId.Base,
+        destinationChainId,
+      },
+    ])
+    .flatMap((testCase) => testCase);
+}
+
+function generateRobinhoodDepositTestCases() {
+  return [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.Base]
+    .map((sourceChainId) => [
+      {
+        fromToken: undefined,
+        sourceChainId,
+        destinationChainId: ChainId.RobinhoodChain,
+      },
+      {
+        fromToken: constants.AddressZero,
+        sourceChainId,
+        destinationChainId: ChainId.RobinhoodChain,
+      },
+    ])
+    .flatMap((testCase) => testCase);
+}
+
+function generateRobinhoodWithdrawTestCases() {
+  return [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain]
+    .map((destinationChainId) => [
+      {
+        fromToken: undefined,
+        sourceChainId: ChainId.RobinhoodChain,
+        destinationChainId,
+      },
+      {
+        fromToken: constants.AddressZero,
+        sourceChainId: ChainId.RobinhoodChain,
         destinationChainId,
       },
     ])
@@ -93,10 +141,6 @@ describe('isValidLifiTransfer', () => {
     ...generateTestCases({
       sourceChainId: ChainId.ApeChain,
       usdcAddress: CommonAddress.ApeChain.USDCe,
-    }),
-    ...generateTestCases({
-      sourceChainId: ChainId.Superposition,
-      usdcAddress: CommonAddress.Superposition.USDCe,
     }),
   ])(
     `from $sourceChainId to $destinationChainId with token $fromToken should return true`,
@@ -119,6 +163,113 @@ describe('isValidLifiTransfer', () => {
     },
   );
 
+  test.each([...generateRobinhoodDepositTestCases(), ...generateRobinhoodWithdrawTestCases()])(
+    `Robinhood route from $sourceChainId to $destinationChainId with token $fromToken should return true`,
+    ({ destinationChainId, fromToken, sourceChainId }) => {
+      expect(isValidLifiTransfer({ fromToken, sourceChainId, destinationChainId })).toBe(true);
+    },
+  );
+
+  test.each([ChainId.Ethereum, ChainId.ArbitrumOne])(
+    'allows an imported Robinhood token to %s without token-list membership',
+    (destinationChainId) => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: '0x523Fc1c7649155d8F8a13Ed860eAD39Af1A3019c',
+          sourceChainId: ChainId.RobinhoodChain,
+          destinationChainId,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    },
+  );
+
+  // Robinhood Chain is excluded: it returns early at the chain-level check, so it would pass
+  // without consulting the allowlist.
+  test.each([ChainId.ArbitrumOne, ChainId.ApeChain])(
+    'allows a non-USDC allowlisted Base token to %s through the unmatched-token path',
+    (destinationChainId) => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: MOCK_ALLOWLISTED_BASE_TOKEN,
+          sourceChainId: ChainId.Base,
+          destinationChainId,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    },
+  );
+
+  // Base USDC passes via `isUsdcToken` too, so this pins only the surrounding contract: an
+  // allowlisted address doesn't make every other token on that chain eligible.
+  test.each([ChainId.ArbitrumOne, ChainId.ApeChain])(
+    'does not treat the Base token allowlist as permission for every token to %s',
+    (destinationChainId) => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: '0x0000000000000000000000000000000000000001',
+          sourceChainId: ChainId.Base,
+          destinationChainId,
+          tokensFromLists: {},
+        }),
+      ).toBe(false);
+      expect(
+        isValidLifiTransfer({
+          fromToken: CommonAddress.Base.USDC,
+          sourceChainId: ChainId.Base,
+          destinationChainId,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    },
+  );
+
+  it('does not enable unsupported chain pairs for an allowlisted token', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: CommonAddress.Base.USDC,
+        sourceChainId: ChainId.Base,
+        destinationChainId: ChainId.Ethereum,
+        tokensFromLists: {},
+      }),
+    ).toBe(false);
+  });
+
+  it('does not allow an unlisted token from a non-opted-in source chain', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: '0x523Fc1c7649155d8F8a13Ed860eAD39Af1A3019c',
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+        tokensFromLists: {},
+      }),
+    ).toBe(false);
+  });
+
+  test.each([ChainId.Ethereum, ChainId.ArbitrumOne])(
+    'allows an unlisted token from %s when the destination chain opts in',
+    (sourceChainId) => {
+      expect(
+        isValidLifiTransfer({
+          fromToken: '0x523Fc1c7649155d8F8a13Ed860eAD39Af1A3019c',
+          sourceChainId,
+          destinationChainId: ChainId.RobinhoodChain,
+          tokensFromLists: {},
+        }),
+      ).toBe(true);
+    },
+  );
+
+  it('Robinhood to Base should return false', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: undefined,
+        sourceChainId: ChainId.RobinhoodChain,
+        destinationChainId: ChainId.Base,
+      }),
+    ).toBe(false);
+  });
+
   it('ArbitrumOne to ApeChain with Ape should return true', () => {
     expect(
       isValidLifiTransfer({
@@ -127,6 +278,17 @@ describe('isValidLifiTransfer', () => {
         destinationChainId: ChainId.ApeChain,
       }),
     ).toBe(true);
+  });
+
+  it('Ethereum → ArbitrumOne with the zero address should not skip the token list check', () => {
+    expect(
+      isValidLifiTransfer({
+        fromToken: constants.AddressZero,
+        sourceChainId: ChainId.Ethereum,
+        destinationChainId: ChainId.ArbitrumOne,
+        tokensFromLists: {},
+      }),
+    ).toBe(false);
   });
 
   it('allows native USDC swaps', () => {
@@ -175,31 +337,24 @@ describe('isValidLifiTransfer', () => {
         }),
       ).toBe(false);
     });
-
-    it('ArbitrumOne → Superposition rejects ArbitrumOne PYUSD OFT', () => {
-      expect(
-        isValidLifiTransfer({
-          fromToken: CommonAddress.ArbitrumOne.PYUSD,
-          sourceChainId: ChainId.ArbitrumOne,
-          destinationChainId: ChainId.Superposition,
-          tokensFromLists: {},
-        }),
-      ).toBe(false);
-    });
   });
 
   describe('Arbitrum Nova pairs', () => {
-    it('Ethereum → Nova is allowed with native token', () => {
-      expect(
-        isValidLifiTransfer({
-          fromToken: undefined,
-          sourceChainId: ChainId.Ethereum,
-          destinationChainId: ChainId.ArbitrumNova,
-        }),
-      ).toBe(true);
-    });
+    test.each([undefined, constants.AddressZero])(
+      'Ethereum → Nova with ETH (%s) is allowed while Nova is in a minimized state',
+      (fromToken) => {
+        expect(
+          isValidLifiTransfer({
+            fromToken,
+            sourceChainId: ChainId.Ethereum,
+            destinationChainId: ChainId.ArbitrumNova,
+            tokensFromLists: {},
+          }),
+        ).toBe(true);
+      },
+    );
 
-    it('Ethereum → Nova is allowed with USDC', () => {
+    it('Ethereum → Nova is rejected with an ERC20 while Nova is in a minimized state', () => {
       expect(
         isValidLifiTransfer({
           fromToken: CommonAddress.Ethereum.USDC,
@@ -207,7 +362,7 @@ describe('isValidLifiTransfer', () => {
           destinationChainId: ChainId.ArbitrumNova,
           tokensFromLists: {},
         }),
-      ).toBe(true);
+      ).toBe(false);
     });
 
     it('Nova → Ethereum is allowed with native token', () => {
@@ -276,6 +431,44 @@ describe('isLifiTransfer', () => {
         isLifiTransfer({
           sourceChainId: ChainId.ArbitrumOne,
           destinationChainId: ChainId.ArbitrumNova,
+        }),
+      ).toBe(false);
+    });
+  });
+
+  describe('Robinhood pairs', () => {
+    it('ApeChain → Robinhood is a valid LiFi pair', () => {
+      expect(
+        isLifiTransfer({
+          sourceChainId: ChainId.ApeChain,
+          destinationChainId: ChainId.RobinhoodChain,
+        }),
+      ).toBe(true);
+    });
+
+    it('Robinhood → ApeChain is a valid LiFi pair', () => {
+      expect(
+        isLifiTransfer({
+          sourceChainId: ChainId.RobinhoodChain,
+          destinationChainId: ChainId.ApeChain,
+        }),
+      ).toBe(true);
+    });
+
+    it('Base → Robinhood is a valid LiFi pair', () => {
+      expect(
+        isLifiTransfer({
+          sourceChainId: ChainId.Base,
+          destinationChainId: ChainId.RobinhoodChain,
+        }),
+      ).toBe(true);
+    });
+
+    it('Robinhood → Base is not a valid LiFi pair', () => {
+      expect(
+        isLifiTransfer({
+          sourceChainId: ChainId.RobinhoodChain,
+          destinationChainId: ChainId.Base,
         }),
       ).toBe(false);
     });
@@ -380,6 +573,54 @@ describe('getTokenOverride', () => {
     expect(apeToArbOverride.destination).toEqual(ape);
   });
 
+  it('maps native ApeChain APE to Robinhood APE in both directions', () => {
+    const apeToRobinhoodOverride = getTokenOverride({
+      fromToken: undefined,
+      sourceChainId: ChainId.ApeChain,
+      destinationChainId: ChainId.RobinhoodChain,
+    });
+    const robinhoodToApeOverride = getTokenOverride({
+      fromToken: undefined,
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.ApeChain,
+    });
+    const apeOnApeChain = {
+      ...ape,
+      address: constants.AddressZero,
+    };
+    const apeOnRobinhood = {
+      ...ape,
+      address: CommonAddress.RobinhoodChain.APE,
+    };
+
+    expect(apeToRobinhoodOverride).toEqual({
+      source: apeOnApeChain,
+      destination: apeOnRobinhood,
+    });
+    expect(robinhoodToApeOverride).toEqual({
+      source: apeOnRobinhood,
+      destination: apeOnApeChain,
+    });
+  });
+
+  it('maps LiFi VIRTUAL between Ethereum and the regular Robinhood token', () => {
+    const deposit = getTokenOverride({
+      fromToken: CommonAddress.Ethereum.VIRTUAL,
+      sourceChainId: ChainId.Ethereum,
+      destinationChainId: ChainId.RobinhoodChain,
+    });
+    const withdrawal = getTokenOverride({
+      fromToken: CommonAddress.RobinhoodChain.VIRTUAL,
+      sourceChainId: ChainId.RobinhoodChain,
+      destinationChainId: ChainId.Ethereum,
+    });
+
+    expect(deposit.source?.address).toBe(CommonAddress.Ethereum.VIRTUAL);
+    expect(deposit.destination?.address).toBe(CommonAddress.RobinhoodChain.VIRTUAL);
+    expect(withdrawal.source?.address).toBe(CommonAddress.RobinhoodChain.VIRTUAL);
+    expect(withdrawal.destination?.address).toBe(CommonAddress.Ethereum.VIRTUAL);
+  });
+
   it('For transfers on chain with custom fee token, returns null', () => {
     const arbToXaiOverride = getTokenOverride({
       fromToken: undefined,
@@ -398,54 +639,5 @@ describe('getTokenOverride', () => {
 
     expect(xaiToArbOverride.source).toEqual(null);
     expect(xaiToArbOverride.destination).toEqual(null);
-  });
-
-  it('For transfers including Superposition returns USDCe on Superposition', () => {
-    const arbToSuperpositionOverride = getTokenOverride({
-      fromToken: CommonAddress.ArbitrumOne.USDC,
-      sourceChainId: ChainId.ArbitrumOne,
-      destinationChainId: ChainId.Superposition,
-    });
-    const superpositionToMainnetOverride = getTokenOverride({
-      fromToken: CommonAddress.Ethereum.USDC,
-      sourceChainId: ChainId.Superposition,
-      destinationChainId: ChainId.Ethereum,
-    });
-
-    const nativeUsdcToken = {
-      decimals: 6,
-      listIds: new Set(),
-      logoURI:
-        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png',
-      name: 'USDC',
-      symbol: 'USDC',
-      type: 'ERC20',
-    };
-    const bridgedUsdcToken = {
-      decimals: 6,
-      listIds: new Set(),
-      logoURI:
-        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/assets/0xaf88d065e77c8cC2239327C5EDb3A432268e5831/logo.png',
-      name: 'Bridged USDC',
-      symbol: 'USDC.e',
-      type: 'ERC20',
-    };
-    expect(arbToSuperpositionOverride.source).toEqual({
-      ...nativeUsdcToken,
-      address: CommonAddress.ArbitrumOne.USDC,
-    });
-    expect(arbToSuperpositionOverride.destination).toEqual({
-      ...bridgedUsdcToken,
-      address: CommonAddress.Superposition.USDCe,
-    });
-
-    expect(superpositionToMainnetOverride.source).toEqual({
-      ...bridgedUsdcToken,
-      address: CommonAddress.Superposition.USDCe,
-    });
-    expect(superpositionToMainnetOverride.destination).toEqual({
-      ...nativeUsdcToken,
-      address: CommonAddress.Ethereum.USDC,
-    });
   });
 });

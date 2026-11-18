@@ -56,7 +56,7 @@ export class LiFiAdapter implements VendorAdapter {
     userAddress?: string;
     slippage: number;
   }) {
-    const routes = await getLifiRoutes({
+    const [route] = await getLifiRoutes({
       fromChainId: ChainId.ArbitrumOne,
       toChainId: ChainId.ArbitrumOne,
       fromTokenAddress: params.inputTokenAddress,
@@ -66,16 +66,12 @@ export class LiFiAdapter implements VendorAdapter {
       slippage: params.slippage / 100,
       integrator: LIFI_INTEGRATOR_IDS.NORMAL,
     });
-    if (!routes || routes.length === 0) {
+
+    if (!route) {
       return { step: null };
     }
 
-    const quote = routes[0];
-    if (!quote) {
-      throw new Error('Route is undefined');
-    }
-
-    const step = quote.steps[0];
+    const step = route.steps[0];
     if (!step) {
       throw new Error('Route step is undefined');
     }

@@ -3,20 +3,20 @@ import { Config, readContract, simulateContract, writeContract } from '@wagmi/co
 import { ChainDomain } from '../app/api/cctp/[type]';
 import { CCTPSupportedChainId } from '../state/cctpState';
 import { ChainId } from '../types/ChainId';
-import { Address } from '../util/AddressUtils';
+import { EvmAddress } from '../util/AddressUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { MessageTransmitterAbi } from '../util/cctp/MessageTransmitterAbi';
 import { TokenMinterAbi } from '../util/cctp/TokenMinterAbi';
 
 // see https://developers.circle.com/stablecoin/docs/cctp-protocol-contract
 type Contracts = {
-  tokenMessengerContractAddress: Address;
+  tokenMessengerContractAddress: EvmAddress;
   targetChainDomain: ChainDomain;
   targetChainId: CCTPSupportedChainId;
-  usdcContractAddress: Address;
-  messageTransmitterContractAddress: Address;
+  usdcContractAddress: EvmAddress;
+  messageTransmitterContractAddress: EvmAddress;
   attestationApiUrl: string;
-  tokenMinterContractAddress: Address;
+  tokenMinterContractAddress: EvmAddress;
 };
 
 const contracts: Record<CCTPSupportedChainId, Contracts> = {
@@ -60,7 +60,7 @@ const contracts: Record<CCTPSupportedChainId, Contracts> = {
 
 export type AttestationResponse =
   | {
-      attestation: Address;
+      attestation: EvmAddress;
       status: 'complete';
     }
   | {
@@ -100,7 +100,7 @@ export const getCctpUtils = ({ sourceChainId }: { sourceChainId?: number }) => {
     sourceChainId,
   });
 
-  const fetchAttestation = async (attestationHash: Address) => {
+  const fetchAttestation = async (attestationHash: EvmAddress) => {
     const response = await fetch(`${attestationApiUrl}/attestations/${attestationHash}`, {
       method: 'GET',
       headers: { accept: 'application/json' },
@@ -110,7 +110,7 @@ export const getCctpUtils = ({ sourceChainId }: { sourceChainId?: number }) => {
     return attestationResponse;
   };
 
-  const waitForAttestation = async (attestationHash: Address) => {
+  const waitForAttestation = async (attestationHash: EvmAddress) => {
     while (true) {
       // eslint-disable-next-line no-await-in-loop
       const attestation = await fetchAttestation(attestationHash);
@@ -128,8 +128,8 @@ export const getCctpUtils = ({ sourceChainId }: { sourceChainId?: number }) => {
     attestation,
     wagmiConfig,
   }: {
-    messageBytes: Address;
-    attestation: Address;
+    messageBytes: EvmAddress;
+    attestation: EvmAddress;
     wagmiConfig: Config;
   }) => {
     const { request } = await simulateContract(wagmiConfig, {

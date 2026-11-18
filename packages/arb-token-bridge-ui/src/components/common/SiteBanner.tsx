@@ -2,12 +2,26 @@
 
 import dayjs from 'dayjs';
 import useSWR from 'swr';
+import { useAccount } from 'wagmi';
 
 import { ArbitrumStatusResponse } from '@/bridge/app/api/status';
 import { NOVA_EXPLORER_URL } from '@/portal/common/constants';
 
+import { useIsTestnetMode } from '../../hooks/useIsTestnetMode';
+import { useCctpFetching } from '../../state/cctpState';
+import { ChainId } from '../../types/ChainId';
 import { getAPIBaseUrl } from '../../util';
 import { ExternalLink } from './ExternalLink';
+
+const SiteBannerCctpClaim = () => {
+  return (
+    <div className="bg-orange-dark px-4 py-[8px] text-center text-sm font-normal text-white">
+      <div className="w-full">
+        <p>You have a USDC claim pending. Please claim it as soon as possible.</p>
+      </div>
+    </div>
+  );
+};
 
 const SiteBannerNovaArbiscan = () => {
   return (
@@ -131,8 +145,31 @@ function useArbitrumStatus() {
   });
 }
 
+function useHasPendingCctpClaim(): boolean {
+  const { address } = useAccount();
+  const [isTestnetMode] = useIsTestnetMode();
+  const cctpTransfers = useCctpFetching({
+    walletAddress: address,
+    l1ChainId: isTestnetMode ? ChainId.Sepolia : ChainId.Ethereum,
+    l2ChainId: isTestnetMode ? ChainId.ArbitrumSepolia : ChainId.ArbitrumOne,
+    pageNumber: 0,
+    pageSize: 1000,
+    type: 'all',
+  });
+
+  return [
+    ...(cctpTransfers.deposits?.pending || []),
+    ...(cctpTransfers.withdrawals?.pending || []),
+  ].some((tx) => tx.status === 'Confirmed' && !tx.resolvedAt);
+}
+
 export function useSiteBannerVisible(): boolean {
   const { data: arbitrumStatus, error } = useArbitrumStatus();
+  const hasPendingCctpClaim = useHasPendingCctpClaim();
+
+  if (hasPendingCctpClaim) {
+    return true;
+  }
 
   if (error) {
     return false;
@@ -150,6 +187,11 @@ export const SiteBanner = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement> & { expiryDate?: string }) => {
   const { data: arbitrumStatus, error } = useArbitrumStatus();
+  const hasPendingCctpClaim = useHasPendingCctpClaim();
+
+  if (hasPendingCctpClaim) {
+    return <SiteBannerCctpClaim />;
+  }
 
   if (error) {
     return null;

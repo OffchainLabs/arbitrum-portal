@@ -51,6 +51,7 @@ module.exports = {
         '3/1': '3 / 1',
       },
       backgroundImage: {
+        'all-chains-gradient': 'linear-gradient(135deg, #34d399, #22d3ee, #3b82f6)',
         'live-incentives-gradient': 'linear-gradient(180deg, #99f24e 0%, #08d6f3 100%)',
         'live-incentives-dimmed-gradient':
           'linear-gradient(180deg, rgba(153, 242, 78, 0.05) 0%, rgba(8, 214, 243, 0.05) 100%)',
@@ -113,6 +114,8 @@ module.exports = {
         'off-white': '#fbfbfb',
         'one-blue': '#1b4add',
         'nova-orange': '#e57310',
+        // Robinhood Chain's #CCFF00 accent at 20% over black, made opaque
+        'robinhood-dark': '#293300',
         'orange': '#FFEED3',
         'dark-orange': '#60461F',
         'atmosphere-blue': '#152C4E',
@@ -172,6 +175,9 @@ module.exports = {
         'neutral-250': '#404040',
         'gray-650': '#737373',
         'earn-success': '#96d18e',
+        'positive': '#b3efbd',
+        'green-hover': '#00cc3a',
+        'red-hover': '#cc3600',
         'cta-border': '#163db6',
         'overlay': '#0a0a0a',
       },
@@ -224,11 +230,16 @@ module.exports = {
             opacity: 0.5,
           },
         },
+        'slide-in-right': {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
       },
       animation: {
         'blink': 'blink-pulse 1s ease-in-out 1',
         'blinkInfinite': 'blink-pulse 1s ease-in-out infinite',
         'progress-bar': 'progress-bar 1.2s ease-in-out 1 forwards',
+        'slide-in-right': 'slide-in-right 300ms ease-out',
       },
       transitionDuration: {
         400: '400ms',

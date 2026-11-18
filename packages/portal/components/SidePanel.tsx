@@ -17,7 +17,7 @@ export const SidePanel = ({
   panelClassName,
 }: SidePanelProps) => {
   return (
-    <Dialog open={isOpen} onClose={onClose} className="fixed z-[1001]">
+    <Dialog open={isOpen} onClose={onClose} className="fixed inset-0 z-[1001]">
       {/* The backdrop, rendered as a fixed sibling to the panel container */}
       <div className="fixed inset-0 bg-black opacity-80" aria-hidden="true" />
 

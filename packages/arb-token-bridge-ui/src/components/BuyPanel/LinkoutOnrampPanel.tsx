@@ -30,8 +30,7 @@ export function LinkoutOnrampPanel({ serviceSlug }: { serviceSlug: string }) {
         <div className="flex flex-col gap-1">
           <h2 className="text-xl">{service.name}</h2>
           <p className="text-sm max-w-md">
-            Buy and transfer instantly using your debit card, bank account with Thirdweb{' '}
-            {service.name}.
+            Buy and transfer instantly using your debit card or bank account with {service.name}.
           </p>
         </div>
       </div>

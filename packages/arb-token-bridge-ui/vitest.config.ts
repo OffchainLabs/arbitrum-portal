@@ -13,9 +13,13 @@ export default defineConfig({
       escapeString: true,
     },
     testTimeout: 15_000,
-    include: ['./src/**/*.test.ts', './src/**/*.test.tsx'],
+    include: ['./src/**/*.test.ts', './src/**/*.test.tsx', './scripts/**/*.test.ts'],
     exclude: ['./src/**/*.integration.test.ts', './src/**/*.integration.test.tsx'],
-    env: loadEnv('', '../app/', ''),
+    env: {
+      ...loadEnv('', '../app/', ''),
+      // pinned so history routing doesn't depend on the ambient env
+      NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS: '4663,46630',
+    },
     environment: 'happy-dom',
     setupFiles: ['./vitest.mocks.ts'],
   },

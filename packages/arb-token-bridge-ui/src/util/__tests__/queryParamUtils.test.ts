@@ -1,19 +1,37 @@
 import { registerCustomArbitrumNetwork } from '@arbitrum/sdk';
-import { constants } from 'ethers';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ChainId } from '../../types/ChainId';
+import { ecosystems } from '../../wallet/ecosystems';
 import { CommonAddress } from '../CommonAddressUtils';
 import orbitChainsData from '../orbitChainsData.json';
-import { sanitizeNullSelectedToken, sanitizeQueryParams } from '../queryParamUtils';
+import {
+  DestinationTokenQueryParam,
+  TokenQueryParam,
+  sanitizeNullSelectedToken,
+  sanitizeQueryParams,
+} from '../queryParamUtils';
+
+describe('token query parameters', () => {
+  const solanaAddress = 'So11111111111111111111111111111111111111112';
+
+  it('preserves Solana token address case', () => {
+    const isEnabled = vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);
+    try {
+      expect(TokenQueryParam.encode(solanaAddress)).toBe(solanaAddress);
+      expect(TokenQueryParam.decode(solanaAddress)).toBe(solanaAddress);
+      expect(DestinationTokenQueryParam.encode(solanaAddress)).toBe(solanaAddress);
+      expect(DestinationTokenQueryParam.decode(solanaAddress)).toBe(solanaAddress);
+    } finally {
+      isEnabled.mockRestore();
+    }
+  });
+});
 
 describe('sanitizeNullSelectedToken', () => {
   beforeAll(() => {
     registerCustomArbitrumNetwork(
       orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.ApeChain)!,
-    );
-    registerCustomArbitrumNetwork(
-      orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.Superposition)!,
     );
   });
 
@@ -21,16 +39,6 @@ describe('sanitizeNullSelectedToken', () => {
     it('should return ERC20 address for ApeChain → Ethereum with USDC', () => {
       const result = sanitizeNullSelectedToken({
         sourceChainId: ChainId.ApeChain,
-        destinationChainId: ChainId.Ethereum,
-        erc20ParentAddress: CommonAddress.Ethereum.USDC,
-      });
-
-      expect(result).toBe(CommonAddress.Ethereum.USDC);
-    });
-
-    it('should return ERC20 address for Superposition → Ethereum with USDC', () => {
-      const result = sanitizeNullSelectedToken({
-        sourceChainId: ChainId.Superposition,
         destinationChainId: ChainId.Ethereum,
         erc20ParentAddress: CommonAddress.Ethereum.USDC,
       });
@@ -100,27 +108,6 @@ describe('sanitizeNullSelectedToken', () => {
       expect(result).toBe(null);
     });
 
-    it('should return the zero address for Superposition → ApeChain without token', () => {
-      const result = sanitizeNullSelectedToken({
-        sourceChainId: ChainId.Superposition,
-        destinationChainId: ChainId.ApeChain,
-        erc20ParentAddress: null,
-      });
-
-      // Superposition doesn't have Ape token, we default to ETH to WETH
-      expect(result).toBe(constants.AddressZero);
-    });
-
-    it('should return null for ApeChain → Superposition without token', () => {
-      const result = sanitizeNullSelectedToken({
-        sourceChainId: ChainId.ApeChain,
-        destinationChainId: ChainId.Superposition,
-        erc20ParentAddress: null,
-      });
-
-      expect(result).toBe(null);
-    });
-
     it('should return null for Ethereum → ApeChain without token', () => {
       const result = sanitizeNullSelectedToken({
         sourceChainId: ChainId.Ethereum,
@@ -140,16 +127,6 @@ describe('sanitizeNullSelectedToken', () => {
 
       expect(result).toBe(null);
     });
-
-    it('should return null for Ethereum → Superposition without token', () => {
-      const result = sanitizeNullSelectedToken({
-        sourceChainId: ChainId.Ethereum,
-        destinationChainId: ChainId.Superposition,
-        erc20ParentAddress: null,
-      });
-
-      expect(result).toBe(null);
-    });
   });
 });
 
@@ -157,9 +134,6 @@ describe('sanitizeQueryParams - Arbitrum Nova pairs', () => {
   beforeAll(() => {
     registerCustomArbitrumNetwork(
       orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.ApeChain)!,
-    );
-    registerCustomArbitrumNetwork(
-      orbitChainsData.mainnet.find((chain) => chain.chainId === ChainId.Superposition)!,
     );
   });
 

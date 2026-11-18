@@ -13,12 +13,13 @@ env:
   NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
   NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }}
   THE_GRAPH_NETWORK_API_KEY: ${{ secrets.THE_GRAPH_NETWORK_API_KEY }}
+  INDEXER_API_URL_BY_CHAIN: ${{ secrets.INDEXER_API_URL_BY_CHAIN }}
+  NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS: '4663,46630'
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   load-e2e-files:
     name: 'Load e2e files'
-    if: inputs.test_type.type != 'cctp'
     runs-on: ubuntu-8
     outputs:
       matrix: ${{ steps.set-matrix.outputs.e2eFiles }}
@@ -29,37 +30,33 @@ jobs:
       - id: set-matrix
         run: echo "e2eFiles=$(node .github/workflows/formatSpecfiles.js ${{ inputs.test_type }} | jq . --compact-output)" >> $GITHUB_OUTPUT
 
-  build:
-    name: 'Build'
-    uses: ./.github/workflows/build.yml
-    secrets: inherit
-
   test-e2e:
     name: 'Test E2E - ${{ matrix.test.name }} ${{ matrix.test.typeName }}'
-    needs: [build, load-e2e-files]
+    # Called by test.yml after its build job, so the build artifacts already exist
+    needs: [load-e2e-files]
     runs-on: ubuntu-8
     strategy:
       fail-fast: false
       matrix:
         test: ${{ fromJson(needs.load-e2e-files.outputs.matrix) }}
 
+    # The testnode runs as a service container; its ports are published to the
+    # host runner so the (non-container) job and the app reach it on localhost.
+    services:
+      testnode:
+        image: ghcr.io/offchainlabs/arbitrum-testnode-ci:v0.2.2-nc3.2-${{ matrix.test.tag }}
+        credentials:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          TESTNODE_VARIANT: ${{ matrix.test.tag }}
+        ports:
+          - 8080:8080
+          - 8545:8545
+          - 8547:8547
+          - 3347:8549
+
     steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
-        with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: false
-
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -77,12 +74,20 @@ jobs:
         with:
           install-command: pnpm install --frozen-lockfile
           cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: ${{ github.ref == 'refs/heads/master' }}
 
       - name: Restore build artifacts
         uses: ./.github/actions/restore-build-artifacts
 
-      - name: Install cypress
-        run: pnpm cypress install
+      - name: Install browser system dependencies
+        run: pnpm --filter arb-token-bridge-ui exec playwright install-deps chromium
+
+      # Synpress/MetaMask 11.15.0 is a Manifest V2 extension that Playwright's bundled Chromium
+      # refuses to load. fixtures.ts launches the pinned Chrome for Testing (Chrome 128, MV2) from
+      # node_modules/.cache/synpress instead. `postinstall` skips it on CI, so install it here.
+      - name: Install pinned Chrome for Testing
+        uses: ./.github/actions/install-chrome
 
       - name: Install linux dependencies
         run: |
@@ -98,47 +103,27 @@ jobs:
         env:
           DISPLAY: :0.0
 
-      - name: Run nitro testnode
-        if: inputs.test_type != 'cctp'
-        timeout-minutes: 20
-        uses: OffchainLabs/actions/run-nitro-test-node@a20a76172ce524832ac897bef2fa10a62ed81c29
-        with:
-          nitro-testnode-ref: f5a54d679733c65b81d5106488feb957ec579a46
-          l3-node: ${{ matrix.test.type != 'regular' }}
-          no-l3-token-bridge: ${{ matrix.test.type == 'regular' }}
-          args: >-
-            ${{
-              (matrix.test.type == 'orbit-eth') && '--l3node --l3-token-bridge' ||
-              (matrix.test.type == 'orbit-custom-6dec' && '--l3-fee-token --l3-fee-token-decimals 6') ||
-              (matrix.test.type == 'orbit-custom-18dec' && '--l3-fee-token') ||
-              (matrix.test.type == 'orbit-custom-20dec' && '--l3-fee-token --l3-fee-token-decimals 20') ||
-              ''
-            }}
+      # The runner only starts job steps once the testnode service container
+      # reports healthy (its HEALTHCHECK polls all chain RPCs), so the config
+      # is ready to fetch here.
+      - name: Fetch testnode config
+        run: curl -sf http://localhost:8080/config/localNetwork.json -o packages/arb-token-bridge-ui/src/util/networksNitroTestnode.generated.json
 
-      - name: Run e2e tests via cypress-io/github-action
-        uses: cypress-io/github-action@0da3c06ed8217b912deea9d8ee69630baed1737e # pin@v6.7.6
-        with:
-          start: pnpm start
-          command: >-
-            ${{
-              (matrix.test.type == 'orbit-eth') && 'pnpm test:e2e:orbit' ||
-              (matrix.test.type == 'orbit-custom-6dec' && 'pnpm test:e2e:orbit:custom-gas-token') ||
-              (matrix.test.type == 'orbit-custom-18dec' && 'pnpm test:e2e:orbit:custom-gas-token') ||
-              (matrix.test.type == 'orbit-custom-20dec' && 'pnpm test:e2e:orbit:custom-gas-token') ||
-              (matrix.test.type == 'cctp' && 'pnpm test:e2e:cctp') ||
-              'pnpm test:e2e'
-            }}
-          wait-on: http://127.0.0.1:3000
-          wait-on-timeout: 120
-          spec: ./packages/arb-token-bridge-ui/tests/e2e/specs/*
+      - name: Run e2e tests (Playwright)
+        run: |
+          pnpm start &
+          npx --yes wait-on http://127.0.0.1:3000 --timeout 120000
+          pnpm test:e2e ${{ matrix.test.file }}
         env:
           DISPLAY: :0.0
-          TEST_FILE: ${{ matrix.test.file }}
+          E2E_ORBIT: ${{ matrix.test.type == 'orbit-eth' }}
+          E2E_ORBIT_CUSTOM_GAS_TOKEN: ${{ startsWith(matrix.test.type, 'orbit-custom') }}
+          ORBIT_CUSTOM_GAS_TOKEN: ${{ startsWith(matrix.test.type, 'orbit-custom') }}
+          METAMASK_VERSION: 11.15.0
           SKIP_METAMASK_SETUP: true
-          CYPRESS_RECORD_VIDEO: ${{ matrix.test.recordVideo }}
+          RECORD_VIDEO: ${{ matrix.test.recordVideo }}
           PRIVATE_KEY_CUSTOM: ${{ secrets.E2E_PRIVATE_KEY }}
           PRIVATE_KEY_USER: ${{ secrets.E2E_PRIVATE_KEY_USER }}
-          PRIVATE_KEY_CCTP: ${{ secrets.E2E_PRIVATE_KEY_CCTP }}
           NEXT_PUBLIC_IS_E2E_TEST: true
           NEXT_PUBLIC_RPC_PROVIDER: alchemy
           NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
@@ -153,25 +138,7 @@ jobs:
         with:
           name: e2e-artifacts-${{ github.sha }}-${{ matrix.test.name }}-${{ matrix.test.type }}
           path: |
-            ./packages/arb-token-bridge-ui/cypress/videos
-            ./packages/arb-token-bridge-ui/cypress/screenshots
+            ./packages/arb-token-bridge-ui/test-results
+            ./packages/arb-token-bridge-ui/playwright-report
           if-no-files-found: 'ignore'
         continue-on-error: true
-
-  clean-up:
-    name: 'Clean Up'
-    runs-on: ubuntu-8
-    needs: [test-e2e]
-    if: always()
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install gh-actions-cache
-        run: gh extension install actions/gh-actions-cache
-      - name: Delete build artifacts
-        run: |
-          if gh actions-cache list | grep build-artifacts-${{ github.run_id }}-${{ github.run_attempt }}
-          then
-            gh actions-cache delete build-artifacts-${{ github.run_id }}-${{ github.run_attempt }} --confirm
-          fi
-        shell: bash

@@ -1,37 +1,48 @@
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
-import { constants } from 'ethers';
-import { isAddress } from 'ethers/lib/utils';
+import { BigNumber, constants } from 'ethers';
 import Image from 'next/image';
-import React, { FormEventHandler, useCallback, useMemo, useState } from 'react';
+import React, { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import useSWRImmutable from 'swr/immutable';
 import { twMerge } from 'tailwind-merge';
-import { useAccount } from 'wagmi';
-
-import { getProviderForChainId } from '@/token-bridge-sdk/utils';
 
 import { useSetInputAmount } from '../../hooks/TransferPanel/useSetInputAmount';
-import { ERC20BridgeToken, TokenType } from '../../hooks/arbTokenBridge.types';
-import { useBalances } from '../../hooks/useBalances';
+import { ERC20BridgeToken } from '../../hooks/arbTokenBridge.types';
 import { useMode } from '../../hooks/useMode';
-import { useNativeCurrency } from '../../hooks/useNativeCurrency';
+import { useNativeCurrencyForTransfer } from '../../hooks/useNativeCurrency';
 import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { getUsdcToken, useSelectedToken } from '../../hooks/useSelectedToken';
 import { useTokenLists } from '../../hooks/useTokenLists';
+import { getTokenData } from '../../services/tokenMetadata';
 import { useAppState } from '../../state';
 import { ChainId } from '../../types/ChainId';
-import { addressesEqual } from '../../util/AddressUtils';
+import { addressesEqual, isValidAddressForChain, normalizeAddress } from '../../util/AddressUtils';
+import { trackEvent } from '../../util/AnalyticsUtils';
 import { CommonAddress } from '../../util/CommonAddressUtils';
-import { ArbOneNativeUSDC } from '../../util/L2NativeUtils';
+import {
+  getNovaEthOnlyDepositErrorMessage,
+  isNativeEthAddress,
+  isNovaDestination,
+} from '../../util/NovaUtils';
+import { isTokenUSDG, isUsdgSurfacedLikeEth } from '../../util/RobinhoodStablecoinUtils';
 import {
   BridgeTokenList,
   SPECIAL_ARBITRUM_TOKEN_TOKEN_LIST_ID,
   addBridgeTokenListToBridge,
   getBridgeTokenListsForNetworks,
+  isLifiOnlyToken,
+  isTokenAvailableOnChain,
 } from '../../util/TokenListUtils';
 import {
-  fetchErc20Data,
+  ARB_ONE_NATIVE_USDC_TOKEN,
+  ARB_SEPOLIA_NATIVE_USDC_TOKEN,
+  NATIVE_CURRENCY_IDENTIFIER,
+  getTokenForRow,
+  getTokenPickerAddresses,
+  isHeldTokenFromEnabledList,
+} from '../../util/TokenSelectionUtils';
+import {
   isTokenArbitrumOneNativeUSDC,
   isTokenArbitrumOneUSDCe,
   isTokenArbitrumSepoliaNativeUSDC,
@@ -39,6 +50,9 @@ import {
 } from '../../util/TokenUtils';
 import { logger } from '../../util/logger';
 import { getNetworkName, isNetwork } from '../../util/networks';
+import { useTokenBalances } from '../../wallet/hooks/useTokenBalances';
+import { useWallets } from '../../wallet/hooks/useWallets';
+import { resolveTokenAddress } from '../../wallet/resolveTokenAddress';
 import { Button } from '../common/Button';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { Panel, SearchPanel } from '../common/SearchPanel/SearchPanel';
@@ -46,25 +60,7 @@ import { SearchPanelTable } from '../common/SearchPanel/SearchPanelTable';
 import { Switch } from '../common/atoms/Switch';
 import { warningToast } from '../common/atoms/Toast';
 import { TokenRow } from './TokenRow';
-import { useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
-
-export const ARB_ONE_NATIVE_USDC_TOKEN: ERC20BridgeToken = {
-  ...ArbOneNativeUSDC,
-  listIds: new Set<string>(),
-  type: TokenType.ERC20,
-  // the address field is for L1 address but native USDC does not have an L1 address
-  // the L2 address is used instead to avoid errors
-  address: CommonAddress.ArbitrumOne.USDC,
-  l2Address: CommonAddress.ArbitrumOne.USDC,
-};
-
-export const ARB_SEPOLIA_NATIVE_USDC_TOKEN: ERC20BridgeToken = {
-  ...ArbOneNativeUSDC,
-  listIds: new Set<string>(),
-  type: TokenType.ERC20,
-  address: CommonAddress.ArbitrumSepolia.USDC,
-  l2Address: CommonAddress.ArbitrumSepolia.USDC,
-};
+import { addTokenFromSearch, useTokensFromLists, useTokensFromUser } from './TokenSearchUtils';
 
 function TokenListRow({ tokenList }: { tokenList: BridgeTokenList }) {
   const {
@@ -151,30 +147,28 @@ function TokenListsPanel() {
   );
 }
 
-const NATIVE_CURRENCY_IDENTIFIER = 'native_currency';
+const SEARCH_EVENT_DEBOUNCE_MS = 300;
 
 function TokensPanel({
   onTokenSelected,
 }: {
   onTokenSelected: (token: ERC20BridgeToken | null) => void;
 }): React.JSX.Element {
-  const { address: walletAddress } = useAccount();
   const {
     app: {
       arbTokenBridge: { token, bridgeTokens },
     },
   } = useAppState();
   const [networks] = useNetworks();
-  const { childChain, childChainProvider, parentChain, isDepositMode } =
-    useNetworksRelationship(networks);
+  const { childChain, parentChain, isDepositMode } = useNetworksRelationship(networks);
 
-  const { ethParentBalance, erc20ParentBalances, ethChildBalance, erc20ChildBalances } =
-    useBalances({
-      parentWalletAddress: walletAddress,
-      childWalletAddress: walletAddress,
-    });
-
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const {
+    sourceWallet: {
+      account: { address: walletAddress },
+      isConnected,
+    },
+  } = useWallets();
+  const nativeCurrency = useNativeCurrencyForTransfer();
 
   const {
     isEthereumMainnet: isParentChainEthereumMainnet,
@@ -184,47 +178,27 @@ function TokensPanel({
   } = isNetwork(parentChain.id);
   const { isArbitrumOne, isArbitrumSepolia, isOrbitChain } = isNetwork(childChain.id);
   const tokensFromUser = useTokensFromUser();
-  const tokensFromLists = useTokensFromLists();
+  const { data: tokensFromLists } = useTokensFromLists();
 
   const [newToken, setNewToken] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isAddingToken, setIsAddingToken] = useState(false);
+  const searchEventTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const getBalance = useCallback(
-    (address: string) => {
-      if (address === NATIVE_CURRENCY_IDENTIFIER) {
-        if (nativeCurrency.isCustom) {
-          return isDepositMode ? erc20ParentBalances?.[nativeCurrency.address] : ethChildBalance;
-        }
+  useEffect(() => {
+    trackEvent('Token Picker Opened', {
+      side: 'source',
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
+      isConnected,
+    });
 
-        return isDepositMode ? ethParentBalance : ethChildBalance;
+    return () => {
+      if (searchEventTimeout.current) {
+        clearTimeout(searchEventTimeout.current);
       }
-
-      if (isDepositMode) {
-        return erc20ParentBalances?.[address.toLowerCase()];
-      }
-
-      if (typeof bridgeTokens === 'undefined') {
-        return null;
-      }
-
-      if (isTokenArbitrumOneNativeUSDC(address) || isTokenArbitrumSepoliaNativeUSDC(address)) {
-        return erc20ChildBalances?.[address.toLowerCase()];
-      }
-
-      const l2Address = bridgeTokens[address.toLowerCase()]?.l2Address;
-      return l2Address ? erc20ChildBalances?.[l2Address.toLowerCase()] : null;
-    },
-    [
-      nativeCurrency,
-      bridgeTokens,
-      erc20ParentBalances,
-      erc20ChildBalances,
-      ethParentBalance,
-      ethChildBalance,
-      isDepositMode,
-    ],
-  );
+    };
+  }, [isConnected, networks.destinationChain.id, networks.sourceChain.id]);
 
   const usdcParentAddress = useMemo(() => {
     if (isParentChainEthereumMainnet) {
@@ -253,55 +227,143 @@ function TokensPanel({
     ([_usdcParentAddress, _parentChainId, _childChainId]) =>
       getUsdcToken({
         tokenAddress: _usdcParentAddress,
-        parentProvider: getProviderForChainId(_parentChainId),
-        childProvider: getProviderForChainId(_childChainId),
+        parentChainId: _parentChainId,
+        childChainId: _childChainId,
       }),
+  );
+
+  const getToken = useCallback(
+    (address: string): ERC20BridgeToken | null => {
+      if (address === NATIVE_CURRENCY_IDENTIFIER) return null;
+      if (isTokenArbitrumOneNativeUSDC(address) || isTokenArbitrumSepoliaNativeUSDC(address)) {
+        // Same token as the row, so balances keep a listed USDC mapping over the source-only fallback
+        return getTokenForRow({
+          address,
+          tokensFromLists,
+          tokensFromUser,
+          isOrbitChain,
+          usdcToken,
+        });
+      }
+
+      return (
+        tokensFromLists[address] ||
+        tokensFromUser[address] ||
+        bridgeTokens?.[address.toLowerCase()] ||
+        null
+      );
+    },
+    [bridgeTokens, isOrbitChain, tokensFromLists, tokensFromUser, usdcToken],
+  );
+  // Native USDC is on no list, so add it where it is the source token:
+  // withdrawals from Arbitrum One or Arbitrum Sepolia, and deposits from them to Orbit chains
+  const isSourceArbitrumOne = isDepositMode ? isParentChainArbitrumOne : isArbitrumOne;
+  const isSourceArbitrumSepolia = isDepositMode ? isParentChainArbitrumSepolia : isArbitrumSepolia;
+  const sourceNativeUsdcAddress = isSourceArbitrumOne
+    ? CommonAddress.ArbitrumOne.USDC
+    : isSourceArbitrumSepolia
+      ? CommonAddress.ArbitrumSepolia.USDC
+      : undefined;
+  const childNativeCurrencyAddress = nativeCurrency.isCustom ? nativeCurrency.address : undefined;
+  const sourceTokenAddresses = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          [
+            NATIVE_CURRENCY_IDENTIFIER,
+            ...(sourceNativeUsdcAddress ? [sourceNativeUsdcAddress] : []),
+            ...Object.keys(tokensFromUser),
+            // Enabled lists only. Search also finds tokens from disabled lists, which get a balance once imported
+            ...Object.keys(bridgeTokens ?? {}),
+          ]
+            .map((address) =>
+              resolveTokenAddress({
+                token: getToken(address),
+                side: 'source',
+                sourceChainId: networks.sourceChain.id,
+                destinationChainId: networks.destinationChain.id,
+                childNativeCurrencyAddress,
+              }),
+            )
+            .filter((address): address is string => !!address),
+        ),
+      ),
+    [
+      bridgeTokens,
+      childNativeCurrencyAddress,
+      getToken,
+      networks.destinationChain.id,
+      networks.sourceChain.id,
+      sourceNativeUsdcAddress,
+      tokensFromUser,
+    ],
+  );
+  const { data: balances } = useTokenBalances({
+    chainId: networks.sourceChain.id,
+    walletAddress,
+    tokenAddresses: sourceTokenAddresses,
+    refreshInterval: 0,
+    keepPreviousData: true,
+  });
+  const getBalance = useCallback(
+    (address: string) => {
+      const tokenAddress = resolveTokenAddress({
+        token: getToken(address),
+        side: 'source',
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+        childNativeCurrencyAddress,
+      });
+      if (!tokenAddress || !walletAddress) return BigNumber.from(0);
+      const balance = balances?.[tokenAddress];
+
+      return balance === undefined ? null : BigNumber.from(balance);
+    },
+    [
+      balances,
+      childNativeCurrencyAddress,
+      getToken,
+      networks.destinationChain.id,
+      networks.sourceChain.id,
+      walletAddress,
+    ],
   );
 
   const tokensToShow = useMemo(() => {
     const tokenSearch = newToken.trim().toLowerCase();
     const tokenAddresses = Object.keys(tokensFromUser).concat(Object.keys(tokensFromLists));
+    const isUsdgPinned = isUsdgSurfacedLikeEth({
+      sourceChainId: networks.sourceChain.id,
+      destinationChainId: networks.destinationChain.id,
+    });
 
-    if (!isDepositMode) {
-      // L2 to L1 withdrawals
-      if (isArbitrumOne) {
-        tokenAddresses.push(CommonAddress.ArbitrumOne.USDC);
-      }
-      if (isArbitrumSepolia) {
-        tokenAddresses.push(CommonAddress.ArbitrumSepolia.USDC);
-      }
-    } else {
-      // L2 to L3 deposits
-      if (isParentChainArbitrumOne) {
-        tokenAddresses.push(CommonAddress.ArbitrumOne.USDC);
-      }
-      if (isParentChainArbitrumSepolia) {
-        tokenAddresses.push(CommonAddress.ArbitrumSepolia.USDC);
-      }
+    if (sourceNativeUsdcAddress) {
+      tokenAddresses.push(sourceNativeUsdcAddress);
     }
 
-    /**
-     * Add native currency if not already included
-     * For chains with custom native tokens, always add it even if AddressZero is present
-     *
-     * For lifi chains, the destination chain might not be the direct parent or child chain and might not have the native token.
-     * (e.g., APE token in Superposition for ApeChain <> Superposition transfers)
-     * We still allow token to be selected (it will default to swap)
-     */
-    const isSuperpositionToApeChain =
-      networks.sourceChain.id === ChainId.Superposition &&
-      networks.destinationChain.id === ChainId.ApeChain;
-    if (
-      (nativeCurrency.isCustom || !tokenAddresses.includes(constants.AddressZero)) &&
-      !isSuperpositionToApeChain
-    ) {
-      tokenAddresses.push(NATIVE_CURRENCY_IDENTIFIER);
-    }
-
-    const tokens = Array.from(new Set(tokenAddresses));
+    const tokens = getTokenPickerAddresses({
+      tokenAddresses,
+      chainId: networks.sourceChain.id,
+      hasCustomNativeCurrency: nativeCurrency.isCustom,
+    });
+    const seenSourceTokenAddresses = new Set<string>();
 
     return tokens
       .filter((address) => {
+        // Route-specific USDC metadata is still loading; a null token would render as the native row
+        if (address !== NATIVE_CURRENCY_IDENTIFIER && !getToken(address)) {
+          return false;
+        }
+
+        /**
+         * Nova is in a minimized state and only accepts ETH deposits, so hide every other token.
+         * This is deliberately unconditional rather than scoped to the LiFi list: USDT into Nova is
+         * an OFT V2 route sourced from the canonical Ethereum token list.
+         */
+        if (isNovaDestination(networks.destinationChain.id)) {
+          return address === NATIVE_CURRENCY_IDENTIFIER || isNativeEthAddress(address);
+        }
+
         // Derive the token object from the address string
         let token = tokensFromUser[address] || tokensFromLists[address];
 
@@ -322,6 +384,10 @@ function TokensPanel({
 
         // If the token on the list is used as a custom fee token, we remove the duplicate
         if (nativeCurrency.isCustom && addressesEqual(address, nativeCurrency.address)) {
+          return false;
+        }
+
+        if (!isTokenAvailableOnChain(token, networks.sourceChain.id)) {
           return false;
         }
 
@@ -348,6 +414,11 @@ function TokensPanel({
             return true;
           }
 
+          // USDG is surfaced like ETH on this route, so it shows whether or not it is held
+          if (isUsdgPinned && isTokenUSDG(address)) {
+            return true;
+          }
+
           const isArbOneNovaTransfer =
             (networks.sourceChain.id === ChainId.ArbitrumOne &&
               networks.destinationChain.id === ChainId.ArbitrumNova) ||
@@ -365,9 +436,14 @@ function TokensPanel({
             return true;
           }
 
+          const isFromEnabledList = isHeldTokenFromEnabledList({
+            address,
+            tokensFromUser,
+            bridgeTokens,
+          });
           const balance = getBalance(address);
           // Only show tokens with a balance greater than zero
-          return balance && balance.gt(0);
+          return isFromEnabledList && balance && balance.gt(0);
         }
 
         if (address === NATIVE_CURRENCY_IDENTIFIER) {
@@ -383,6 +459,22 @@ function TokensPanel({
         const { name, symbol, address: tokenAddress, l2Address = '' } = token;
 
         return (name + symbol + tokenAddress + l2Address).toLowerCase().includes(tokenSearch);
+      })
+      .filter((address) => {
+        const token = tokensFromUser[address] || tokensFromLists[address];
+        const sourceTokenAddress = isDepositMode ? token?.address : token?.l2Address;
+
+        if (!sourceTokenAddress) {
+          return true;
+        }
+
+        const normalizedSourceTokenAddress = normalizeAddress(sourceTokenAddress);
+        if (seenSourceTokenAddresses.has(normalizedSourceTokenAddress)) {
+          return false;
+        }
+
+        seenSourceTokenAddresses.add(normalizedSourceTokenAddress);
+        return true;
       })
       .sort((address1: string, address2: string) => {
         // Pin native currency to top
@@ -405,6 +497,15 @@ function TokensPanel({
           return 1;
         }
 
+        // Pin USDG right under Ether
+        if (isUsdgPinned) {
+          const isUsdg1 = isTokenUSDG(address1);
+          const isUsdg2 = isTokenUSDG(address2);
+          if (isUsdg1 !== isUsdg2) {
+            return isUsdg1 ? -1 : 1;
+          }
+        }
+
         const bal1 = getBalance(address1);
         const bal2 = getBalance(address2);
 
@@ -423,44 +524,29 @@ function TokensPanel({
     newToken,
     tokensFromUser,
     tokensFromLists,
+    bridgeTokens,
     isDepositMode,
     networks.sourceChain.id,
     networks.destinationChain.id,
     nativeCurrency,
-    isArbitrumOne,
-    isArbitrumSepolia,
-    isParentChainArbitrumOne,
-    isParentChainArbitrumSepolia,
+    sourceNativeUsdcAddress,
     isOrbitChain,
     childChain.id,
     getBalance,
+    getToken,
   ]);
 
   const storeNewToken = async () => {
-    let error = 'Token not found on this network.';
-    let isSuccessful = false;
+    const result = await addTokenFromSearch({
+      address: newToken,
+      sourceChainId: networks.sourceChain.id,
+      token,
+    });
 
-    try {
-      // Try to add the token as an L2-native token
-      token.addL2NativeToken(newToken);
-      isSuccessful = true;
-    } catch (error) {
-      //
-    }
-
-    try {
-      // Try to add the token as a regular bridged token
-      await token.add(newToken);
-      isSuccessful = true;
-    } catch (ex: any) {
-      if (ex.name === 'TokenDisabledError') {
-        error = 'This token is currently paused in the bridge.';
-      }
-    }
-
-    // Only show error message if neither succeeded
-    if (!isSuccessful) {
-      setErrorMessage(error);
+    if (result === 'disabled') {
+      setErrorMessage('This token is currently paused in the bridge.');
+    } else if (result === 'not-found') {
+      setErrorMessage('Token not found on this network.');
     }
   };
 
@@ -468,7 +554,13 @@ function TokensPanel({
     e.preventDefault();
     setErrorMessage('');
 
-    if (!isAddress(newToken) || isAddingToken) {
+    if (!isValidAddressForChain(newToken, networks.sourceChain.id) || isAddingToken) {
+      return;
+    }
+
+    // Adding a token would succeed but the row would then be filtered out, leaving an empty list
+    if (isNovaDestination(networks.destinationChain.id)) {
+      setErrorMessage(getNovaEthOnlyDepositErrorMessage());
       return;
     }
 
@@ -483,35 +575,76 @@ function TokensPanel({
     }
   };
 
-  const onSearchInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setErrorMessage('');
-    setNewToken(event.target.value);
-  }, []);
+  const onSearchInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setErrorMessage('');
+      setNewToken(event.target.value);
+
+      const query = event.target.value.trim();
+      if (searchEventTimeout.current) {
+        clearTimeout(searchEventTimeout.current);
+        searchEventTimeout.current = null;
+      }
+
+      if (query) {
+        searchEventTimeout.current = setTimeout(() => {
+          searchEventTimeout.current = null;
+          trackEvent('Token Search Performed', {
+            side: 'source',
+            sourceChainId: networks.sourceChain.id,
+            destinationChainId: networks.destinationChain.id,
+            isConnected,
+            query,
+          });
+        }, SEARCH_EVENT_DEBOUNCE_MS);
+      }
+    },
+    [isConnected, networks.destinationChain.id, networks.sourceChain.id],
+  );
+
+  const handleTokenSelected = useCallback(
+    (selectedToken: ERC20BridgeToken | null, balance: BigNumber | null) => {
+      trackEvent('Token Selected', {
+        side: 'source',
+        sourceChainId: networks.sourceChain.id,
+        destinationChainId: networks.destinationChain.id,
+        isConnected,
+        tokenAddress:
+          (isDepositMode ? selectedToken?.address : selectedToken?.l2Address) ??
+          selectedToken?.address ??
+          constants.AddressZero,
+        hasBalance: balance?.gt(0) ?? false,
+      });
+      onTokenSelected(selectedToken);
+    },
+    [
+      isConnected,
+      isDepositMode,
+      networks.destinationChain.id,
+      networks.sourceChain.id,
+      onTokenSelected,
+    ],
+  );
+
+  const getTokenForRowInPanel = useCallback(
+    (address: string) =>
+      getTokenForRow({ address, tokensFromLists, tokensFromUser, isOrbitChain, usdcToken }),
+    [tokensFromLists, tokensFromUser, isOrbitChain, usdcToken],
+  );
 
   const rowRenderer = useCallback(
     (virtualizedProps: ListRowProps) => {
       const address = tokensToShow[virtualizedProps.index];
-      let token: ERC20BridgeToken | null = null;
-
-      if (isTokenArbitrumOneNativeUSDC(address) || isTokenArbitrumSepoliaNativeUSDC(address)) {
-        if (isOrbitChain) {
-          token = usdcToken;
-        } else {
-          token = isTokenArbitrumOneNativeUSDC(address)
-            ? ARB_ONE_NATIVE_USDC_TOKEN
-            : ARB_SEPOLIA_NATIVE_USDC_TOKEN;
-        }
-      } else if (address) {
-        token = tokensFromLists[address] || tokensFromUser[address] || null;
-      }
+      if (!address) return null;
 
       if (address === NATIVE_CURRENCY_IDENTIFIER) {
         return (
           <TokenRow
             key={`TokenRowNativeCurrency-${walletAddress}`}
             style={virtualizedProps.style}
-            onTokenSelected={onTokenSelected}
+            onTokenSelected={handleTokenSelected}
             token={null}
+            balance={getBalance(NATIVE_CURRENCY_IDENTIFIER) ?? null}
           />
         );
       }
@@ -520,20 +653,13 @@ function TokensPanel({
         <TokenRow
           key={`${address}-${walletAddress}`}
           style={virtualizedProps.style}
-          onTokenSelected={onTokenSelected}
-          token={token}
+          onTokenSelected={handleTokenSelected}
+          token={getTokenForRowInPanel(address)}
+          balance={getBalance(address) ?? null}
         />
       );
     },
-    [
-      tokensToShow,
-      tokensFromLists,
-      tokensFromUser,
-      onTokenSelected,
-      usdcToken,
-      isOrbitChain,
-      walletAddress,
-    ],
+    [tokensToShow, getTokenForRowInPanel, handleTokenSelected, walletAddress, getBalance],
   );
 
   const AddButton = useMemo(
@@ -543,14 +669,14 @@ function TokensPanel({
         variant="secondary"
         loading={isAddingToken}
         loadingProps={{ loaderColor: '#999999' /** text-gray-6 */ }}
-        disabled={!isAddress(newToken)}
+        disabled={!isValidAddressForChain(newToken, networks.sourceChain.id)}
         className="border border-gray-dark py-1"
         aria-label="Add New Token"
       >
         Add
       </Button>
     ),
-    [isAddingToken, newToken],
+    [isAddingToken, newToken, networks.sourceChain.id],
   );
 
   return (
@@ -582,6 +708,7 @@ function TokensPanel({
 }
 
 export function TokenSearch(props: UseDialogProps) {
+  const { onClose } = props;
   const { setAmount2 } = useSetInputAmount();
   const {
     app: {
@@ -590,82 +717,96 @@ export function TokenSearch(props: UseDialogProps) {
   } = useAppState();
   const [, setSelectedToken] = useSelectedToken();
   const [networks] = useNetworks();
-  const { childChain, parentChainProvider } = useNetworksRelationship(networks);
+  const { childChain, parentChain } = useNetworksRelationship(networks);
 
   const { embedMode } = useMode();
   const [activePanel, setActivePanel] = useState<Panel>(Panel.MAIN);
 
   const { isValidating: isFetchingTokenLists } = useTokenLists(childChain.id); // to show a small loader while token-lists are loading when search panel opens
 
-  async function selectToken(_token: ERC20BridgeToken | null) {
-    props.onClose(false);
+  const selectToken = useCallback(
+    async (_token: ERC20BridgeToken | null) => {
+      onClose(false);
 
-    if (_token === null) {
-      setSelectedToken(null);
-      return;
-    }
-
-    if (!_token.address) {
-      return;
-    }
-
-    if (addressesEqual(_token.address, constants.AddressZero)) {
-      if (networks.destinationChain.id === ChainId.ApeChain) {
-        setSelectedToken(constants.AddressZero);
-      } else {
-        // Map native currency to null for other chains
+      if (_token === null) {
         setSelectedToken(null);
-      }
-      return;
-    }
-
-    if (isTokenNativeUSDC(_token.address)) {
-      // not supported
-      setAmount2('');
-    }
-
-    try {
-      if (typeof bridgeTokens === 'undefined') {
         return;
       }
 
-      const isL2NativeUSDC =
-        isTokenArbitrumOneNativeUSDC(_token.address) ||
-        isTokenArbitrumSepoliaNativeUSDC(_token.address);
-
-      if (isL2NativeUSDC) {
-        setSelectedToken(_token.address);
+      if (!_token.address) {
         return;
       }
 
-      // Token not added to the bridge, so we'll handle importing it
-      if (typeof bridgeTokens[_token.address] === 'undefined') {
-        setSelectedToken(_token.address);
+      if (addressesEqual(_token.address, constants.AddressZero)) {
+        if (networks.destinationChain.id === ChainId.ApeChain) {
+          setSelectedToken(constants.AddressZero);
+        } else {
+          // Map native currency to null for other chains
+          setSelectedToken(null);
+        }
         return;
       }
 
-      const data = await fetchErc20Data({
-        address: _token.address,
-        provider: parentChainProvider,
-      });
-
-      if (data) {
-        token.updateTokenData(_token.address);
-        setSelectedToken(_token.address);
+      // Tokens available on only one side use that chain's address directly.
+      if (isLifiOnlyToken(_token)) {
+        setSelectedToken(_token.address, _token);
+        return;
       }
-    } catch (error: any) {
-      logger.warn(error);
 
-      if (error.name === 'TokenDisabledError') {
-        warningToast('This token is currently paused in the bridge');
+      if (isTokenNativeUSDC(_token.address)) {
+        // not supported
+        setAmount2('');
       }
-    }
-  }
+
+      try {
+        if (typeof bridgeTokens === 'undefined') {
+          return;
+        }
+
+        const isL2NativeUSDC =
+          isTokenArbitrumOneNativeUSDC(_token.address) ||
+          isTokenArbitrumSepoliaNativeUSDC(_token.address);
+
+        if (isL2NativeUSDC) {
+          setSelectedToken(_token.address);
+          return;
+        }
+
+        // Token not added to the bridge, so we'll handle importing it
+        if (typeof bridgeTokens[_token.address] === 'undefined') {
+          setSelectedToken(_token.address);
+          return;
+        }
+
+        const data = await getTokenData(_token.address, parentChain.id);
+
+        if (data) {
+          token.updateTokenData(_token.address);
+          setSelectedToken(_token.address);
+        }
+      } catch (error: any) {
+        logger.warn(error);
+
+        if (error.name === 'TokenDisabledError') {
+          warningToast('This token is currently paused in the bridge');
+        }
+      }
+    },
+    [
+      bridgeTokens,
+      networks.destinationChain.id,
+      parentChain.id,
+      onClose,
+      setAmount2,
+      setSelectedToken,
+      token,
+    ],
+  );
 
   return (
     <Dialog
       {...props}
-      onClose={() => props.onClose(false)}
+      onClose={() => onClose(false)}
       title={activePanel === Panel.MAIN ? 'Select Token' : 'Manage Token Lists'}
       actionButtonProps={{ hidden: true }}
       isFooterHidden={true}

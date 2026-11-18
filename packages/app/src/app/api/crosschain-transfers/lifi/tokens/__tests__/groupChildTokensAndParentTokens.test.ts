@@ -1,7 +1,14 @@
-import { CoinKey, ChainId as LiFiChainId } from '@lifi/sdk';
+import { CoinKey, ChainId as LiFiChainId, type Token as LiFiToken } from '@lifi/sdk';
+import { getAddress } from 'viem';
 import { describe, expect, it } from 'vitest';
 
 import { ChainId } from '@/bridge/types/ChainId';
+import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
+import {
+  LIFI_TRANSFER_LIST_ID,
+  isTokenAvailableOnChain,
+  tokenListTokenToBridgeToken,
+} from '@/bridge/util/TokenListUtils';
 
 import { groupChildTokensAndParentTokens } from '../groupChildTokensAndParentTokens';
 import type { LifiTokenWithCoinKey } from '../registry';
@@ -18,6 +25,16 @@ const buildToken = (
   logoURI: 'https://example.com/logo.png',
   ...overrides,
 });
+
+const unmatchedRobinhoodToken: LiFiToken = {
+  address: '0x0000000000000000000000000000000000004663',
+  name: 'Robinhood-only token',
+  symbol: 'RHOOD',
+  decimals: 18,
+  priceUSD: '1',
+  chainId: ChainId.RobinhoodChain as unknown as LiFiChainId,
+  logoURI: 'https://example.com/robinhood.png',
+};
 
 type BridgeInfo = Record<
   string,
@@ -160,7 +177,7 @@ describe('groupChildTokensAndParentTokens', () => {
     const childTokensByCoinKey = {
       [CoinKey.WETH]: buildToken({
         coinKey: CoinKey.WETH,
-        chainId: LiFiChainId.SUP,
+        chainId: LiFiChainId.APE,
         logoURI: childLogo,
       }),
     };
@@ -169,7 +186,7 @@ describe('groupChildTokensAndParentTokens', () => {
       parentTokens,
       childTokensByCoinKey,
       parentChainId: ChainId.ArbitrumOne,
-      childChainId: ChainId.Superposition,
+      childChainId: ChainId.ApeChain,
     });
 
     expect(tokens[0]?.logoURI).toBe(childLogo);
@@ -200,5 +217,175 @@ describe('groupChildTokensAndParentTokens', () => {
       address: childTokensByCoinKey[CoinKey.USDC].address,
       symbol: 'USDC.e',
     });
+  });
+
+  it('includes an unmatched Robinhood token as a chain-specific list entry', () => {
+    const tokens = groupChildTokensAndParentTokens({
+      parentTokens: [],
+      childTokens: [unmatchedRobinhoodToken],
+      childTokensByCoinKey: {},
+      parentChainId: ChainId.Ethereum,
+      childChainId: ChainId.RobinhoodChain,
+    });
+
+    expect(tokens).toEqual([
+      expect.objectContaining({
+        chainId: ChainId.RobinhoodChain,
+        address: unmatchedRobinhoodToken.address,
+        symbol: unmatchedRobinhoodToken.symbol,
+      }),
+    ]);
+    expect(tokens[0]?.extensions?.bridgeInfo).toBeUndefined();
+  });
+
+  it('does not include unmatched tokens for chains without the opt-in', () => {
+    const tokens = groupChildTokensAndParentTokens({
+      parentTokens: [],
+      childTokens: [{ ...unmatchedRobinhoodToken, chainId: LiFiChainId.ARB }],
+      childTokensByCoinKey: {},
+      parentChainId: ChainId.Ethereum,
+      childChainId: ChainId.ArbitrumOne,
+    });
+
+    expect(tokens).toEqual([]);
+  });
+
+  it.each([ChainId.RobinhoodChain, ChainId.ArbitrumOne, ChainId.ApeChain])(
+    'includes only allowlisted unmatched Base tokens when destination %s has no matching coinKey',
+    (childChainId) => {
+      const baseUsdc = buildToken({
+        chainId: ChainId.Base,
+        address: getAddress(CommonAddress.Base.USDC),
+        coinKey: CoinKey.USDC,
+        name: 'USD Coin',
+        decimals: 6,
+      });
+      const tokens = groupChildTokensAndParentTokens({
+        parentTokens: [
+          baseUsdc,
+          buildToken({ chainId: ChainId.Base, coinKey: CoinKey.USDT }),
+          // A matching symbol/coinKey is insufficient: only the canonical address is allowed.
+          buildToken({ chainId: ChainId.Base, coinKey: CoinKey.USDC }),
+        ],
+        childTokens: [],
+        childTokensByCoinKey: {},
+        parentChainId: ChainId.Base,
+        childChainId,
+      });
+
+      expect(tokens).toHaveLength(1);
+      expect(tokens[0]).toMatchObject({
+        chainId: ChainId.Base,
+        address: baseUsdc.address,
+        symbol: 'USDC',
+        decimals: 6,
+      });
+      expect(tokens[0]?.extensions?.bridgeInfo).toBeUndefined();
+
+      const baseUsdcEntry = tokens[0];
+      if (!baseUsdcEntry) {
+        throw new Error('Expected Base USDC in the token list');
+      }
+      const bridgeToken = tokenListTokenToBridgeToken({
+        token: baseUsdcEntry,
+        listId: LIFI_TRANSFER_LIST_ID,
+        parentChainId: ChainId.Base,
+        childChainId,
+      });
+      expect(bridgeToken).toMatchObject({
+        address: CommonAddress.Base.USDC.toLowerCase(),
+        lifiOnlyChainId: ChainId.Base,
+      });
+      expect(bridgeToken?.l2Address).toBeUndefined();
+      expect(isTokenAvailableOnChain(bridgeToken, ChainId.Base)).toBe(true);
+      expect(isTokenAvailableOnChain(bridgeToken, childChainId)).toBe(false);
+    },
+  );
+
+  it.each([ChainId.Ethereum, ChainId.ApeChain, ChainId.ArbitrumOne])(
+    'does not apply the Base address allowlist to chain %s',
+    (parentChainId) => {
+      const tokens = groupChildTokensAndParentTokens({
+        parentTokens: [
+          buildToken({
+            chainId: parentChainId,
+            address: CommonAddress.Base.USDC,
+            coinKey: CoinKey.USDC,
+          }),
+        ],
+        childTokensByCoinKey: {},
+        parentChainId,
+        childChainId: ChainId.RobinhoodChain,
+      });
+
+      expect(tokens).toEqual([]);
+    },
+  );
+
+  it.each([ChainId.RobinhoodChain, ChainId.ArbitrumOne])(
+    'does not duplicate Base USDC when a matching token exists on %s',
+    (childChainId) => {
+      const childUsdc = buildToken({
+        chainId: childChainId,
+        coinKey: CoinKey.USDC,
+      });
+      const tokens = groupChildTokensAndParentTokens({
+        parentTokens: [
+          buildToken({
+            chainId: ChainId.Base,
+            address: CommonAddress.Base.USDC,
+            coinKey: CoinKey.USDC,
+          }),
+        ],
+        childTokensByCoinKey: { [CoinKey.USDC]: childUsdc },
+        parentChainId: ChainId.Base,
+        childChainId,
+      });
+
+      expect(tokens).toHaveLength(1);
+      expect(tokens[0]?.chainId).toBe(childChainId);
+      expect(tokens[0]?.extensions?.bridgeInfo).toMatchObject({
+        [ChainId.Base]: { tokenAddress: CommonAddress.Base.USDC },
+      });
+    },
+  );
+});
+
+describe('cross-ecosystem token list metadata', () => {
+  it('keeps source mint casing and decimals independent of a destination token with the same coin key', () => {
+    const mint = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+    const source = buildToken({
+      chainId: ChainId.Solana,
+      address: mint,
+      decimals: 6,
+      coinKey: CoinKey.USDC,
+    });
+    const destination = buildToken({
+      chainId: ChainId.ArbitrumOne,
+      decimals: 18,
+      coinKey: CoinKey.USDC,
+    });
+    // No source token shares its coin key
+    const unmatchedDestination = buildToken({
+      chainId: ChainId.ArbitrumOne,
+      address: '0x0000000000000000000000000000000000000012',
+      coinKey: CoinKey.DAI,
+    });
+    const tokens = groupChildTokensAndParentTokens({
+      parentTokens: [source],
+      childTokens: [destination, unmatchedDestination],
+      childTokensByCoinKey: { [CoinKey.USDC]: destination, [CoinKey.DAI]: unmatchedDestination },
+      parentChainId: ChainId.Solana,
+      childChainId: ChainId.ArbitrumOne,
+    });
+    expect(tokens).toHaveLength(3);
+    expect(tokens[0]).toMatchObject({ chainId: ChainId.Solana, address: mint, decimals: 6 });
+    expect(tokens[1]).toMatchObject({ chainId: ChainId.ArbitrumOne, decimals: 18 });
+    expect(tokens[2]).toMatchObject({
+      chainId: ChainId.ArbitrumOne,
+      address: unmatchedDestination.address,
+      symbol: CoinKey.DAI,
+    });
+    tokens.forEach((token) => expect(token.extensions?.bridgeInfo).toBeUndefined());
   });
 });

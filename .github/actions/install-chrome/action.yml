@@ -1,0 +1,26 @@
+name: Install Chrome for Testing
+description: Restore the pinned Chrome for Testing from cache, or download it
+
+# `postinstall` skips the download on CI, so jobs that need Chrome call this action instead.
+# It caches Chrome on its own, keyed by version, so one entry serves every job and lockfile
+runs:
+  using: composite
+  steps:
+    - name: Read Chrome version and path
+      id: chrome
+      shell: bash
+      run: |
+        echo "version=$(node -p "require('./package.json').config.chromeVersion")" >> "$GITHUB_OUTPUT"
+        echo "path=$(node -p "require('./package.json').config.chromePath")" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Chrome for Testing
+      id: cache
+      uses: actions/cache@v6
+      with:
+        path: ${{ steps.chrome.outputs.path }}
+        key: ${{ runner.os }}-chrome-${{ steps.chrome.outputs.version }}
+
+    - name: Install Chrome for Testing
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: pnpm run install:chromium

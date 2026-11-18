@@ -3,12 +3,13 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Fragment, useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
-import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { useTransactionHistory } from '../../hooks/useTransactionHistory';
-import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { TransactionDetailsContent } from './TransactionDetailsContent';
 import { useTxDetailsStore } from './TransactionHistory';
-import { useTransactionHistoryAddressStore } from './TransactionHistorySearchBar';
+import {
+  useTransactionHistoryAddressStore,
+  useTxHashSearchState,
+} from './TransactionHistorySearchBar';
 
 export const TransactionsTableDetails = () => {
   const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
@@ -22,6 +23,7 @@ export const TransactionsTableDetails = () => {
     shallow,
   );
 
+  const { isTxHashSearch } = useTxHashSearchState();
   const { transactions } = useTransactionHistory(sanitizedAddress);
 
   const tx = useMemo(() => {
@@ -38,10 +40,7 @@ export const TransactionsTableDetails = () => {
     );
   }, [transactions, txFromStore]);
 
-  const childProvider = getProviderForChainId(tx?.childChainId ?? 0);
-  const nativeCurrency = useNativeCurrency({ provider: childProvider });
-
-  if (!tx || !sanitizedAddress || !nativeCurrency) {
+  if (!tx || (!sanitizedAddress && !isTxHashSearch)) {
     return null;
   }
 
@@ -87,7 +86,12 @@ export const TransactionsTableDetails = () => {
                   </button>
                 </Dialog.Title>
 
-                <TransactionDetailsContent tx={tx} walletAddress={sanitizedAddress} />
+                <TransactionDetailsContent
+                  tx={tx}
+                  // A hash search result is not tied to the searched address,
+                  // so describe the tx relative to its own sender.
+                  walletAddress={isTxHashSearch ? tx.sender : sanitizedAddress}
+                />
               </Dialog.Panel>
             </Transition.Child>
           </div>

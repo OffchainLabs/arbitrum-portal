@@ -8,16 +8,21 @@ import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../hooks/useSelectedToken';
 import { BuyPanelNetworkSelectionContainer } from '../BuyPanel/BuyPanel';
 import { RecoverFundsDialog } from '../RecoverFunds';
+import { AmountMismatchWarningDialog } from '../TransferPanel/AmountMismatchWarningDialog';
 import { CustomDestinationAddressConfirmationDialog } from '../TransferPanel/CustomDestinationAddressConfirmationDialog';
 import { CustomFeeTokenApprovalDialog } from '../TransferPanel/CustomFeeTokenApprovalDialog';
 import { DestinationTokenSearch } from '../TransferPanel/DestinationTokenSearch';
 import { HighSlippageWarningDialog } from '../TransferPanel/HighSlippageWarningDialog';
+import {
+  LifiApprovalDialogData,
+  LifiTokenApprovalDialog,
+} from '../TransferPanel/LifiTokenApprovalDialog';
 import { NovaDepositWarningDialog } from '../TransferPanel/NovaDepositWarningDialog';
-import { PoPDisabledDialog } from '../TransferPanel/PoPDisabledDialog';
 import { SettingsDialog } from '../TransferPanel/SettingsDialog';
 import { TokenApprovalDialog } from '../TransferPanel/TokenApprovalDialog';
 import { TokenDepositCheckDialog } from '../TransferPanel/TokenDepositCheckDialog';
 import { TokenSearch } from '../TransferPanel/TokenSearch';
+import { TrustWalletUpdateDialog } from '../TransferPanel/TrustWalletUpdateDialog';
 import { CctpUsdcDepositConfirmationDialog } from '../TransferPanel/USDCDeposit/CctpUsdcDepositConfirmationDialog';
 import { UsdcDepositConfirmationDialog } from '../TransferPanel/USDCDeposit/UsdcDepositConfirmationDialog';
 import { CctpUsdcWithdrawalConfirmationDialog } from '../TransferPanel/USDCWithdrawal/CctpUsdcWithdrawalConfirmationDialog';
@@ -35,7 +40,14 @@ type WaitForInputFunction = () => Promise<[boolean, unknown]>;
 /**
  * Opens the dialog and returns a function which can be called to retrieve a {@link WaitForInputFunction}.
  */
-export type OpenDialogFunction = (dialogType: DialogType) => WaitForInputFunction;
+export type DialogData = {
+  lifiApproval?: LifiApprovalDialogData;
+};
+
+export type OpenDialogFunction = (
+  dialogType: DialogType,
+  dialogData?: DialogData,
+) => WaitForInputFunction;
 
 /**
  * Returns an array containing {@link DialogProps} and {@link OpenDialogFunction}.
@@ -44,6 +56,7 @@ type UseDialogResult = [DialogProps, OpenDialogFunction];
 
 export type DialogType =
   | 'approve_token'
+  | 'approve_lifi_token'
   | 'approve_cctp_usdc'
   | 'approve_custom_fee_token'
   | 'withdraw'
@@ -54,6 +67,7 @@ export type DialogType =
   | 'confirm_cctp_deposit'
   | 'confirm_usdc_deposit'
   | 'high_slippage_warning'
+  | 'amount_mismatch_warning'
   | 'widget_transaction_history'
   | 'token_selection'
   | 'destination_token_selection'
@@ -62,8 +76,8 @@ export type DialogType =
   | 'source_network_selection'
   | 'destination_network_selection'
   | 'buy_panel_network_selection'
-  | 'pop_disabled'
   | 'nova_deposit_warning'
+  | 'trust_wallet_update'
   | 'earn_tos';
 
 export function useDialog2(): UseDialogResult {
@@ -73,30 +87,51 @@ export function useDialog2(): UseDialogResult {
 
   // Whether the dialog is currently open
   const [openedDialogType, setOpenedDialogType] = useState<DialogType | null>(null);
+  const [dialogData, setDialogData] = useState<DialogData | undefined>();
+  // Counts opens, so reopening the same dialog type still gives it a new `onClose`
+  const [openCount, setOpenCount] = useState(0);
+  const openCountRef = useRef(0);
 
-  const openDialog: OpenDialogFunction = useCallback((dialogType: DialogType) => {
-    setOpenedDialogType(dialogType);
+  const openDialog: OpenDialogFunction = useCallback(
+    (dialogType: DialogType, data?: DialogData) => {
+      openCountRef.current += 1;
+      setOpenCount(openCountRef.current);
+      setOpenedDialogType(dialogType);
+      setDialogData(data);
 
-    return () => {
-      return new Promise((resolve) => {
-        resolveRef.current = resolve;
-      });
-    };
-  }, []);
+      return () => {
+        return new Promise((resolve) => {
+          resolveRef.current = resolve;
+        });
+      };
+    },
+    [],
+  );
 
-  const closeDialog = useCallback((confirmed: boolean, onCloseData?: unknown) => {
-    if (typeof resolveRef.current !== 'undefined') {
-      resolveRef.current?.([confirmed, onCloseData]);
-    }
+  const closeDialog = useCallback(
+    (confirmed: boolean, onCloseData?: unknown) => {
+      // `Dialog` calls `onClose` 200ms after a close, once its exit animation ends.
+      // Ignore that call if the dialog was opened again in the meantime.
+      if (openCount !== openCountRef.current) {
+        return;
+      }
 
-    setOpenedDialogType(null);
-  }, []);
+      if (typeof resolveRef.current !== 'undefined') {
+        resolveRef.current?.([confirmed, onCloseData]);
+      }
 
-  return [{ openedDialogType, onClose: closeDialog }, openDialog];
+      setOpenedDialogType(null);
+      setDialogData(undefined);
+    },
+    [openCount],
+  );
+
+  return [{ openedDialogType, dialogData, onClose: closeDialog }, openDialog];
 }
 
 export type DialogProps = {
   openedDialogType: DialogType | null;
+  dialogData?: DialogData;
   onClose: (confirmed: boolean, onCloseData?: unknown) => void;
 };
 
@@ -104,8 +139,8 @@ export function DialogWrapper(props: DialogProps) {
   const [selectedToken] = useSelectedToken();
   const [{ amount }] = useArbQueryParams();
   const [networks] = useNetworks();
-  const { childChainProvider } = useNetworksRelationship(networks);
-  const nativeCurrency = useNativeCurrency({ provider: childChainProvider });
+  const { childChain } = useNetworksRelationship(networks);
+  const nativeCurrency = useNativeCurrency({ chainId: childChain.id });
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -121,6 +156,13 @@ export function DialogWrapper(props: DialogProps) {
     case 'approve_token':
     case 'approve_cctp_usdc':
       return <TokenApprovalDialog {...commonProps} token={selectedToken} />;
+    case 'approve_lifi_token':
+      return (
+        <LifiTokenApprovalDialog
+          {...commonProps}
+          approvalRequest={props.dialogData?.lifiApproval?.approvalRequest}
+        />
+      );
     case 'approve_custom_fee_token':
       if (nativeCurrency.isCustom) {
         return <CustomFeeTokenApprovalDialog {...commonProps} customFeeToken={nativeCurrency} />;
@@ -147,6 +189,8 @@ export function DialogWrapper(props: DialogProps) {
       );
     case 'high_slippage_warning':
       return <HighSlippageWarningDialog {...commonProps} />;
+    case 'amount_mismatch_warning':
+      return <AmountMismatchWarningDialog {...commonProps} />;
     case 'widget_transaction_history':
       return <WidgetTransactionHistory {...commonProps} />;
     case 'token_selection':
@@ -163,10 +207,10 @@ export function DialogWrapper(props: DialogProps) {
       return <NetworkSelectionContainer {...commonProps} type="destination" />;
     case 'buy_panel_network_selection':
       return <BuyPanelNetworkSelectionContainer {...commonProps} />;
-    case 'pop_disabled':
-      return <PoPDisabledDialog {...commonProps} />;
     case 'nova_deposit_warning':
       return <NovaDepositWarningDialog {...commonProps} />;
+    case 'trust_wallet_update':
+      return <TrustWalletUpdateDialog {...commonProps} />;
     case 'earn_tos':
       return <EarnToSPopupDialog {...commonProps} />;
     default:

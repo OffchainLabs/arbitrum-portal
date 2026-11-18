@@ -8,9 +8,11 @@ import {
 } from '@arbitrum/sdk';
 import { BigNumber } from '@ethersproject/bignumber';
 import { Provider } from '@ethersproject/providers';
-import { getStatus } from '@lifi/sdk';
+import { type RouteExtended, getStatus } from '@lifi/sdk';
+import type { StatusResponse } from '@lifi/types';
 import dayjs from 'dayjs';
 
+import type { AmountWithToken } from '../../app/api/crosschain-transfers/types';
 import { AssetType } from '../../hooks/arbTokenBridge.types';
 import { getUniqueIdOrHashFromEvent } from '../../hooks/useArbTokenBridge';
 import { Deposit, Transfer } from '../../hooks/useTransactionHistory';
@@ -26,18 +28,29 @@ import { getBlockBeforeConfirmation } from '../../state/cctpState';
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { ChainId } from '../../types/ChainId';
 import { SimplifiedRouteType } from '../../util/AnalyticsUtils';
+import { getLifiToolDetails, getLifiTransactionSnapshot } from '../../util/LifiRouteUtils';
+import {
+  LIFI_TRANSFER_PROCESS_TYPES,
+  getLifiRouteStatusRequest,
+  getLifiTransferStatus,
+  isActiveLifiProcess,
+  isLifiRouteComplete,
+  isPendingLifiProcessId,
+  isValidLifiTransactionHash,
+} from '../../util/LifiTransactionStatus';
 import { getAttestationHashAndMessageFromReceipt } from '../../util/cctp/getAttestationHashAndMessageFromReceipt';
 import {
   getParentToChildMessageDataFromParentTxHash,
   isEthDepositMessage,
 } from '../../util/deposits/helpers';
-import { getL1BlockTime, getNetworkName, isNetwork } from '../../util/networks';
+import { getExplorerUrl, getL1BlockTime, getNetworkName, isNetwork } from '../../util/networks';
 import { getOutgoingMessageState } from '../../util/withdrawals/helpers';
 import { warningToast } from '../common/atoms/Toast';
 
 const PARENT_CHAIN_TX_DETAILS_OF_CLAIM_TX = 'arbitrum:bridge:claim:parent:tx:details';
 const DEPOSITS_LOCAL_STORAGE_KEY = 'arbitrum:bridge:deposits';
 const LIFI_REFUND_TOAST_KEY_PREFIX = 'arbitrum:bridge:lifi:refund:';
+const LIFI_SCAN_URL = 'https://scan.li.fi';
 
 function showLifiRefundToastOnce(tx: LifiMergedTransaction) {
   if (typeof window === 'undefined') {
@@ -68,6 +81,39 @@ export function isOftTransfer(tx: Transfer): tx is LayerZeroTransaction {
 
 export function isLifiTransfer(tx: Transfer): tx is LifiMergedTransaction {
   return 'isLifi' in tx && tx.isLifi === true;
+}
+
+function isLifiTransferFailedOrRefunded(tx: LifiMergedTransaction) {
+  return (
+    tx.status === WithdrawalStatus.FAILURE ||
+    tx.destinationStatus === WithdrawalStatus.FAILURE ||
+    isLifiTransferRefunded(tx)
+  );
+}
+
+function getLifiRouteState(tx: LifiMergedTransaction) {
+  const steps = tx.lifiRoute?.steps ?? [];
+
+  return {
+    bridgeIsComplete: steps.some((step) =>
+      (step.execution?.process ?? []).some(
+        (process) => process.type === 'CROSS_CHAIN' && process.status === 'DONE',
+      ),
+    ),
+    hasActiveProcess: steps.some((step) =>
+      (step.execution?.process ?? []).some(isActiveLifiProcess),
+    ),
+    hasFailedStep: steps.some((step) => step.execution?.status === 'FAILED'),
+    hasPendingStep: steps.some((step) => step.execution?.status === 'PENDING'),
+    hasUnfinishedStep: steps.some((step) => step.execution?.status !== 'DONE'),
+    isMultiStep: steps.length > 1,
+  };
+}
+
+function isLifiTransferRefunded(tx: LifiMergedTransaction) {
+  return (
+    tx.status === WithdrawalStatus.REFUNDED || tx.destinationStatus === WithdrawalStatus.REFUNDED
+  );
 }
 
 export function getTransactionType(tx: Transfer): SimplifiedRouteType {
@@ -112,12 +158,7 @@ export function isTxPending(tx: MergedTransaction) {
   }
 
   if (isLifiTransfer(tx)) {
-    if (
-      tx.status === WithdrawalStatus.FAILURE ||
-      tx.destinationStatus === WithdrawalStatus.FAILURE ||
-      tx.status === WithdrawalStatus.REFUNDED ||
-      tx.destinationStatus === WithdrawalStatus.REFUNDED
-    ) {
+    if (isLifiTransferFailedOrRefunded(tx) || getLifiRouteState(tx).hasFailedStep) {
       return false;
     }
 
@@ -133,6 +174,39 @@ export function isTxPending(tx: MergedTransaction) {
     );
   }
   return tx.status === WithdrawalStatus.UNCONFIRMED;
+}
+
+export function isLifiTransferResumable(tx: MergedTransaction) {
+  if (!isLifiTransfer(tx) || !tx.lifiRoute) {
+    return false;
+  }
+
+  if (isLifiTransferRefunded(tx)) {
+    return false;
+  }
+
+  const { hasActiveProcess, hasPendingStep, hasUnfinishedStep, isMultiStep } =
+    getLifiRouteState(tx);
+
+  return isMultiStep && hasUnfinishedStep && !hasPendingStep && !hasActiveProcess;
+}
+
+export function getLifiTransferDisplayStatus(tx: LifiMergedTransaction): LifiMergedTransaction {
+  if (isLifiTransferRefunded(tx)) {
+    return tx;
+  }
+
+  const { bridgeIsComplete, hasFailedStep, hasUnfinishedStep } = getLifiRouteState(tx);
+
+  if (!hasUnfinishedStep || !bridgeIsComplete) {
+    return tx;
+  }
+
+  return {
+    ...tx,
+    status: WithdrawalStatus.CONFIRMED,
+    destinationStatus: hasFailedStep ? WithdrawalStatus.FAILURE : WithdrawalStatus.UNCONFIRMED,
+  };
 }
 
 export function isTxClaimable(tx: MergedTransaction): boolean {
@@ -164,12 +238,7 @@ export function isTxFailed(tx: MergedTransaction): boolean {
   }
 
   if (isLifiTransfer(tx)) {
-    return (
-      tx.status === WithdrawalStatus.FAILURE ||
-      tx.destinationStatus === WithdrawalStatus.FAILURE ||
-      tx.status === WithdrawalStatus.REFUNDED ||
-      tx.destinationStatus === WithdrawalStatus.REFUNDED
-    );
+    return isLifiTransferFailedOrRefunded(tx) || getLifiRouteState(tx).hasFailedStep;
   }
 
   if (isDeposit(tx)) {
@@ -191,16 +260,21 @@ export function isSameTransaction(
     parentChainId: ChainId;
     childChainId: ChainId;
     uniqueId?: BigNumber | null;
+    lifiRoute?: { id?: string };
   },
   txDetails_2: {
     txId: string;
     parentChainId: ChainId;
     childChainId: ChainId;
     uniqueId?: BigNumber | null;
+    lifiRoute?: { id?: string };
   },
 ) {
+  const sameLifiRoute =
+    typeof txDetails_1.lifiRoute?.id === 'string' &&
+    txDetails_1.lifiRoute.id === txDetails_2.lifiRoute?.id;
   const baseMatch =
-    txDetails_1.txId === txDetails_2.txId &&
+    (txDetails_1.txId === txDetails_2.txId || sameLifiRoute) &&
     txDetails_1.parentChainId === txDetails_2.parentChainId &&
     txDetails_1.childChainId === txDetails_2.childChainId;
 
@@ -403,6 +477,7 @@ export async function getUpdatedEthDeposit(tx: MergedTransaction): Promise<Merge
         retryableCreationTxID: (parentToChildMsg as EthDepositMessage).childTxHash,
         // Only show `childTxId` after the deposit is confirmed
         childTxId: isDeposited ? (parentToChildMsg as EthDepositMessage).childTxHash : undefined,
+        isNativeTokenDepositMessage: true,
       },
     };
 
@@ -460,6 +535,7 @@ export async function getUpdatedRetryableDeposit(
       childTxId,
       fetchingUpdate: false,
       retryableCreationTxID: _parentToChildMsg.retryableCreationId,
+      callValueRefundAddress: _parentToChildMsg.messageData.callValueRefundAddress,
     },
   };
 
@@ -479,8 +555,9 @@ export async function getUpdatedWithdrawal(tx: MergedTransaction): Promise<Merge
   const txReceipt = await getTxReceipt(tx);
   const childTxReceipt = new ChildTransactionReceipt(txReceipt);
   const events = childTxReceipt.getChildToParentEvents();
-  const withdrawalEvent = tx.uniqueId
-    ? events.find((e) => getUniqueIdOrHashFromEvent(e).eq(tx.uniqueId!))
+  const existingUniqueId = tx.uniqueId;
+  const withdrawalEvent = existingUniqueId
+    ? events.find((e) => getUniqueIdOrHashFromEvent(e).eq(existingUniqueId))
     : events[0];
 
   if (childTxReceipt) {
@@ -566,73 +643,179 @@ export async function getUpdatedCctpTransfer(tx: MergedTransaction): Promise<Mer
   return { ...tx, status: WithdrawalStatus.UNCONFIRMED };
 }
 
+function applyCompletedLifiStep({
+  route,
+  stepIndex,
+  actualToAmount,
+}: {
+  route: RouteExtended;
+  stepIndex: number;
+  actualToAmount: AmountWithToken | undefined;
+}): RouteExtended {
+  const nextRoute = structuredClone(route);
+  const execution = nextRoute.steps[stepIndex]?.execution;
+
+  if (execution) {
+    execution.status = 'DONE';
+    execution.process = execution.process.map((process) =>
+      LIFI_TRANSFER_PROCESS_TYPES.has(process.type) ? { ...process, status: 'DONE' } : process,
+    );
+
+    if (actualToAmount) {
+      execution.toAmount = actualToAmount.amount;
+      execution.toToken = actualToAmount.token as NonNullable<typeof execution.toToken>;
+    }
+  }
+
+  return nextRoute;
+}
+
+function deriveLifiStatus({
+  apiStatus,
+  statusResponse,
+  lifiRoute,
+  routeIsComplete,
+  routeHasFailedStep,
+}: {
+  apiStatus: ReturnType<typeof getLifiTransferStatus>;
+  statusResponse: StatusResponse;
+  lifiRoute: RouteExtended | undefined;
+  routeIsComplete: boolean | undefined;
+  routeHasFailedStep: boolean | undefined;
+}): ReturnType<typeof getLifiTransferStatus> {
+  if (
+    statusResponse.status === 'FAILED' &&
+    routeHasFailedStep &&
+    lifiRoute?.steps[0]?.execution?.status === 'DONE'
+  ) {
+    return {
+      ...apiStatus,
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.FAILURE,
+    };
+  }
+  const keepRouteResumable =
+    statusResponse.status === 'DONE' &&
+    statusResponse.substatus !== 'REFUNDED' &&
+    lifiRoute !== undefined &&
+    !routeIsComplete;
+
+  if (!keepRouteResumable) {
+    return apiStatus;
+  }
+
+  return {
+    ...apiStatus,
+    status: WithdrawalStatus.CONFIRMED,
+    destinationStatus: routeHasFailedStep ? WithdrawalStatus.FAILURE : WithdrawalStatus.UNCONFIRMED,
+  };
+}
+
 export async function getUpdatedLifiTransfer(
   tx: LifiMergedTransaction,
-): Promise<MergedTransaction> {
-  if (
-    tx.status === WithdrawalStatus.FAILURE ||
-    tx.destinationStatus === WithdrawalStatus.FAILURE ||
-    tx.status === WithdrawalStatus.REFUNDED ||
-    tx.destinationStatus === WithdrawalStatus.REFUNDED
-  ) {
+): Promise<LifiMergedTransaction> {
+  if (isLifiTransferFailedOrRefunded(tx)) {
     return tx;
   }
 
-  const statusResponse = await getStatus({
-    txHash: tx.txId,
-    bridge: tx.toolDetails.key,
-    fromChain: tx.sourceChainId.toString(),
-    toChain: tx.destinationChainId.toString(),
+  const statusRequest = tx.lifiRoute
+    ? getLifiRouteStatusRequest(tx.lifiRoute)
+    : isValidLifiTransactionHash(tx.txId)
+      ? {
+          params: {
+            txHash: tx.txId,
+            bridge: getLifiTransactionSnapshot(tx)?.toolsDetails[0].key ?? getLifiToolDetails().key,
+            fromChain: tx.sourceChainId.toString(),
+            toChain: tx.destinationChainId.toString(),
+          },
+        }
+      : undefined;
+
+  if (!statusRequest) {
+    return tx;
+  }
+
+  const statusResponse = await getStatus(statusRequest.params);
+  if (statusResponse.status === 'NOT_FOUND') {
+    return tx;
+  }
+
+  const receiving = 'receiving' in statusResponse ? statusResponse.receiving : undefined;
+  const actualReceiving =
+    statusResponse.status === 'DONE' &&
+    receiving &&
+    'amount' in receiving &&
+    typeof receiving.amount === 'string' &&
+    'token' in receiving &&
+    receiving.token
+      ? (receiving as typeof receiving & {
+          amount: string;
+          amountUSD?: string;
+          token: AmountWithToken['token'];
+        })
+      : undefined;
+  const actualToAmount: AmountWithToken | undefined = actualReceiving
+    ? {
+        amount: actualReceiving.amount,
+        amountUSD: typeof actualReceiving.amountUSD === 'string' ? actualReceiving.amountUSD : '0',
+        chainId: actualReceiving.chainId,
+        token: actualReceiving.token,
+      }
+    : undefined;
+
+  let lifiRoute = tx.lifiRoute;
+  const statusStepIndex = 'stepIndex' in statusRequest ? statusRequest.stepIndex : undefined;
+  if (statusResponse.status === 'DONE' && lifiRoute && statusStepIndex !== undefined) {
+    lifiRoute = applyCompletedLifiStep({
+      route: lifiRoute,
+      stepIndex: statusStepIndex,
+      actualToAmount,
+    });
+  }
+
+  if (statusResponse.status === 'FAILED' && lifiRoute && statusStepIndex !== undefined) {
+    lifiRoute = structuredClone(lifiRoute);
+    const execution = lifiRoute.steps[statusStepIndex]?.execution;
+    if (execution) {
+      execution.status = 'FAILED';
+      execution.process = execution.process.map((process) =>
+        LIFI_TRANSFER_PROCESS_TYPES.has(process.type) ? { ...process, status: 'FAILED' } : process,
+      );
+    }
+  }
+
+  const routeIsComplete = isLifiRouteComplete(lifiRoute);
+  const routeHasFailedStep = lifiRoute?.steps.some((step) => step.execution?.status === 'FAILED');
+  const apiStatus = getLifiTransferStatus(statusResponse);
+  const { status, destinationStatus, destinationTxId } = deriveLifiStatus({
+    apiStatus,
+    statusResponse,
+    lifiRoute,
+    routeIsComplete,
+    routeHasFailedStep,
   });
 
-  let sourceStatus: WithdrawalStatus;
-  let destinationStatus: WithdrawalStatus;
-  let destinationTxId: string | null = null;
+  const completedToAmount =
+    routeIsComplete && lifiRoute
+      ? getLifiTransactionSnapshot({ ...tx, lifiRoute })?.toAmount
+      : !lifiRoute
+        ? (tx.toAmount ?? actualToAmount)
+        : undefined;
 
-  /**
-   * See https://docs.li.fi/li.fi-api/li.fi-api/status-of-a-transaction#the-different-statuses-and-what-they-mean
-   */
-  if (statusResponse.status === 'DONE') {
-    if (statusResponse.substatus === 'REFUNDED') {
-      sourceStatus = WithdrawalStatus.REFUNDED;
-      destinationStatus = WithdrawalStatus.REFUNDED;
-      showLifiRefundToastOnce(tx);
-    } else {
-      sourceStatus = WithdrawalStatus.CONFIRMED;
-      destinationStatus = WithdrawalStatus.CONFIRMED;
-    }
-    if ('txHash' in statusResponse.receiving) {
-      destinationTxId = statusResponse.receiving.txHash;
-    }
-  } else if (statusResponse.status === 'PENDING') {
-    if ('timestamp' in statusResponse.sending) {
-      // Source transaction has been executed
-      sourceStatus = WithdrawalStatus.CONFIRMED;
-      destinationStatus = WithdrawalStatus.UNCONFIRMED;
-    } else {
-      sourceStatus = WithdrawalStatus.UNCONFIRMED;
-      destinationStatus = WithdrawalStatus.UNCONFIRMED;
-    }
-    if ('txHash' in statusResponse.receiving) {
-      destinationTxId = statusResponse.receiving.txHash;
-    }
-  } else {
-    // Failure
-    if ('timestamp' in statusResponse.sending) {
-      // Source transaction has been executed
-      sourceStatus = WithdrawalStatus.CONFIRMED;
-      destinationStatus = WithdrawalStatus.FAILURE;
-    } else {
-      sourceStatus = WithdrawalStatus.FAILURE;
-      destinationStatus = WithdrawalStatus.UNCONFIRMED;
-    }
+  if (status === WithdrawalStatus.REFUNDED || destinationStatus === WithdrawalStatus.REFUNDED) {
+    showLifiRefundToastOnce(tx);
   }
 
   return {
     ...tx,
+    ...(lifiRoute ? { lifiRoute } : {}),
     destinationTxId,
-    status: sourceStatus,
+    lifiExplorerLink:
+      'lifiExplorerLink' in statusResponse ? statusResponse.lifiExplorerLink : tx.lifiExplorerLink,
+    status,
     destinationStatus,
+    ...(completedToAmount ? { toAmount: completedToAmount } : {}),
+    ...(!lifiRoute && actualToAmount ? { receivedAmount: actualToAmount } : {}),
   };
 }
 
@@ -687,10 +870,63 @@ export function getDestinationNetworkTxId(tx: MergedTransaction) {
   }
 
   if (isLifiTransfer(tx)) {
-    return tx.destinationTxId;
+    return getLifiRouteTransactionProcesses(tx).at(-1)?.txHash ?? tx.destinationTxId;
   }
 
   return tx.isWithdrawal
     ? tx.childToParentMsgData?.uniqueId.toString()
     : tx.parentToChildMsgData?.childTxId;
+}
+
+function getLifiRouteTransactionProcesses(tx: LifiMergedTransaction) {
+  const routeSteps = tx.lifiRoute?.steps ?? tx.lifiRouteSteps ?? [];
+
+  return routeSteps.flatMap((step) =>
+    (step.execution?.process ?? []).filter(
+      (process) =>
+        LIFI_TRANSFER_PROCESS_TYPES.has(process.type) &&
+        !isPendingLifiProcessId(process) &&
+        isValidLifiTransactionHash(process.txHash),
+    ),
+  );
+}
+
+function getLifiScanUrl(txId: string | null | undefined) {
+  if (!isValidLifiTransactionHash(txId)) {
+    return '';
+  }
+
+  return `${LIFI_SCAN_URL}/tx/${txId}`;
+}
+
+export function getSourceTransactionUrl(tx: MergedTransaction) {
+  if (isLifiTransfer(tx)) {
+    if (tx.lifiExplorerLink) {
+      return tx.lifiExplorerLink;
+    }
+
+    const sourceProcess = getLifiRouteTransactionProcesses(tx)[0];
+    if (sourceProcess) {
+      return sourceProcess.txLink || getLifiScanUrl(sourceProcess.txHash);
+    }
+
+    return tx.lifiRoute || tx.lifiRouteSteps?.length ? '' : getLifiScanUrl(tx.txId);
+  }
+
+  return `${getExplorerUrl(tx.sourceChainId)}/tx/${tx.txId}`;
+}
+
+export function getDestinationTransactionUrl(tx: MergedTransaction) {
+  const destinationNetworkTxId = getDestinationNetworkTxId(tx);
+
+  if (isLifiTransfer(tx)) {
+    return getLifiScanUrl(destinationNetworkTxId);
+  }
+
+  if (!destinationNetworkTxId) {
+    return '';
+  }
+
+  const destinationChainId = tx.isWithdrawal ? tx.parentChainId : tx.childChainId;
+  return `${getExplorerUrl(destinationChainId)}/tx/${destinationNetworkTxId}`;
 }

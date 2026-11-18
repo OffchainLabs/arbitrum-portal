@@ -1,0 +1,25 @@
+# A closed PR's caches can't be restored by any other ref, but they count toward the repo's 10GB
+# cache limit until they go unused for 7 days. Deleting them on close frees that space for the
+# open PRs.
+# pull_request_target gives the token write access on PRs from forks too. This workflow never
+# checks out the PR's code.
+name: Delete PR caches
+
+on:
+  pull_request_target:
+    types:
+      - closed
+
+permissions:
+  actions: write
+
+jobs:
+  delete-pr-caches:
+    name: Delete PR caches
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete PR caches
+        run: gh cache delete --all --ref "refs/pull/${{ github.event.pull_request.number }}/merge" --succeed-on-no-caches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
