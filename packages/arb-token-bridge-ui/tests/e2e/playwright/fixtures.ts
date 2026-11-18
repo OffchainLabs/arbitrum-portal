@@ -144,6 +144,24 @@ function registerSnapshotNetworks(e2eEnv: E2EConfig) {
   setSynpressNetwork(lastNetwork);
 }
 
+const APP_URL = 'http://127.0.0.1:3000';
+
+async function waitForApp(timeoutMs = 600_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      // eslint-disable-next-line no-await-in-loop -- polling
+      const response = await fetch(APP_URL);
+      if (response.ok) return;
+    } catch {
+      // not up yet
+    }
+    // eslint-disable-next-line no-await-in-loop -- polling
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error(`The app at ${APP_URL} did not start within ${timeoutMs / 1000}s`);
+}
+
 // What a snapshot depends on: the wallet and the networks setUpMetamask adds.
 function metamaskSnapshotKey(e2eEnv: E2EConfig) {
   return JSON.stringify([e2eEnv.ADDRESS, getMetamaskNetworks(e2eEnv)]);
@@ -248,6 +266,12 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         context = await launch('');
         await waitForMetamaskPage(context);
         await setUpMetamask(e2eEnv);
+      }
+
+      // CI starts Playwright while the app is still being built and started, so MetaMask setup
+      // overlaps the build. Wait for the app before the first test.
+      if (process.env.E2E_WAIT_FOR_APP === 'true') {
+        await waitForApp();
       }
 
       await use(context);

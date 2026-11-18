@@ -96,29 +96,34 @@ jobs:
             || { cat "$RUNNER_TEMP/testnode.log"; docker logs testnode; exit 1; }
           curl -sf http://localhost:8080/config/localNetwork.json -o packages/arb-token-bridge-ui/src/util/networksNitroTestnode.generated.json
 
-      # Waits for the build, which runs alongside this job's setup
-      - name: Restore build artifacts
-        uses: ./.github/actions/restore-build-artifacts
-
       # The ubuntu-24.04 runner image already has Xvfb and Chrome's libraries.
       - name: Run xvfb
         run: Xvfb :0 -screen 0 1366x768x24 -listen tcp -ac &
 
       # A MetaMask profile saved right after setup (see fixtures.ts), so most jobs only unlock it.
       # Its vault password comes from the wallet's secret key, so the cached copy is safe to share.
+      # fixtures.ts rebuilds a profile whose wallet or networks differ from the current ones. Bump
+      # the version when setUpMetamask changes in another way.
       - name: Cache MetaMask profile
         uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}/metamask-profile
-          key: ${{ runner.os }}-metamask-${{ matrix.test.type }}-${{ hashFiles('packages/arb-token-bridge-ui/tests/e2e/playwright/fixtures.ts', 'packages/arb-token-bridge-ui/tests/e2e/playwright/support/common.ts', 'package.json') }}
+          key: ${{ runner.os }}-metamask-v1-${{ matrix.test.type }}-${{ hashFiles('package.json') }}
 
       - name: Run e2e tests (Playwright)
+        # Playwright starts while the build may still be running: launching Chrome and unlocking
+        # MetaMask doesn't need the app, and fixtures.ts waits for it before the first test. The
+        # build is restored and served in the background. next is run directly because the first
+        # pnpm command in a job spends ~23s checking the lockfile.
         run: |
-          # next directly: the first pnpm command in a job spends ~23s checking the lockfile
-          (cd packages/app && ./node_modules/.bin/next start) &
-          timeout 120 bash -c 'until curl -sf -o /dev/null http://127.0.0.1:3000; do sleep 0.5; done'
-          pnpm test:e2e ${{ matrix.test.files }} ${E2E_GREP:+--grep "$E2E_GREP"}
+          (
+            .github/scripts/restore-build-artifacts.sh
+            cd packages/app && exec ./node_modules/.bin/next start
+          ) > "$RUNNER_TEMP/app.log" 2>&1 &
+          pnpm test:e2e ${{ matrix.test.files }} ${E2E_GREP:+--grep "$E2E_GREP"} || { cat "$RUNNER_TEMP/app.log"; exit 1; }
         env:
+          GH_TOKEN: ${{ github.token }}
+          E2E_WAIT_FOR_APP: true
           E2E_GREP: ${{ matrix.test.grep }}
           E2E_METAMASK_PROFILE: ${{ runner.temp }}/metamask-profile
           DISPLAY: :0.0
