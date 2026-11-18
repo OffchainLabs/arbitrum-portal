@@ -89,6 +89,8 @@ export function getWithdrawalsFromReceipt({
   return [...tokenWithdrawals, ...ethWithdrawals];
 }
 
+const UNCHECKED_CHAINS_ERROR = 'Some chains could not be checked for this transaction hash.';
+
 async function getReceiptForChain({
   txHash,
   chainId,
@@ -186,8 +188,11 @@ export async function fetchTransactionsByTxHash({
 
   // with no receipt found and a chain unreachable, "not found" could be a lie
   if (receipts.length === 0 && probeResults.includes('failed')) {
-    throw new Error('Some chains could not be checked for this transaction hash.');
+    throw new Error(UNCHECKED_CHAINS_ERROR);
   }
+
+  // one failing pair must not sink a hash another pair would have resolved
+  let hasFailedDepositLookup = false;
 
   const transfers = await Promise.all(
     receipts.map(async ({ chainId, receipt }) => {
@@ -212,6 +217,9 @@ export async function fetchTransactionsByTxHash({
               pageNumber: 0,
               pageSize: 100,
               searchString: txHash,
+            }).catch(() => {
+              hasFailedDepositLookup = true;
+              return [];
             }),
           ),
         )
@@ -233,5 +241,11 @@ export async function fetchTransactionsByTxHash({
     uniqueSenders.map((sender) => fetchApiTransfersForSender({ sender, txHash, isTestnetMode })),
   );
 
-  return apiTransfers.flat();
+  const apiTransfersFound = apiTransfers.flat();
+
+  if (apiTransfersFound.length === 0 && hasFailedDepositLookup) {
+    throw new Error(UNCHECKED_CHAINS_ERROR);
+  }
+
+  return apiTransfersFound;
 }

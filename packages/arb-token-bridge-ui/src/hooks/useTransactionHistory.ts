@@ -54,7 +54,11 @@ import {
   resolveLifiRouteBatchId,
 } from '../util/LifiTransactionStatus';
 import { captureSentryErrorWithExtraData } from '../util/SentryUtils';
-import { shouldIncludeReceivedTxs, shouldIncludeSentTxs } from '../util/SubgraphUtils';
+import {
+  fetchLatestIndexedBlockNumber,
+  shouldIncludeReceivedTxs,
+  shouldIncludeSentTxs,
+} from '../util/SubgraphUtils';
 import { BATCH_FETCH_BLOCKS } from '../util/chainBlockRanges';
 import { TxHistoryChainFilter, getChainFilterKey, matchesChainFilter } from '../util/chainFilter';
 import { fetchDeposits } from '../util/deposits/fetchDeposits';
@@ -64,6 +68,7 @@ import { isBundleRejectedError } from '../util/isUserRejectedError';
 import { logger } from '../util/logger';
 import { getExplorerUrl, isNetwork } from '../util/networks';
 import { normalizeTimestamp } from '../util/normalizeTimestamp';
+import { ChainPairFetch, getFailedChainPairs } from '../util/txHistory/chainPairFetches';
 import { fetchTransactionsByTxHash } from '../util/txHistory/fetchTransactionsByTxHash';
 import { ChainPair, getMultiChainFetchList, getTxHistoryRoutes } from '../util/txHistoryRoutes';
 import { FetchWithdrawalsParams, fetchWithdrawals } from '../util/withdrawals/fetchWithdrawals';
@@ -114,6 +119,7 @@ export type Deposit = Transaction;
 export type Withdrawal = WithdrawalFromSubgraph | WithdrawalInitiated | EthWithdrawal;
 
 type DepositOrWithdrawal = Deposit | Withdrawal;
+
 export type Transfer = DepositOrWithdrawal | MergedTransaction;
 
 type ForceFetchReceivedStore = {
@@ -528,7 +534,7 @@ export async function fetchWithdrawalsInBatches(
     batchSizeBlocks?: number;
   },
 ): Promise<Withdrawal[]> {
-  const latestBlockNumber = await params.l2Provider.getBlockNumber();
+  const latestBlockNumber = params.toBlock ?? (await params.l2Provider.getBlockNumber());
 
   let fromBlock = params.fromBlock ?? 1;
   const toBlock = params.toBlock ?? latestBlockNumber;
@@ -586,6 +592,7 @@ export async function fetchWithdrawalsInBatches(
 
   const batchSizeBlocks = params.batchSizeBlocks ?? 5_000_000;
   const batchCount = Math.ceil((toBlock - fromBlock) / batchSizeBlocks);
+  const lastIndexedBlock = await fetchLatestIndexedBlockNumber(childChainId);
 
   // Max parallel fetches to avoid 429 errors
   const limit = pLimit(10);
@@ -601,6 +608,7 @@ export async function fetchWithdrawalsInBatches(
         ...params,
         fromBlock: fromBlockForBatch,
         toBlock: toBlockForBatch,
+        lastIndexedBlock,
       });
       performance.mark(`withdrawal batch end chainId:${childChainId} ${i}/${batchCount}`);
       return result;
@@ -734,9 +742,6 @@ const useTransactionHistoryWithoutStatuses = (
       isTxHistoryEnabled && !isSmartContractWallet && !isTestnetMode ? address : undefined,
   });
 
-  const { data: failedChainPairs, mutate: addFailedChainPair } = useSWRImmutable<ChainPair[]>(
-    evmAddress ? ['failed_chain_pairs', evmAddress] : null,
-  );
   const connectedChainId = account.chainId;
   const canFetch = canFetchTransactionHistory({
     address: evmAddress,
@@ -749,8 +754,10 @@ const useTransactionHistoryWithoutStatuses = (
   // to revalidate on network switch. EOA history is network-agnostic.
   const smartContractWalletChainScope = isSmartContractWallet ? connectedChainId : undefined;
 
+  // Each pair's failure is cached with the list it emptied, so the warning
+  // always describes the list on screen.
   const fetcher = useCallback(
-    (type: 'deposits' | 'withdrawals') => {
+    async (type: 'deposits' | 'withdrawals'): Promise<ChainPairFetch<DepositOrWithdrawal>[]> => {
       if (!canFetch) {
         return [];
       }
@@ -807,7 +814,7 @@ const useTransactionHistoryWithoutStatuses = (
               const fetcherFn = type === 'deposits' ? fetchDeposits : withdrawalFn;
 
               // else, fetch deposits or withdrawals
-              return await fetcherFn({
+              const transfers = await fetcherFn({
                 sender: includeSentTxs ? evmAddress : undefined,
                 receiver: includeReceivedTxs ? evmAddress : undefined,
                 l1Provider: getProviderForChainId(chainPair.parentChainId),
@@ -818,32 +825,15 @@ const useTransactionHistoryWithoutStatuses = (
                 forceFetchReceived,
                 batchSizeBlocks,
               });
+
+              return { chainPair, transfers, failed: false };
             } catch {
-              addFailedChainPair((prevFailedChainPairs) => {
-                if (!prevFailedChainPairs) {
-                  return [chainPair];
-                }
-                if (
-                  typeof prevFailedChainPairs.find(
-                    (prevPair) =>
-                      prevPair.parentChainId === chainPair.parentChainId &&
-                      prevPair.childChainId === chainPair.childChainId,
-                  ) !== 'undefined'
-                ) {
-                  // already added
-                  return prevFailedChainPairs;
-                }
-
-                return [...prevFailedChainPairs, chainPair];
-              });
-
-              return [];
+              return { chainPair, transfers: [], failed: true };
             }
           }),
       );
     },
     [
-      addFailedChainPair,
       evmAddress,
       canFetch,
       connectedChainId,
@@ -891,9 +881,9 @@ const useTransactionHistoryWithoutStatuses = (
     () => fetcher('withdrawals'),
   );
 
-  const deposits = (depositsData || []).flat();
+  const deposits = (depositsData || []).flatMap((fetch) => fetch.transfers);
 
-  const withdrawals = (withdrawalsData || []).flat();
+  const withdrawals = (withdrawalsData || []).flatMap((fetch) => fetch.transfers);
   const lifiHistoryTransactions = lifiHistoryTransfers || [];
 
   // CCTP, OFT and LiFi are fetched by single API calls rather than the scoped
@@ -927,7 +917,7 @@ const useTransactionHistoryWithoutStatuses = (
       oftLoading ||
       lifiHistoryLoading,
     error: depositsError ?? withdrawalsError ?? cctpError,
-    failedChainPairs: failedChainPairs || [],
+    failedChainPairs: getFailedChainPairs([...(depositsData || []), ...(withdrawalsData || [])]),
   };
 };
 

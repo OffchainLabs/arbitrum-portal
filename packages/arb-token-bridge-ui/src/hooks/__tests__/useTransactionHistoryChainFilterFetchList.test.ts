@@ -4,7 +4,9 @@
  * which chain pairs the fetcher fans out to for a given selection.
  */
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { createElement } from 'react';
+import { SWRConfig } from 'swr';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useTransactionHistoryChainFilterStore } from '../../components/TransactionHistory/useTransactionHistoryChainFilterStore';
@@ -33,6 +35,20 @@ vi.mock('../useArbQueryParams', async (importActual) => ({
   useArbQueryParams: vi
     .fn()
     .mockReturnValue([{ sourceChain: 1, destinationChain: 42161, disabledFeatures: [] }, vi.fn()]),
+}));
+
+// no CCTP API in tests; its fetch error would mask the history result
+vi.mock('../../state/cctpState', async (importActual) => ({
+  ...(await importActual()),
+  useCctpFetching: () => ({
+    deposits: undefined,
+    withdrawals: undefined,
+    isLoadingDeposits: false,
+    isLoadingWithdrawals: false,
+    mutateDeposits: vi.fn(),
+    mutateWithdrawals: vi.fn(),
+    setPendingTransfer: vi.fn(),
+  }),
 }));
 
 vi.mock('../../util/deposits/fetchDeposits', () => ({
@@ -141,5 +157,53 @@ describe.sequential('useTransactionHistory fetch list narrowing', () => {
         (parent, child) => parent === longtailChainId || child === longtailChainId,
       ).sort(),
     );
+  }, 40_000);
+});
+
+describe.sequential('useTransactionHistory failed chain pairs', () => {
+  beforeEach(() => {
+    useTransactionHistoryChainFilterStore.setState({ selection: null });
+    vi.mocked(fetchDeposits).mockReset();
+  });
+
+  it('keeps a failure for the selection whose cached list it emptied', async () => {
+    const onePair = { parentChainId: ChainId.Ethereum, childChainId: ChainId.ArbitrumOne };
+    let failOne = true;
+    vi.mocked(fetchDeposits).mockImplementation(async (params) => {
+      const parentChainId = (params.l1Provider as StaticJsonRpcProvider).network.chainId;
+      const childChainId = (params.l2Provider as StaticJsonRpcProvider).network.chainId;
+      if (
+        failOne &&
+        parentChainId === onePair.parentChainId &&
+        childChainId === onePair.childChainId
+      ) {
+        throw new Error('/api/deposits failed with 502');
+      }
+      return [];
+    });
+
+    const { result } = renderHook(() => useTransactionHistory(ADDRESS, { runFetcher: true }), {
+      wrapper: ({ children }) =>
+        createElement(SWRConfig, { value: { provider: () => new Map() } }, children),
+    });
+    await waitFor(() => expect(result.current.failedChainPairs).toContainEqual(onePair), {
+      timeout: 30_000,
+    });
+
+    failOne = false;
+    vi.mocked(fetchDeposits).mockClear();
+    act(() => {
+      useTransactionHistoryChainFilterStore.setState({
+        selection: { chainIds: [ChainId.ArbitrumOne], isTestnetMode: false },
+      });
+    });
+    await waitFor(() => expect(fetchDeposits).toHaveBeenCalled(), { timeout: 30_000 });
+    await waitFor(() => expect(result.current.failedChainPairs).toEqual([]));
+
+    // back on the first selection its cached list still lacks One deposits
+    act(() => {
+      useTransactionHistoryChainFilterStore.setState({ selection: null });
+    });
+    await waitFor(() => expect(result.current.failedChainPairs).toContainEqual(onePair));
   }, 40_000);
 });
