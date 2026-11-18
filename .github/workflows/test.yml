@@ -104,6 +104,7 @@ jobs:
           - { name: 'default tokens 2', args: 'TransferPanel.default-tokens-2' }
           - { name: 'default tokens 3', args: 'TransferPanel.default-tokens-3' }
           - { name: 'default tokens 4', args: 'TransferPanel.default-tokens-4' }
+          - { name: 'default tokens 5', args: 'TransferPanel.default-tokens-5' }
           - { name: 'other', args: "--exclude '**/TransferPanel.default-tokens*'" }
     env: *app_env
     steps:

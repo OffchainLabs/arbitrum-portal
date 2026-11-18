@@ -248,6 +248,12 @@ export const defaultTokenCases: DefaultTokenCase[] = [
   },
 ];
 
+/** Ethereum <-> Arbitrum One list every bridged token, which takes up to ~2 min to render. */
+export function isFullTokenListCase({ sourceChain, destinationChain }: DefaultTokenCase) {
+  const chains = [sourceChain, destinationChain];
+  return chains.includes('ethereum') && chains.includes('arbitrum-one');
+}
+
 export const defaultTokenCaseTitle =
   'opens source and destination token panels with expected entries for default token transfer: $sourceChain -> $destinationChain';
 
