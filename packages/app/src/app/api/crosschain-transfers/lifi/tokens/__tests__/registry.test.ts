@@ -28,9 +28,28 @@ vi.mock('@lifi/sdk', async (importOriginal) => ({
   getTokens,
 }));
 
-vi.mock('next/cache', () => ({
-  unstable_cache: (fetcher: () => unknown) => fetcher,
+const { cacheEntries } = vi.hoisted(() => ({
+  cacheEntries: [] as { keyParts: string[]; args: unknown[]; result: unknown }[],
 }));
+
+vi.mock('next/cache', () => ({
+  unstable_cache:
+    (fetcher: (...args: unknown[]) => Promise<unknown>, keyParts: string[]) =>
+    async (...args: unknown[]) => {
+      const result = await fetcher(...args);
+      cacheEntries.push({ keyParts, args, result });
+      return result;
+    },
+}));
+
+// Same measure as Next's data cache, which skips entries over 2 MB
+function nextCacheEntrySize(result: unknown): number {
+  return JSON.stringify({
+    kind: 'FETCH',
+    data: { headers: {}, body: JSON.stringify(result), status: 200, url: '' },
+    revalidate: 30,
+  }).length;
+}
 
 function virtualToken(address: string, chainId: number, coinKey?: CoinKey): LiFiToken {
   return {
@@ -113,7 +132,7 @@ describe('getLifiTokenRegistry', () => {
       },
     });
 
-    const registry = await getLifiTokenRegistry();
+    const registry = await getLifiTokenRegistry([ChainId.Solana]);
 
     expect(registry.tokensByChain[ChainId.Solana]?.map((token) => token.address)).toEqual(
       [...supportedTokens, additionalToken].map((token) => token.address),
@@ -127,7 +146,7 @@ describe('getLifiTokenRegistry', () => {
     );
     getTokens.mockResolvedValue({ tokens: { [ChainId.Solana]: [unmatched] } });
 
-    const registry = await getLifiTokenRegistry();
+    const registry = await getLifiTokenRegistry([ChainId.Solana]);
     expect(registry.tokensByChain[ChainId.Solana]).toEqual([unmatched]);
     expect(registry.tokensByChainAndCoinKey[ChainId.Solana]).toEqual({});
     const entries = groupChildTokensAndParentTokens({
@@ -219,7 +238,11 @@ describe('getLifiTokenRegistry', () => {
       },
     });
 
-    const registry = await getLifiTokenRegistry();
+    const registry = await getLifiTokenRegistry([
+      ChainId.Base,
+      ChainId.Ethereum,
+      ChainId.ArbitrumOne,
+    ]);
 
     expect(registry.tokensByChain[ChainId.Base]).toEqual([baseUsdc]);
     expect(registry.tokensByChain[ChainId.Ethereum]).toEqual([]);
@@ -266,7 +289,7 @@ describe('getLifiTokenRegistry', () => {
       },
     });
 
-    const registry = await getLifiTokenRegistry();
+    const registry = await getLifiTokenRegistry([ChainId.Ethereum, ChainId.RobinhoodChain]);
     const tokens = groupChildTokensAndParentTokens({
       parentTokens: registry.tokensByChain[ChainId.Ethereum] ?? [],
       childTokens: registry.tokensByChain[ChainId.RobinhoodChain] ?? [],
@@ -348,6 +371,67 @@ describe('getLifiTokenRegistry', () => {
   });
 });
 
+describe('getLifiTokenRegistry caching', () => {
+  beforeEach(() => {
+    getTokens.mockReset();
+    cacheEntries.length = 0;
+  });
+
+  it('fetches only the requested chains, once per chain', async () => {
+    getTokens.mockResolvedValue({ tokens: {} });
+
+    await getLifiTokenRegistry([ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.Ethereum]);
+
+    expect(getTokens.mock.calls.map(([options]) => options.chains)).toEqual([
+      [ChainId.Ethereum],
+      [ChainId.ArbitrumOne],
+    ]);
+  });
+
+  it('keeps each per-chain cache entry under 2 MiB for a full LiFi token list', async () => {
+    // Solana keeps every LiFi token, as it allows unmatched tokens. Field lengths follow LiFi's
+    // Solana list from November 2026: 5,824 tokens, almost none with a coinKey.
+    const solanaTokens = Array.from({ length: 6_000 }, (_, index) => {
+      const symbol = `TKN${index}x`;
+      return {
+        address: `So1ana${String(index).padStart(38, '0')}`,
+        chainId: ChainId.Solana,
+        symbol,
+        name: `Token ${index} PP Variable xStock`,
+        decimals: 8,
+        priceUSD: '107.34453773415345',
+        logoURI: `https://xstocks-metadata.backed.fi/logos/tokens/${symbol}.png`,
+        verificationStatus: 'verified',
+        verificationStatusBreakdown: [
+          { provider: 'hypernative', result: 'verified', providerResult: 'accept' },
+        ],
+      } as unknown as LiFiToken;
+    });
+    getTokens.mockResolvedValue({ tokens: { [ChainId.Solana]: solanaTokens } });
+    // The list as LiFi returns it would not fit
+    expect(nextCacheEntrySize(solanaTokens)).toBeGreaterThan(2 * 1024 * 1024);
+
+    const registry = await getLifiTokenRegistry([ChainId.Solana]);
+
+    expect(registry.tokensByChain[ChainId.Solana]).toHaveLength(6_000);
+    expect(registry.tokensByChain[ChainId.Solana]?.[0]).toEqual({
+      address: solanaTokens[0]?.address,
+      chainId: ChainId.Solana,
+      symbol: 'TKN0x',
+      name: 'Token 0 PP Variable xStock',
+      decimals: 8,
+      priceUSD: '107.34453773415345',
+      logoURI: 'https://xstocks-metadata.backed.fi/logos/tokens/TKN0x.png',
+    });
+    expect(cacheEntries.map(({ keyParts }) => keyParts)).toEqual(
+      expect.arrayContaining([['lifi-token-registry-tokens'], ['lifi-token-registry-prices']]),
+    );
+    for (const { result } of cacheEntries) {
+      expect(nextCacheEntrySize(result)).toBeLessThan(2 * 1024 * 1024);
+    }
+  });
+});
+
 describe('getLifiTokenRegistry exclusions', () => {
   beforeEach(() => {
     getTokens.mockReset();
@@ -361,7 +445,7 @@ describe('getLifiTokenRegistry exclusions', () => {
       },
     });
 
-    const registry = await getLifiTokenRegistry();
+    const registry = await getLifiTokenRegistry([ChainId.RobinhoodChain, ChainId.ArbitrumOne]);
 
     const robinhoodTokens = registry.tokensByChain[ChainId.RobinhoodChain] ?? [];
     const robinhoodUsdg = robinhoodTokens.filter((token) => token.symbol === 'USDG');
@@ -407,7 +491,7 @@ describe('getLifiTokenRegistry USDG pairing', () => {
       },
     });
 
-    const registry = await getLifiTokenRegistry();
+    const registry = await getLifiTokenRegistry([ChainId.Ethereum, ChainId.ArbitrumOne]);
     const tokens = groupChildTokensAndParentTokens({
       parentTokens: registry.tokensByChain[ChainId.Ethereum] ?? [],
       childTokens: registry.tokensByChain[ChainId.ArbitrumOne] ?? [],
@@ -459,7 +543,7 @@ describe('getLifiTokenRegistry USDG pairing', () => {
         },
       });
 
-      const registry = await getLifiTokenRegistry();
+      const registry = await getLifiTokenRegistry([ChainId.Ethereum, ChainId.ArbitrumOne]);
 
       expect(registry.tokensByChain[ChainId.Ethereum]?.[0]?.logoURI).toBe(
         'https://example.com/logo.png',
@@ -488,10 +572,10 @@ describe.sequential('getLifiTokenRegistry with the Solana flag off', () => {
         },
       });
 
-      const registry = await getRegistryWithFlagOff();
+      const registry = await getRegistryWithFlagOff([ChainId.Solana, ChainId.ArbitrumOne]);
 
       expect(getTokens).toHaveBeenCalledTimes(1);
-      expect(getTokens.mock.calls[0]?.[0].chains).not.toContain(ChainId.Solana);
+      expect(getTokens.mock.calls[0]?.[0].chains).toEqual([ChainId.ArbitrumOne]);
       expect(registry.tokensByChain[ChainId.Solana]).toBeUndefined();
       expect(registry.tokensByChainAndCoinKey[ChainId.Solana]).toBeUndefined();
     } finally {
