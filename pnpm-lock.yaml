@@ -3989,7 +3989,7 @@ packages:
       viem: ^2.28.0
 
   '@zerodev/react-ui@file:.zd-tarballs/zerodev-react-ui-0.0.9.tgz':
-    resolution: {integrity: sha512-xYOPdEWPWyCBgEu2izEDet+kYTHKUO8zTVXvnbS7ATgpkS+RrmuvTI8cy54v2UsIjjTNx/Fv5frlvfQnFfjKIQ==, tarball: file:.zd-tarballs/zerodev-react-ui-0.0.9.tgz}
+    resolution: {integrity: sha512-D9J/Wv4p+MZyueoRzS5KhlDLvOuTmn7hjskTHhUTBryQdqDGZ/MTHuWBTCPC/z12kLkE2Uuf4dM86i/zQRUFPw==, tarball: file:.zd-tarballs/zerodev-react-ui-0.0.9.tgz}
     version: 0.0.9
     peerDependencies:
       radix-ui: ^1.4.0
@@ -4001,7 +4001,7 @@ packages:
       viem: ^2.28.0
 
   '@zerodev/wallet-core@file:.zd-tarballs/zerodev-wallet-core-0.0.7.tgz':
-    resolution: {integrity: sha512-By6Hh5WSpeb/g+SeMuKGl/w1ZXuLBLqtjDbVvjjA8Jtm1ftUBGmuLuASGMkKm2yV6iMh506Oo21GBeADeEGR/Q==, tarball: file:.zd-tarballs/zerodev-wallet-core-0.0.7.tgz}
+    resolution: {integrity: sha512-RSJmUnyJbXgwiaP0bMfc/JTL3F0lcT7CWy4zL3QtTzvYf0A6vp4+jgcH7tDUiOkVrbkWNmXsMlvgPV+41tWuFQ==, tarball: file:.zd-tarballs/zerodev-wallet-core-0.0.7.tgz}
     version: 0.0.7
     peerDependencies:
       '@react-native-async-storage/async-storage': '>=2.0.0'
@@ -4029,7 +4029,7 @@ packages:
         optional: true
 
   '@zerodev/wallet-react-ui@file:.zd-tarballs/zerodev-wallet-react-ui-0.0.15.tgz':
-    resolution: {integrity: sha512-JM0hcVHxxHUL1fwjheeTLtG3V1GjB21nNBOP43toNma17Oj96LM/JYDPX37Qnq8RJpAkKIQVrqnUu65S4cE7Aw==, tarball: file:.zd-tarballs/zerodev-wallet-react-ui-0.0.15.tgz}
+    resolution: {integrity: sha512-WUZH6gJXoWwFXTTqc//SA47G0aumHDDncv6jbx8gY9jqunh/2ZBvxSzcvSMx9Bs2mMiVtDa+wZGbc1I2oi4tiQ==, tarball: file:.zd-tarballs/zerodev-wallet-react-ui-0.0.15.tgz}
     version: 0.0.15
     peerDependencies:
       '@tanstack/react-query': ^5.0.0
@@ -4042,7 +4042,7 @@ packages:
       wagmi: ^2.19.0 || ^3.0.0
 
   '@zerodev/wallet-react@file:.zd-tarballs/zerodev-wallet-react-0.0.10.tgz':
-    resolution: {integrity: sha512-7HrCFFvVNp298vZzYAE3fre3ZU2h5iem8wlaYyZq8j1Wr13OKPAFhIHePB4VvmfHFrG6Cxd0nkUwmINMJqFYVw==, tarball: file:.zd-tarballs/zerodev-wallet-react-0.0.10.tgz}
+    resolution: {integrity: sha512-+7pFzRz1gcY0BvwNChuLu83evu+JSL/Cd7tECPGMBik9N8/Mw91DUVfhA7fqoL4j06sqYKAywQX21G+K2lcPZQ==, tarball: file:.zd-tarballs/zerodev-wallet-react-0.0.10.tgz}
     version: 0.0.10
     peerDependencies:
       '@tanstack/react-query': ^5.0.0
