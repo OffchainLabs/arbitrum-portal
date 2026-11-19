@@ -62,6 +62,7 @@ export function TokenPicker<T extends PickerToken>({
   recents,
   top,
   getProviders,
+  sameAssetTokens = [],
   getNetworkReach,
   getSearchKey,
   onSelect,
@@ -85,6 +86,9 @@ export function TokenPicker<T extends PickerToken>({
   // In the destination picker: the providers that reach a token. A token without any changes the
   // source when the user picks it.
   getProviders?: (token: T) => ProviderId[] | undefined;
+  // In the destination picker: the tokens that the source reaches as the same asset. Without a
+  // search, the ones on the filtered network, or on the selected one under All networks, come first.
+  sameAssetTokens?: T[];
   // In the destination picker: how the source reaches each network. Picking a token on a network
   // that it does not reach changes the source.
   getNetworkReach?: (chainId: number) => NetworkReach;
@@ -130,9 +134,21 @@ export function TokenPicker<T extends PickerToken>({
     ];
   };
   const available = mergePickerTokens(extraTokens, currentMatches?.tokens ?? [], localTokens);
-  const mainTokens = sort(
-    available.filter((token) => chainId === null || token.chainId === chainId),
-  );
+  const leadChainId = chainId ?? selectedToken?.chainId;
+  const leadTokens = query.trim()
+    ? []
+    : sameAssetTokens.filter((token) => token.chainId === leadChainId);
+  const leadKeys = new Set(leadTokens.map(tokenKey));
+  const mainTokens = [
+    ...leadTokens,
+    ...sort(
+      available.filter(
+        (token) =>
+          (chainId === null || token.chainId === chainId) && !leadKeys.has(tokenKey(token)),
+      ),
+    ),
+  ];
+  const listedTokens = mainTokens.filter((token) => !leadKeys.has(tokenKey(token)));
   const otherTokens =
     chainId !== null && query.trim()
       ? sort(
@@ -148,10 +164,16 @@ export function TokenPicker<T extends PickerToken>({
           ...mainTokens.map((token): PickerRow<T> => ({ kind: 'token', token })),
         ]
       : [
-          ...(mainTokens.some((token) => balances.has(tokenKey(token)))
+          ...(leadTokens.length
+            ? [
+                { kind: 'header' as const, label: 'Same asset' },
+                ...leadTokens.map((token): PickerRow<T> => ({ kind: 'token', token })),
+              ]
+            : []),
+          ...(listedTokens.some((token) => balances.has(tokenKey(token)))
             ? [
                 { kind: 'header' as const, label: 'In your wallet' },
-                ...mainTokens
+                ...listedTokens
                   .filter((token) => balances.has(tokenKey(token)))
                   .map((token): PickerRow<T> => ({ kind: 'token', token })),
               ]
@@ -160,7 +182,7 @@ export function TokenPicker<T extends PickerToken>({
             kind: 'header' as const,
             label: chainId === null ? 'Top tokens across networks' : 'All tokens',
           },
-          ...mainTokens
+          ...listedTokens
             .filter((token) => !balances.has(tokenKey(token)))
             .map((token): PickerRow<T> => ({ kind: 'token', token })),
         ]),

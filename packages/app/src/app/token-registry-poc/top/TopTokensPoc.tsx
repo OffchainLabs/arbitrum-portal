@@ -22,6 +22,7 @@ import {
   addRecentToken,
   getDestinationProviders,
   getNetworkReach,
+  isSameAsset,
   mergePickerTokens,
   tokenKey,
 } from '@/app/src/token-registry/registryFiles';
@@ -621,6 +622,11 @@ function TopTokensPocContent() {
                 pendingSource
                   ? undefined
                   : (token) => getDestinationProviders(selection.destinationChains, token)
+              }
+              sameAssetTokens={
+                pendingSource
+                  ? []
+                  : selection.destinationChains.flatMap((chain) => chain.tokens.filter(isSameAsset))
               }
               getNetworkReach={
                 pendingSource
