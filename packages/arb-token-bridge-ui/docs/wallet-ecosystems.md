@@ -43,7 +43,7 @@ Cross-ecosystem helpers in `util/AddressUtils.ts` (`isValidAddress`, `normalizeA
 
 Wallet library calls for the transfer flow stay in the wallet layer. `useEvmWallet` wraps wagmi and AppKit's `eip155` namespace, and `useSolanaWallet` wraps AppKit's `solana` namespace. Features that only exist on EVM, such as Earn, Buy, Recover Funds and withdrawal claims, still read wagmi directly, because they never involve another ecosystem.
 
-The two-wallet case follows from the handles. The source wallet signs. The recipient is the typed destination address or, on a cross-ecosystem transfer, the destination wallet. `requiresRecipientAddress` and `getRecipientToHighlight` in `services/destinationAddress.ts` encode those rules once, and the transfer panel, network boxes, route card and header all read them.
+The two-wallet case follows from the handles. The source wallet signs. The recipient is the typed destination address or, on a cross-ecosystem transfer, the destination wallet. `requiresRecipientAddress` and `getRecipientToHighlight` in `services/destinationAddress.ts` encode those rules once, and the transfer panel, network boxes and header all read them.
 
 ### No ecosystem branches in the UI
 
