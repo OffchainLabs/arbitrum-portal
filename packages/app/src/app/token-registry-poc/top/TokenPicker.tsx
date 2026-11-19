@@ -8,6 +8,7 @@ import { formatUnits } from 'viem';
 
 import {
   DestinationOption,
+  NetworkReach,
   RegistryIndexFile,
   TokenList,
   TopFile,
@@ -42,6 +43,12 @@ export async function fetchJson<T>([url]: SwrKey): Promise<T> {
   return response.json();
 }
 
+const NETWORK_REACH_TITLES: Record<NetworkReach, string | undefined> = {
+  sameAsset: undefined,
+  swap: 'The source reaches this network only by swapping to another token.',
+  none: 'The source does not reach this network. Picking a token here changes the source.',
+};
+
 type PickerRow<T> = { kind: 'header'; label: string } | { kind: 'token'; token: T };
 
 export function TokenPicker<T extends PickerToken>({
@@ -55,6 +62,7 @@ export function TokenPicker<T extends PickerToken>({
   recents,
   top,
   getProviders,
+  getNetworkReach,
   getSearchKey,
   onSelect,
   onClose,
@@ -77,6 +85,9 @@ export function TokenPicker<T extends PickerToken>({
   // In the destination picker: the providers that reach a token. A token without any changes the
   // source when the user picks it.
   getProviders?: (token: T) => ProviderId[] | undefined;
+  // In the destination picker: how the source reaches each network. Picking a token on a network
+  // that it does not reach changes the source.
+  getNetworkReach?: (chainId: number) => NetworkReach;
   getSearchKey: (chainId: number | null, query: string) => SwrKey | null;
   onSelect: (token: T) => void;
   onClose: () => void;
@@ -218,7 +229,7 @@ export function TokenPicker<T extends PickerToken>({
               {token.isCounterpart && <span className="chip chip-native">Same asset</span>}
               {token.isImported && <span className="chip chip-warn">Unverified</span>}
               {getProviders && !getProviders(token) && (
-                <span className="chip chip-quiet">Changes source</span>
+                <span className="chip chip-warn">Changes source</span>
               )}
               {selected && <Icon name="check" size={14} />}
             </div>
@@ -299,6 +310,7 @@ export function TokenPicker<T extends PickerToken>({
   }));
   function networkButton(chain: RegistryIndexFile['chains'][number] | null, mobile = false) {
     const selected = chainId === (chain?.chainId ?? null);
+    const reach = chain ? getNetworkReach?.(chain.chainId) : undefined;
     const held = extraTokens.filter(
       (token) => balances.has(tokenKey(token)) && (!chain || token.chainId === chain.chainId),
     );
@@ -320,6 +332,7 @@ export function TokenPicker<T extends PickerToken>({
         type="button"
         className={`${mobile ? 'netchip' : 'net'}${selected ? ' is-on' : ''}`}
         aria-pressed={selected}
+        title={reach ? NETWORK_REACH_TITLES[reach] : undefined}
         onClick={() => changeFilter(chain?.chainId ?? null)}
       >
         {chain ? (
@@ -329,6 +342,16 @@ export function TokenPicker<T extends PickerToken>({
         )}
         <span className="net-name">{chain?.name ?? 'All networks'}</span>
         {!mobile && total !== undefined && <span className="net-val">{usd(total)}</span>}
+        {reach === 'none' && (
+          <span className="net-warn" aria-label="Changes source">
+            <Icon name="warn" size={mobile ? 12 : 14} />
+          </span>
+        )}
+        {reach === 'swap' && (
+          <span className="net-swap" aria-label="Swap only">
+            <Icon name="swap" size={mobile ? 12 : 14} />
+          </span>
+        )}
       </button>
     );
   }
@@ -446,24 +469,30 @@ export function TokenPicker<T extends PickerToken>({
           {!query && recentTokens.length > 0 && (
             <div className="recents" aria-label="Recent selections">
               <span className="recents-label">Recent</span>
-              {recentTokens.map((token) => (
-                <button
-                  key={tokenKey(token)}
-                  className="recent"
-                  title={`${token.symbol} on ${chainName(token.chainId)}`}
-                  onClick={() =>
-                    // A recent token keeps the providers of the source it was picked with. Use the
-                    // current lists' copy, or drop the providers so the pick gets resolved again.
-                    onSelect(
-                      available.find((current) => tokenKey(current) === tokenKey(token)) ??
-                        ({ ...token, providers: undefined, isCounterpart: undefined } as T),
-                    )
-                  }
-                >
-                  <TokenImage token={token} size={20} />
-                  {token.symbol}
-                </button>
-              ))}
+              {recentTokens.map((token) => {
+                // A recent token keeps the providers of the source it was picked with. Use the
+                // current lists' copy, or drop the providers so the pick gets resolved again.
+                const current =
+                  available.find((candidate) => tokenKey(candidate) === tokenKey(token)) ??
+                  ({ ...token, providers: undefined, isCounterpart: undefined } as T);
+                const changesSource = getProviders !== undefined && !getProviders(current);
+                return (
+                  <button
+                    key={tokenKey(token)}
+                    className="recent"
+                    title={`${token.symbol} on ${chainName(token.chainId)}${changesSource ? '. Picking it changes the source.' : ''}`}
+                    onClick={() => onSelect(current)}
+                  >
+                    <TokenImage token={token} size={20} />
+                    {token.symbol}
+                    {changesSource && (
+                      <span className="net-warn" aria-label="Changes source">
+                        <Icon name="warn" size={12} />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
           {suggestions.length > 0 && (

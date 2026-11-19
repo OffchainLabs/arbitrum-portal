@@ -24,7 +24,8 @@ export function Icon({
     | 'external'
     | 'info'
     | 'gas'
-    | 'user';
+    | 'user'
+    | 'warn';
   size?: number;
 }) {
   const paths = {
@@ -43,6 +44,7 @@ export function Icon({
     info: 'M12 11v6m0-10v.1M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',
     gas: 'M4 21V4h10v17M2 21h14M6 7h6m2 5h3v5a2 2 0 0 0 4 0V7l-3-3',
     user: 'M20 21v-2a7 7 0 0 0-14 0v2M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
+    warn: 'M12 9v4m0 4v.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z',
   };
   return (
     <svg
@@ -112,14 +114,11 @@ export function TokenImage({
         />
       ) : (
         <span className="tok-mono" style={{ fontSize: Math.max(9, size * 0.34) }}>
-          {token.symbol.slice(0, 3)}
+          {token.symbol.slice(0, size < 28 ? 1 : 3)}
         </span>
       )}
       {badge && (
-        <span
-          className="tok-badge"
-          style={{ width: badgeSize, height: badgeSize, boxShadow: '0 0 0 2px var(--surface-2)' }}
-        >
+        <span className="tok-badge" style={{ width: badgeSize, height: badgeSize }}>
           <ChainImage chainId={token.chainId} size={badgeSize} />
         </span>
       )}

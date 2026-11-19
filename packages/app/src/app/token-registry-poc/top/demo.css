@@ -145,7 +145,10 @@
   right: -3px;
   bottom: -3px;
   border-radius: 50%;
-  display: block;
+  /* A grid keeps the chain icon off the text baseline, so it sits inside its ring. */
+  display: grid;
+  /* The ring takes the color of what is behind the token, so the badge looks cut out of the logo. */
+  box-shadow: 0 0 0 2px var(--pill-ring, var(--surface-2));
 }
 .bridge-demo .chain-ic {
   display: inline-grid;
