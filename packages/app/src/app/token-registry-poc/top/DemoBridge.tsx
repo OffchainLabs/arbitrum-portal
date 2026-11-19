@@ -498,7 +498,7 @@ export function DemoBridge({
             <PopoverButton className="iconbtn" aria-label="Bridge settings">
               <Icon name="settings" size={19} />
             </PopoverButton>
-            <PopoverPanel className="pop pop-settings">
+            <PopoverPanel className="demo-pop">
               <div className="pop-title">Settings</div>
               <div className="set-row">
                 <div>

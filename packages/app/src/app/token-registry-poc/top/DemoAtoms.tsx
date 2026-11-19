@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { TopToken } from '@/app/src/token-registry/registryFiles';
+import { ChainId } from '@/bridge/types/ChainId';
 import { getBridgeUiConfigForChain } from '@/bridge/util/bridgeUiConfig';
 
 export function Icon({
@@ -60,9 +61,21 @@ export function Icon({
   );
 }
 
+// Chain logos sit on a white disc. Base's logo is white, so it sits on Base blue.
+const CHAIN_IMAGE_BACKGROUNDS: Partial<Record<number, string>> = {
+  [ChainId.Base]: '#0052ff',
+};
+
 export function ChainImage({ chainId, size = 24 }: { chainId: number; size?: number }) {
   return (
-    <span className="chain-ic" style={{ width: size, height: size }}>
+    <span
+      className="chain-ic"
+      style={{
+        width: size,
+        height: size,
+        background: CHAIN_IMAGE_BACKGROUNDS[chainId] ?? '#fff',
+      }}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={getBridgeUiConfigForChain(chainId).network.logo}

@@ -285,7 +285,7 @@ function TopTokensPocContent() {
       setPendingSource(undefined);
   }, [pendingSource, selection]);
 
-  function writeSelection(nextSource: TopToken, nextDestination?: TopToken) {
+  function selectionParams(nextSource: TopToken, nextDestination?: TopToken) {
     const next = new URLSearchParams(params.toString());
     next.set(
       'sourceChain',
@@ -306,6 +306,11 @@ function TopTokensPocContent() {
       next.delete('destinationChain');
       next.delete('destinationToken');
     }
+    return next;
+  }
+
+  function writeSelection(nextSource: TopToken, nextDestination?: TopToken) {
+    const next = selectionParams(nextSource, nextDestination);
     setQuery(parseSelectionQuery(next));
     window.history.replaceState(null, '', `${pathname}?${next}`);
   }
@@ -317,41 +322,76 @@ function TopTokensPocContent() {
     transitionPicker(() => setOpenPicker('source'));
   }
 
-  function pickSource(token: TopToken) {
-    resolutionAttempt.current += 1;
+  async function pickSource(token: TopToken) {
+    const attempt = ++resolutionAttempt.current;
     setSourceNotice(undefined);
     setSourceRecents((recents) => addRecentToken(recents, token));
     setResolvingDestination(false);
     setDestinationError('');
+    const nextDestination =
+      destination && tokenKey(token) === tokenKey(destination) ? source : destination;
+    // Load the new selection and the destination list before the pickers swap, so the destination
+    // picker opens with its final content. After 600 ms the swap stops waiting for them.
+    const nextSelectionKey = selectionKey(
+      parseSelectionQuery(selectionParams(token, nextDestination)),
+    );
+    const listKey = destinationKey(token, filters.destination);
+    let selectionLoaded = false;
+    const loadSelection = fetchJson<Selection>(nextSelectionKey)
+      .then((data) => mutate(nextSelectionKey, data, { revalidate: false }))
+      .then(() => {
+        selectionLoaded = true;
+      });
+    const loadList = fetchJson<TokenList<DestinationOption>>(listKey).then((data) =>
+      mutate(listKey, data, { revalidate: false }),
+    );
+    await Promise.race([
+      Promise.allSettled([loadSelection, loadList]),
+      new Promise((resolve) => setTimeout(resolve, 600)),
+    ]);
+    if (attempt !== resolutionAttempt.current) return;
     transitionPicker(() => {
-      setPendingSource(token);
+      if (!selectionLoaded) setPendingSource(token);
       setOpenPicker('destination');
-      writeSelection(
-        token,
-        destination && tokenKey(token) === tokenKey(destination) ? source : destination,
-      );
+      writeSelection(token, nextDestination);
     });
+  }
+
+  async function resolveDestination(token: TopToken): Promise<DestinationSelection> {
+    if (!source) throw new Error('No source token.');
+    const swap = destination && tokenKey(source) === tokenKey(token);
+    // A token from the current source's destination lists already carries its providers, so the
+    // current source reaches it. Only other tokens need the backend to check or change the source.
+    const { providers } = token as Partial<DestinationOption>;
+    if (!swap && providers?.length) {
+      return {
+        kind: 'resolved',
+        sourceToken: source,
+        destinationToken: token as DestinationOption,
+        sourceChanged: false,
+      };
+    }
+    setResolvingDestination(true);
+    const response = await fetch(`${API}/selection`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sourceChainId: swap ? destination.chainId : source.chainId,
+        sourceTokenAddress: swap ? destination.address : source.address,
+        destinationChainId: token.chainId,
+        destinationTokenAddress: token.address,
+      }),
+    });
+    if (!response.ok) throw new Error('Could not check routes. Select the token again to retry.');
+    return response.json();
   }
 
   async function pickDestination(token: TopToken) {
     if (!source) return;
     const attempt = ++resolutionAttempt.current;
-    setResolvingDestination(true);
     setDestinationError('');
     try {
-      const swap = destination && tokenKey(source) === tokenKey(token);
-      const response = await fetch(`${API}/selection`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sourceChainId: swap ? destination.chainId : source.chainId,
-          sourceTokenAddress: swap ? destination.address : source.address,
-          destinationChainId: token.chainId,
-          destinationTokenAddress: token.address,
-        }),
-      });
-      if (!response.ok) throw new Error('Could not check routes. Select the token again to retry.');
-      const result: DestinationSelection = await response.json();
+      const result = await resolveDestination(token);
       if (attempt !== resolutionAttempt.current) return;
       if (result.kind === 'unavailable') {
         setDestinationError(`${token.symbol} on ${name(token.chainId)}: ${result.reason}`);
@@ -365,6 +405,19 @@ function TopTokensPocContent() {
       });
       const nextSelection = await fetchJson<Selection>(nextKey);
       if (attempt !== resolutionAttempt.current) return;
+      // The selection can fall back to another destination if the registry changed since the
+      // pick. Commit only when it holds both resolved tokens.
+      if (
+        !nextSelection.sourceToken ||
+        !nextSelection.destinationToken ||
+        tokenKey(nextSelection.sourceToken) !== tokenKey(result.sourceToken) ||
+        tokenKey(nextSelection.destinationToken) !== tokenKey(result.destinationToken)
+      ) {
+        setDestinationError(
+          `The route to ${token.symbol} on ${name(token.chainId)} changed. Select the token again.`,
+        );
+        return;
+      }
       await mutate(nextKey, nextSelection, { revalidate: false });
       if (attempt !== resolutionAttempt.current) return;
       transitionPicker(() => {

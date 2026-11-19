@@ -470,7 +470,14 @@ export function TokenPicker<T extends PickerToken>({
                   key={tokenKey(token)}
                   className="recent"
                   title={`${token.symbol} on ${chainName(token.chainId)}`}
-                  onClick={() => onSelect(token)}
+                  onClick={() =>
+                    // A recent token keeps the providers of the source it was picked with. Use the
+                    // current lists' copy, or drop the providers so the pick gets resolved again.
+                    onSelect(
+                      available.find((current) => tokenKey(current) === tokenKey(token)) ??
+                        ({ ...token, providers: undefined, isCounterpart: undefined } as T),
+                    )
+                  }
                 >
                   <TokenImage token={token} size={20} />
                   {token.symbol}
