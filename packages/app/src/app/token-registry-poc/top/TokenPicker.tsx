@@ -366,7 +366,12 @@ export function TokenPicker<T extends PickerToken>({
           if (query) setQuery('');
           else onClose();
         }
-        if (event.key === 'Enter' && highlighted && event.target === input.current) {
+        // Enter selects from the search field or the list, which takes focus on click. Other
+        // buttons and fields keep their own Enter.
+        const target = event.target as HTMLElement;
+        const isOtherControl =
+          target !== input.current && target.closest('button, a, input, textarea, select');
+        if (event.key === 'Enter' && highlighted && !isOtherControl) {
           event.preventDefault();
           onSelect(highlighted);
         }

@@ -197,9 +197,6 @@ function TopTokensPocContent() {
   useEffect(() => saveRecents('source', sourceRecents), [sourceRecents]);
   useEffect(() => saveRecents('destination', destinationRecents), [destinationRecents]);
   const [pendingSource, setPendingSource] = useState<TopToken>();
-  const [inspectionInput, setInspectionInput] = useState('');
-  const [inspectionAddress, setInspectionAddress] = useState<string>();
-  const [inspectionError, setInspectionError] = useState('');
   const [resolvingDestination, setResolvingDestination] = useState(false);
   const [destinationError, setDestinationError] = useState('');
   const [sourceNotice, setSourceNotice] = useState<{
@@ -228,20 +225,11 @@ function TopTokensPocContent() {
     error: topError,
     mutate: retryTop,
   } = useSWR(needsTop ? TOP_FILE_KEY : null, fetchJson<TopFile>);
-  const balanceAddress = inspectionAddress ?? address;
-  const {
-    data: holdings,
-    error: balanceError,
-    isValidating: refreshingBalances,
-    mutate: refreshBalances,
-  } = useSWR(
+  const { data: holdings, mutate: refreshBalances } = useSWR(
     // The read starts when the user hovers or focuses a token button, or opens a picker. A user
     // who never reaches for a picker never triggers it.
-    balanceAddress && needsBalances
-      ? ([
-          `${API}/balances?${new URLSearchParams({ address: balanceAddress })}`,
-          'balances',
-        ] as const)
+    address && needsBalances
+      ? ([`${API}/balances?${new URLSearchParams({ address })}`, 'balances'] as const)
       : null,
     fetchJson<HeldTokens>,
     {
@@ -565,129 +553,6 @@ function TopTokensPocContent() {
                 {sourceNotice.message}
               </p>
             )}
-        </>
-      }
-      inspection={
-        <>
-          {' '}
-          <section className="mt-5 rounded-xl border border-white/10 p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-medium">Balances</h2>
-              {balanceAddress && (
-                <button
-                  type="button"
-                  disabled={refreshingBalances}
-                  onClick={() => void refreshBalances()}
-                  className="text-xs text-sky-300 disabled:opacity-50"
-                >
-                  {refreshingBalances ? 'Refreshing…' : 'Refresh balances'}
-                </button>
-              )}
-            </div>
-            <p role="status" className="mt-2 text-xs text-white/60">
-              {!balanceAddress
-                ? 'Connect a wallet or inspect an address to see held tokens.'
-                : balanceError
-                  ? 'Could not load balances. Retry with Refresh balances.'
-                  : !needsBalances
-                    ? 'Balances load when you reach for a token picker.'
-                    : !holdings
-                      ? 'Reading balances from the registry chains…'
-                      : `${holdings.tokens.length} held tokens${inspectionAddress ? ' · Read-only address inspection' : ''}`}
-            </p>
-            {holdings?.failedChainIds.length ? (
-              <p className="mt-2 text-xs text-amber-300">
-                Balances unavailable on {holdings.failedChainIds.map(name).join(', ')}. These
-                balances are unknown, not zero.
-              </p>
-            ) : null}
-            {balanceAddress && (
-              <p className="mt-1 break-all font-mono text-[11px] text-white/40">{balanceAddress}</p>
-            )}
-            <details className="mt-3 text-xs text-white/60">
-              <summary className="cursor-pointer">
-                Inspect a real address without connecting
-              </summary>
-              <form
-                className="mt-2 flex gap-2"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (!isAddress(inspectionInput.trim())) {
-                    setInspectionError('Enter a valid EVM address.');
-                    return;
-                  }
-                  setInspectionAddress(inspectionInput.trim().toLowerCase());
-                  setNeedsBalances(true);
-                  setInspectionError('');
-                }}
-              >
-                <input
-                  aria-label="Address to inspect"
-                  value={inspectionInput}
-                  onChange={(event) => setInspectionInput(event.target.value)}
-                  placeholder="0x…"
-                  className="min-w-0 flex-1 rounded bg-white/5 p-2 font-mono"
-                />
-                <button type="submit" className="rounded bg-white/10 px-3">
-                  Inspect
-                </button>
-                {inspectionAddress && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setInspectionAddress(undefined);
-                      setInspectionInput('');
-                    }}
-                  >
-                    Clear
-                  </button>
-                )}
-              </form>
-              {inspectionError && (
-                <p role="alert" className="mt-2 text-amber-300">
-                  {inspectionError}
-                </p>
-              )}
-            </details>
-          </section>
-          <details className="mt-4 text-xs text-white/50">
-            <summary className="cursor-pointer">Technical evidence</summary>
-            <div className="mt-2 space-y-1">
-              <div>
-                Selection:{' '}
-                <a
-                  className="break-all text-sky-300"
-                  href={selectionKey(query)[0]}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Open API response
-                </a>
-              </div>
-              <div>
-                Registry:{' '}
-                <a
-                  className="break-all text-sky-300"
-                  href={`${TOKEN_REGISTRY_URL}/index.json`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Published index
-                </a>
-              </div>
-              {top && (
-                <div>
-                  {top.tokens.length} top tokens · Generated{' '}
-                  {new Date(top.generatedAt).toLocaleString()}
-                </div>
-              )}
-            </div>
-            <p className="mt-2">
-              Recents last for this page session. Prices come from the live provider registry.
-              Networks and assets come from the published registry; missing prices and failed
-              balance requests remain unknown.
-            </p>
-          </details>
         </>
       }
       picker={

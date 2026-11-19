@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  Dialog,
-  DialogPanel,
-  DialogTitle,
-  Popover,
-  PopoverButton,
-  PopoverPanel,
-} from '@headlessui/react';
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import { useDebounce } from '@uidotdev/usehooks';
 import { BigNumber, utils } from 'ethers';
 import { ReactNode, useEffect, useRef, useState } from 'react';
@@ -253,7 +246,6 @@ export function DemoBridge({
   onIntent,
   onReverse,
   notice,
-  inspection,
   balancesLoading,
   balanceFailed,
 }: {
@@ -269,13 +261,11 @@ export function DemoBridge({
   onIntent: () => void;
   onReverse: () => void;
   notice: ReactNode;
-  inspection: ReactNode;
   balancesLoading: boolean;
   balanceFailed: boolean;
 }) {
   const { address } = useAccount();
   const [view, setView] = useState<'form' | 'review' | 'progress' | 'txns'>('form');
-  const [modal, setModal] = useState<'notes' | null>(null);
   const [amount, setAmount] = useState('');
   const [recipientEnabled, setRecipientEnabled] = useState(false);
   const [recipient, setRecipient] = useState('');
@@ -797,9 +787,6 @@ export function DemoBridge({
           <span className="nav-tile nav-search">
             <Icon name="search" />
           </span>
-          <button className="nav-proto" onClick={() => setModal('notes')}>
-            Prototype
-          </button>
         </div>
         <div className="nav-links">
           <span className="nav-link">Home</span>
@@ -1122,44 +1109,7 @@ export function DemoBridge({
           </aside>
         </div>
         {pickerOpen && <div className="picker-scrim" onClick={onClosePicker} />}
-        <div className="protobar">
-          <button onClick={() => setModal('notes')}>
-            <Icon name="info" size={14} />
-            Prototype notes
-          </button>
-          <span className="protobar-sep" />
-          <button
-            onClick={() => {
-              setAmount('');
-              setRecipient('');
-              setRecipientEnabled(false);
-              navigate('form');
-            }}
-          >
-            Reset form
-          </button>
-        </div>
       </main>
-      <Dialog open={modal !== null} onClose={() => setModal(null)} className="bridge-demo">
-        <div className="scrim">
-          <DialogPanel className={`modal${modal === 'notes' ? ' modal-notes' : ''}`}>
-            <header className="modal-head">
-              <DialogTitle>Prototype</DialogTitle>
-              <button className="iconbtn" aria-label="Close" onClick={() => setModal(null)}>
-                <Icon name="close" />
-              </button>
-            </header>
-            <div className="notes">
-              <p>
-                Demo interface connected to the published token registry, wallet balances, live
-                quotes, and bridge SDK. Transfers require your wallet confirmation. History contains
-                transfers started in this page session.
-              </p>
-              {inspection}
-            </div>
-          </DialogPanel>
-        </div>
-      </Dialog>
     </div>
   );
 }

@@ -493,23 +493,6 @@
 .bridge-demo .nav-search img {
   opacity: 0.9;
 }
-.bridge-demo .nav-proto {
-  height: 26px;
-  padding: 0 10px;
-  margin-left: 4px;
-  border-radius: 999px;
-  border: 1px dashed rgba(255, 255, 255, 0.28);
-  font-size: 12px;
-  color: var(--text-2);
-  letter-spacing: 0.02em;
-  transition:
-    color 0.15s,
-    border-color 0.15s;
-}
-.bridge-demo .nav-proto:hover {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.5);
-}
 .bridge-demo .nav-links {
   display: flex;
   align-items: center;
@@ -2345,46 +2328,6 @@
   font-size: 12.5px;
   color: var(--text-3);
 }
-.bridge-demo .modal-notes {
-  width: 560px;
-}
-.bridge-demo .notes {
-  display: grid;
-  gap: 16px;
-  padding: 6px 6px 8px;
-  max-height: min(70vh, 640px);
-  overflow-y: auto;
-}
-.bridge-demo .notes h3 {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-3);
-  margin-bottom: 5px;
-}
-.bridge-demo .notes p,
-.bridge-demo .notes li {
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--text-2);
-  max-width: 64ch;
-}
-.bridge-demo .notes ol,
-.bridge-demo .notes ul {
-  display: grid;
-  gap: 3px;
-  margin: 2px 0 6px;
-  padding-left: 20px;
-}
-.bridge-demo .notes ol {
-  list-style: decimal;
-}
-.bridge-demo .notes ul {
-  list-style: disc;
-}
-.bridge-demo .notes li::marker {
-  color: var(--text-4);
-  font-variant-numeric: normal;
-}
 
 .bridge-demo .toast {
   position: fixed;
@@ -2419,41 +2362,6 @@
     opacity: 0;
     transform: translate(-50%, 10px);
   }
-}
-.bridge-demo .protobar {
-  position: fixed;
-  left: calc(var(--rail-w) + 12px);
-  bottom: 16px;
-  z-index: 35;
-  display: inline-flex;
-  align-items: center;
-  padding: 3px;
-  border-radius: 999px;
-  background: rgba(25, 25, 25, 0.92);
-  border: 1px solid var(--line);
-  backdrop-filter: blur(8px);
-}
-.bridge-demo .protobar button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  color: var(--text-3);
-  transition:
-    color 0.15s,
-    background 0.15s;
-}
-.bridge-demo .protobar button:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
-}
-.bridge-demo .protobar-sep {
-  width: 1px;
-  height: 14px;
-  background: var(--line-2);
 }
 @media (max-width: 1119px) {
   .bridge-demo .routes-slot {
@@ -2512,12 +2420,6 @@
     width: 84px;
     padding: 8px 0 6px;
     gap: 4px;
-  }
-  .bridge-demo .protobar {
-    position: static;
-    display: flex;
-    width: max-content;
-    margin: 18px auto 0;
   }
   .bridge-demo .summary-stats {
     order: 3;
@@ -2621,9 +2523,6 @@
   }
   .bridge-demo .connect-row {
     height: 68px;
-  }
-  .bridge-demo .modal-notes {
-    width: 100%;
   }
   .bridge-demo .tx {
     flex-wrap: wrap;
