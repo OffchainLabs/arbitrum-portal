@@ -38,7 +38,13 @@ export type RegistryChainFile = {
 
 export type RegistryIndexFile = {
   generatedAt: string;
-  chains: { chainId: number; name: string; parentChainId?: number }[];
+  chains: {
+    chainId: number;
+    name: string;
+    parentChainId?: number;
+    // The chain's token files, in order. Without it, the chain has one file: chains/<id>.json.
+    files?: string[];
+  }[];
   // hasLifi: the bridge offers LiFi on the pair, and LiFi connects it.
   pairs: {
     sourceChainId: number;
@@ -56,6 +62,8 @@ export type TopToken = {
   logoURI?: string;
   // Not in the registry files: the server read it from the chain when the user pasted its address.
   isImported?: true;
+  // LiFi routes the token. A destination chain with lifi reaches every such token.
+  isLifi?: true;
 };
 
 // The order is the ranking across every chain: the curated tokens, the native tokens, then LiFi's
@@ -79,7 +87,7 @@ export type DestinationSelection =
     }
   | { kind: 'unavailable'; reason: string };
 
-// What the search and destination-tokens endpoints return. A complete list holds every token
+// What the search endpoint returns. A complete list holds every token
 // that matches, so the picker can search it without the server.
 export type TokenList<T extends TopToken = TopToken> = {
   tokens: T[];
@@ -96,9 +104,29 @@ export type DestinationChain = {
   // The pair's override, otherwise the canonical, LayerZero, or LiFi same-asset token, otherwise the
   // native token, otherwise any reachable token.
   defaultToken: DestinationOption;
-  // The token the canonical bridge delivers on this chain, when it has a route.
-  canonicalToken?: DestinationOption;
+  // The same-asset tokens: the canonical token, the LayerZero token, the LiFi counterpart, the
+  // pair's override and the default token. A few per chain.
+  tokens: DestinationOption[];
+  // The source reaches every token with isLifi on this chain through LiFi.
+  lifi: boolean;
 };
+
+// The providers that take the source to a token, from the selection's destination chains.
+// Undefined when the source does not reach the token, so picking it changes the source.
+export function getDestinationProviders(
+  chains: DestinationChain[],
+  token: Pick<TopToken, 'chainId' | 'address' | 'isLifi'>,
+): ProviderId[] | undefined {
+  const chain = chains.find(({ chainId }) => chainId === token.chainId);
+  if (!chain) {
+    return undefined;
+  }
+  const listed = chain.tokens.find(({ address }) => address === token.address);
+  if (listed) {
+    return listed.providers;
+  }
+  return chain.lifi && token.isLifi ? ['lifi'] : undefined;
+}
 
 // Ether on Ethereum to Arbitrum One, like the bridge.
 // top.json keeps up to this many tokens per chain. A chain with fewer has all its tokens there.
@@ -124,7 +152,12 @@ export type Selection = {
   destinationChainId?: number;
   // The default token of that chain: the requested token when the source reaches it.
   destinationToken?: DestinationOption;
-  adjustment?: { kind: 'source-chain' | 'destination'; message: string };
+  // source: a destination pick changed the source. unavailable: no source reaches the picked
+  // destination, so the transfer stays as it was.
+  adjustment?: {
+    kind: 'source-chain' | 'destination' | 'source' | 'unavailable';
+    message: string;
+  };
 };
 
 // Each destination chain of a request reads the ranks of the same top file.

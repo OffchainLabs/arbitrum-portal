@@ -27,7 +27,6 @@ import {
   TopToken,
   getSearchScore,
   getTokenComparator,
-  searchTokens,
   tokenKey,
 } from '../registryFiles';
 import {
@@ -45,13 +44,13 @@ import { getCanonicalBridge, isCanonicalTransferAllowed } from './canonicalBridg
 import { readErc20Metadata } from './resolveImport';
 
 export const SEARCH_LIMIT = 50;
-export const DESTINATION_TOKENS_LIMIT = 1_000;
 
 // Like Jumper, a pasted address that no file knows is only looked up on the selected chain, or
 // without one on these chains.
 const IMPORT_LOOKUP_CHAIN_IDS = [ChainIds.Ethereum, ChainIds.ArbitrumOne, ChainIds.Base];
 
-// The Ethereum file is about 1.5 MB, under Next's 2 MiB fetch-cache limit.
+// Next's fetch cache stores the body base64-encoded and skips entries over 2 MiB, so the registry
+// splits a chain file over 1.25 MiB into parts.
 async function fetchRegistryFile<T>(file: string): Promise<T> {
   const response = await fetch(`${TOKEN_REGISTRY_URL}/${file}`, {
     next: { revalidate: 3_600 },
@@ -64,8 +63,27 @@ async function fetchRegistryFile<T>(file: string): Promise<T> {
 
 const getIndexFile = () => fetchRegistryFile<RegistryIndexFile>('index.json');
 const getTopFile = () => fetchRegistryFile<TopFile>('top.json');
-const getChainFile = (chainId: number) =>
-  fetchRegistryFile<RegistryChainFile>(`chains/${chainId}.json`);
+
+export function mergeChainFileParts(
+  chainId: number,
+  parts: RegistryChainFile[],
+): RegistryChainFile {
+  const [first] = parts;
+  if (!first || parts.some((part) => part.chainId !== chainId)) {
+    throw new Error(`Invalid token files for chain ${chainId}`);
+  }
+  return parts.length === 1 ? first : { ...first, tokens: parts.flatMap((part) => part.tokens) };
+}
+
+// index.json lists the parts of each chain file. Next caches each part on its own.
+async function getChainFile(chainId: number): Promise<RegistryChainFile> {
+  const index = await getIndexFile();
+  const files = index.chains.find((chain) => chain.chainId === chainId)?.files ?? [
+    `chains/${chainId}.json`,
+  ];
+  const parts = await Promise.all(files.map((file) => fetchRegistryFile<RegistryChainFile>(file)));
+  return mergeChainFileParts(chainId, parts);
+}
 
 function toTopToken(chainId: number, token: RegistryFileToken): TopToken {
   return {
@@ -75,6 +93,7 @@ function toTopToken(chainId: number, token: RegistryFileToken): TopToken {
     name: token.name,
     decimals: token.decimals,
     ...(token.logoURI ? { logoURI: token.logoURI } : {}),
+    ...(token.isLifi ? { isLifi: true as const } : {}),
   };
 }
 
@@ -327,6 +346,8 @@ function isCanonicalRouteAllowed({
 // rank like the source list.
 type ChainOptions = {
   options: DestinationOption[];
+  // The source reaches every token with isLifi on the chain through LiFi.
+  lifi: boolean;
   canonicalAddress?: string;
   layerZeroAddress?: string;
   overrideAddress?: string;
@@ -356,7 +377,7 @@ function buildChainOptions({
     isExcludedToken(pair.sourceChainId, sourceToken.address) ||
     blockedSourceRoutes[key]?.includes(sourceToken.address as Address)
   ) {
-    return { options: [] };
+    return { options: [], lifi: false };
   }
 
   const destinationTokens = new Map(destinationFile.tokens.map((token) => [token.address, token]));
@@ -406,11 +427,11 @@ function buildChainOptions({
   }
 
   // LiFi swaps the source token into any token it routes on the destination chain.
-  if (
+  const lifi =
     hasLifi &&
     sourceToken.isLifi === true &&
-    !blockedLifiSourceRoutes[key]?.includes(sourceToken.address as Address)
-  ) {
+    !blockedLifiSourceRoutes[key]?.includes(sourceToken.address as Address);
+  if (lifi) {
     for (const token of destinationFile.tokens) {
       if (token.isLifi) {
         add(token.address, 'lifi');
@@ -420,6 +441,7 @@ function buildChainOptions({
 
   return {
     options: [...options.values()].sort(getTokenComparator(top)),
+    lifi,
     canonicalAddress,
     layerZeroAddress,
     overrideAddress: getDefaultDestinationOverride(pair, sourceToken.address as Address),
@@ -431,6 +453,9 @@ type DestinationOptions = {
   options: DestinationOption[];
   defaultToken?: DestinationOption;
   canonicalToken?: DestinationOption;
+  // The same-asset tokens and the default, for the selection.
+  sameAssetTokens: DestinationOption[];
+  lifi: boolean;
 };
 
 // The default is the token the user picked, otherwise the first route in this order: the pair's
@@ -439,6 +464,7 @@ type DestinationOptions = {
 function withDefault(
   {
     options,
+    lifi,
     canonicalAddress,
     layerZeroAddress,
     overrideAddress,
@@ -456,10 +482,21 @@ function withDefault(
     (lifiCounterpart?.providers.includes('lifi') ? lifiCounterpart : undefined) ??
     find(NATIVE_TOKEN_ADDRESS) ??
     options[0];
+  // Every token that a provider other than LiFi reaches is the same asset. The page checks the
+  // other LiFi tokens with the chain's lifi flag.
+  const sameAssetTokens = options.filter(
+    (option) =>
+      option === defaultToken ||
+      option.isCounterpart ||
+      option.address === overrideAddress ||
+      option.providers.some((provider) => provider !== 'lifi'),
+  );
   return {
     options,
     defaultToken,
     canonicalToken: find(canonicalAddress),
+    sameAssetTokens,
+    lifi,
   };
 }
 
@@ -471,13 +508,6 @@ export function buildDestinationOptions({
   preferredAddress?: string;
 }): DestinationOptions {
   return withDefault(buildChainOptions(params), preferredAddress);
-}
-
-function getPair(index: RegistryIndexFile, sourceChainId: number, destinationChainId: number) {
-  return index.pairs.find(
-    (pair) =>
-      pair.sourceChainId === sourceChainId && pair.destinationChainId === destinationChainId,
-  );
 }
 
 // The files every destination chain of a request reads. A route handler does not share fetches,
@@ -608,15 +638,19 @@ export async function getDestinationChains({
 
   return chains
     .flatMap((chain) => {
-      const { defaultToken, canonicalToken } = withDefault(
+      const { defaultToken, sameAssetTokens } = withDefault(
         chain,
         getPreferredAddress(chain.chainId),
       );
       return defaultToken
-        ? [{ chainId: chain.chainId, defaultToken, ...(canonicalToken ? { canonicalToken } : {}) }]
+        ? [{ chainId: chain.chainId, defaultToken, tokens: sameAssetTokens, lifi: chain.lifi }]
         : [];
     })
-    .sort((a, b) => Number(Boolean(b.canonicalToken)) - Number(Boolean(a.canonicalToken)));
+    .sort((a, b) => Number(hasCanonicalRoute(b)) - Number(hasCanonicalRoute(a)));
+}
+
+function hasCanonicalRoute(chain: DestinationChain): boolean {
+  return chain.tokens.some((token) => token.providers.includes('canonical'));
 }
 
 // The tokens of the page's URL. A chain outside the registry falls back to the default selection,
@@ -624,17 +658,29 @@ export async function getDestinationChains({
 // and the source picker opens on that chain. A token the user imported through the search still
 // gets its destinations, so the page can show them for the pick. A requested destination token
 // stays the default of its chain when the source reaches it, like a token the user picked.
+// picked says which side the user just picked. After a destination pick, the destination stays and
+// the source changes when it does not reach the token.
 export async function getSelection({
   sourceChainId,
   sourceTokenAddress,
   destinationChainId,
   destinationTokenAddress,
+  picked = 'source',
 }: {
   sourceChainId: number;
   sourceTokenAddress: string;
   destinationChainId?: number;
   destinationTokenAddress?: string;
+  picked?: 'source' | 'destination';
 }): Promise<Selection> {
+  if (picked === 'destination' && destinationChainId !== undefined && destinationTokenAddress) {
+    return getSelectionForDestination({
+      sourceChainId,
+      sourceTokenAddress,
+      destinationChainId,
+      destinationTokenAddress,
+    });
+  }
   const index = await getIndexFile();
   const isRegistryChain = index.chains.some((chain) => chain.chainId === sourceChainId);
   const request = isRegistryChain
@@ -703,101 +749,35 @@ export async function getSelection({
   };
 }
 
-// Without a destination chain, the tokens of every chain the source reaches, up to 1,000 per
-// chain like the source list, and in the same order: by top-file rank.
-// A chain's default or the user's pick does not change this order. The list is complete when no
-// chain was cut, and the picker then searches it without the server.
-export async function getDestinationTokens({
-  sourceChainId,
-  sourceTokenAddress,
-  destinationChainId,
-  query,
-}: {
-  sourceChainId: number;
-  sourceTokenAddress: string;
-  destinationChainId?: number;
-  query?: string;
-}): Promise<TokenList<DestinationOption>> {
-  let options: DestinationOption[];
-  let isComplete: boolean;
-  if (destinationChainId === undefined) {
-    const sourceFiles = await getSourceFiles(sourceChainId);
-    const chains = await getAllChainOptions({ sourceFiles, sourceTokenAddress });
-    // A search covers every token, past the 1,000 of each chain.
-    options = chains
-      .flatMap((chain) =>
-        query?.trim() ? chain.options : chain.options.slice(0, DESTINATION_TOKENS_LIMIT),
-      )
-      .sort(getTokenComparator(sourceFiles.top));
-    isComplete = chains.every((chain) => chain.options.length <= DESTINATION_TOKENS_LIMIT);
-  } else {
-    const [index, sourceFiles] = await Promise.all([getIndexFile(), getSourceFiles(sourceChainId)]);
-    const pair = getPair(index, sourceChainId, destinationChainId);
-    if (!pair) {
-      return { tokens: [], isComplete: true };
-    }
-    ({ options } = withDefault(
-      await getChainOptions({
-        sourceFiles,
-        sourceTokenAddress,
-        destinationChainId,
-        hasLifi: pair.hasLifi === true,
-        allowsImport: true,
-      }),
-    ));
-    isComplete = options.length <= DESTINATION_TOKENS_LIMIT;
+async function getSelectionForDestination(
+  request: Parameters<typeof resolveDestinationSelection>[0],
+): Promise<Selection> {
+  const result = await resolveDestinationSelection(request);
+  if (result.kind === 'unavailable') {
+    const current = await getSelection({
+      sourceChainId: request.sourceChainId,
+      sourceTokenAddress: request.sourceTokenAddress,
+    });
+    return { ...current, adjustment: { kind: 'unavailable', message: result.reason } };
   }
-
-  if (query?.trim()) {
-    const matches = searchTokens(options, query, (await getIndexFile()).chains);
-    return {
-      tokens: matches.slice(0, SEARCH_LIMIT),
-      isComplete: matches.length <= SEARCH_LIMIT,
-    };
+  const selection = await getSelection({
+    sourceChainId: result.sourceToken.chainId,
+    sourceTokenAddress: result.sourceToken.address,
+    destinationChainId: request.destinationChainId,
+    destinationTokenAddress: request.destinationTokenAddress,
+  });
+  if (!result.sourceChanged) {
+    return selection;
   }
-  // Without a destination chain, each chain was already cut at the limit.
-  return {
-    tokens: destinationChainId === undefined ? options : options.slice(0, DESTINATION_TOKENS_LIMIT),
-    isComplete,
-  };
-}
-
-export async function getEligibleDestinationTokens({
-  sourceChainId,
-  sourceTokenAddress,
-  candidates,
-}: {
-  sourceChainId: number;
-  sourceTokenAddress: string;
-  candidates: Pick<TopToken, 'chainId' | 'address'>[];
-}): Promise<TokenList<DestinationOption>> {
   const index = await getIndexFile();
-  if (!index.chains.some((chain) => chain.chainId === sourceChainId)) {
-    return { tokens: [], isComplete: true };
-  }
-  const sourceFiles = await getSourceFiles(sourceChainId);
-  const requested = new Set(candidates.map(tokenKey));
-  const chainIds = new Set(candidates.map((token) => token.chainId));
-  const pairs = index.pairs.filter(
-    (pair) => pair.sourceChainId === sourceChainId && chainIds.has(pair.destinationChainId),
-  );
-  const options = await Promise.all(
-    pairs.map((pair) =>
-      getChainOptions({
-        sourceFiles,
-        sourceTokenAddress,
-        destinationChainId: pair.destinationChainId,
-        hasLifi: pair.hasLifi === true,
-        allowsImport: true,
-      }),
-    ),
-  );
+  const chainName = (chainId: number) =>
+    index.chains.find((chain) => chain.chainId === chainId)?.name ?? String(chainId);
   return {
-    tokens: options
-      .flatMap((chain) => chain.options)
-      .filter((token) => requested.has(tokenKey(token)))
-      .sort(getTokenComparator(sourceFiles.top)),
-    isComplete: true,
+    ...selection,
+    adjustment: {
+      kind: 'source',
+      message: `The source changed to ${result.sourceToken.symbol} on ${chainName(result.sourceToken.chainId)} to reach ${result.destinationToken.symbol} on ${chainName(result.destinationToken.chainId)}.`,
+    },
   };
 }
 
