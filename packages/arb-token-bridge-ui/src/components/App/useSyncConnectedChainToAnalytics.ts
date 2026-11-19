@@ -1,5 +1,5 @@
-import { useWalletInfo } from '@reown/appkit/react';
 import * as Sentry from '@sentry/react';
+import { useWalletInfo } from '@zerodev/wallet-react-ui';
 import { useEffect } from 'react';
 import { useAccount } from 'wagmi';
 
@@ -27,7 +27,7 @@ export function useSyncConnectedChainToAnalytics() {
   const [networks] = useNetworks();
   const { parentChain, childChain } = useNetworksRelationship(networks);
   const { isConnected } = useAccount();
-  const { walletInfo } = useWalletInfo('eip155');
+  const { walletInfo } = useWalletInfo();
 
   useEffect(() => {
     if (isConnected) {

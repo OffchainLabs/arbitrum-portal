@@ -8,12 +8,14 @@ import {
   ChevronDownIcon,
   CodeBracketIcon,
   DocumentDuplicateIcon,
+  WalletIcon,
 } from '@heroicons/react/24/outline';
+import { useZeroDevWalletKit } from '@zerodev/wallet-react-ui';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { useCopyToClipboard } from 'react-use';
 import { twMerge } from 'tailwind-merge';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount } from 'wagmi';
 
 import { CustomBoringAvatar } from '@/bridge/components/common/CustomBoringAvatar';
 import { SafeImage } from '@/bridge/components/common/SafeImage';
@@ -26,6 +28,8 @@ const MENU_ITEM_BUTTON_CLASSES =
 const ICON_CLASSES = 'h-4 w-4 shrink-0';
 const AVATAR_CLASSES = 'h-6 w-6 rounded-full shrink-0';
 
+type SolanaAdapter = ReturnType<typeof useZeroDevWalletKit<'solana'>>;
+
 interface WalletConnectedDropdownProps {
   account: {
     address: string;
@@ -33,11 +37,21 @@ interface WalletConnectedDropdownProps {
   chain?: {
     id: number;
   };
+  solana: SolanaAdapter;
+  openConnectModal: () => void;
 }
 
-function WalletConnectedDropdown({ account, chain }: WalletConnectedDropdownProps) {
+function WalletConnectedDropdown({
+  account,
+  chain,
+  solana,
+  openConnectModal,
+}: WalletConnectedDropdownProps) {
   const { address, accountShort, ensName, ensAvatar, udInfo, setQueryParams } = useAccountMenu();
-  const { disconnect } = useDisconnect();
+  // The kit's EVM disconnect detaches a wallet that also serves the Solana
+  // slot at wagmi's state level; wagmi's own disconnect() would ask the
+  // extension to revoke the site, which ends the Solana session too.
+  const evm = useZeroDevWalletKit({ namespace: 'eip155' });
   const [, copyToClipboard] = useCopyToClipboard();
   const [showCopied, setShowCopied] = useState(false);
   const pathname = usePathname();
@@ -129,9 +143,21 @@ function WalletConnectedDropdown({ account, chain }: WalletConnectedDropdownProp
               </button>
             )}
 
-            <button onClick={() => disconnect()} className={MENU_ITEM_BUTTON_CLASSES}>
+            {solana.isConnected && solana.address ? (
+              <button onClick={() => solana.disconnect()} className={MENU_ITEM_BUTTON_CLASSES}>
+                <ArrowLeftOnRectangleIcon className={twMerge(ICON_CLASSES, 'text-white')} />
+                <span>Disconnect Solana</span>
+              </button>
+            ) : (
+              <button onClick={openConnectModal} className={MENU_ITEM_BUTTON_CLASSES}>
+                <WalletIcon className={twMerge(ICON_CLASSES, 'text-white')} />
+                <span>Connect Solana Wallet</span>
+              </button>
+            )}
+
+            <button onClick={() => evm.disconnect()} className={MENU_ITEM_BUTTON_CLASSES}>
               <ArrowLeftOnRectangleIcon className={twMerge(ICON_CLASSES, 'text-white')} />
-              <span>Disconnect Wallet</span>
+              <span>Disconnect EVM</span>
             </button>
           </Popover.Panel>
         </>
@@ -156,12 +182,121 @@ function WalletDisconnectedButton({ openConnectModal }: WalletDisconnectedButton
   );
 }
 
+interface SolanaConnectedDropdownProps {
+  solana: SolanaAdapter & { address: string };
+  openConnectModal: () => void;
+}
+
+/**
+ * Solana sessions live in the ZD kit, not wagmi, so the EVM-driven dropdown
+ * never sees them. Same chrome as the EVM one, with a door to add an EVM
+ * wallet while the Solana session stays connected.
+ */
+function SolanaConnectedDropdown({ solana, openConnectModal }: SolanaConnectedDropdownProps) {
+  const [, copyToClipboard] = useCopyToClipboard();
+  const [showCopied, setShowCopied] = useState(false);
+
+  const { address } = solana;
+  const truncatedAddress = `${address.slice(0, 4)}...${address.slice(-4)}`;
+  const explorerUrl = `https://solscan.io/account/${address}`;
+
+  function copy(value: string) {
+    setShowCopied(true);
+    copyToClipboard(value);
+    setTimeout(() => setShowCopied(false), 1000);
+  }
+
+  const Avatar = () => (
+    <SafeImage
+      src={solana.walletInfo?.icon || undefined}
+      className={AVATAR_CLASSES}
+      fallback={<CustomBoringAvatar size={24} name={address} />}
+    />
+  );
+
+  return (
+    <Popover className="relative">
+      {({ open }) => (
+        <>
+          <Popover.Button className="flex items-center gap-2 rounded-md bg-neutral-25 px-2 py-2 text-sm text-white transition-colors hover:bg-neutral-25/80 ui-open:bg-neutral-25/90">
+            <Avatar />
+            <span className="text-sm hidden md:block">{truncatedAddress}</span>
+            <ChevronDownIcon
+              className={twMerge(
+                ICON_CLASSES,
+                'transition-transform hidden md:block',
+                open && 'rotate-180',
+              )}
+            />
+          </Popover.Button>
+
+          <Popover.Panel className="absolute right-0 top-[0px] z-50 w-56 rounded-md border-0 bg-gray-1 p-3 shadow-lg">
+            <button
+              onClick={() => copy(address)}
+              className={twMerge(MENU_ITEM_BUTTON_CLASSES, 'px-2 py-2.5 mb-0.5')}
+              aria-label="Copy address"
+            >
+              <Avatar />
+              <span className="text-sm text-white flex-1 text-left">{truncatedAddress}</span>
+              {showCopied ? (
+                <>
+                  <CheckIcon className={twMerge(ICON_CLASSES, 'text-gray-5')} />
+                  <span className="text-xs text-gray-5 shrink-0">Copied!</span>
+                </>
+              ) : (
+                <DocumentDuplicateIcon className={twMerge(ICON_CLASSES, 'text-gray-5')} />
+              )}
+            </button>
+
+            <hr className="my-1 border-gray-8" />
+
+            <button
+              onClick={() => window.open(explorerUrl, '_blank', 'noopener,noreferrer')}
+              className={MENU_ITEM_BUTTON_CLASSES}
+            >
+              <ArrowTopRightOnSquareIcon className={twMerge(ICON_CLASSES, 'text-white')} />
+              <span>Explorer</span>
+            </button>
+
+            <button onClick={openConnectModal} className={MENU_ITEM_BUTTON_CLASSES}>
+              <WalletIcon className={twMerge(ICON_CLASSES, 'text-white')} />
+              <span>Connect EVM Wallet</span>
+            </button>
+
+            <button onClick={() => solana.disconnect()} className={MENU_ITEM_BUTTON_CLASSES}>
+              <ArrowLeftOnRectangleIcon className={twMerge(ICON_CLASSES, 'text-white')} />
+              <span>Disconnect Solana</span>
+            </button>
+          </Popover.Panel>
+        </>
+      )}
+    </Popover>
+  );
+}
+
 export function NavWallet() {
   const { address, chain } = useAccount();
+  const solana = useZeroDevWalletKit({ namespace: 'solana' });
   const { openConnectModal } = useWalletModal();
 
   if (address) {
-    return <WalletConnectedDropdown account={{ address }} chain={chain} />;
+    return (
+      <WalletConnectedDropdown
+        account={{ address }}
+        chain={chain}
+        solana={solana}
+        openConnectModal={openConnectModal}
+      />
+    );
+  }
+
+  if (solana.isConnected && solana.address) {
+    return (
+      <SolanaConnectedDropdown
+        solana={{ ...solana, address: solana.address }}
+        openConnectModal={openConnectModal}
+      />
+    );
   }
 
   return <WalletDisconnectedButton openConnectModal={openConnectModal} />;
