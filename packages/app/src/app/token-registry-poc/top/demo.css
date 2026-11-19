@@ -155,6 +155,8 @@
   flex: none;
 }
 .bridge-demo .chain-ic img {
+  width: 64%;
+  height: 64%;
   object-fit: contain;
 }
 .bridge-demo .allnet-ic {
