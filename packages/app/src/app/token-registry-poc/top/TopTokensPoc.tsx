@@ -285,7 +285,11 @@ function TopTokensPocContent() {
       setPendingSource(undefined);
   }, [pendingSource, selection]);
 
-  function selectionParams(nextSource: TopToken, nextDestination?: TopToken) {
+  // A destination without an address asks the backend for the default token on that chain.
+  function selectionParams(
+    nextSource: TopToken,
+    nextDestination?: { chainId: number; address?: string },
+  ) {
     const next = new URLSearchParams(params.toString());
     next.set(
       'sourceChain',
@@ -298,10 +302,12 @@ function TopTokensPocContent() {
         'destinationChain',
         encodeChainQueryParam(nextDestination.chainId) ?? String(nextDestination.chainId),
       );
-      next.set(
-        'destinationToken',
-        DestinationTokenQueryParam.encode(nextDestination.address) ?? nextDestination.address,
-      );
+      if (nextDestination.address)
+        next.set(
+          'destinationToken',
+          DestinationTokenQueryParam.encode(nextDestination.address) ?? nextDestination.address,
+        );
+      else next.delete('destinationToken');
     } else {
       next.delete('destinationChain');
       next.delete('destinationToken');
@@ -309,7 +315,10 @@ function TopTokensPocContent() {
     return next;
   }
 
-  function writeSelection(nextSource: TopToken, nextDestination?: TopToken) {
+  function writeSelection(
+    nextSource: TopToken,
+    nextDestination?: { chainId: number; address?: string },
+  ) {
     const next = selectionParams(nextSource, nextDestination);
     setQuery(parseSelectionQuery(next));
     window.history.replaceState(null, '', `${pathname}?${next}`);
@@ -322,37 +331,26 @@ function TopTokensPocContent() {
     transitionPicker(() => setOpenPicker('source'));
   }
 
-  async function pickSource(token: TopToken) {
-    const attempt = ++resolutionAttempt.current;
+  function pickSource(token: TopToken) {
+    resolutionAttempt.current += 1;
     setSourceNotice(undefined);
     setSourceRecents((recents) => addRecentToken(recents, token));
     setResolvingDestination(false);
     setDestinationError('');
+    // Picking the destination token swaps the sides. The URL names the destination token only when
+    // the user picked it, and that pick stays when the new source reaches it. Otherwise the backend
+    // picks the default token on the same destination chain.
+    const destinationPicked =
+      destination && query.destinationToken === destination.address.toLowerCase();
     const nextDestination =
-      destination && tokenKey(token) === tokenKey(destination) ? source : destination;
-    // Load the new selection and the destination list before the pickers swap, so the destination
-    // picker opens with its final content. After 600 ms the swap stops waiting for them.
-    const nextSelectionKey = selectionKey(
-      parseSelectionQuery(selectionParams(token, nextDestination)),
-    );
-    const listKey = destinationKey(token, filters.destination);
-    let selectionLoaded = false;
-    const loadSelection = fetchJson<Selection>(nextSelectionKey)
-      .then((data) => mutate(nextSelectionKey, data, { revalidate: false }))
-      .then(() => {
-        selectionLoaded = true;
-      });
-    const loadList = fetchJson<TokenList<DestinationOption>>(listKey).then((data) =>
-      mutate(listKey, data, { revalidate: false }),
-    );
-    await Promise.race([
-      Promise.allSettled([loadSelection, loadList]),
-      new Promise((resolve) => setTimeout(resolve, 600)),
-    ]);
-    if (attempt !== resolutionAttempt.current) return;
+      destination && tokenKey(token) === tokenKey(destination)
+        ? source
+        : destinationPicked
+          ? destination
+          : destination && { chainId: destination.chainId };
     transitionPicker(() => {
-      if (!selectionLoaded) setPendingSource(token);
-      setOpenPicker('destination');
+      setPendingSource(token);
+      setOpenPicker(null);
       writeSelection(token, nextDestination);
     });
   }

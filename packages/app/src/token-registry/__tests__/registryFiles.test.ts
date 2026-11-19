@@ -449,6 +449,35 @@ describe('buildDestinationOptions policy', () => {
     expect(defaultToken?.address).toBe(PYUSD_ARBITRUM);
   });
 
+  it('defaults to the canonical token, then the same asset through LiFi, then the native token', () => {
+    const DAI_ETHEREUM = '0x6b175474e89094c44da98b954eedeac495271d0f';
+    const DAI_NOVA_CANONICAL = '0x00000000000000000000000000000000000000d1';
+    const DAI_NOVA_LIFI = '0x00000000000000000000000000000000000000d2';
+    const OTHER_ETHEREUM = '0x00000000000000000000000000000000000000d3';
+    const source = chainFile(1, undefined, [
+      token(NATIVE_TOKEN_ADDRESS, 'ETH'),
+      { ...token(DAI_ETHEREUM, 'DAI'), counterparts: { '42170': DAI_NOVA_LIFI } },
+      { ...token(OTHER_ETHEREUM, 'OTHER'), counterparts: { '42170': DAI_NOVA_LIFI } },
+    ]);
+    const nova = chainFile(42170, 1, [
+      token(NATIVE_TOKEN_ADDRESS, 'ETH'),
+      token(DAI_NOVA_CANONICAL, 'DAI', DAI_ETHEREUM),
+      token(DAI_NOVA_LIFI, 'DAI'),
+    ]);
+    const defaultFor = (sourceTokenAddress: string, toTokens: string[]) =>
+      build({
+        sourceFile: source,
+        destinationFile: nova,
+        lifi: { fromTokens: [DAI_ETHEREUM, OTHER_ETHEREUM], toTokens },
+        sourceTokenAddress,
+      }).defaultToken?.address;
+    expect(defaultFor(DAI_ETHEREUM, [DAI_NOVA_LIFI, NATIVE_TOKEN_ADDRESS])).toBe(
+      DAI_NOVA_CANONICAL,
+    );
+    expect(defaultFor(OTHER_ETHEREUM, [DAI_NOVA_LIFI, NATIVE_TOKEN_ADDRESS])).toBe(DAI_NOVA_LIFI);
+    expect(defaultFor(OTHER_ETHEREUM, [NATIVE_TOKEN_ADDRESS])).toBe(NATIVE_TOKEN_ADDRESS);
+  });
+
   it('sends the gas token, not Ether, to the native token of a custom gas token chain', () => {
     const arbitrum = chainFile(42161, 1, [
       token(NATIVE_TOKEN_ADDRESS, 'ETH'),
