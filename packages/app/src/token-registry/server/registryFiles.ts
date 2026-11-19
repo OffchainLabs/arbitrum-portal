@@ -329,8 +329,9 @@ type ChainOptions = {
   options: DestinationOption[];
   canonicalAddress?: string;
   layerZeroAddress?: string;
-  // The default without a pick: the pair's override, otherwise the same token as the source.
-  defaultCandidates: (string | undefined)[];
+  overrideAddress?: string;
+  // The same asset as the source on this chain.
+  counterpartAddress?: string;
 };
 
 function buildChainOptions({
@@ -355,7 +356,7 @@ function buildChainOptions({
     isExcludedToken(pair.sourceChainId, sourceToken.address) ||
     blockedSourceRoutes[key]?.includes(sourceToken.address as Address)
   ) {
-    return { options: [], defaultCandidates: [] };
+    return { options: [] };
   }
 
   const destinationTokens = new Map(destinationFile.tokens.map((token) => [token.address, token]));
@@ -421,10 +422,8 @@ function buildChainOptions({
     options: [...options.values()].sort(getTokenComparator(top)),
     canonicalAddress,
     layerZeroAddress,
-    defaultCandidates: [
-      getDefaultDestinationOverride(pair, sourceToken.address as Address),
-      sourceToken.counterparts?.[destinationFile.chainId],
-    ],
+    overrideAddress: getDefaultDestinationOverride(pair, sourceToken.address as Address),
+    counterpartAddress: sourceToken.counterparts?.[destinationFile.chainId],
   };
 }
 
@@ -434,21 +433,29 @@ type DestinationOptions = {
   canonicalToken?: DestinationOption;
 };
 
-// The default is the token the user picked, otherwise the pair's override, otherwise the same token
-// as the source, otherwise the canonical, LayerZero or native token. It does not change the order.
+// The default is the token the user picked, otherwise the first route in this order: the pair's
+// override, the canonical token, the LayerZero token, the same asset through LiFi, the native token,
+// then any other token by rank. It does not change the order of the list.
 function withDefault(
-  { options, canonicalAddress, layerZeroAddress, defaultCandidates }: ChainOptions,
+  {
+    options,
+    canonicalAddress,
+    layerZeroAddress,
+    overrideAddress,
+    counterpartAddress,
+  }: ChainOptions,
   preferredAddress?: string,
 ): DestinationOptions {
   const find = (address: string | undefined) =>
     address === undefined ? undefined : options.find((option) => option.address === address);
-  const defaultToken = [
-    preferredAddress,
-    ...defaultCandidates,
-    canonicalAddress,
-    layerZeroAddress,
-    NATIVE_TOKEN_ADDRESS,
-  ].reduce<DestinationOption | undefined>((found, address) => found ?? find(address), undefined);
+  const lifiCounterpart = find(counterpartAddress);
+  const defaultToken =
+    [preferredAddress, overrideAddress, canonicalAddress, layerZeroAddress]
+      .map(find)
+      .find(Boolean) ??
+    (lifiCounterpart?.providers.includes('lifi') ? lifiCounterpart : undefined) ??
+    find(NATIVE_TOKEN_ADDRESS) ??
+    options[0];
   return {
     options,
     defaultToken,

@@ -93,8 +93,8 @@ export type HeldTokens = { tokens: HeldToken[]; failedChainIds: number[] };
 
 export type DestinationChain = {
   chainId: number;
-  // The same token as the source when the source can reach it, otherwise the canonical token,
-  // otherwise the native token.
+  // The pair's override, otherwise the canonical, LayerZero, or LiFi same-asset token, otherwise the
+  // native token, otherwise any reachable token.
   defaultToken: DestinationOption;
   // The token the canonical bridge delivers on this chain, when it has a route.
   canonicalToken?: DestinationOption;
