@@ -40,7 +40,8 @@ export type DemoRoute = {
 
 export type QuoteRequest = {
   source: TopToken;
-  destination: TopToken;
+  // The selection gives the providers that reach the destination token.
+  destination: DestinationOption;
   amount: string;
   sender?: string;
   recipient?: string;
@@ -74,18 +75,7 @@ export async function fetchRoutes([, request]: readonly [string, QuoteRequest]) 
         ? getNovaEthOnlyDepositErrorMessage()
         : getNovaEthDepositCapErrorMessage(),
     );
-  const response = await fetch('/api/token-registry/files/destination-tokens', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      sourceChainId: source.chainId,
-      sourceToken: source.address,
-      candidates: [destination],
-    }),
-  });
-  if (!response.ok) throw new Error('Could not check this route. Retry.');
-  const eligibility: { tokens: DestinationOption[] } = await response.json();
-  const providers = eligibility.tokens[0]?.providers ?? [];
+  const { providers } = destination;
   const requests: Promise<DemoRoute[]>[] = [];
   if (providers.includes('lifi'))
     requests.push(

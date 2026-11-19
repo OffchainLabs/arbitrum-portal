@@ -19,7 +19,7 @@ import {
   searchTokens,
   tokenKey,
 } from '@/app/src/token-registry/registryFiles';
-import { NATIVE_TOKEN_ADDRESS } from '@/app/src/token-registry/types';
+import { NATIVE_TOKEN_ADDRESS, ProviderId } from '@/app/src/token-registry/types';
 import { getAccountExplorerUrl } from '@/bridge/util/networks';
 
 import {
@@ -54,15 +54,13 @@ export function TokenPicker<T extends PickerToken>({
   extraTokens,
   recents,
   top,
-  getListKey,
+  getProviders,
   getSearchKey,
   onSelect,
   onClose,
   description,
   selectionStatus,
   selectionError,
-  extraLoading,
-  extraError,
   onFilterChange,
   prices = {},
   failedBalanceChainIds = [],
@@ -76,15 +74,15 @@ export function TokenPicker<T extends PickerToken>({
   extraTokens: T[];
   recents: T[];
   top?: TopFile;
-  getListKey?: (chainId: number | null) => SwrKey;
+  // In the destination picker: the providers that reach a token. A token without any changes the
+  // source when the user picks it.
+  getProviders?: (token: T) => ProviderId[] | undefined;
   getSearchKey: (chainId: number | null, query: string) => SwrKey | null;
   onSelect: (token: T) => void;
   onClose: () => void;
   description?: string;
   selectionStatus?: string;
   selectionError?: string;
-  extraLoading?: boolean;
-  extraError?: boolean;
   onFilterChange: (chainId: number | null) => void;
   prices?: Record<string, number>;
   failedBalanceChainIds?: number[];
@@ -104,12 +102,6 @@ export function TokenPicker<T extends PickerToken>({
   const chainName = (id: number) =>
     chains.find((chain) => chain.chainId === id)?.name ?? String(id);
   const options = { revalidateOnFocus: false, keepPreviousData: false };
-  const {
-    data: listData,
-    error: listError,
-    isLoading: listLoading,
-    mutate: retryList,
-  } = useSWR(getListKey?.(chainId) ?? null, fetchJson<TokenList<T>>, options);
   const searchKey = debouncedQuery ? getSearchKey(chainId, debouncedQuery) : null;
   const otherKey = chainId !== null && debouncedQuery ? getSearchKey(null, debouncedQuery) : null;
   const {
@@ -134,12 +126,7 @@ export function TokenPicker<T extends PickerToken>({
       ...matched.filter((token) => !balances.has(tokenKey(token))),
     ];
   };
-  const available = mergePickerTokens(
-    listData?.tokens ?? [],
-    extraTokens,
-    currentMatches?.tokens ?? [],
-    localTokens,
-  );
+  const available = mergePickerTokens(extraTokens, currentMatches?.tokens ?? [], localTokens);
   const mainTokens = sort(
     available.filter((token) => chainId === null || token.chainId === chainId),
   );
@@ -189,9 +176,9 @@ export function TokenPicker<T extends PickerToken>({
     ? rows.findIndex((row) => row.kind === 'token' && tokenKey(row.token) === tokenKey(highlighted))
     : -1;
   const optionId = (token: T) => `${id}-${tokenKey(token)}`;
-  const isBusy = listLoading || searching || otherLoading || query.trim() !== debouncedQuery;
-  const hasError = Boolean(listError || searchError || otherError);
-  const incomplete = currentMatches?.isComplete === false || listData?.isComplete === false;
+  const isBusy = searching || otherLoading || query.trim() !== debouncedQuery;
+  const hasError = Boolean(searchError || otherError);
+  const incomplete = currentMatches?.isComplete === false;
   const recentTokens = recents.slice(0, 4);
 
   function changeFilter(next: number | null, consume = false) {
@@ -239,6 +226,9 @@ export function TokenPicker<T extends PickerToken>({
               )}
               {token.isCounterpart && <span className="chip chip-native">Same asset</span>}
               {token.isImported && <span className="chip chip-warn">Unverified</span>}
+              {getProviders && !getProviders(token) && (
+                <span className="chip chip-quiet">Changes source</span>
+              )}
               {selected && <Icon name="check" size={14} />}
             </div>
             <div className="trow-sub">
@@ -505,13 +495,12 @@ export function TokenPicker<T extends PickerToken>({
               {selectionStatus ?? selectionError ?? description}
             </p>
           )}
-          {(hasError || extraError) && (
+          {hasError && (
             <p className="picker-message" role="alert">
               Some results could not load.{' '}
               <button
                 className="linkbtn"
                 onClick={() => {
-                  void retryList();
                   void retrySearch();
                   void retryOther();
                 }}
@@ -552,11 +541,9 @@ export function TokenPicker<T extends PickerToken>({
               </div>
             )}
           </div>
-          {(isBusy || extraLoading || incomplete) && (
+          {(isBusy || incomplete) && (
             <p className="picker-message" role="status">
-              {isBusy || extraLoading
-                ? 'Loading results…'
-                : 'Narrow your search to find more tokens'}
+              {isBusy ? 'Loading results…' : 'Narrow your search to find more tokens'}
             </p>
           )}
           {chainId !== null && query && (

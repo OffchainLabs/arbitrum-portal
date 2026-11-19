@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { RegistryChainFile, TopFile } from '../registryFiles';
+import {
+  DestinationChain,
+  RegistryChainFile,
+  TopFile,
+  getDestinationProviders,
+} from '../registryFiles';
 import {
   buildDestinationOptions,
   buildSourcesForDestination,
+  mergeChainFileParts,
   searchChainFiles,
   toHeldTokens,
   withImportedTokens,
@@ -213,11 +219,12 @@ describe('searchChainFiles', () => {
 
 describe('buildDestinationOptions', () => {
   it('sorts by top-file rank like the source list, and defaults to the same token', () => {
-    const { options, defaultToken, canonicalToken } = buildDestinationOptions({
-      ...withLifi({ sourceFile: ethereum, destinationFile: arbitrumOne, lifi: depositLifi }),
-      top,
-      sourceTokenAddress: USDC_ETHEREUM,
-    });
+    const { options, defaultToken, canonicalToken, sameAssetTokens, lifi } =
+      buildDestinationOptions({
+        ...withLifi({ sourceFile: ethereum, destinationFile: arbitrumOne, lifi: depositLifi }),
+        top,
+        sourceTokenAddress: USDC_ETHEREUM,
+      });
     expect(options.map((option) => [option.address, option.providers])).toEqual([
       [WBTC_ARBITRUM, ['lifi']],
       [USDC_ARBITRUM, ['lifi']],
@@ -228,10 +235,16 @@ describe('buildDestinationOptions', () => {
     expect(canonicalToken?.address).toBe(USDC_E_ARBITRUM);
     expect(defaultToken?.isCounterpart).toBe(true);
     expect(canonicalToken?.isCounterpart).toBeUndefined();
+    // The selection lists the same asset by name and covers the other LiFi tokens with the flag.
+    expect(sameAssetTokens.map((option) => option.address)).toEqual([
+      USDC_ARBITRUM,
+      USDC_E_ARBITRUM,
+    ]);
+    expect(lifi).toBe(true);
   });
 
   it('ignores the LiFi flags on a pair that LiFi does not connect', () => {
-    const { options } = buildDestinationOptions({
+    const { options, lifi } = buildDestinationOptions({
       ...withLifi({ sourceFile: ethereum, destinationFile: arbitrumOne, lifi: depositLifi }),
       hasLifi: false,
       top,
@@ -240,6 +253,7 @@ describe('buildDestinationOptions', () => {
     expect(options.map((option) => [option.address, option.providers])).toEqual([
       [USDC_E_ARBITRUM, ['canonical']],
     ]);
+    expect(lifi).toBe(false);
   });
 
   it('withdraws to the parent token and sends Ether to Ether', () => {
@@ -562,5 +576,64 @@ describe('toHeldTokens', () => {
       expect.objectContaining({ address: USDC_ARBITRUM, balance: '5' }),
       expect.objectContaining({ address: USDC_E_ARBITRUM, balance: '7' }),
     ]);
+  });
+});
+
+describe('mergeChainFileParts', () => {
+  const part = (chainId: number, symbols: string[]): RegistryChainFile => ({
+    generatedAt: '',
+    chainId,
+    tokens: symbols.map((symbol, position) => ({
+      address: `0x${String(position).padStart(40, '0')}`,
+      symbol,
+      name: symbol,
+      decimals: 18,
+    })),
+  });
+
+  it('reads the parts of a chain file as one chain, in order', () => {
+    const merged = mergeChainFileParts(1, [part(1, ['ETH', 'USDC']), part(1, ['WBTC'])]);
+    expect(merged.tokens.map((token) => token.symbol)).toEqual(['ETH', 'USDC', 'WBTC']);
+  });
+
+  it('rejects a part from another chain', () => {
+    expect(() => mergeChainFileParts(1, [part(1, ['ETH']), part(42161, ['ARB'])])).toThrow();
+  });
+});
+
+describe('getDestinationProviders', () => {
+  const usdcE = {
+    chainId: 42161,
+    address: USDC_E_ARBITRUM,
+    symbol: 'USDC.e',
+    name: 'Bridged USDC',
+    decimals: 6,
+    providers: ['canonical' as const],
+  };
+  const chains: DestinationChain[] = [
+    { chainId: 42161, defaultToken: usdcE, tokens: [usdcE], lifi: true },
+    { chainId: 42170, defaultToken: { ...usdcE, chainId: 42170 }, tokens: [], lifi: false },
+  ];
+
+  it('reads the providers of a listed same-asset token', () => {
+    expect(getDestinationProviders(chains, usdcE)).toEqual(['canonical']);
+  });
+
+  it('reaches any LiFi token on a chain with the LiFi flag', () => {
+    expect(
+      getDestinationProviders(chains, { chainId: 42161, address: WBTC_ARBITRUM, isLifi: true }),
+    ).toEqual(['lifi']);
+  });
+
+  it('does not reach a token that LiFi does not route, or a chain without the flag', () => {
+    expect(getDestinationProviders(chains, { chainId: 42161, address: WBTC_ARBITRUM })).toBe(
+      undefined,
+    );
+    expect(
+      getDestinationProviders(chains, { chainId: 42170, address: WBTC_ARBITRUM, isLifi: true }),
+    ).toBe(undefined);
+    expect(
+      getDestinationProviders(chains, { chainId: 10, address: WBTC_ARBITRUM, isLifi: true }),
+    ).toBe(undefined);
   });
 });

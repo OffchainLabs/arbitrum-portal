@@ -15,7 +15,7 @@ import useSWR from 'swr';
 import { isAddress } from 'viem';
 import { useAccount } from 'wagmi';
 
-import { TopToken, tokenKey } from '@/app/src/token-registry/registryFiles';
+import { DestinationOption, TopToken, tokenKey } from '@/app/src/token-registry/registryFiles';
 import { NATIVE_TOKEN_ADDRESS } from '@/app/src/token-registry/types';
 import { NOVA_MAX_ETH_DEPOSIT_AMOUNT, isNovaDestination } from '@/bridge/util/NovaUtils';
 import { getBridgeUiConfigForChain } from '@/bridge/util/bridgeUiConfig';
@@ -258,7 +258,7 @@ export function DemoBridge({
   balanceFailed,
 }: {
   source?: TopToken;
-  destination?: TopToken;
+  destination?: DestinationOption;
   balances: Map<string, string>;
   prices: Record<string, number>;
   picker: ReactNode;

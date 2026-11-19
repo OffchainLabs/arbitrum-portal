@@ -16,10 +16,10 @@ import {
   RegistryIndexFile,
   Selection,
   TOKEN_REGISTRY_URL,
-  TokenList,
   TopFile,
   TopToken,
   addRecentToken,
+  getDestinationProviders,
   mergePickerTokens,
   tokenKey,
 } from '@/app/src/token-registry/registryFiles';
@@ -62,6 +62,8 @@ type SelectionQuery = {
   sourceToken: string;
   destinationChainId?: number;
   destinationToken?: string;
+  // A destination pick keeps the destination and lets the API change the source.
+  picked?: 'destination';
 };
 
 function parseSelectionQuery(params: URLSearchParams): SelectionQuery {
@@ -84,6 +86,7 @@ function selectionKey(query: SelectionQuery): SwrKey {
   if (query.destinationChainId !== undefined)
     params.set('destinationChainId', String(query.destinationChainId));
   if (query.destinationToken) params.set('destinationToken', query.destinationToken);
+  if (query.picked) params.set('picked', query.picked);
   return [`${API}/selection?${params}`, 'selection'];
 }
 
@@ -92,52 +95,6 @@ function sourceSearchKey(chainId: number | null, query: string): SwrKey | null {
   const params = new URLSearchParams({ q: query });
   if (chainId !== null) params.set('chainId', String(chainId));
   return [`${API}/search?${params}`, 'source-search'];
-}
-
-function destinationKey(source: TopToken, chainId: number | null, query?: string): SwrKey {
-  const params = new URLSearchParams({
-    sourceChainId: String(source.chainId),
-    sourceToken: source.address,
-  });
-  if (chainId !== null) params.set('destinationChainId', String(chainId));
-  if (query) params.set('q', query);
-  return [`${API}/destination-tokens?${params}`, 'destinations'];
-}
-
-type EligibilityKey = readonly [
-  string,
-  number,
-  string,
-  Pick<TopToken, 'chainId' | 'address'>[],
-  string,
-];
-
-async function fetchEligibility([
-  url,
-  sourceChainId,
-  sourceToken,
-  candidates,
-]: EligibilityKey): Promise<TokenList<DestinationOption>> {
-  const batches = Array.from({ length: Math.ceil(candidates.length / 200) }, (_, index) =>
-    candidates.slice(index * 200, (index + 1) * 200),
-  );
-  const results = await Promise.all(
-    batches.map(async (batch) => {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sourceChainId,
-          sourceToken,
-          candidates: batch,
-        }),
-      });
-      if (!response.ok) throw new Error(`Eligibility check failed (${response.status})`);
-      const result: TokenList<DestinationOption> = await response.json();
-      return result.tokens;
-    }),
-  );
-  return { tokens: mergePickerTokens(...results), isComplete: true };
 }
 
 const WalletProviders = dynamic(
@@ -253,24 +210,6 @@ function TopTokensPocContent() {
   if (source && sourceBalance !== undefined) signingBalances.set(tokenKey(source), sourceBalance);
   if (destination && destinationBalance !== undefined)
     signingBalances.set(tokenKey(destination), destinationBalance);
-  const candidates = mergePickerTokens<TopToken>(holdings?.tokens ?? [], destinationRecents).map(
-    ({ chainId, address }) => ({ chainId, address }),
-  );
-  const eligibilityKey: EligibilityKey | null =
-    openPicker === 'destination' && source && candidates.length
-      ? [
-          `${API}/destination-tokens`,
-          source.chainId,
-          source.address,
-          candidates,
-          'destination-eligibility',
-        ]
-      : null;
-  const {
-    data: eligible,
-    error: eligibleError,
-    isLoading: checkingEligibility,
-  } = useSWR(eligibilityKey, fetchEligibility);
   const chains = index?.chains ?? [];
   const name = (chainId: number) =>
     chains.find((chain) => chain.chainId === chainId)?.name ??
@@ -355,33 +294,45 @@ function TopTokensPocContent() {
     });
   }
 
+  // The selection's routes tell whether the source reaches the token. Only a token it does not
+  // reach, or a swap of the sides, needs the API to pick the source.
   async function resolveDestination(token: TopToken): Promise<DestinationSelection> {
-    if (!source) throw new Error('No source token.');
+    if (!source || !selection) throw new Error('No source token.');
     const swap = destination && tokenKey(source) === tokenKey(token);
-    // A token from the current source's destination lists already carries its providers, so the
-    // current source reaches it. Only other tokens need the backend to check or change the source.
-    const { providers } = token as Partial<DestinationOption>;
-    if (!swap && providers?.length) {
+    const providers = swap
+      ? undefined
+      : getDestinationProviders(selection.destinationChains, token);
+    if (providers) {
       return {
         kind: 'resolved',
         sourceToken: source,
-        destinationToken: token as DestinationOption,
+        destinationToken: { ...token, providers },
         sourceChanged: false,
       };
     }
     setResolvingDestination(true);
-    const response = await fetch(`${API}/selection`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sourceChainId: swap ? destination.chainId : source.chainId,
-        sourceTokenAddress: swap ? destination.address : source.address,
+    const requestedSource = swap ? destination : source;
+    const result = await fetchJson<Selection>(
+      selectionKey({
+        sourceChainId: requestedSource.chainId,
+        sourceToken: requestedSource.address,
         destinationChainId: token.chainId,
-        destinationTokenAddress: token.address,
+        destinationToken: token.address,
+        picked: 'destination',
       }),
-    });
-    if (!response.ok) throw new Error('Could not check routes. Select the token again to retry.');
-    return response.json();
+    );
+    if (result.adjustment?.kind === 'unavailable') {
+      return { kind: 'unavailable', reason: result.adjustment.message };
+    }
+    if (!result.sourceToken || !result.destinationToken) {
+      throw new Error('Could not check routes. Select the token again to retry.');
+    }
+    return {
+      kind: 'resolved',
+      sourceToken: result.sourceToken,
+      destinationToken: result.destinationToken,
+      sourceChanged: tokenKey(result.sourceToken) !== tokenKey(requestedSource),
+    };
   }
 
   async function pickDestination(token: TopToken) {
@@ -450,7 +401,9 @@ function TopTokensPocContent() {
   }
 
   const pickerError = indexError || topError;
-  const metadataReady = Boolean(index && top);
+  // The destination picker opens with the selection's same-asset tokens, and adds the top.json
+  // tokens when the file loads.
+  const metadataReady = Boolean(index && (top || openPicker === 'destination'));
   return (
     <DemoBridge
       source={source}
@@ -610,19 +563,6 @@ function TopTokensPocContent() {
                   Open API response
                 </a>
               </div>
-              {source && (
-                <div>
-                  Destinations:{' '}
-                  <a
-                    className="text-sky-300"
-                    href={destinationKey(source, null)[0]}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Open eligible tokens
-                  </a>
-                </div>
-              )}
               <div>
                 Registry:{' '}
                 <a
@@ -712,21 +652,19 @@ function TopTokensPocContent() {
               selectedToken={destination}
               balances={balances}
               localTokens={mergePickerTokens<TopToken>(
-                (pendingSource ? [] : selection.destinationChains).flatMap((chain) =>
-                  chain.canonicalToken ? [chain.canonicalToken] : [],
-                ),
+                (pendingSource ? [] : selection.destinationChains).flatMap((chain) => chain.tokens),
                 top?.tokens ?? [],
               )}
-              extraTokens={mergePickerTokens<TopToken>(
-                eligible?.tokens ?? [],
-                holdings?.tokens ?? [],
-              )}
+              extraTokens={holdings?.tokens ?? []}
               recents={destinationRecents}
               top={top}
-              extraLoading={checkingEligibility}
-              extraError={Boolean(eligibleError)}
-              getListKey={(chainId) => destinationKey(source, chainId)}
+              getProviders={
+                pendingSource
+                  ? undefined
+                  : (token) => getDestinationProviders(selection.destinationChains, token)
+              }
               getSearchKey={sourceSearchKey}
+              description={top ? undefined : 'Loading more tokens…'}
               selectionStatus={
                 resolvingDestination ? 'Checking routes for this destination…' : undefined
               }
