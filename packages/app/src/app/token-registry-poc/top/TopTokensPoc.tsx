@@ -1,5 +1,6 @@
 'use client';
 
+import { getArbitrumNetwork } from '@arbitrum/sdk';
 import { getBalance } from '@wagmi/core';
 import dynamic from 'next/dynamic';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -10,12 +11,12 @@ import { useAccount } from 'wagmi';
 
 import {
   DEFAULT_SELECTION,
-  DestinationOption,
   DestinationSelection,
   HeldTokens,
   RegistryIndexFile,
   Selection,
   TOKEN_REGISTRY_URL,
+  TOP_TOKENS_PER_CHAIN,
   TopFile,
   TopToken,
   addRecentToken,
@@ -38,7 +39,6 @@ import { SwrKey, TokenPicker, fetchJson } from './TokenPicker';
 import { transitionPicker } from './pickerTransition';
 
 const TOP_FILE_KEY: SwrKey = [`${TOKEN_REGISTRY_URL}/top.json`, 'token-registry-top'];
-const INDEX_FILE_KEY: SwrKey = [`${TOKEN_REGISTRY_URL}/index.json`, 'token-registry-index'];
 const API = '/api/token-registry/files';
 
 async function fetchSelectedBalance([, owner, chainId, tokenAddress]: readonly [
@@ -90,12 +90,75 @@ function selectionKey(query: SelectionQuery): SwrKey {
   return [`${API}/selection?${params}`, 'selection'];
 }
 
-function sourceSearchKey(chainId: number | null, query: string): SwrKey | null {
+// With a network filter, top.json holds every token of a chain with fewer than 1,000, so the
+// picker searches it without the server. A pasted address still asks the server, which imports it.
+function searchKey(top: TopFile | undefined, chainId: number | null, query: string): SwrKey | null {
   if (query.trim().length < 2) return null;
+  const isComplete =
+    chainId !== null &&
+    top !== undefined &&
+    top.tokens.filter((token) => token.chainId === chainId).length < TOP_TOKENS_PER_CHAIN;
+  if (isComplete && !isAddress(query.trim())) return null;
   const params = new URLSearchParams({ q: query });
   if (chainId !== null) params.set('chainId', String(chainId));
   return [`${API}/search?${params}`, 'source-search'];
 }
+
+// The network rail without index.json: top.json holds every chain's native token, and the bridge's
+// chain config gives the name and the parent chain.
+function getPickerChains(chainIds: number[]): RegistryIndexFile['chains'] {
+  return [...new Set(chainIds)].map((chainId) => {
+    let parentChainId: number | undefined;
+    try {
+      parentChainId = getArbitrumNetwork(chainId).parentChainId;
+    } catch {
+      parentChainId = undefined;
+    }
+    return {
+      chainId,
+      name: getBridgeUiConfigForChain(chainId).network.name,
+      ...(parentChainId ? { parentChainId } : {}),
+    };
+  });
+}
+
+// The last picks of each side stay across visits. Storage can be unavailable, for example in a
+// private window, and the picker then keeps them for the page session only.
+function loadRecents(side: 'source' | 'destination'): TopToken[] {
+  try {
+    const stored = window.localStorage.getItem(`token-registry-poc:recents:${side}`);
+    return stored ? (JSON.parse(stored) as TopToken[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecents(side: 'source' | 'destination', recents: TopToken[]) {
+  try {
+    window.localStorage.setItem(`token-registry-poc:recents:${side}`, JSON.stringify(recents));
+  } catch {
+    // The recents stay in memory.
+  }
+}
+
+// The selected tokens and the native tokens of their chains. The balances give the held tokens'
+// prices.
+function pricesKey(tokens: (TopToken | undefined)[]): SwrKey | null {
+  const keys = [
+    ...new Set(
+      tokens.flatMap((token) =>
+        token
+          ? [tokenKey(token), tokenKey({ chainId: token.chainId, address: NATIVE_TOKEN_ADDRESS })]
+          : [],
+      ),
+    ),
+  ].sort();
+  return keys.length
+    ? [`${API}/prices?${new URLSearchParams({ tokens: keys.join(',') })}`, 'prices']
+    : null;
+}
+
+const BALANCES_MAX_AGE = 5 * 60_000;
 
 const WalletProviders = dynamic(
   () => import('./WalletProviders').then((mod) => mod.WalletProviders),
@@ -126,14 +189,12 @@ function TopTokensPocContent() {
     source: null,
     destination: null,
   });
-  const { data: prices = {} } = useSWR(
-    [`${API}/prices`, 'prices'] as const,
-    fetchJson<Record<string, number>>,
-    { refreshInterval: 60_000 },
-  );
-  const [needsIndex, setNeedsIndex] = useState(false);
-  const [sourceRecents, setSourceRecents] = useState<TopToken[]>([]);
-  const [destinationRecents, setDestinationRecents] = useState<DestinationOption[]>([]);
+  const [needsBalances, setNeedsBalances] = useState(false);
+  const balancesReadAt = useRef(0);
+  const [sourceRecents, setSourceRecents] = useState(() => loadRecents('source'));
+  const [destinationRecents, setDestinationRecents] = useState(() => loadRecents('destination'));
+  useEffect(() => saveRecents('source', sourceRecents), [sourceRecents]);
+  useEffect(() => saveRecents('destination', destinationRecents), [destinationRecents]);
   const [pendingSource, setPendingSource] = useState<TopToken>();
   const [inspectionInput, setInspectionInput] = useState('');
   const [inspectionAddress, setInspectionAddress] = useState<string>();
@@ -166,11 +227,6 @@ function TopTokensPocContent() {
     error: topError,
     mutate: retryTop,
   } = useSWR(needsTop ? TOP_FILE_KEY : null, fetchJson<TopFile>);
-  const {
-    data: index,
-    error: indexError,
-    mutate: retryIndex,
-  } = useSWR(needsIndex ? INDEX_FILE_KEY : null, fetchJson<RegistryIndexFile>);
   const balanceAddress = inspectionAddress ?? address;
   const {
     data: holdings,
@@ -178,14 +234,22 @@ function TopTokensPocContent() {
     isValidating: refreshingBalances,
     mutate: refreshBalances,
   } = useSWR(
-    balanceAddress
+    // The read starts when the user hovers or focuses a token button, or opens a picker. A user
+    // who never reaches for a picker never triggers it.
+    balanceAddress && needsBalances
       ? ([
           `${API}/balances?${new URLSearchParams({ address: balanceAddress })}`,
           'balances',
         ] as const)
       : null,
     fetchJson<HeldTokens>,
-    { refreshInterval: 60_000 },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      onSuccess: () => {
+        balancesReadAt.current = Date.now();
+      },
+    },
   );
   const balances = new Map(
     (holdings?.tokens ?? []).map((token) => [tokenKey(token), token.balance]),
@@ -210,7 +274,25 @@ function TopTokensPocContent() {
   if (source && sourceBalance !== undefined) signingBalances.set(tokenKey(source), sourceBalance);
   if (destination && destinationBalance !== undefined)
     signingBalances.set(tokenKey(destination), destinationBalance);
-  const chains = index?.chains ?? [];
+  const { data: selectedPrices } = useSWR(
+    pricesKey([source, destination]),
+    fetchJson<Record<string, number>>,
+    { refreshInterval: 60_000 },
+  );
+  const prices: Record<string, number> = { ...selectedPrices };
+  for (const token of holdings?.tokens ?? []) {
+    if (token.priceUSD !== undefined) prices[tokenKey(token)] ??= token.priceUSD;
+  }
+  const chains = getPickerChains(
+    top
+      ? top.tokens.flatMap((token) =>
+          token.address === NATIVE_TOKEN_ADDRESS ? [token.chainId] : [],
+        )
+      : [
+          ...(source ? [source.chainId] : []),
+          ...(selection?.destinationChains.map((chain) => chain.chainId) ?? []),
+        ],
+  );
   const name = (chainId: number) =>
     chains.find((chain) => chain.chainId === chainId)?.name ??
     getBridgeUiConfigForChain(chainId).network.name;
@@ -263,10 +345,16 @@ function TopTokensPocContent() {
     window.history.replaceState(null, '', `${pathname}?${next}`);
   }
 
+  // Each picker open reads the balances again when the last read is more than 5 minutes old.
+  function readBalances() {
+    setNeedsBalances(true);
+    if (holdings && Date.now() - balancesReadAt.current > BALANCES_MAX_AGE) void refreshBalances();
+  }
+
   function openSource() {
     resolutionAttempt.current += 1;
     setNeedsTop(true);
-    setNeedsIndex(true);
+    readBalances();
     transitionPicker(() => setOpenPicker('source'));
   }
 
@@ -296,7 +384,9 @@ function TopTokensPocContent() {
 
   // The selection's routes tell whether the source reaches the token. Only a token it does not
   // reach, or a swap of the sides, needs the API to pick the source.
-  async function resolveDestination(token: TopToken): Promise<DestinationSelection> {
+  async function resolveDestination(
+    token: TopToken,
+  ): Promise<{ result: DestinationSelection; selection?: Selection }> {
     if (!source || !selection) throw new Error('No source token.');
     const swap = destination && tokenKey(source) === tokenKey(token);
     const providers = swap
@@ -304,10 +394,12 @@ function TopTokensPocContent() {
       : getDestinationProviders(selection.destinationChains, token);
     if (providers) {
       return {
-        kind: 'resolved',
-        sourceToken: source,
-        destinationToken: { ...token, providers },
-        sourceChanged: false,
+        result: {
+          kind: 'resolved',
+          sourceToken: source,
+          destinationToken: { ...token, providers },
+          sourceChanged: false,
+        },
       };
     }
     setResolvingDestination(true);
@@ -322,16 +414,21 @@ function TopTokensPocContent() {
       }),
     );
     if (result.adjustment?.kind === 'unavailable') {
-      return { kind: 'unavailable', reason: result.adjustment.message };
+      return { result: { kind: 'unavailable', reason: result.adjustment.message } };
     }
     if (!result.sourceToken || !result.destinationToken) {
       throw new Error('Could not check routes. Select the token again to retry.');
     }
+    // The response is the selection of the new URL, so the page does not ask for it again.
+    const { adjustment: _adjustment, ...nextSelection } = result;
     return {
-      kind: 'resolved',
-      sourceToken: result.sourceToken,
-      destinationToken: result.destinationToken,
-      sourceChanged: tokenKey(result.sourceToken) !== tokenKey(requestedSource),
+      result: {
+        kind: 'resolved',
+        sourceToken: result.sourceToken,
+        destinationToken: result.destinationToken,
+        sourceChanged: tokenKey(result.sourceToken) !== tokenKey(requestedSource),
+      },
+      selection: nextSelection,
     };
   }
 
@@ -340,7 +437,7 @@ function TopTokensPocContent() {
     const attempt = ++resolutionAttempt.current;
     setDestinationError('');
     try {
-      const result = await resolveDestination(token);
+      const { result, selection: resolvedSelection } = await resolveDestination(token);
       if (attempt !== resolutionAttempt.current) return;
       if (result.kind === 'unavailable') {
         setDestinationError(`${token.symbol} on ${name(token.chainId)}: ${result.reason}`);
@@ -352,7 +449,7 @@ function TopTokensPocContent() {
         destinationChainId: result.destinationToken.chainId,
         destinationToken: result.destinationToken.address,
       });
-      const nextSelection = await fetchJson<Selection>(nextKey);
+      const nextSelection = resolvedSelection ?? (await fetchJson<Selection>(nextKey));
       if (attempt !== resolutionAttempt.current) return;
       // The selection can fall back to another destination if the registry changed since the
       // pick. Commit only when it holds both resolved tokens.
@@ -400,10 +497,10 @@ function TopTokensPocContent() {
     transitionPicker(() => setOpenPicker(null));
   }
 
-  const pickerError = indexError || topError;
+  const pickerError = topError;
   // The destination picker opens with the selection's same-asset tokens, and adds the top.json
   // tokens when the file loads.
-  const metadataReady = Boolean(index && (top || openPicker === 'destination'));
+  const metadataReady = Boolean(top || openPicker === 'destination');
   return (
     <DemoBridge
       source={source}
@@ -416,14 +513,14 @@ function TopTokensPocContent() {
       onClosePicker={closePicker}
       onOpenSource={openSource}
       onOpenDestination={() => {
-        setNeedsIndex(true);
         setNeedsTop(true);
+        readBalances();
         setDestinationError('');
         transitionPicker(() => setOpenPicker('destination'));
       }}
       onIntent={() => {
         void preload(TOP_FILE_KEY, fetchJson<TopFile>);
-        void preload(INDEX_FILE_KEY, fetchJson<RegistryIndexFile>);
+        setNeedsBalances(true);
       }}
       onReverse={() => {
         if (source && destination) writeSelection(destination, source);
@@ -491,9 +588,11 @@ function TopTokensPocContent() {
                 ? 'Connect a wallet or inspect an address to see held tokens.'
                 : balanceError
                   ? 'Could not load balances. Retry with Refresh balances.'
-                  : !holdings
-                    ? 'Reading balances from the registry chains…'
-                    : `${holdings.tokens.length} held tokens${inspectionAddress ? ' · Read-only address inspection' : ''}`}
+                  : !needsBalances
+                    ? 'Balances load when you reach for a token picker.'
+                    : !holdings
+                      ? 'Reading balances from the registry chains…'
+                      : `${holdings.tokens.length} held tokens${inspectionAddress ? ' · Read-only address inspection' : ''}`}
             </p>
             {holdings?.failedChainIds.length ? (
               <p className="mt-2 text-xs text-amber-300">
@@ -517,6 +616,7 @@ function TopTokensPocContent() {
                     return;
                   }
                   setInspectionAddress(inspectionInput.trim().toLowerCase());
+                  setNeedsBalances(true);
                   setInspectionError('');
                 }}
               >
@@ -597,14 +697,7 @@ function TopTokensPocContent() {
               {pickerError ? (
                 <>
                   Could not load picker data.{' '}
-                  <button
-                    type="button"
-                    className="text-sky-300"
-                    onClick={() => {
-                      void retryTop();
-                      void retryIndex();
-                    }}
-                  >
+                  <button type="button" className="text-sky-300" onClick={() => void retryTop()}>
                     Retry
                   </button>
                 </>
@@ -633,7 +726,7 @@ function TopTokensPocContent() {
               extraTokens={holdings?.tokens ?? []}
               recents={sourceRecents}
               top={top}
-              getSearchKey={sourceSearchKey}
+              getSearchKey={(chainId, query) => searchKey(top, chainId, query)}
               onSelect={pickSource}
               onClose={closePicker}
             />
@@ -663,7 +756,7 @@ function TopTokensPocContent() {
                   ? undefined
                   : (token) => getDestinationProviders(selection.destinationChains, token)
               }
-              getSearchKey={sourceSearchKey}
+              getSearchKey={(chainId, query) => searchKey(top, chainId, query)}
               description={top ? undefined : 'Loading more tokens…'}
               selectionStatus={
                 resolvingDestination ? 'Checking routes for this destination…' : undefined

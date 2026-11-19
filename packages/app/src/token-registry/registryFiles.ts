@@ -95,8 +95,9 @@ export type TokenList<T extends TopToken = TopToken> = {
 };
 
 // What the balances endpoint returns: the tokens the wallet holds, with the balance in the token's
-// smallest unit. failedChainIds lists the chains whose RPC call failed.
-export type HeldToken = TopToken & { balance: string };
+// smallest unit and LiFi's USD price when it has one. failedChainIds lists the chains whose RPC
+// call failed.
+export type HeldToken = TopToken & { balance: string; priceUSD?: number };
 export type HeldTokens = { tokens: HeldToken[]; failedChainIds: number[] };
 
 export type DestinationChain = {

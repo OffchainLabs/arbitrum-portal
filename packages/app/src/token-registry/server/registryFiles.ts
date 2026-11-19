@@ -1,6 +1,7 @@
 import { unstable_cache } from 'next/cache';
 import { isAddress } from 'viem';
 
+import { getLifiTokenRegistry } from '../../app/api/crosschain-transfers/lifi/tokens/registry';
 import {
   ChainIds,
   blockedLifiSourceRoutes,
@@ -41,6 +42,7 @@ import {
 import { readBalances } from './balanceReader';
 import { getCachedImport } from './cachedImport';
 import { getCanonicalBridge, isCanonicalTransferAllowed } from './canonicalBridge';
+import { getTokenPrices } from './prices';
 import { readErc20Metadata } from './resolveImport';
 
 export const SEARCH_LIMIT = 50;
@@ -155,6 +157,8 @@ export function toHeldTokens({
 // One eth_call per chain reads the balance of every token in its file, top 1,000 or not.
 export async function getHeldTokens(account: Address): Promise<HeldTokens> {
   const [index, top] = await Promise.all([getIndexFile(), getTopFile()]);
+  // The held tokens come with their prices, so the page does not wait for the balances to ask.
+  const registry = getLifiTokenRegistry();
   const results = await Promise.all(
     index.chains.map(async ({ chainId }) => {
       try {
@@ -174,7 +178,16 @@ export async function getHeldTokens(account: Address): Promise<HeldTokens> {
 
   const tokens = results.flatMap((result) => result.tokens ?? []);
   const failedChainIds = results.flatMap((result) => (result.tokens ? [] : [result.chainId]));
-  return { tokens: tokens.sort(getTokenComparator(top)), failedChainIds };
+  const prices = await getTokenPrices(tokens, registry);
+  return {
+    tokens: tokens
+      .map((token) => {
+        const priceUSD = prices[tokenKey(token)];
+        return priceUSD === undefined ? token : { ...token, priceUSD };
+      })
+      .sort(getTokenComparator(top)),
+    failedChainIds,
+  };
 }
 
 export async function searchRegistryTokens({
