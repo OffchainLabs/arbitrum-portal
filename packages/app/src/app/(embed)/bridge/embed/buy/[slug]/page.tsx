@@ -1,5 +1,4 @@
-import { Slug } from 'packages/app/src/utils/bridgePageUtils';
-
+import { Slug } from '@/app/src/utils/bridgePageUtils';
 import { PathnameEnum } from '@/bridge/constants';
 
 import EmbedPageWrapper from '../../EmbedPageWrapper';
