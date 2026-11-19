@@ -1,18 +1,26 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { isAddress } from 'viem';
 
-import { getLifiTokenRegistry } from '@/app/src/app/api/crosschain-transfers/lifi/tokens/registry';
+import { PRICE_REQUEST_LIMIT, getTokenPrices } from '@/app/src/token-registry/server/prices';
 
-export async function GET() {
-  const { tokensByChain } = await getLifiTokenRegistry();
-  const prices: Record<string, number> = {};
-  for (const tokens of Object.values(tokensByChain)) {
-    for (const token of tokens) {
-      const price = Number(token.priceUSD);
-      if (Number.isFinite(price) && price > 0)
-        prices[`${token.chainId}:${token.address.toLowerCase()}`] = price;
-    }
+// tokens: comma-separated chainId:address pairs. The page asks for the selected tokens and the
+// native tokens of their chains. The balances endpoint gives the prices of the held tokens.
+export async function GET(request: NextRequest) {
+  const tokens = (request.nextUrl.searchParams.get('tokens') ?? '')
+    .split(',')
+    .filter(Boolean)
+    .map((key) => {
+      const [chainId, address] = key.split(':');
+      return { chainId: Number(chainId), address: (address ?? '').toLowerCase() };
+    });
+  if (
+    tokens.length > PRICE_REQUEST_LIMIT ||
+    tokens.some(({ chainId, address }) => Number.isNaN(chainId) || !isAddress(address))
+  ) {
+    return NextResponse.json({ error: 'Invalid tokens' }, { status: 400 });
   }
-  return NextResponse.json(prices, {
-    headers: { 'Cache-Control': 'public, max-age=0, s-maxage=30' },
+
+  return NextResponse.json(await getTokenPrices(tokens), {
+    headers: { 'Cache-Control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=60' },
   });
 }

@@ -103,21 +103,13 @@ export function TokenPicker<T extends PickerToken>({
     chains.find((chain) => chain.chainId === id)?.name ?? String(id);
   const options = { revalidateOnFocus: false, keepPreviousData: false };
   const searchKey = debouncedQuery ? getSearchKey(chainId, debouncedQuery) : null;
-  const otherKey = chainId !== null && debouncedQuery ? getSearchKey(null, debouncedQuery) : null;
   const {
     data: matches,
     error: searchError,
     isLoading: searching,
     mutate: retrySearch,
   } = useSWR(searchKey, fetchJson<TokenList<T>>, options);
-  const {
-    data: otherMatches,
-    error: otherError,
-    isLoading: otherLoading,
-    mutate: retryOther,
-  } = useSWR(otherKey, fetchJson<TokenList<T>>, options);
   const currentMatches = query.trim() === debouncedQuery ? matches : undefined;
-  const currentOtherMatches = query.trim() === debouncedQuery ? otherMatches : undefined;
   const sort = (tokens: T[]) => {
     const ranked = top ? [...tokens].sort(getTokenComparator(top)) : tokens;
     const matched = query.trim() ? searchTokens(ranked, query, chains) : ranked;
@@ -133,9 +125,8 @@ export function TokenPicker<T extends PickerToken>({
   const otherTokens =
     chainId !== null && query.trim()
       ? sort(
-          mergePickerTokens(currentOtherMatches?.tokens ?? [], extraTokens, localTokens).filter(
-            (token) => token.chainId !== chainId,
-          ),
+          // The loaded lists only: the other networks' top tokens are enough for eight suggestions.
+          mergePickerTokens(extraTokens, localTokens).filter((token) => token.chainId !== chainId),
         ).slice(0, 8)
       : [];
   const suggestions = getNetworkSuggestions(query, chains);
@@ -176,8 +167,8 @@ export function TokenPicker<T extends PickerToken>({
     ? rows.findIndex((row) => row.kind === 'token' && tokenKey(row.token) === tokenKey(highlighted))
     : -1;
   const optionId = (token: T) => `${id}-${tokenKey(token)}`;
-  const isBusy = searching || otherLoading || query.trim() !== debouncedQuery;
-  const hasError = Boolean(searchError || otherError);
+  const isBusy = searching || query.trim() !== debouncedQuery;
+  const hasError = Boolean(searchError);
   const incomplete = currentMatches?.isComplete === false;
   const recentTokens = recents.slice(0, 4);
 
@@ -502,7 +493,6 @@ export function TokenPicker<T extends PickerToken>({
                 className="linkbtn"
                 onClick={() => {
                   void retrySearch();
-                  void retryOther();
                 }}
               >
                 Retry
