@@ -164,7 +164,12 @@ export type OrbitChain = {
 };
 
 export type EntityCardDisplayMode =
-  'normal' | 'preview' | 'spotlight' | 'bookmarked' | 'reward-spotlight' | 'compact';
+  | 'normal'
+  | 'preview'
+  | 'spotlight'
+  | 'bookmarked'
+  | 'reward-spotlight'
+  | 'compact';
 
 export type OrbitTvlStats = Record<string, number>;
 

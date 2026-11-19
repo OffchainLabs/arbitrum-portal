@@ -123,7 +123,7 @@ export const GettingStarted = () => {
               <div className="text-lg">{item.title}</div>
               <div className="text-xs">{item.description}</div>
               <ExternalLink
-                className="my-1 w-min shrink-0 whitespace-nowrap rounded-md bg-white p-2 px-3 text-xs text-default-black hover:bg-white/80"
+                className="my-1 w-min shrink-0 rounded-md bg-white p-2 px-3 text-xs whitespace-nowrap text-default-black hover:bg-white/80"
                 href={item.link}
               >
                 {item.cta}
@@ -132,7 +132,7 @@ export const GettingStarted = () => {
 
             <div className="relative h-[250px] w-full shrink-0 lg:h-full lg:w-1/2">
               {item.gradientOverlay && (
-                <div className="absolute left-0 top-0 z-10 h-full w-full bg-linear-to-b from-default-black to-transparent lg:bg-linear-to-r" />
+                <div className="absolute top-0 left-0 z-10 h-full w-full bg-linear-to-b from-default-black to-transparent lg:bg-linear-to-r" />
               )}
               {item.image}
             </div>
