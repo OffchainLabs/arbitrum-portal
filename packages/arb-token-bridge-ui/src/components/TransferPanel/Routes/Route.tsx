@@ -16,7 +16,6 @@ import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { minutesToHumanReadableTime } from '../../../hooks/useTransferDuration';
-import { getRecipientToHighlight } from '../../../services/destinationAddress';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { shortenAddress } from '../../../util/CommonUtils';
 import { formatAmount, formatUSD } from '../../../util/NumberUtils';
@@ -24,7 +23,6 @@ import { getUsdValueForAmount } from '../../../util/TokenPriceUtils';
 import { getConfirmationTime } from '../../../util/WithdrawalUtils';
 import { getChainMetadata } from '../../../util/networkMetadata';
 import { isNetwork } from '../../../util/networks';
-import { useWallets } from '../../../wallet/hooks/useWallets';
 import { useAppContextState } from '../../App/AppContext';
 import { SafeImage } from '../../common/SafeImage';
 import { Loader } from '../../common/atoms/Loader';
@@ -621,12 +619,6 @@ export const Route = React.memo(
     });
     const [_token] = useSelectedToken();
     const [{ amount2, destinationAddress }] = useArbQueryParams();
-    const { sourceWallet, destinationWallet } = useWallets();
-    const recipient = getRecipientToHighlight({
-      destinationAddress,
-      sourceWallet,
-      destinationWallet,
-    });
     const isBatchTransferSupported = useIsBatchTransferSupported();
     const [{ theme }] = useArbQueryParams();
     const { ethPrice } = useETHPrice();
@@ -730,15 +722,15 @@ export const Route = React.memo(
           />
 
           {/* if custom destination address is the receiver, explicitly show it */}
-          {recipient && (
+          {destinationAddress && (
             <>
               <DelimiterDot />
               <Tooltip
-                content={`${recipient} will be the recipient of the funds. Be sure you mean to send it here.`}
+                content={`${destinationAddress} will be the recipient of the funds. Be sure you mean to send it here.`}
               >
                 <div className="flex items-center gap-1 rounded bg-orange-dark px-1 py-0.5 text-xs">
                   <UserIcon className="h-3 w-3" />
-                  {shortenAddress(recipient)} will receive
+                  {shortenAddress(destinationAddress)} will receive
                 </div>
               </Tooltip>
             </>
