@@ -41,7 +41,7 @@ vi.mock('@/bridge/hooks/useSwitchNetworkWithConfig', () => ({
   useSwitchNetworkWithConfig: () => ({ switchChainAsync: vi.fn() }),
 }));
 vi.mock('@/bridge/wallet/hooks/useWalletModal', () => ({
-  useWalletModal: () => ({ openConnectModal: vi.fn() }),
+  useWalletModal: () => ({ openConnectModal: vi.fn(), openConnectModalFor: vi.fn() }),
 }));
 vi.mock('@/bridge/components/TransactionHistory/TransactionHistorySearchBar', () => ({
   // inlined: vi.mock factories are hoisted above the file's own consts

@@ -7,10 +7,10 @@ import {
 } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { useAccount, useDisconnect } from 'wagmi';
 
 import { useAccountMenu } from '../../hooks/useAccountMenu';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { Button } from '../common/Button';
 import { CustomBoringAvatar } from '../common/CustomBoringAvatar';
 import { SafeImage } from '../common/SafeImage';
@@ -58,8 +58,13 @@ const AccountContent = ({
 };
 
 export const WidgetHeaderAccountButton = () => {
-  const { address, chain, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
+  const {
+    sourceWallet: {
+      account: { address, chainId },
+      isConnected,
+      disconnect,
+    },
+  } = useWallets();
   const { openConnectModal } = useWalletModal();
   const [isCopied, setIsCopied] = useState(false);
 
@@ -73,7 +78,7 @@ export const WidgetHeaderAccountButton = () => {
 
   return (
     <div className="flex items-center gap-2 text-base text-white">
-      {isConnected && address && chain && (
+      {isConnected && address && chainId && (
         <Popover className="relative">
           {({ open }) => (
             <>
@@ -111,7 +116,7 @@ export const WidgetHeaderAccountButton = () => {
         </Popover>
       )}
 
-      {(!isConnected || !address || !chain) && (
+      {(!isConnected || !address || !chainId) && (
         <Button
           variant="primary"
           className="flex h-[40px] w-full justify-between bg-primary-cta"

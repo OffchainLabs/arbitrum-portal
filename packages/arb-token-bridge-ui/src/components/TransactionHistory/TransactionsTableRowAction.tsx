@@ -24,6 +24,7 @@ import { useWalletContext } from '../../wallet/WalletContext';
 import { getSigners } from '../../wallet/getSigners';
 import { findWalletEcosystem } from '../../wallet/getWalletEcosystem';
 import { useWalletModal } from '../../wallet/hooks/useWalletModal';
+import type { WalletEcosystem } from '../../wallet/types';
 import { Button } from '../common/Button';
 import { DialogWrapper, useDialog2 } from '../common/Dialog2';
 import { TransferCountdown } from '../common/TransferCountdown';
@@ -38,14 +39,15 @@ import {
 
 const actionRowPrimaryButtonClassName = 'w-14 rounded bg-lime-dark p-2 text-xs text-white';
 
-function ActionRowConnectButton() {
-  const { openConnectModal } = useWalletModal();
+// Connects the wallet the row's action needs, whatever the transfer panel's source chain
+function ActionRowConnectButton({ ecosystem }: { ecosystem: WalletEcosystem }) {
+  const { openConnectModalFor } = useWalletModal();
 
   return (
     <Button
       variant="primary"
       className={actionRowPrimaryButtonClassName}
-      onClick={openConnectModal}
+      onClick={() => openConnectModalFor(ecosystem)}
     >
       Connect
     </Button>
@@ -219,7 +221,7 @@ export function TransactionsTableRowAction({
 
   if (isDepositReadyToRedeem(tx)) {
     if (!isConnected) {
-      return <ActionRowConnectButton />;
+      return <ActionRowConnectButton ecosystem={sourceWallet.ecosystem} />;
     }
 
     // Failed retryable
@@ -239,7 +241,7 @@ export function TransactionsTableRowAction({
 
   if (isResumingLifiRoute || isLifiTransferResumable(tx)) {
     if (!isConnected) {
-      return <ActionRowConnectButton />;
+      return <ActionRowConnectButton ecosystem={sourceWallet.ecosystem} />;
     }
 
     if (!connectedAddress || !tx.sender || !addressesEqual(connectedAddress, tx.sender)) {
@@ -279,7 +281,7 @@ export function TransactionsTableRowAction({
     }
 
     if (!isConnected) {
-      return <ActionRowConnectButton />;
+      return <ActionRowConnectButton ecosystem={sourceWallet.ecosystem} />;
     }
 
     if (isLifiTransfer(tx)) {
