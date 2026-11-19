@@ -21,6 +21,7 @@ import {
   TopToken,
   addRecentToken,
   getDestinationProviders,
+  getNetworkReach,
   mergePickerTokens,
   tokenKey,
 } from '@/app/src/token-registry/registryFiles';
@@ -755,6 +756,11 @@ function TopTokensPocContent() {
                 pendingSource
                   ? undefined
                   : (token) => getDestinationProviders(selection.destinationChains, token)
+              }
+              getNetworkReach={
+                pendingSource
+                  ? undefined
+                  : (chainId) => getNetworkReach(selection.destinationChains, chainId)
               }
               getSearchKey={(chainId, query) => searchKey(top, chainId, query)}
               description={top ? undefined : 'Loading more tokens…'}

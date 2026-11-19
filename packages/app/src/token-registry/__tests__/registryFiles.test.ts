@@ -5,6 +5,7 @@ import {
   RegistryChainFile,
   TopFile,
   getDestinationProviders,
+  getNetworkReach,
 } from '../registryFiles';
 import {
   buildDestinationOptions,
@@ -635,5 +636,41 @@ describe('getDestinationProviders', () => {
     expect(
       getDestinationProviders(chains, { chainId: 10, address: WBTC_ARBITRUM, isLifi: true }),
     ).toBe(undefined);
+  });
+});
+
+describe('getNetworkReach', () => {
+  const token = {
+    chainId: 42161,
+    address: USDC_E_ARBITRUM,
+    symbol: 'USDC.e',
+    name: 'Bridged USDC',
+    decimals: 6,
+  };
+  const canonical = { ...token, providers: ['canonical' as const] };
+  const counterpart = {
+    ...token,
+    chainId: 10,
+    providers: ['lifi' as const],
+    isCounterpart: true as const,
+  };
+  const swap = { ...token, chainId: 8453, address: WBTC_ARBITRUM, providers: ['lifi' as const] };
+  const chains: DestinationChain[] = [
+    { chainId: 42161, defaultToken: canonical, tokens: [canonical], lifi: true },
+    { chainId: 10, defaultToken: counterpart, tokens: [counterpart], lifi: true },
+    { chainId: 8453, defaultToken: swap, tokens: [swap], lifi: true },
+  ];
+
+  it('reaches a network with a canonical, LayerZero, or counterpart token as the same asset', () => {
+    expect(getNetworkReach(chains, 42161)).toBe('sameAsset');
+    expect(getNetworkReach(chains, 10)).toBe('sameAsset');
+  });
+
+  it('reaches a network with only LiFi swaps to other tokens by swap', () => {
+    expect(getNetworkReach(chains, 8453)).toBe('swap');
+  });
+
+  it('does not reach a network missing from the selection', () => {
+    expect(getNetworkReach(chains, 660279)).toBe('none');
   });
 });

@@ -129,6 +129,22 @@ export function getDestinationProviders(
   return chain.lifi && token.isLifi ? ['lifi'] : undefined;
 }
 
+// How the source reaches a destination network. 'swap' when every route there is a LiFi swap to
+// another asset, and 'none' when the source does not reach the network.
+export type NetworkReach = 'sameAsset' | 'swap' | 'none';
+
+export function getNetworkReach(chains: DestinationChain[], chainId: number): NetworkReach {
+  const chain = chains.find((candidate) => candidate.chainId === chainId);
+  if (!chain) {
+    return 'none';
+  }
+  return chain.tokens.some(
+    (token) => token.isCounterpart || token.providers.some((provider) => provider !== 'lifi'),
+  )
+    ? 'sameAsset'
+    : 'swap';
+}
+
 // Ether on Ethereum to Arbitrum One, like the bridge.
 // top.json keeps up to this many tokens per chain. A chain with fewer has all its tokens there.
 export const TOP_TOKENS_PER_CHAIN = 1_000;
