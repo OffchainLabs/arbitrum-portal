@@ -39,7 +39,7 @@
     "oxlint": "^1.89.0",
     "oxlint-tsgolint": "^7.0.2004",
     "puppeteer-core": "24.43.1",
-    "typescript": "^5.9.3"
+    "typescript": "^7.0.2"
   },
   "config": {
     "chromeVersion": "128.0.6613.137",
