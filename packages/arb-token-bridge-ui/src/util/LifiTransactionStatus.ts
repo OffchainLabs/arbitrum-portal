@@ -7,7 +7,6 @@ import { isValidTransactionId } from './AddressUtils';
 export const LIFI_TRANSFER_PROCESS_TYPES: ReadonlySet<ProcessType> = new Set([
   'CROSS_CHAIN',
   'SWAP',
-  'TRANSACTION',
 ]);
 export function isValidLifiTransactionHash(txHash: string | null | undefined): txHash is string {
   return typeof txHash === 'string' && isValidTransactionId(txHash, { ignoreFeatureFlag: true });
@@ -22,10 +21,13 @@ export function isPendingLifiProcessId(process: { txType?: string; txLink?: stri
 }
 
 // The SDK holds these statuses in memory until it sends the transaction: STARTED while it prepares
-// it, ACTION_REQUIRED while the wallet prompt is open. A page reload ends that wait.
+// it, then ACTION_REQUIRED, MESSAGE_REQUIRED (a signature) or RESET_REQUIRED (an allowance reset)
+// while the wallet prompt is open. A page reload ends that wait.
 const LIFI_UNSUBMITTED_PROCESS_STATUSES: ReadonlySet<Process['status']> = new Set([
   'STARTED',
   'ACTION_REQUIRED',
+  'MESSAGE_REQUIRED',
+  'RESET_REQUIRED',
 ]);
 
 export function isActiveLifiProcess(process: Pick<Process, 'status'>) {
