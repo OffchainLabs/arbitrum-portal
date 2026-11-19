@@ -11,7 +11,7 @@ export const OrbitStatusBadge = ({ status }: { status: string | null }) => {
   return (
     <span
       className={twMerge(
-        'inline-flex items-start justify-start gap-2 break-words rounded px-1.5 py-0.5 text-xs font-normal capitalize text-white',
+        'inline-flex items-start justify-start gap-2 wrap-break-word rounded px-1.5 py-0.5 text-xs font-normal capitalize text-white',
         isMainnet && 'bg-blue',
         isTestnet && 'border border-blue',
         !isMainnet && !isTestnet && 'border border-dashed border-blue',

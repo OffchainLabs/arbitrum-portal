@@ -47,7 +47,7 @@ export const IntroDocs = () => {
             href={content.link}
             key={`intro-docs-content-${index}`}
             className={twMerge(
-              'flex h-[200px] flex-col gap-1 bg-1/2 bg-right-bottom bg-no-repeat',
+              'flex h-[200px] flex-col gap-1 bg-size-[50%] bg-bottom-right bg-no-repeat',
               content.className,
             )}
             style={{

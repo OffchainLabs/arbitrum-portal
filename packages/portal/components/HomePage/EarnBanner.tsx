@@ -50,7 +50,7 @@ function StatTile({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-xl bg-white/[0.08] p-3">
+    <div className="flex flex-col gap-2 rounded-xl bg-white/8 p-3">
       <span className="text-xs text-white/50">{label}</span>
       {children ?? <span className="text-xl leading-none text-white">{value}</span>}
       {subValue && <span className="text-xs text-white/50">{subValue}</span>}
@@ -60,7 +60,7 @@ function StatTile({
 
 function MarketCard() {
   return (
-    <div className="pointer-events-none absolute -right-28 -bottom-24 z-10 rotate-[6deg] shadow-lg lg:relative md:right-8 md:-bottom-14 w-[400px] lg:transition-all lg:duration-300 lg:group-hover:-bottom-10 scale-75 md:scale-100">
+    <div className="pointer-events-none absolute -right-28 -bottom-24 z-10 rotate-6 shadow-lg lg:relative md:right-8 md:-bottom-14 w-[400px] lg:transition-all lg:duration-300 lg:group-hover:-bottom-10 scale-75 md:scale-100">
       <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black p-4">
         {/* Header row */}
         <div className="flex items-center justify-between">
