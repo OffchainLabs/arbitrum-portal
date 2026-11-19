@@ -28,19 +28,29 @@ vi.mock('@lifi/sdk', async (importOriginal) => ({
   getTokens,
 }));
 
+// In-memory stand-in for Next's data cache, keyed like `unstable_cache`: key parts plus arguments
 const { cacheEntries } = vi.hoisted(() => ({
-  cacheEntries: [] as { keyParts: string[]; args: unknown[]; result: unknown }[],
+  cacheEntries: new Map<string, { keyParts: string[]; result: unknown }>(),
 }));
 
 vi.mock('next/cache', () => ({
   unstable_cache:
     (fetcher: (...args: unknown[]) => Promise<unknown>, keyParts: string[]) =>
     async (...args: unknown[]) => {
+      const key = `${keyParts.join(',')}-${JSON.stringify(args)}`;
+      const entry = cacheEntries.get(key);
+      if (entry) {
+        return JSON.parse(JSON.stringify(entry.result));
+      }
       const result = await fetcher(...args);
-      cacheEntries.push({ keyParts, args, result });
+      cacheEntries.set(key, { keyParts, result });
       return result;
     },
 }));
+
+beforeEach(() => {
+  cacheEntries.clear();
+});
 
 // Same measure as Next's data cache, which skips entries over 2 MB
 function nextCacheEntrySize(result: unknown): number {
@@ -140,14 +150,13 @@ describe('getLifiTokenRegistry', () => {
   });
 
   it('retains an unmatched Solana mint through registry, grouping, and selection', async () => {
-    const unmatched = withVerificationStatus(
-      virtualToken('XsQAm7K8RQuTg4BXy9qfXUxqHkHRwLNxikbRfn9kw4w', ChainId.Solana),
-      'verified',
-    );
+    const solanaMint = virtualToken('XsQAm7K8RQuTg4BXy9qfXUxqHkHRwLNxikbRfn9kw4w', ChainId.Solana);
+    const unmatched = withVerificationStatus({ ...solanaMint }, 'verified');
     getTokens.mockResolvedValue({ tokens: { [ChainId.Solana]: [unmatched] } });
 
     const registry = await getLifiTokenRegistry([ChainId.Solana]);
-    expect(registry.tokensByChain[ChainId.Solana]).toEqual([unmatched]);
+    // The registry keeps only the fields the route reads, so verificationStatus is dropped
+    expect(registry.tokensByChain[ChainId.Solana]).toEqual([solanaMint]);
     expect(registry.tokensByChainAndCoinKey[ChainId.Solana]).toEqual({});
     const entries = groupChildTokensAndParentTokens({
       parentTokens: registry.tokensByChain[ChainId.Solana] ?? [],
@@ -206,7 +215,7 @@ describe('getLifiTokenRegistry', () => {
       },
     });
 
-    const registry = await getLifiTokenRegistry();
+    const registry = await getLifiTokenRegistry([ChainId.Solana, ChainId.RobinhoodChain]);
 
     expect(registry.tokensByChain[ChainId.Solana]?.map((token) => token.address)).toEqual([
       unverifiedSol.address,
@@ -374,23 +383,29 @@ describe('getLifiTokenRegistry', () => {
 describe('getLifiTokenRegistry caching', () => {
   beforeEach(() => {
     getTokens.mockReset();
-    cacheEntries.length = 0;
   });
 
-  it('fetches only the requested chains, once per chain', async () => {
+  it('fetches each requested chain once and reuses it across requests', async () => {
     getTokens.mockResolvedValue({ tokens: {} });
+    const requestedChains = () => getTokens.mock.calls.map(([options]) => options.chains);
 
     await getLifiTokenRegistry([ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.Ethereum]);
+    expect(requestedChains()).toEqual([[ChainId.Ethereum], [ChainId.ArbitrumOne]]);
 
-    expect(getTokens.mock.calls.map(([options]) => options.chains)).toEqual([
+    await getLifiTokenRegistry([ChainId.Ethereum, ChainId.ArbitrumOne]);
+    expect(requestedChains()).toHaveLength(2);
+
+    await getLifiTokenRegistry([ChainId.Ethereum, ChainId.RobinhoodChain]);
+    expect(requestedChains()).toEqual([
       [ChainId.Ethereum],
       [ChainId.ArbitrumOne],
+      [ChainId.RobinhoodChain],
     ]);
   });
 
   it('keeps each per-chain cache entry under 2 MiB for a full LiFi token list', async () => {
-    // Solana keeps every LiFi token, as it allows unmatched tokens. Field lengths follow LiFi's
-    // Solana list from November 2026: 5,824 tokens, almost none with a coinKey.
+    // Worst case: LiFi verifies every Solana token, so Solana keeps all of them. Field lengths
+    // follow LiFi's Solana list from November 2026: 5,824 tokens, almost none with a coinKey.
     const solanaTokens = Array.from({ length: 6_000 }, (_, index) => {
       const symbol = `TKN${index}x`;
       return {
@@ -423,12 +438,9 @@ describe('getLifiTokenRegistry caching', () => {
       priceUSD: '107.34453773415345',
       logoURI: 'https://xstocks-metadata.backed.fi/logos/tokens/TKN0x.png',
     });
-    expect(cacheEntries.map(({ keyParts }) => keyParts)).toEqual(
-      expect.arrayContaining([['lifi-token-registry-tokens'], ['lifi-token-registry-prices']]),
-    );
-    for (const { result } of cacheEntries) {
-      expect(nextCacheEntrySize(result)).toBeLessThan(2 * 1024 * 1024);
-    }
+    const entries = [...cacheEntries.values()];
+    expect(entries).toHaveLength(1);
+    expect(nextCacheEntrySize(entries[0]?.result)).toBeLessThan(2 * 1024 * 1024);
   });
 });
 

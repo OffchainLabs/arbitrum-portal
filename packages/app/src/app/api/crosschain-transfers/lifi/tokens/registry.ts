@@ -303,55 +303,10 @@ const fetchChainTokens = async (chainId: number): Promise<LifiToken[]> => {
   return filteredTokens;
 };
 
-// The token and price cache entries are filled from the same LiFi response, so share the request
-// when both miss or revalidate at the same time
-const pendingChainTokens = new Map<number, Promise<LifiToken[]>>();
-
-function fetchChainTokensOnce(chainId: number): Promise<LifiToken[]> {
-  const pending = pendingChainTokens.get(chainId);
-  if (pending) {
-    return pending;
-  }
-
-  const request = fetchChainTokens(chainId).finally(() => pendingChainTokens.delete(chainId));
-  pendingChainTokens.set(chainId, request);
-  return request;
-}
-
 // One entry per chain: all chains together are over Next's 2 MB limit and would never be cached
-const getCachedChainTokens = unstable_cache(
-  async (chainId: number): Promise<LifiToken[]> =>
-    (await fetchChainTokensOnce(chainId)).map(({ priceUSD, ...token }) => token),
-  ['lifi-token-registry-tokens'],
-  { revalidate: 30 },
-);
-
-// Prices are kept out of the token entry, which is the larger of the two
-const getCachedChainPrices = unstable_cache(
-  async (chainId: number): Promise<Record<string, string>> => {
-    const prices: Record<string, string> = {};
-    for (const token of await fetchChainTokensOnce(chainId)) {
-      if (token.priceUSD !== undefined) {
-        prices[token.address] = token.priceUSD;
-      }
-    }
-    return prices;
-  },
-  ['lifi-token-registry-prices'],
-  { revalidate: 30 },
-);
-
-async function getChainTokens(chainId: number): Promise<LifiToken[]> {
-  const [tokens, prices] = await Promise.all([
-    getCachedChainTokens(chainId),
-    getCachedChainPrices(chainId),
-  ]);
-
-  return tokens.map((token) => {
-    const priceUSD = prices[token.address];
-    return priceUSD === undefined ? token : { ...token, priceUSD };
-  });
-}
+const getCachedChainTokens = unstable_cache(fetchChainTokens, ['lifi-token-registry'], {
+  revalidate: 30,
+});
 
 function hasCoinKey(token: LifiToken): token is LifiTokenWithCoinKey {
   return Boolean(token.coinKey);
@@ -382,7 +337,10 @@ export async function getLifiTokenRegistry(chainIds: number[]): Promise<LifiToke
   const sourceChainIds = [...new Set(chainIds)].filter((chainId) =>
     allowedLifiSourceChainIds.includes(chainId),
   );
-  const chainTokens = await Promise.all(sourceChainIds.map(getChainTokens));
+  // Pass only the chain id: unstable_cache keys on every argument
+  const chainTokens = await Promise.all(
+    sourceChainIds.map((chainId) => getCachedChainTokens(chainId)),
+  );
 
   const registry: LifiTokenRegistry = { tokensByChain: {}, tokensByChainAndCoinKey: {} };
   sourceChainIds.forEach((chainId, index) => {
