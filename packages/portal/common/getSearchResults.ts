@@ -7,12 +7,13 @@ import { CATEGORIES } from './categories';
 import { ORBIT_CHAINS } from './orbitChains';
 import { PROJECTS } from './projects';
 import { SUBCATEGORIES } from './subcategories';
-import { Category, FullProject, SearchableData, Subcategory } from './types';
+import { Category, FullProject, OrbitChain, SearchableData, Subcategory } from './types';
 
 export type SearchResult =
   | SearchableData<FullProject>
   | SearchableData<Category>
-  | SearchableData<Subcategory>;
+  | SearchableData<Subcategory>
+  | SearchableData<OrbitChain>;
 
 export type FuzzySearchResult = Fuse.FuseResult<SearchResult>;
 

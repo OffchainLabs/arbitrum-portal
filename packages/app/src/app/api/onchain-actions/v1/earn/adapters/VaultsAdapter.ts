@@ -254,9 +254,10 @@ export class VaultsAdapter implements VendorAdapter {
 
       const [oldest, newest] = pointsByTimestamp
         .keys()
-        .reduce<
-          [number, number]
-        >(([min, max], ts) => [Math.min(min, ts), Math.max(max, ts)], [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]);
+        .reduce<[number, number]>(
+          ([min, max], ts) => [Math.min(min, ts), Math.max(max, ts)],
+          [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY],
+        );
 
       if ((oldest <= fromTimestamp && newest >= toTimestamp) || pagePoints.length < perPage) {
         return;

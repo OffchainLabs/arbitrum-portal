@@ -8,8 +8,7 @@ import { ExternalLink } from '../common/ExternalLink';
 import { NoteBox } from '../common/NoteBox';
 
 export type TokenDepositCheckDialogType =
-  | 'deposit_token_user_added_token'
-  | 'deposit_token_new_token';
+  'deposit_token_user_added_token' | 'deposit_token_new_token';
 
 export type TokenDepositCheckDialogProps = UseDialogProps & {
   type: TokenDepositCheckDialogType;
