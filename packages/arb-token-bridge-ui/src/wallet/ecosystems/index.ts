@@ -46,3 +46,8 @@ export const ecosystems: Record<WalletEcosystem, EcosystemConfig> = {
   evm: evmEcosystem,
   solana: solanaEcosystem,
 };
+
+/** Ecosystems such as Solana whose chains only reach Arbitrum through LiFi */
+export function getLifiOnlyEcosystems(): EcosystemConfig[] {
+  return Object.values(ecosystems).filter((ecosystem) => ecosystem.isLifiOnly);
+}

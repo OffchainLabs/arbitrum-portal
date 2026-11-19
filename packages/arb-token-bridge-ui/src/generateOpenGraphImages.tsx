@@ -53,6 +53,7 @@ const chainToLogo: { [key: Chain]: string } = {
   [ChainId.Sepolia]: 'https://l2beat.com/icons/ethereum.png',
   [ChainId.ArbitrumSepolia]: 'https://l2beat.com/icons/arbitrum.png',
   [ChainId.Base]: 'https://l2beat.com/icons/base.png',
+  [ChainId.Solana]: 'https://l2beat.com/icons/solana.png',
 };
 
 const configs: ChainCombination[] = [
@@ -71,6 +72,7 @@ const configs: ChainCombination[] = [
 const oneWayConfigs: ChainCombination[] = [
   [ChainId.Base, ChainId.ArbitrumOne],
   [ChainId.ArbitrumNova, ChainId.ArbitrumOne],
+  [ChainId.Solana, ChainId.ArbitrumOne],
 ];
 
 const imagesDirectory = '../app/public/images/__auto-generated/open-graph';

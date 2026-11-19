@@ -8,9 +8,18 @@ import {
   isTokenAvailableOnChain,
   tokenListTokenToBridgeToken,
 } from '@/bridge/util/TokenListUtils';
+import { SOLANA_NATIVE_TOKEN_ADDRESS } from '@/bridge/wallet/ecosystems/solana';
 
 import { groupChildTokensAndParentTokens } from '../groupChildTokensAndParentTokens';
 import { getLifiTokenRegistry } from '../registry';
+
+const solanaFlag = vi.hoisted(() => ({ isEnabled: true }));
+
+vi.mock('@/bridge/wallet/ecosystems/solana', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/bridge/wallet/ecosystems/solana')>();
+  actual.solanaEcosystem.isEnabled = () => solanaFlag.isEnabled;
+  return actual;
+});
 
 const { getTokens } = vi.hoisted(() => ({ getTokens: vi.fn() }));
 
@@ -80,6 +89,58 @@ const oldApeOnArbitrumOne = buildLifiToken({
 describe('getLifiTokenRegistry', () => {
   beforeEach(() => {
     getTokens.mockReset();
+  });
+
+  it('keeps Solana tokens beyond SOL and stablecoins', async () => {
+    const supportedTokens = [
+      virtualToken(SOLANA_NATIVE_TOKEN_ADDRESS, ChainId.Solana, CoinKey.SOL),
+      virtualToken(CommonAddress.Solana.USDC, ChainId.Solana, CoinKey.USDC),
+      virtualToken(CommonAddress.Solana.USDT, ChainId.Solana, CoinKey.USDT),
+    ];
+    const additionalToken = virtualToken(
+      'XsQAm7K8RQuTg4BXy9qfXUxqHkHRwLNxikbRfn9kw4w',
+      ChainId.Solana,
+      CoinKey.ETH,
+    );
+    getTokens.mockResolvedValue({
+      tokens: {
+        [ChainId.Solana]: [...supportedTokens, additionalToken],
+      },
+    });
+
+    const registry = await getLifiTokenRegistry();
+
+    expect(registry.tokensByChain[ChainId.Solana]?.map((token) => token.address)).toEqual(
+      [...supportedTokens, additionalToken].map((token) => token.address),
+    );
+  });
+
+  it('retains an unmatched Solana mint through registry, grouping, and selection', async () => {
+    const unmatched = virtualToken('XsQAm7K8RQuTg4BXy9qfXUxqHkHRwLNxikbRfn9kw4w', ChainId.Solana);
+    getTokens.mockResolvedValue({ tokens: { [ChainId.Solana]: [unmatched] } });
+
+    const registry = await getLifiTokenRegistry();
+    expect(registry.tokensByChain[ChainId.Solana]).toEqual([unmatched]);
+    expect(registry.tokensByChainAndCoinKey[ChainId.Solana]).toEqual({});
+    const entries = groupChildTokensAndParentTokens({
+      parentTokens: registry.tokensByChain[ChainId.Solana] ?? [],
+      childTokens: [],
+      childTokensByCoinKey: {},
+      parentChainId: ChainId.Solana,
+      childChainId: ChainId.ArbitrumOne,
+    });
+    const entry = entries[0];
+    if (!entry) throw new Error('Expected unmatched Solana token');
+    expect(entry.extensions?.bridgeInfo).toBeUndefined();
+    const bridgeToken = tokenListTokenToBridgeToken({
+      token: entry,
+      listId: LIFI_TRANSFER_LIST_ID,
+      parentChainId: ChainId.Solana,
+      childChainId: ChainId.ArbitrumOne,
+    });
+    expect(bridgeToken?.lifiOnlyChainId).toBe(ChainId.Solana);
+    expect(isTokenAvailableOnChain(bridgeToken, ChainId.Solana)).toBe(true);
+    expect(isTokenAvailableOnChain(bridgeToken, ChainId.ArbitrumOne)).toBe(false);
   });
 
   it('keeps an allowlisted token without a coinKey through registry, grouping, and selection', async () => {
@@ -350,4 +411,36 @@ describe('getLifiTokenRegistry USDG pairing', () => {
       expect(registry.tokensByChain[ChainId.ArbitrumOne]?.[0]?.logoURI).toBe(usdgLogo);
     },
   );
+});
+
+describe.sequential('getLifiTokenRegistry with the Solana flag off', () => {
+  beforeEach(() => {
+    getTokens.mockReset();
+  });
+
+  it('neither requests nor returns Solana tokens', async () => {
+    solanaFlag.isEnabled = false;
+    try {
+      // The LiFi source chains read the flag when `constants.ts` loads
+      vi.resetModules();
+      const { getLifiTokenRegistry: getRegistryWithFlagOff } = await import('../registry');
+      getTokens.mockResolvedValue({
+        tokens: {
+          [ChainId.Solana]: [
+            virtualToken(SOLANA_NATIVE_TOKEN_ADDRESS, ChainId.Solana, CoinKey.SOL),
+          ],
+        },
+      });
+
+      const registry = await getRegistryWithFlagOff();
+
+      expect(getTokens).toHaveBeenCalledTimes(1);
+      expect(getTokens.mock.calls[0]?.[0].chains).not.toContain(ChainId.Solana);
+      expect(registry.tokensByChain[ChainId.Solana]).toBeUndefined();
+      expect(registry.tokensByChainAndCoinKey[ChainId.Solana]).toBeUndefined();
+    } finally {
+      solanaFlag.isEnabled = true;
+      vi.resetModules();
+    }
+  });
 });
