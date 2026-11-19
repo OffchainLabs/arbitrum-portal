@@ -45,6 +45,11 @@ function virtualToken(address: string, chainId: number, coinKey?: CoinKey): LiFi
   };
 }
 
+// LiFi's API returns `verificationStatus`, but its SDK `Token` type leaves it out
+function withVerificationStatus(token: LiFiToken, verificationStatus: string): LiFiToken {
+  return Object.assign(token, { verificationStatus });
+}
+
 // LiFi's own ChainId and CoinKey enums do not include Robinhood Chain, so build through unknown
 function buildLifiToken(overrides: {
   address: string;
@@ -116,7 +121,10 @@ describe('getLifiTokenRegistry', () => {
   });
 
   it('retains an unmatched Solana mint through registry, grouping, and selection', async () => {
-    const unmatched = virtualToken('XsQAm7K8RQuTg4BXy9qfXUxqHkHRwLNxikbRfn9kw4w', ChainId.Solana);
+    const unmatched = withVerificationStatus(
+      virtualToken('XsQAm7K8RQuTg4BXy9qfXUxqHkHRwLNxikbRfn9kw4w', ChainId.Solana),
+      'verified',
+    );
     getTokens.mockResolvedValue({ tokens: { [ChainId.Solana]: [unmatched] } });
 
     const registry = await getLifiTokenRegistry();
@@ -141,6 +149,54 @@ describe('getLifiTokenRegistry', () => {
     expect(bridgeToken?.lifiOnlyChainId).toBe(ChainId.Solana);
     expect(isTokenAvailableOnChain(bridgeToken, ChainId.Solana)).toBe(true);
     expect(isTokenAvailableOnChain(bridgeToken, ChainId.ArbitrumOne)).toBe(false);
+  });
+
+  it('lists only verified Solana tokens among those without a coinKey', async () => {
+    const unverifiedSol = withVerificationStatus(
+      virtualToken(SOLANA_NATIVE_TOKEN_ADDRESS, ChainId.Solana, CoinKey.SOL),
+      'unverified',
+    );
+    const verified = withVerificationStatus(
+      virtualToken('XsQAm7K8RQuTg4BXy9qfXUxqHkHRwLNxikbRfn9kw4w', ChainId.Solana),
+      'verified',
+    );
+    const unverified = withVerificationStatus(
+      virtualToken('Xs3eBt7uRfJX8QUs4suhyU8p2M6DoUDrJyWBa8LLZsg', ChainId.Solana),
+      'unverified',
+    );
+    const flagged = withVerificationStatus(
+      virtualToken('XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W', ChainId.Solana),
+      'flagged',
+    );
+    const withoutStatus = virtualToken(
+      'XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp',
+      ChainId.Solana,
+    );
+    const unverifiedRobinhoodToken = withVerificationStatus(
+      buildLifiToken({
+        address: '0x0000000000000000000000000000000000004664',
+        name: 'Unverified Robinhood token',
+        symbol: 'RHOODU',
+      }),
+      'unverified',
+    );
+    getTokens.mockResolvedValue({
+      tokens: {
+        [ChainId.Solana]: [unverifiedSol, verified, unverified, flagged, withoutStatus],
+        [ChainId.RobinhoodChain]: [unverifiedRobinhoodToken],
+      },
+    });
+
+    const registry = await getLifiTokenRegistry();
+
+    expect(registry.tokensByChain[ChainId.Solana]?.map((token) => token.address)).toEqual([
+      unverifiedSol.address,
+      verified.address,
+    ]);
+    // Other chains that allow unmatched tokens keep them whatever their status
+    expect(registry.tokensByChain[ChainId.RobinhoodChain]?.map((token) => token.symbol)).toContain(
+      'RHOODU',
+    );
   });
 
   it('keeps an allowlisted token without a coinKey through registry, grouping, and selection', async () => {
