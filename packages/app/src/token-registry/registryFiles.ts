@@ -138,11 +138,15 @@ export function getNetworkReach(chains: DestinationChain[], chainId: number): Ne
   if (!chain) {
     return 'none';
   }
-  return chain.tokens.some(
-    (token) => token.isCounterpart || token.providers.some((provider) => provider !== 'lifi'),
-  )
-    ? 'sameAsset'
-    : 'swap';
+  return chain.tokens.some(isSameAsset) ? 'sameAsset' : 'swap';
+}
+
+// The source arrives as the same asset: through the canonical bridge, LayerZero, or LiFi to the
+// source's counterpart.
+export function isSameAsset(
+  token: Pick<DestinationOption, 'providers' | 'isCounterpart'>,
+): boolean {
+  return Boolean(token.isCounterpart) || token.providers.some((provider) => provider !== 'lifi');
 }
 
 // Ether on Ethereum to Arbitrum One, like the bridge.
