@@ -85,6 +85,7 @@ See `tsconfig.base.json` for the full list.
   - `fix(bridge): fix token row crash on null balances (#163)`
   - `build(deps): security advisories (#172)`
   - `chore: update Plume testnet urls (#167)`
+- **No merges outside normal working hours**: a merge to `master` deploys to production. Only merge during normal working hours, when someone is around to watch the deploy. Agents never merge from background waits or overnight, even when the PR is approved and green.
 
 ## Development Notes
 
