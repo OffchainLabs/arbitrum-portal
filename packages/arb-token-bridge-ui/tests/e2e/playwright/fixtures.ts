@@ -253,9 +253,17 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         fs.cpSync(snapshotDir, userDataDir, { recursive: true });
         context = await launch(userDataDir);
         // An existing profile opens no MetaMask tab, and Synpress looks for one
-        await (
-          await context.newPage()
-        ).goto(`chrome-extension://${getUnpackedExtensionId(metamaskPath)}/home.html`);
+        const metamaskHome = await context.newPage();
+        await metamaskHome.goto(
+          `chrome-extension://${getUnpackedExtensionId(metamaskPath)}/home.html`,
+        );
+        // Every few days MetaMask 11 shows a "Protect your funds" backup reminder whose backdrop
+        // blocks the account menu Synpress clicks. Dismiss it first; MetaMask then stops showing it.
+        await metamaskHome.locator('[data-testid=account-options-menu-button]').waitFor();
+        await metamaskHome
+          .getByRole('button', { name: 'Got it' })
+          .click({ timeout: 2_000 })
+          .catch(() => {});
         await initialSetup(chromium, {
           secretWordsOrPrivateKey: e2eEnv.PRIVATE_KEY,
           network: 'sepolia',
