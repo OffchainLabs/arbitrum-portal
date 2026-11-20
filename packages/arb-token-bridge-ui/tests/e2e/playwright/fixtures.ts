@@ -260,18 +260,16 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         // MetaMask 11 shows a "Protect your funds" backup reminder once a profile is 2 days old,
         // after it loads the balance; its backdrop blocks the account menu Synpress clicks.
         // Unlock and dismiss it first, and Synpress carries on with an unlocked wallet.
-        const snapshotAgeMs =
-          Date.now() - fs.statSync(path.join(snapshotDir, METAMASK_SNAPSHOT_MARKER)).mtimeMs;
-        if (snapshotAgeMs >= 2 * 24 * 60 * 60 * 1000) {
-          await metamaskHome
-            .locator('[data-testid="unlock-page"] #password')
-            .fill(getMetamaskPassword(e2eEnv));
-          await metamaskHome.locator('[data-testid="unlock-page"] .btn-default').click();
-          await metamaskHome
-            .getByRole('button', { name: 'Got it' })
-            .click({ timeout: 15_000 })
-            .catch(() => {});
-        }
+        await metamaskHome
+          .locator('[data-testid="unlock-page"] #password')
+          .fill(getMetamaskPassword(e2eEnv));
+        await metamaskHome.locator('[data-testid="unlock-page"] .btn-default').click();
+        const dismissed = await metamaskHome
+          .getByRole('button', { name: 'Got it' })
+          .click({ timeout: 15_000 })
+          .then(() => true)
+          .catch(() => false);
+        console.log(`[e2e] MetaMask backup reminder dismissed: ${dismissed}`);
         await initialSetup(chromium, {
           secretWordsOrPrivateKey: e2eEnv.PRIVATE_KEY,
           network: 'sepolia',
