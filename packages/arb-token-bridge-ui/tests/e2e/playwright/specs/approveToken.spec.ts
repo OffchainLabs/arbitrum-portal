@@ -2,8 +2,6 @@
  * Approve token for deposit.
  * Port of tests/e2e/specs/approveToken.cy.ts.
  */
-import * as metamask from '@synthetixio/synpress/commands/metamask';
-
 import { expect, test } from '../fixtures';
 import {
   acceptTnC,
@@ -14,6 +12,7 @@ import {
   findSelectTokenButton,
   importTokenThroughUI,
   login,
+  rejectMetamaskRequest,
   selectRoute,
 } from '../support/actions';
 import { ERC20TokenName, ERC20TokenSymbol, getZeroToLessThanOneToken } from '../support/common';
@@ -49,7 +48,6 @@ test.describe('Approve token for deposit', () => {
      * If confirm spending fails, the test is still considered passing, so add another check to
      * make sure it fails if needed.
      */
-    await page.waitForTimeout(25_000);
-    await metamask.rejectTransaction();
+    await rejectMetamaskRequest(page);
   });
 });

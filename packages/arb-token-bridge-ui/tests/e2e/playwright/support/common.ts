@@ -107,6 +107,12 @@ export const invalidTokenAddress = utils.computeAddress(utils.randomBytes(32));
 
 export const moreThanZeroBalance = /0(\.\d+)/;
 
+// A random amount from 0.0002 to 0.001. Balances show 4 decimals, so a smaller transfer can leave
+// the shown balance unchanged and fail a balance check.
+export function getRandomAmount() {
+  return Number((0.0002 + Math.random() * 0.0008).toFixed(5));
+}
+
 export function getZeroToLessThanOneToken(symbol: string) {
   return new RegExp(`0(\\.\\d+)* ${symbol}`);
 }

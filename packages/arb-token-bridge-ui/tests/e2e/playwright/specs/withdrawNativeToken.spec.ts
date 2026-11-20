@@ -29,12 +29,13 @@ import {
   getInitialETHBalance,
   getL1NetworkName,
   getL2NetworkName,
+  getRandomAmount,
   getZeroToLessThanOneToken,
 } from '../support/common';
 
 test.describe('Withdraw native token', () => {
   // shared across the withdraw + claim tests (run serially, single worker)
-  let ethToWithdraw = Number((Math.random() * 0.001).toFixed(5));
+  let ethToWithdraw = getRandomAmount();
 
   test.describe('user has some native token and is on L2', () => {
     test('should show form fields correctly', async ({ page, e2eEnv }) => {
@@ -52,7 +53,7 @@ test.describe('Withdraw native token', () => {
     });
 
     test('should show withdrawal confirmation and withdraw', async ({ page, e2eEnv }) => {
-      ethToWithdraw = Number((Math.random() * 0.001).toFixed(5));
+      ethToWithdraw = getRandomAmount();
       await login(page, e2eEnv, { networkType: 'childChain' });
       await typeAmount(page, ethToWithdraw);
       await acceptTnC(page);
@@ -75,8 +76,8 @@ test.describe('Withdraw native token', () => {
 
       await metamask.confirmTransaction({ gasConfig: 'aggressive' });
 
+      // No duration check: testnode withdrawals turn claimable within seconds, which replaces it.
       await findTransactionInTransactionHistory(page, {
-        duration: 'Less than a minute',
         amount: ethToWithdraw,
         symbol: e2eEnv.NATIVE_TOKEN_SYMBOL,
       });
@@ -117,11 +118,12 @@ test.describe('Withdraw native token', () => {
       // the balance on the destination chain should not be the same as before
       const balance = page.getByLabel(`${nativeTokenSymbol} balance amount on parentChain`);
       await expect(balance).toBeVisible();
-      await expect(balance).not.toHaveText(l1EthBal);
+      // Native balances refresh every 30s
+      await expect(balance).not.toHaveText(l1EthBal, { timeout: 65_000 });
     });
 
     test('should withdraw to custom destination address successfully', async ({ page, e2eEnv }) => {
-      const amount = Number((Math.random() * 0.001).toFixed(5));
+      const amount = getRandomAmount();
 
       await login(page, e2eEnv, { networkType: 'childChain' });
 
@@ -147,10 +149,7 @@ test.describe('Withdraw native token', () => {
       await metamask.confirmTransaction({ gasConfig: 'aggressive' });
 
       const txData = { amount, symbol: e2eEnv.NATIVE_TOKEN_SYMBOL };
-      await findTransactionInTransactionHistory(page, {
-        duration: 'Less than a minute',
-        ...txData,
-      });
+      await findTransactionInTransactionHistory(page, txData);
       await openTransactionDetails(page, txData);
       await findTransactionDetailsCustomDestinationAddress(
         page,

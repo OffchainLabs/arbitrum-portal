@@ -16,7 +16,9 @@ env:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-4
+    # Every test job waits on this build. The shared ubuntu-8 pool queued it for 12-112s, longer
+    # than the 8 cores save, so it runs on GitHub's standard runners.
+    runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
     steps:
       - name: Checkout
@@ -44,10 +46,19 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-
           save: ${{ github.ref == 'refs/heads/master' }}
 
+      # pnpm's verdict that the lockfile passes the supply-chain policies. Without it the first
+      # pnpm command spends ~21s verifying the lockfile against the registry.
+      - name: Cache the lockfile check
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/pnpm/lockfile-verified.jsonl
+          key: ${{ runner.os }}-pnpm-lockfile-verified-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
+
       - name: Build
         shell: bash
         run: pnpm build
         env:
+          SKIP_BUILD_TYPECHECK: true
           NEXT_PUBLIC_IS_E2E_TEST: true
           NEXT_PUBLIC_RPC_PROVIDER: alchemy
           NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}

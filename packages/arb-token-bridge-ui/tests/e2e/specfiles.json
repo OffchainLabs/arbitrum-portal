@@ -1,23 +1,105 @@
 [
-  { "name": "Login and balance check", "file": "login.spec.ts", "recordVideo": "false" },
-  { "name": "Deposit native token", "file": "depositNativeToken.spec.ts", "recordVideo": "false" },
   {
-    "name": "Withdraw native token",
-    "file": "withdrawNativeToken.spec.ts",
+    "name": "Withdraw Standard ERC20 form and custom address",
+    "files": "withdrawERC20.spec.ts",
+    "grep": "imports Standard ERC20.*(form fields|custom destination)",
     "recordVideo": "false"
   },
-  { "name": "Deposit ERC20", "file": "depositERC20.spec.ts", "recordVideo": "false" },
-  { "name": "Withdraw ERC20", "file": "withdrawERC20.spec.ts", "recordVideo": "false" },
-  { "name": "Batch deposit", "file": "batchDeposit.spec.ts", "recordVideo": "false" },
-  { "name": "TX history", "file": "txHistory.spec.ts", "recordVideo": "false" },
-  { "name": "Approve ERC20", "file": "approveToken.spec.ts", "recordVideo": "false" },
-  { "name": "Import test ERC20", "file": "importToken.spec.ts", "recordVideo": "false" },
   {
-    "name": "Read classic deposits",
-    "file": "readClassicDeposits.spec.ts",
+    "name": "Withdraw and claim Standard ERC20",
+    "files": "withdrawERC20.spec.ts",
+    "grep": "imports Standard ERC20.*(same address|claim funds)",
     "recordVideo": "false"
   },
-  { "name": "Redeem Retryable", "file": "redeemRetryable.spec.ts", "recordVideo": "false" },
-  { "name": "Switch network", "file": "switchNetworks.spec.ts", "recordVideo": "false" },
-  { "name": "URL query param", "file": "urlQueryParam.spec.ts", "recordVideo": "false" }
+  {
+    "name": "Withdraw WETH form and custom address",
+    "files": "withdrawERC20.spec.ts",
+    "grep": "imports WETH.*(form fields|custom destination)",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Withdraw and claim WETH",
+    "files": "withdrawERC20.spec.ts",
+    "grep": "imports WETH.*(same address|claim funds)",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Withdraw native token form and custom address",
+    "files": "withdrawNativeToken.spec.ts",
+    "grep": "form fields|gas estimations|custom destination",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Withdraw and claim native token",
+    "files": "withdrawNativeToken.spec.ts",
+    "grep": "withdrawal confirmation|claim funds",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Deposit Standard ERC20",
+    "files": "depositERC20.spec.ts",
+    "grep": "Standard ERC20",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Deposit WETH",
+    "files": "depositERC20.spec.ts",
+    "grep": "WETH",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Batch deposit to the same address",
+    "files": "batchDeposit.spec.ts",
+    "grep": "L1 and L2 chains|same address",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Batch deposit to a different address",
+    "files": "batchDeposit.spec.ts",
+    "grep": "different address",
+    "recordVideo": "false"
+  },
+  { "name": "Approve ERC20", "files": "approveToken.spec.ts", "recordVideo": "false" },
+  {
+    "name": "Login, switch network",
+    "files": "login.spec.ts switchNetworks.spec.ts",
+    "recordVideo": "false"
+  },
+  {
+    "name": "URL query param exact amount",
+    "files": "urlQueryParam.spec.ts",
+    "grep": "exact amount",
+    "recordVideo": "false"
+  },
+  { "name": "Redeem retryable", "files": "redeemRetryable.spec.ts", "recordVideo": "false" },
+  {
+    "name": "URL query param max amount",
+    "files": "urlQueryParam.spec.ts",
+    "grep": "max amount",
+    "recordVideo": "false"
+  },
+  {
+    "name": "URL query param sanitizing 1 and token",
+    "files": "urlQueryParam.spec.ts",
+    "grep": "sanitize the amount query param \\(1\\)|select token",
+    "recordVideo": "false"
+  },
+  {
+    "name": "URL query param sanitizing 2",
+    "files": "urlQueryParam.spec.ts",
+    "grep": "sanitize the amount query param \\(2\\)",
+    "recordVideo": "false"
+  },
+  {
+    "name": "Deposit native token",
+    "files": "depositNativeToken.spec.ts",
+    "recordVideo": "false"
+  },
+  { "name": "Import test ERC20", "files": "importToken.spec.ts", "recordVideo": "false" },
+  {
+    "name": "TX history, read classic deposits",
+    "files": "readClassicDeposits.spec.ts txHistory.spec.ts",
+    "regularOnly": true,
+    "recordVideo": "false"
+  }
 ]

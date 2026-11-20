@@ -36,6 +36,7 @@ import {
   getL1NetworkName,
   getL2NetworkConfig,
   getL2NetworkName,
+  getRandomAmount,
   getZeroToLessThanOneToken,
 } from '../support/common';
 
@@ -74,7 +75,7 @@ async function clickContinueWithdrawal(page: import('@playwright/test').Page) {
 
 test.describe('Withdraw ERC20 Token', () => {
   // shared across withdraw + claim tests (run serially, single worker)
-  let amountToSend = Number((Math.random() * 0.001).toFixed(5));
+  let amountToSend = getRandomAmount();
 
   tokenTypes.forEach((tokenType) => {
     test.describe(`User is on L2 and imports ${tokenType}`, () => {
@@ -92,7 +93,7 @@ test.describe('Withdraw ERC20 Token', () => {
       }) => {
         const testCase = getTestCase(e2eEnv, tokenType);
         const zeroToLessThanOneNativeToken = getZeroToLessThanOneToken(e2eEnv.NATIVE_TOKEN_SYMBOL);
-        amountToSend = Number((Math.random() * 0.001).toFixed(5));
+        amountToSend = getRandomAmount();
 
         await login(page, e2eEnv, { networkType: 'childChain' });
         await searchAndSelectToken(page, e2eEnv, {
@@ -111,8 +112,8 @@ test.describe('Withdraw ERC20 Token', () => {
 
         await metamask.confirmTransaction({ gasConfig: 'aggressive' });
 
+        // No duration check: testnode withdrawals turn claimable within seconds, which replaces it.
         await findTransactionInTransactionHistory(page, {
-          duration: 'Less than a minute',
           amount: amountToSend,
           symbol: testCase.symbol,
         });
@@ -161,7 +162,8 @@ test.describe('Withdraw ERC20 Token', () => {
 
         const parentBalance = page.getByLabel(`${testCase.symbol} balance amount on parentChain`);
         await expect(parentBalance).toBeVisible();
-        await expect(parentBalance).not.toHaveText(l1Erc20Bal);
+        // Token balances refresh every 15s
+        await expect(parentBalance).not.toHaveText(l1Erc20Bal, { timeout: 35_000 });
       });
 
       test(`should withdraw ${tokenType} to custom destination address successfully`, async ({
@@ -170,7 +172,7 @@ test.describe('Withdraw ERC20 Token', () => {
       }) => {
         const testCase = getTestCase(e2eEnv, tokenType);
         const zeroToLessThanOneNativeToken = getZeroToLessThanOneToken(e2eEnv.NATIVE_TOKEN_SYMBOL);
-        const amount = Number((Math.random() * 0.001).toFixed(5));
+        const amount = getRandomAmount();
 
         const l2Erc20Bal = formatAmount(
           (await getInitialERC20Balance({
@@ -202,10 +204,7 @@ test.describe('Withdraw ERC20 Token', () => {
         await metamask.confirmTransaction({ gasConfig: 'aggressive' });
 
         const txData = { amount, symbol: testCase.symbol };
-        await findTransactionInTransactionHistory(page, {
-          duration: 'Less than a minute',
-          ...txData,
-        });
+        await findTransactionInTransactionHistory(page, txData);
         await openTransactionDetails(page, txData);
         await findTransactionDetailsCustomDestinationAddress(
           page,
@@ -217,7 +216,7 @@ test.describe('Withdraw ERC20 Token', () => {
 
         const childBalance = page.getByLabel(`${testCase.symbol} balance amount on childChain`);
         await expect(childBalance).toBeVisible();
-        await expect(childBalance).not.toHaveText(l2Erc20Bal);
+        await expect(childBalance).not.toHaveText(l2Erc20Bal, { timeout: 35_000 });
 
         await expect(findAmountInput(page)).toHaveValue('');
         await expect(await findMoveFundsButton(page)).toBeDisabled();
