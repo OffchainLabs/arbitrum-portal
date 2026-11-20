@@ -40,11 +40,15 @@ function getCanonicalTokenListUrls({
     .flatMap((list) => (list.url ? [list.url] : []));
 }
 
-// Custom-gas-token chains need a native token mapping that the PoC does not build yet.
-function toCanonicalBridge(network: ArbitrumNetwork): CanonicalBridge | null {
+// Custom-gas-token chains need a native token mapping that the per-pair registry does not build
+// yet. An import only reads the gateway router, so it takes them too.
+function toCanonicalBridge(
+  network: ArbitrumNetwork,
+  { allowCustomGasToken = false }: { allowCustomGasToken?: boolean } = {},
+): CanonicalBridge | null {
   if (
     !network.tokenBridge ||
-    (network.nativeToken && network.nativeToken !== NATIVE_TOKEN_ADDRESS)
+    (!allowCustomGasToken && network.nativeToken && network.nativeToken !== NATIVE_TOKEN_ADDRESS)
   ) {
     return null;
   }
@@ -60,21 +64,27 @@ function toCanonicalBridge(network: ArbitrumNetwork): CanonicalBridge | null {
   };
 }
 
-export function getCanonicalBridge(pair: ChainPair): CanonicalBridge | null {
+export function getCanonicalBridge(
+  pair: ChainPair,
+  options?: { allowCustomGasToken?: boolean },
+): CanonicalBridge | null {
   const destination = findNetwork(pair.destinationChainId);
   if (destination?.parentChainId === pair.sourceChainId) {
-    return toCanonicalBridge(destination);
+    return toCanonicalBridge(destination, options);
   }
 
   const source = findNetwork(pair.sourceChainId);
   if (source?.parentChainId === pair.destinationChainId) {
-    return toCanonicalBridge(source);
+    return toCanonicalBridge(source, options);
   }
 
   return null;
 }
 
-export function isCanonicalDeposit(pair: ChainPair, bridge: CanonicalBridge): boolean {
+// The policy only needs the two chains, so a bridge the SDK does not know works too.
+type BridgeChains = Pick<CanonicalBridge, 'parentChainId' | 'childChainId'>;
+
+export function isCanonicalDeposit(pair: ChainPair, bridge: BridgeChains): boolean {
   return pair.sourceChainId === bridge.parentChainId;
 }
 
@@ -85,7 +95,7 @@ export function isCanonicalTransferAllowed({
   pair,
   parentTokenAddress,
 }: {
-  bridge: CanonicalBridge;
+  bridge: BridgeChains;
   pair: ChainPair;
   parentTokenAddress: Address;
 }): boolean {

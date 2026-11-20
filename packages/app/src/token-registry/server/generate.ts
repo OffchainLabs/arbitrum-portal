@@ -1,5 +1,4 @@
 import { unstable_cache } from 'next/cache';
-import { isAddress } from 'viem';
 
 import {
   batchDepositExcludedSourceTokens,
@@ -32,6 +31,7 @@ import {
   pairKey,
   toTokenId,
 } from '../types';
+import { getCachedImport } from './cachedImport';
 import {
   CanonicalBridge,
   getCanonicalBridge,
@@ -42,11 +42,9 @@ import {
   LayerZeroMetadata,
   findOftTokens,
   getLayerZeroMetadata,
-  isImportedOftDepositBlocked,
   isListedByLayerZero,
   isOftDepositBlocked,
 } from './oftDeposits';
-import { resolveImport } from './resolveImport';
 
 type ProviderRoutes =
   | { provider: 'canonical'; routes: Record<Address, Address> }
@@ -1063,49 +1061,6 @@ function isBlockedSourceToken(pair: ChainPair, sourceTokenAddress: Address): boo
 function hasCanonicalRoute(registry: PairRegistry, sourceTokenAddress: Address): boolean {
   return registry.providers.some(
     (section) => section.provider === 'canonical' && sourceTokenAddress in section.routes,
-  );
-}
-
-export function getCachedImport({
-  bridge,
-  pair,
-  sourceTokenAddress,
-}: {
-  bridge: CanonicalBridge;
-  pair: ChainPair;
-  sourceTokenAddress: Address;
-}): Promise<SelectedTokenAvailability | null> {
-  return cached(
-    `token-registry-import-${pairKey(pair)}-${sourceTokenAddress}-v${REGISTRY_CACHE_VERSION}`,
-    async () => {
-      const isDeposit = isCanonicalDeposit(pair, bridge);
-      // A deposit's OFT check reads the parent token, which is the source token unless the user
-      // pasted its child address. Its oftVersion() read goes out with the import's reads, and the
-      // LayerZero metadata loads meanwhile.
-      const pendingOftCheck =
-        isDeposit && isAddress(sourceTokenAddress)
-          ? findOftTokens({ chainId: pair.sourceChainId, addresses: [sourceTokenAddress] })
-          : undefined;
-      // Nothing awaits the read when the import fails or resolves another parent token.
-      pendingOftCheck?.catch(() => {});
-      const [imported, layerZeroMetadata] = await Promise.all([
-        resolveImport({ bridge, pair, rawAddress: sourceTokenAddress }),
-        isDeposit ? getLayerZeroMetadata() : Promise.resolve(null),
-      ]);
-      const isBlocked =
-        imported &&
-        layerZeroMetadata &&
-        (await isImportedOftDepositBlocked({
-          metadata: layerZeroMetadata,
-          parentChainId: pair.sourceChainId,
-          childChainId: pair.destinationChainId,
-          parentTokenAddress: imported.sourceToken.address,
-          childTokenAddress: imported.destinationToken.address,
-          pendingOftCheck:
-            imported.sourceToken.address === sourceTokenAddress ? pendingOftCheck : undefined,
-        }));
-      return isBlocked ? null : imported;
-    },
   );
 }
 
