@@ -233,16 +233,20 @@ export async function fetchWithdrawals({
     childChainId: l2ChainID,
   }));
 
-  const eventLogWithdrawals = await fetchWithdrawalsUsingEventLogs({
-    sender,
-    receiver,
-    fromBlock: indexedBoundary,
-    toBlock: head,
-    parentChainId,
-    l2ChainId: l2ChainID,
-    l2Provider,
-    forceFetchReceived,
-  });
+  // the indexer covers everything up to head, and a scan from head + 1 to 'latest' is rejected
+  const eventLogWithdrawals =
+    lastIndexedBlock >= head
+      ? []
+      : await fetchWithdrawalsUsingEventLogs({
+          sender,
+          receiver,
+          fromBlock: indexedBoundary,
+          toBlock,
+          parentChainId,
+          l2ChainId: l2ChainID,
+          l2Provider,
+          forceFetchReceived,
+        });
 
   return [...eventLogWithdrawals, ...indexedWithdrawals];
 }

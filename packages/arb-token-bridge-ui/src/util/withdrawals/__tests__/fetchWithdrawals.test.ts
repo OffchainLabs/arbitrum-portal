@@ -136,13 +136,21 @@ describe.sequential('fetchWithdrawals', () => {
       expect(fetchETHWithdrawalsFromEventLogsMock).not.toHaveBeenCalled();
     });
 
-    it('bounds the event-log scan at the head it read', async () => {
+    it('skips the event-log scan when the indexer is ahead of the RPC head', async () => {
+      fetchLatestIndexedBlockNumberMock.mockResolvedValue(HEAD + 5);
+
+      await fetchWithdrawals(baseParams);
+
+      expect(fetchTokenWithdrawalsFromEventLogsSequentiallyMock).not.toHaveBeenCalled();
+    });
+
+    it('scans from the indexed block to latest when the indexer lags', async () => {
       fetchLatestIndexedBlockNumberMock.mockResolvedValue(500);
 
       await fetchWithdrawals(baseParams);
 
       expect(fetchTokenWithdrawalsFromEventLogsSequentiallyMock).toHaveBeenCalledWith(
-        expect.objectContaining({ fromBlock: 501, toBlock: HEAD }),
+        expect.objectContaining({ fromBlock: 501, toBlock: 'latest' }),
       );
     });
 
