@@ -7,6 +7,7 @@ import { shallow } from 'zustand/shallow';
 import { useForceFetchReceived, useTransactionHistory } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { addressesEqual } from '../../util/AddressUtils';
+import { isE2eTestingEnvironment } from '../../util/CommonUtils';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { TransactionStatusInfo } from '../TransactionHistory/TransactionStatusInfo';
 import { TabButton } from '../common/Tab';
@@ -18,6 +19,9 @@ import {
 import { ContentWrapper, TransactionHistoryTable } from './TransactionHistoryTable';
 import { TransactionsTableDetails } from './TransactionsTableDetails';
 import { isTxClaimable, isTxCompleted, isTxExpired, isTxFailed, isTxPending } from './helpers';
+
+// The e2e testnode confirms withdrawals in seconds; production chains take hours to days.
+const PENDING_REFRESH_MS = isE2eTestingEnvironment ? 1_000 : 10_000;
 
 function useTransactionHistoryUpdater() {
   const sanitizedAddress = useTransactionHistoryAddressStore((state) => state.sanitizedAddress);
@@ -46,7 +50,7 @@ function useTransactionHistoryUpdater() {
       }
 
       pendingTransactions.forEach(updatePendingTransaction);
-    }, 10_000);
+    }, PENDING_REFRESH_MS);
 
     return () => clearInterval(interval);
   }, [pendingTransactions, updatePendingTransaction, isTxHashSearch]);
