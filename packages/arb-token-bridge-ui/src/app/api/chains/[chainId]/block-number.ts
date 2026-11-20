@@ -1,11 +1,7 @@
-import { gql } from '@apollo/client';
 import { NextResponse } from 'next/server';
 
 import { getIndexerApiUrl } from '../../../../api-utils/ServerIndexerUtils';
-import {
-  type SubgraphSource,
-  getL2SubgraphClient,
-} from '../../../../api-utils/ServerSubgraphUtils';
+import { type SubgraphSource } from '../../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../../types/ChainId';
 import { logger } from '../../../../util/logger';
 import { isChildChainIndexed } from '../../../../util/txHistory/sources';
@@ -50,16 +46,6 @@ async function fetchIndexerBlockNumber(
   return blockNumber;
 }
 
-function getSubgraphClient(chainId: number) {
-  switch (chainId) {
-    case ChainId.ArbitrumNova:
-      return getL2SubgraphClient(ChainId.ArbitrumNova);
-
-    default:
-      return undefined;
-  }
-}
-
 function getIndexerConfigChainId(chainId: number): number | undefined {
   if (chainId === ChainId.Ethereum) return ChainId.ArbitrumOne;
   if (chainId === ChainId.Sepolia) return ChainId.ArbitrumSepolia;
@@ -75,53 +61,18 @@ export async function GET(
   const { chainId } = await params;
   const numericChainId = Number(chainId);
 
+  const indexerConfigChainId = getIndexerConfigChainId(numericChainId);
+  if (typeof indexerConfigChainId === 'undefined') {
+    return NextResponse.json({ data: NO_INDEXED_BLOCK }, { status: 200 });
+  }
+
   try {
-    const indexerConfigChainId = getIndexerConfigChainId(numericChainId);
-    if (typeof indexerConfigChainId !== 'undefined') {
-      const indexerBlockNumber = await fetchIndexerBlockNumber(
-        numericChainId,
-        indexerConfigChainId,
-      );
-
-      return NextResponse.json(
-        {
-          meta: { source: 'arbitrum-indexer' },
-          data: indexerBlockNumber,
-        },
-        { status: 200 },
-      );
-    }
-
-    const subgraph = getSubgraphClient(numericChainId);
-
-    if (!subgraph) {
-      return NextResponse.json({ data: NO_INDEXED_BLOCK }, { status: 200 });
-    }
-
-    const result: {
-      data: {
-        _meta: {
-          block: {
-            number: number;
-          };
-        };
-      };
-    } = await subgraph.client.query({
-      query: gql`
-        {
-          _meta {
-            block {
-              number
-            }
-          }
-        }
-      `,
-    });
+    const indexerBlockNumber = await fetchIndexerBlockNumber(numericChainId, indexerConfigChainId);
 
     return NextResponse.json(
       {
-        meta: { source: subgraph.source },
-        data: result.data._meta.block.number,
+        meta: { source: 'arbitrum-indexer' },
+        data: indexerBlockNumber,
       },
       { status: 200 },
     );

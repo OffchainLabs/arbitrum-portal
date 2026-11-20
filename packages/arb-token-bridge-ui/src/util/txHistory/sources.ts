@@ -1,4 +1,3 @@
-import { ChainId } from '../../types/ChainId';
 import defaultIndexerChildChainIds from './defaultIndexerChildChainIds.json';
 
 /** `undefined` for anything that isn't a positive integer chain ID. */
@@ -21,7 +20,7 @@ export function parseChainIds(raw: string | undefined): number[] {
   return Array.from(new Set(ids));
 }
 
-// Arbitrum One and Sepolia have no other history source, so configuration may add
+// Arbitrum One, Nova and Sepolia have no other history source, so configuration may add
 // indexed chains but must never remove these required defaults. Shared with the CI
 // preflight in .github/workflows/validateIndexerConfig.js.
 const DEFAULT_INDEXER_CHILD_CHAIN_IDS: readonly number[] = defaultIndexerChildChainIds;
@@ -36,12 +35,4 @@ export const INDEXER_CHILD_CHAIN_IDS = Array.from(
 
 export function isChildChainIndexed(childChainId: number): boolean {
   return INDEXER_CHILD_CHAIN_IDS.includes(childChainId);
-}
-
-function hasBridgeSubgraph(childChainId: number): boolean {
-  return childChainId === ChainId.ArbitrumNova;
-}
-
-export function hasBridgeHistory(childChainId: number): boolean {
-  return isChildChainIndexed(childChainId) || hasBridgeSubgraph(childChainId);
 }
