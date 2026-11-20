@@ -7,6 +7,7 @@ import { shallow } from 'zustand/shallow';
 import { useForceFetchReceived, useTransactionHistory } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { addressesEqual } from '../../util/AddressUtils';
+import { e2ePollingInterval } from '../../util/CommonUtils';
 import { useWallets } from '../../wallet/hooks/useWallets';
 import { TransactionStatusInfo } from '../TransactionHistory/TransactionStatusInfo';
 import { TabButton } from '../common/Tab';
@@ -46,7 +47,7 @@ function useTransactionHistoryUpdater() {
       }
 
       pendingTransactions.forEach(updatePendingTransaction);
-    }, 10_000);
+    }, e2ePollingInterval(10_000));
 
     return () => clearInterval(interval);
   }, [pendingTransactions, updatePendingTransaction, isTxHashSearch]);
