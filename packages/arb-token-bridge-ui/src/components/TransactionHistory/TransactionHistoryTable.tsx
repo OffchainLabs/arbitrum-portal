@@ -1,4 +1,9 @@
-import { ExclamationCircleIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
+import { Disclosure } from '@headlessui/react';
+import {
+  ChevronRightIcon,
+  ExclamationCircleIcon,
+  PlusCircleIcon,
+} from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
 import {
   ButtonHTMLAttributes,
@@ -83,7 +88,7 @@ export const HistoryLoader = () => {
   return <span className="animate-pulse">Loading transactions...</span>;
 };
 
-const FailedChainPairsTooltip = ({
+const FailedLoadsWarning = ({
   failedChainPairs,
   failedTxs,
 }: {
@@ -107,51 +112,56 @@ const FailedChainPairsTooltip = ({
     .join('. ');
 
   return (
-    <Tooltip
-      content={
-        <div className="flex flex-col space-y-2 text-xs">
-          {failedChainPairs.length > 0 && (
-            <div className="flex flex-col space-y-1">
-              <span>We were unable to fetch data for the following chain pairs:</span>
-              <ul className="flex list-disc flex-col pl-4">
-                {failedChainPairs.map((pair) => (
-                  <li key={`${pair.parentChainId}-${pair.childChainId}`}>
-                    <b>{getNetworkName(pair.parentChainId)}</b>
-                    {' <> '}
-                    <b>{getNetworkName(pair.childChainId)}</b>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {failedTxs.length > 0 && (
-            <div className="flex flex-col space-y-1">
-              <span>We were unable to load the following transactions:</span>
-              <ul className="flex list-disc flex-col pl-4">
-                {failedTxs.map((tx, index) => (
-                  <li key={`${tx.txId}-${index}`} className="break-all">
-                    <span className="font-mono">{tx.txId}</span>
-                    {' ('}
-                    {getNetworkName(tx.parentChainId)}
-                    {' <> '}
-                    {getNetworkName(tx.childChainId)})
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      }
+    <Disclosure
+      as="div"
+      role="status"
+      aria-label={warningLabel}
+      data-testid="failed-chain-pairs-warning"
+      className="mt-4 flex w-full flex-col justify-start gap-1 rounded border border-orange-dark bg-orange p-3 text-sm text-orange-dark"
     >
-      <span
-        role="img"
-        aria-label={warningLabel}
-        className="inline-flex"
-        data-testid="failed-chain-pairs-warning"
-      >
-        <ExclamationCircleIcon height={20} className="text-error" aria-hidden="true" />
-      </span>
-    </Tooltip>
+      <Disclosure.Button className="flex items-center text-left">
+        <div className="flex items-start gap-1">
+          <ExclamationCircleIcon className="mt-[2px] h-3 w-3 shrink-0 stroke-orange-dark" />
+          <p>
+            Some transactions couldn&apos;t be loaded. Refresh the page, or search by transaction
+            hash to find them.
+          </p>
+        </div>
+        <ChevronRightIcon className="ml-auto h-3 w-3 shrink-0 ui-open:rotate-90 ui-open:transform" />
+      </Disclosure.Button>
+      <Disclosure.Panel className="flex flex-col gap-2 pl-4 text-xs">
+        {failedChainPairs.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <span>We were unable to fetch data for the following chain pairs:</span>
+            <ul className="flex list-disc flex-col pl-4">
+              {failedChainPairs.map((pair) => (
+                <li key={`${pair.parentChainId}-${pair.childChainId}`}>
+                  <b>{getNetworkName(pair.parentChainId)}</b>
+                  {' <> '}
+                  <b>{getNetworkName(pair.childChainId)}</b>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {failedTxs.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <span>We were unable to load the following transactions:</span>
+            <ul className="flex list-disc flex-col pl-4">
+              {failedTxs.map((tx, index) => (
+                <li key={`${tx.txId}-${index}`} className="break-all">
+                  <span className="font-mono">{tx.txId}</span>
+                  {' ('}
+                  {getNetworkName(tx.parentChainId)}
+                  {' <> '}
+                  {getNetworkName(tx.childChainId)})
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </Disclosure.Panel>
+    </Disclosure>
   );
 };
 
@@ -230,7 +240,7 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
     return (
       <>
         {/* an outage leaves nothing to list, so the warning has to render here too */}
-        <FailedChainPairsTooltip failedChainPairs={failedChainPairs} failedTxs={failedTxs} />
+        <FailedLoadsWarning failedChainPairs={failedChainPairs} failedTxs={failedTxs} />
         <EmptyTransactionHistory
           loading={loading}
           // with a chain unchecked, "no transactions" could be a lie
@@ -261,13 +271,11 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
       >
         {loading ? (
           <div className="flex h-[28px] items-center space-x-2">
-            <FailedChainPairsTooltip failedChainPairs={failedChainPairs} failedTxs={failedTxs} />
             <HistoryLoader />
           </div>
         ) : (
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center justify-start space-x-1">
-              <FailedChainPairsTooltip failedChainPairs={failedChainPairs} failedTxs={failedTxs} />
               <span className="text-xs">
                 Showing {transactions.length} {isPendingTab ? 'pending' : 'settled'} transactions
                 made in {oldestTxTimeAgoString}.
@@ -277,6 +285,7 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
             {!completed && <LoadMoreButton onClick={resume} />}
           </div>
         )}
+        <FailedLoadsWarning failedChainPairs={failedChainPairs} failedTxs={failedTxs} />
         <div>{pendingTokenDepositsCount > 0 && <PendingDepositWarning />}</div>
       </div>
 
