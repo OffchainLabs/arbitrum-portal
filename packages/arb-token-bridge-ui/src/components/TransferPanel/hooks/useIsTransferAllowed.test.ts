@@ -8,23 +8,27 @@ import { ChainId } from '../../../types/ChainId';
 import { useIsTransferAllowed } from './useIsTransferAllowed';
 import { type RouteType, useRouteStore } from './useRouteStore';
 
+const source = vi.hoisted(() => ({ chainId: 0, address: '' }));
+
 vi.mock('../../../wallet/hooks/useWallets', () => ({
   useWallets: () => ({
     sourceWallet: {
       isConnected: true,
-      account: {
-        address: '0x1111111111111111111111111111111111111111',
-        chainId: ChainId.Ethereum,
-      },
+      account: { address: source.address, chainId: source.chainId },
     },
   }),
 }));
 
 vi.mock('../../../hooks/useNetworks', () => ({
   useNetworks: () => [
-    { sourceChain: { id: ChainId.Ethereum }, destinationChain: { id: ChainId.ArbitrumOne } },
+    { sourceChain: { id: source.chainId }, destinationChain: { id: ChainId.ArbitrumOne } },
   ],
 }));
+
+const sourceAddresses: Partial<Record<ChainId, string>> = {
+  [ChainId.Ethereum]: '0x1111111111111111111111111111111111111111',
+  [ChainId.Solana]: 'Hgw1pNJDYm5NbMheUHFNniiqtncor73swrH4RSN9APu5',
+};
 
 vi.mock('./useDestinationAddressError', () => ({
   useDestinationAddressError: () => ({ destinationAddressError: undefined }),
@@ -39,11 +43,14 @@ afterEach(() => {
 });
 
 describe.sequential('useIsTransferAllowed', () => {
-  it.each<[RouteType, boolean, boolean]>([
-    ['arbitrum', false, false],
-    ['arbitrum', true, true],
-    ['lifi', false, true],
-  ])('%s route, bridge SDK loaded %s: %s', (route, loaded, allowed) => {
+  it.each<[ChainId, RouteType, boolean, boolean]>([
+    [ChainId.Ethereum, 'arbitrum', false, false],
+    [ChainId.Ethereum, 'arbitrum', true, true],
+    [ChainId.Ethereum, 'lifi', false, true],
+    [ChainId.Solana, 'lifi', false, true],
+  ])('source %s, %s route, bridge SDK loaded %s: %s', (sourceChain, route, loaded, allowed) => {
+    source.chainId = sourceChain;
+    source.address = sourceAddresses[sourceChain] ?? '';
     useRouteStore.setState({ selectedRoute: route });
     useAppStore.setState({
       arbTokenBridgeLoaded: loaded,

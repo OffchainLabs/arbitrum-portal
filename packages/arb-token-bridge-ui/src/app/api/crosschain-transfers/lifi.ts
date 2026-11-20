@@ -7,15 +7,16 @@ import {
   createConfig,
   getRoutes,
 } from '@lifi/sdk';
-import { BigNumber, constants, utils } from 'ethers';
+import { BigNumber, constants } from 'ethers';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
 import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO } from '../../../constants';
 import { ChainId } from '../../../types/ChainId';
-import { addressesEqual } from '../../../util/AddressUtils';
+import { addressesEqual, isValidAddressForChain } from '../../../util/AddressUtils';
 import { getLifiRouteStepLabel, getLifiToolDetails } from '../../../util/LifiRouteUtils';
+import { getWalletEcosystem } from '../../../wallet/getWalletEcosystem';
 import { CrosschainTransfersRouteBase, QueryParams, RouteCost, Token } from './types';
 import { isValidLifiTransfer } from './utils';
 
@@ -309,20 +310,6 @@ export async function GET(
 
   try {
     // Validate parameters
-    if (!fromToken || !utils.isAddress(fromToken)) {
-      return NextResponse.json(
-        { message: 'fromToken is not a valid address', data: null },
-        { status: 400 },
-      );
-    }
-
-    if (!toToken || !utils.isAddress(toToken)) {
-      return NextResponse.json(
-        { message: 'toToken is not a valid address', data: null },
-        { status: 400 },
-      );
-    }
-
     if (!fromChainId) {
       return NextResponse.json({ message: 'fromChainId is required', data: null }, { status: 400 });
     }
@@ -331,11 +318,28 @@ export async function GET(
       return NextResponse.json({ message: 'toChainId is required', data: null }, { status: 400 });
     }
 
+    const parsedFromChainId = Number(fromChainId);
+    const parsedToChainId = Number(toChainId);
+
+    if (!fromToken || !isValidAddressForChain(fromToken, parsedFromChainId)) {
+      return NextResponse.json(
+        { message: 'fromToken is not a valid address', data: null },
+        { status: 400 },
+      );
+    }
+
+    if (!toToken || !isValidAddressForChain(toToken, parsedToChainId)) {
+      return NextResponse.json(
+        { message: 'toToken is not a valid address', data: null },
+        { status: 400 },
+      );
+    }
+
     if (
       !isValidLifiTransfer({
         fromToken,
-        sourceChainId: Number(fromChainId),
-        destinationChainId: Number(toChainId),
+        sourceChainId: parsedFromChainId,
+        destinationChainId: parsedToChainId,
       })
     ) {
       return NextResponse.json(
@@ -346,6 +350,12 @@ export async function GET(
         { status: 400 },
       );
     }
+
+    const recipient =
+      toAddress ??
+      (getWalletEcosystem(parsedFromChainId) === getWalletEcosystem(parsedToChainId)
+        ? fromAddress
+        : undefined);
 
     // Validate options
     const parsedSlippage = Number(slippage);
@@ -363,10 +373,10 @@ export async function GET(
       fromAddress,
       fromAmount,
       fromTokenAddress: fromToken,
-      fromChainId: Number(fromChainId),
-      toChainId: Number(toChainId),
+      fromChainId: parsedFromChainId,
+      toChainId: parsedToChainId,
       toTokenAddress: toToken,
-      toAddress,
+      toAddress: recipient,
     };
 
     const options: RoutesRequest['options'] = {
@@ -397,7 +407,7 @@ export async function GET(
           parseLifiRoute({
             route,
             fromAddress,
-            toAddress: toAddress || fromAddress,
+            toAddress: recipient,
             fromChainId,
             toChainId,
           }),

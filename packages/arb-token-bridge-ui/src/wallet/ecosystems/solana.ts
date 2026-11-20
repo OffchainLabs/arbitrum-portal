@@ -53,6 +53,12 @@ export const solanaEcosystem: EcosystemConfig = {
     normalize: (signature) => signature,
   },
   nativeTokenAddress: SOLANA_NATIVE_TOKEN_ADDRESS,
+  // 0.002 SOL. Solana rejects a transaction that leaves an account with less than the
+  // rent-exempt minimum of 890,880 lamports
+  nativeCurrencyReserve: 2_000_000n,
+  // 0.001 SOL. LiFi quotes 135,000 lamports of Solana gas per route, and takes its fees out of
+  // the amount
+  gasBufferBeforeQuote: 1_000_000n,
   isLifiOnly: true,
   hasGasPrice: false,
   // AppKit identifies Solana networks by their genesis hash
@@ -61,5 +67,6 @@ export const solanaEcosystem: EcosystemConfig = {
   // Solscan
   explorerAccountPath: 'account',
   chains: [solanaChain],
+  nativeAssetType: 'SOL',
   namespace: 'solana',
 };

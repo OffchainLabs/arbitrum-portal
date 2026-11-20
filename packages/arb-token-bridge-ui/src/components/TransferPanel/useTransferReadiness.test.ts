@@ -1,11 +1,14 @@
 import { renderHook } from '@testing-library/react';
-import { BigNumber } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { describe, expect, it, vi } from 'vitest';
 
 import { WETH_TOKEN_LOGO } from '@/bridge/constants';
 
 import { createWalletTestWrapper } from '../../test-utils/wallet-test-wrapper';
+import { ChainId } from '../../types/ChainId';
+import type { SolanaAddress } from '../../util/AddressUtils';
 import { defaultWalletContextValue } from '../../wallet/WalletContext';
+import { SOLANA_NATIVE_TOKEN_ADDRESS } from '../../wallet/ecosystems/solana';
 import type { WalletContextValue } from '../../wallet/types';
 import { hasHighUsdSlippage } from './TransferWarningUtils';
 import { RouteContext } from './hooks/useRouteStore';
@@ -26,6 +29,8 @@ const data = vi.hoisted(() => ({
   sourceBalance: '100000000',
   sourceGasBalance: '1000000000000000000',
   amount: '10',
+  selectedRoute: 'arbitrum',
+  selectedRouteContext: undefined as RouteContext | undefined,
 }));
 vi.mock('@uidotdev/usehooks', () => ({
   useLocalStorage: () => [true],
@@ -37,7 +42,7 @@ vi.mock('../../hooks/useArbQueryParams', async (importOriginal) => ({
 }));
 vi.mock('../../hooks/useSelectedToken', () => ({ useSelectedToken: () => [null] }));
 vi.mock('./hooks/useAmountBigNumber', () => ({
-  useAmountBigNumber: () => BigNumber.from(data.amount).mul(1_000_000),
+  useAmountBigNumber: () => utils.parseUnits(data.amount, 6),
 }));
 vi.mock('../App/AppContext', () => ({
   useAppContextState: () => ({ layout: { isTransferring: false } }),
@@ -50,12 +55,15 @@ vi.mock('../../hooks/useNetworksRelationship', () => ({
   }),
 }));
 vi.mock('./hooks/useRouteStore', () => ({
-  useRouteStore: () => ({ selectedRoute: 'arbitrum', selectedRouteContext: undefined }),
-  getSelectedRouteContext: () => undefined,
-  isLifiRoute: () => false,
+  useRouteStore: () => ({
+    selectedRoute: data.selectedRoute,
+    selectedRouteContext: data.selectedRouteContext,
+  }),
+  getSelectedRouteContext: () => data.selectedRouteContext,
+  isLifiRoute: (route: string) => route === 'lifi',
 }));
 vi.mock('./hooks/useRoutesUpdater', () => ({
-  useRouteEligibility: () => ({ eligibleRouteTypes: ['arbitrum'] }),
+  useRouteEligibility: () => ({ eligibleRouteTypes: ['arbitrum', 'lifi'] }),
 }));
 vi.mock('./hooks/useSelectedTokenIsWithdrawOnly', () => ({
   useSelectedTokenIsWithdrawOnly: () => ({
@@ -404,5 +412,62 @@ describe('source wallet', () => {
     Object.assign(data, { amount: '1' });
     const { result } = renderReadiness(defaultWalletContextValue);
     expect(result.current.transferReady).toEqual({ deposit: false, withdrawal: false });
+  });
+});
+
+describe.sequential('LiFi transfer from Solana', () => {
+  const sol = { address: SOLANA_NATIVE_TOKEN_ADDRESS, symbol: 'SOL', decimals: 9, logoURI: '' };
+  const solanaWallets: WalletContextValue = {
+    ...defaultWalletContextValue,
+    solana: {
+      ...defaultWalletContextValue.solana,
+      isConnected: true,
+      account: {
+        ecosystem: 'solana',
+        address: 'So11111111111111111111111111111111111111112' as SolanaAddress,
+        chainId: ChainId.Solana,
+        status: 'connected',
+      },
+    },
+  };
+
+  // 0.1 SOL balance, 0.000225 SOL of route costs and a 0.002 SOL reserve
+  it.each([
+    { amount: '0.097', allowed: true },
+    { amount: '0.098', allowed: false },
+  ])('checks $amount SOL against the route costs and the reserve', ({ amount, allowed }) => {
+    const route = getMock({
+      gas: { amount: '100000', amountUSD: '0', token: sol, chainId: ChainId.Solana },
+      fee: { amount: '125000', amountUSD: '0', token: sol, chainId: ChainId.Solana },
+      fromAmount: {
+        amount: utils.parseUnits(amount, 9).toString(),
+        amountUSD: '0',
+        token: sol,
+      },
+    });
+    Object.assign(data, {
+      amount,
+      isDepositMode: true,
+      sourceChain: {
+        id: ChainId.Solana,
+        name: 'Solana',
+        nativeCurrency: { name: 'Solana', symbol: 'SOL', decimals: 9 },
+      },
+      destinationChain: {
+        id: ChainId.ArbitrumOne,
+        name: 'Arbitrum One',
+        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+      },
+      sourceBalance: '100000000',
+      sourceGasBalance: '100000000',
+      selectedRoute: 'lifi',
+      selectedRouteContext: { ...route, fromChainId: ChainId.Solana },
+    });
+
+    const { result } = renderReadiness(solanaWallets);
+
+    expect(result.current.transferReady.deposit).toBe(allowed);
+    if (allowed) expect(result.current.errorMessages).toBeUndefined();
+    else expect(result.current.errorMessages?.inputAmount1).toContain('requires 0.10023 SOL');
   });
 });

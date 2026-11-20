@@ -4,9 +4,10 @@ import type { LifiCrosschainTransfersRoute } from '@/bridge/app/api/crosschain-t
 
 import type { GasEstimates } from '../hooks/arbTokenBridge.types';
 import { getNetworksRelationship } from '../util/getNetworksRelationship';
+import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
 import type { WalletEcosystem } from '../wallet/types';
-import type { TransferProps, TransferType } from './BridgeTransferStarter';
+import type { QuotedGasEstimates, TransferProps, TransferType } from './BridgeTransferStarter';
 import {
   LifiRouteExecutionProps,
   LifiTransferOverrides,
@@ -40,26 +41,38 @@ export class LifiTransferStarter {
     this.lifiRoute = lifiRoute;
   }
 
-  public async transferEstimateGas(): Promise<GasEstimates> {
+  public async transferEstimateGas(): Promise<GasEstimates | QuotedGasEstimates> {
     const { parentChainId, childChainId } = getNetworksRelationship({
       sourceChainId: this.lifiRoute.fromChainId,
       destinationChainId: this.lifiRoute.toChainId,
     });
-    return this.lifiRoute.gas.reduce<GasEstimates>(
+    const estimates = this.lifiRoute.gas.reduce<QuotedGasEstimates>(
       (result, gas) => {
         if (gas.chainId === parentChainId) {
           result.estimatedParentChainGas = result.estimatedParentChainGas.add(gas.estimate ?? 0);
+          result.estimatedParentChainGasFee = result.estimatedParentChainGasFee.add(gas.amount);
         }
         if (gas.chainId === childChainId) {
           result.estimatedChildChainGas = result.estimatedChildChainGas.add(gas.estimate ?? 0);
+          result.estimatedChildChainGasFee = result.estimatedChildChainGasFee.add(gas.amount);
         }
         return result;
       },
       {
         estimatedParentChainGas: constants.Zero,
         estimatedChildChainGas: constants.Zero,
+        estimatedParentChainGasFee: constants.Zero,
+        estimatedChildChainGasFee: constants.Zero,
       },
     );
+
+    // The gas summary prices estimates with the source chain's gas price. Without one, as on
+    // Solana, it shows LiFi's quoted fees instead.
+    if (getEcosystemConfig(this.lifiRoute.fromChainId).hasGasPrice) {
+      const { estimatedParentChainGas, estimatedChildChainGas } = estimates;
+      return { estimatedParentChainGas, estimatedChildChainGas };
+    }
+    return estimates;
   }
 
   public async transfer(
