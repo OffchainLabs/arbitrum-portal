@@ -128,10 +128,13 @@ const FailedChainPairsTooltip = ({
             <div className="flex flex-col space-y-1">
               <span>We were unable to load the following transactions:</span>
               <ul className="flex list-disc flex-col pl-4">
-                {failedTxs.map((tx) => (
-                  <li key={tx.txId} className="break-all">
+                {failedTxs.map((tx, index) => (
+                  <li key={`${tx.txId}-${index}`} className="break-all">
                     <span className="font-mono">{tx.txId}</span>
-                    {tx.childChainId ? ` on ${getNetworkName(tx.childChainId)}` : ''}
+                    {' ('}
+                    {getNetworkName(tx.parentChainId)}
+                    {' <> '}
+                    {getNetworkName(tx.childChainId)})
                   </li>
                 ))}
               </ul>
@@ -232,7 +235,10 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
           loading={loading}
           // with a chain unchecked, "no transactions" could be a lie
           isError={
-            typeof error !== 'undefined' || failedChainPairs.length > 0 || failedTxs.length > 0
+            typeof error !== 'undefined' ||
+            failedChainPairs.length > 0 ||
+            // while paused, keep the Load more button instead of the error
+            (completed && failedTxs.length > 0)
           }
           paused={paused}
           resume={resume}

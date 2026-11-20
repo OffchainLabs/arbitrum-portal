@@ -117,7 +117,8 @@ export type UseTransactionHistoryResult = {
 
 export type FailedTx = {
   txId: string;
-  childChainId: number | undefined;
+  parentChainId: number;
+  childChainId: number;
 };
 
 type TxPage = {
@@ -275,15 +276,23 @@ export async function transformTransactionsPage(
     }
 
     const tx = txs[i]!;
-    const txId = getTxIdFromTransaction(tx) ?? 'unknown';
-    const childChainId = 'childChainId' in tx ? Number(tx.childChainId) : undefined;
+    const failedTx = {
+      txId: getTxIdFromTransaction(tx) ?? 'unknown',
+      parentChainId: Number(tx.parentChainId),
+      childChainId: Number(tx.childChainId),
+    };
 
+    logger.warn(result.reason);
     captureSentryErrorWithExtraData({
       error: result.reason,
       originFunction: 'useTransactionHistory transformTransactionsPage',
-      additionalData: { txId, childChainId: String(childChainId ?? 'unknown') },
+      additionalData: {
+        txId: failedTx.txId,
+        parentChainId: String(failedTx.parentChainId),
+        childChainId: String(failedTx.childChainId),
+      },
     });
-    page.failedTxs.push({ txId, childChainId });
+    page.failedTxs.push(failedTx);
   });
 
   return page;
@@ -1276,7 +1285,15 @@ export const useTransactionHistory = (
     typeof txPages !== 'undefined' &&
     data.length === txPages.reduce((count, txPage) => count + getTxPageSize(txPage), 0);
 
-  const failedTxs = useMemo(() => txPages?.flatMap((txPage) => txPage.failedTxs) ?? [], [txPages]);
+  const failedTxs = (txPages ?? [])
+    .flatMap((txPage) => txPage.failedTxs)
+    .filter((tx) =>
+      matchesChainFilter({
+        filter: chainFilter,
+        sourceChainId: tx.parentChainId,
+        destinationChainId: tx.childChainId,
+      }),
+    );
 
   // transfers initiated by the user during the current session
   // we store it separately as there are a lot of side effects when mutating SWRInfinite
@@ -1633,19 +1650,18 @@ export const useTransactionHistory = (
 
     const oldestTx = loadedTxs.at(-1);
 
-    if (!newestTx || !oldestTx) {
-      return;
-    }
+    // with no tx loaded yet there is no date to pause on, so keep paging
+    if (oldestTx) {
+      const oldestTxDaysAgo = dayjs().diff(dayjs(oldestTx.createdAt ?? 0), 'days');
 
-    const oldestTxDaysAgo = dayjs().diff(dayjs(oldestTx.createdAt ?? 0), 'days');
+      const nextPauseThresholdDays = (pauseCount + 1) * PAUSE_SIZE_DAYS;
+      const shouldPause = oldestTxDaysAgo >= nextPauseThresholdDays;
 
-    const nextPauseThresholdDays = (pauseCount + 1) * PAUSE_SIZE_DAYS;
-    const shouldPause = oldestTxDaysAgo >= nextPauseThresholdDays;
-
-    if (shouldPause) {
-      pause();
-      setPauseCount((prevPauseCount) => prevPauseCount + 1);
-      return;
+      if (shouldPause) {
+        pause();
+        setPauseCount((prevPauseCount) => prevPauseCount + 1);
+        return;
+      }
     }
 
     // make sure we don't over-fetch

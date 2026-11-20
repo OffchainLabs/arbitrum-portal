@@ -24,9 +24,11 @@ describe('transformTransactionsPage', () => {
     const page = await transformTransactionsPage(txs, transform);
 
     expect(page.transactions.map((tx) => tx.txId)).toEqual(['0x1', '0x3']);
-    expect(page.failedTxs).toEqual([{ txId: '0x2', childChainId: 42170 }]);
+    expect(page.failedTxs).toEqual([{ txId: '0x2', parentChainId: 1, childChainId: 42170 }]);
     expect(captureSentryErrorWithExtraData).toHaveBeenCalledWith(
-      expect.objectContaining({ additionalData: { txId: '0x2', childChainId: '42170' } }),
+      expect.objectContaining({
+        additionalData: { txId: '0x2', parentChainId: '1', childChainId: '42170' },
+      }),
     );
   });
 

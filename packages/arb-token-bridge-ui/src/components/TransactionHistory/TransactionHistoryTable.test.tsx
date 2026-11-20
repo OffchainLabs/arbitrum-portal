@@ -19,7 +19,7 @@ function renderEmptyTable({
 }: {
   error?: unknown;
   failedChainPairs: { parentChainId: number; childChainId: number }[];
-  failedTxs?: { txId: string; childChainId: number | undefined }[];
+  failedTxs?: { txId: string; parentChainId: number; childChainId: number }[];
 }) {
   render(
     <TooltipProvider>
@@ -62,7 +62,7 @@ describe.sequential('TransactionHistoryTable empty state', () => {
   it('reports a load error when transactions failed to load', () => {
     renderEmptyTable({
       failedChainPairs: [],
-      failedTxs: [{ txId: '0xabc', childChainId: 42161 }],
+      failedTxs: [{ txId: '0xabc', parentChainId: 1, childChainId: 42161 }],
     });
 
     expect(screen.getByTestId('empty-history').textContent).toBe('error');
