@@ -6,6 +6,7 @@ import {
   isUnmatchedLifiTokenAllowed,
 } from '@/bridge/app/api/crosschain-transfers/constants';
 import { ChainId } from '@/bridge/types/ChainId';
+import { addressesEqual } from '@/bridge/util/AddressUtils';
 import { CommonAddress } from '@/bridge/util/CommonAddressUtils';
 
 type CustomTokenConfig = {
@@ -150,7 +151,12 @@ const EXCLUDED_ADDRESSES: Partial<Record<number, Set<string>>> = {
   ]),
 };
 
-export type LifiToken = Omit<LifiSdkToken, 'chainId' | 'priceUSD'> & {
+// Only the fields the route reads. LiFi tokens also carry verification data that takes most of the
+// response size, and the cache entries must stay under Next's 2 MB limit.
+export type LifiToken = Pick<
+  LifiSdkToken,
+  'address' | 'symbol' | 'name' | 'decimals' | 'coinKey' | 'logoURI'
+> & {
   chainId: number;
   priceUSD?: string;
 };
@@ -242,69 +248,106 @@ export interface LifiTokenRegistry {
   tokensByChainAndCoinKey: Record<number, Record<string, LifiTokenWithCoinKey>>;
 }
 
-const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
-  const response = await getTokens({
-    chains: allowedLifiSourceChainIds as unknown as LiFiChainId[],
-  });
-
-  if (!response.tokens) {
-    return {
-      tokensByChain: {},
-      tokensByChainAndCoinKey: {},
-    };
-  }
-
-  const tokensByChain: LifiTokenRegistry['tokensByChain'] = {};
-  const tokensByChainAndCoinKey: LifiTokenRegistry['tokensByChainAndCoinKey'] = {};
-
-  for (const chainId of allowedLifiSourceChainIds) {
-    const tokensGroupedByCoinKey: Partial<Record<CoinKey, LifiTokenWithCoinKey>> = {};
-
-    const filteredTokens = (response.tokens[chainId] ?? []).reduce<LifiToken[]>((acc, token) => {
-      // Exclude tokens on the exclude list
-      if (isExcludedToken(token, chainId)) return acc;
-
-      const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
-      if (!tokenWithCoinKey) {
-        if (isListedUnmatchedToken(token, chainId)) {
-          acc.push(token);
-        }
-        return acc;
-      }
-
-      const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
-      const normalizedToken = normalizeTokenMetadata(tokenWithLogoURI);
-
-      tokensGroupedByCoinKey[normalizedToken.coinKey] ??= normalizedToken;
-      acc.push(normalizedToken);
-      return acc;
-    }, []);
-
-    tokensByChain[chainId] = filteredTokens;
-    tokensByChainAndCoinKey[chainId] = tokensGroupedByCoinKey;
-  }
-
-  const canonicalVirtual: LifiTokenWithCoinKey = {
-    address: CommonAddress.RobinhoodChain.VIRTUAL_CANONICAL,
-    chainId: ChainId.RobinhoodChain,
-    coinKey: VIRTUAL_COIN_KEY,
-    decimals: 18,
-    name: 'Virtual Protocol',
-    symbol: 'VIRTUAL',
-  };
-
-  tokensByChain[ChainId.RobinhoodChain] = [
-    ...(tokensByChain[ChainId.RobinhoodChain] ?? []),
-    canonicalVirtual,
-  ];
-  tokensByChainAndCoinKey[ChainId.RobinhoodChain] = {
-    ...(tokensByChainAndCoinKey[ChainId.RobinhoodChain] ?? {}),
-    [VIRTUAL_COIN_KEY]: canonicalVirtual,
-  };
-
-  return { tokensByChain, tokensByChainAndCoinKey };
+const canonicalVirtual: LifiTokenWithCoinKey = {
+  address: CommonAddress.RobinhoodChain.VIRTUAL_CANONICAL,
+  chainId: ChainId.RobinhoodChain,
+  coinKey: VIRTUAL_COIN_KEY,
+  decimals: 18,
+  name: 'Virtual Protocol',
+  symbol: 'VIRTUAL',
 };
 
-export const getLifiTokenRegistry = unstable_cache(fetchRegistry, ['lifi-token-registry'], {
+function pickTokenFields({
+  address,
+  chainId,
+  symbol,
+  name,
+  decimals,
+  coinKey,
+  logoURI,
+  priceUSD,
+}: LifiToken): LifiToken {
+  return { address, chainId, symbol, name, decimals, coinKey, logoURI, priceUSD };
+}
+
+const fetchChainTokens = async (chainId: number): Promise<LifiToken[]> => {
+  const response = await getTokens({ chains: [chainId as LiFiChainId] });
+
+  if (!response.tokens) {
+    return [];
+  }
+
+  const filteredTokens = (response.tokens[chainId] ?? []).reduce<LifiToken[]>((acc, token) => {
+    // Exclude tokens on the exclude list
+    if (isExcludedToken(token, chainId)) return acc;
+
+    const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
+    if (!tokenWithCoinKey) {
+      if (isListedUnmatchedToken(token, chainId)) {
+        acc.push(pickTokenFields(token));
+      }
+      return acc;
+    }
+
+    const tokenWithLogoURI = assignLogoURI(tokenWithCoinKey);
+    const normalizedToken = normalizeTokenMetadata(tokenWithLogoURI);
+
+    acc.push(pickTokenFields(normalizedToken));
+    return acc;
+  }, []);
+
+  if (chainId === ChainId.RobinhoodChain) {
+    filteredTokens.push(canonicalVirtual);
+  }
+
+  return filteredTokens;
+};
+
+// One entry per chain: all chains together are over Next's 2 MB limit and would never be cached
+const getCachedChainTokens = unstable_cache(fetchChainTokens, ['lifi-token-registry'], {
   revalidate: 30,
 });
+
+function hasCoinKey(token: LifiToken): token is LifiTokenWithCoinKey {
+  return Boolean(token.coinKey);
+}
+
+/** First token per coinKey wins, except canonical VIRTUAL, which replaces LiFi's VIRTUAL */
+function groupTokensByCoinKey(tokens: LifiToken[]): Record<string, LifiTokenWithCoinKey> {
+  const tokensByCoinKey: Record<string, LifiTokenWithCoinKey> = {};
+
+  for (const token of tokens) {
+    if (!hasCoinKey(token)) continue;
+
+    const isCanonicalVirtual =
+      token.chainId === ChainId.RobinhoodChain &&
+      addressesEqual(token.address, CommonAddress.RobinhoodChain.VIRTUAL_CANONICAL);
+    if (isCanonicalVirtual) {
+      tokensByCoinKey[token.coinKey] = token;
+    } else {
+      tokensByCoinKey[token.coinKey] ??= token;
+    }
+  }
+
+  return tokensByCoinKey;
+}
+
+/** Reads the registry for the given chains. Chains that are not LiFi source chains are left out. */
+export async function getLifiTokenRegistry(chainIds: number[]): Promise<LifiTokenRegistry> {
+  const sourceChainIds = [...new Set(chainIds)].filter((chainId) =>
+    allowedLifiSourceChainIds.includes(chainId),
+  );
+  // Pass only the chain id: unstable_cache keys on every argument
+  const chainTokens = await Promise.all(
+    sourceChainIds.map((chainId) => getCachedChainTokens(chainId)),
+  );
+
+  const registry: LifiTokenRegistry = { tokensByChain: {}, tokensByChainAndCoinKey: {} };
+  sourceChainIds.forEach((chainId, index) => {
+    const tokens = chainTokens[index] ?? [];
+    registry.tokensByChain[chainId] = tokens;
+    registry.tokensByChainAndCoinKey[chainId] = groupTokensByCoinKey(tokens);
+  });
+
+  return registry;
+}
