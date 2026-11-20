@@ -23,8 +23,10 @@ import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { FailedTx, UseTransactionHistoryResult } from '../../hooks/useTransactionHistory';
 import { MergedTransaction } from '../../state/app/state';
 import { isTokenDeposit } from '../../state/app/utils';
-import { getNetworkName } from '../../util/networks';
+import { shortenTxHash } from '../../util/CommonUtils';
+import { getExplorerUrl, getNetworkName } from '../../util/networks';
 import { ChainPair } from '../../util/txHistoryRoutes';
+import { ExternalLink } from '../common/ExternalLink';
 import { EmptyTransactionHistory } from './EmptyTransactionHistory';
 import { PendingDepositWarning } from './PendingDepositWarning';
 import { TransactionsTableRow } from './TransactionsTableRow';
@@ -88,6 +90,8 @@ export const HistoryLoader = () => {
   return <span className="animate-pulse">Loading transactions...</span>;
 };
 
+const MAX_LISTED_FAILED_TXS = 5;
+
 const FailedLoadsWarning = ({
   failedChainPairs,
   failedTxs,
@@ -98,6 +102,8 @@ const FailedLoadsWarning = ({
   if (failedChainPairs.length === 0 && failedTxs.length === 0) {
     return null;
   }
+
+  const hiddenTxsCount = failedTxs.length - MAX_LISTED_FAILED_TXS;
 
   const warningLabel = [
     failedChainPairs.length > 0 &&
@@ -147,16 +153,19 @@ const FailedLoadsWarning = ({
         {failedTxs.length > 0 && (
           <div className="flex flex-col gap-1">
             <span>We were unable to load the following transactions:</span>
-            <ul className="flex max-h-40 list-disc flex-col overflow-y-auto pl-4">
-              {failedTxs.map((tx, index) => (
+            <ul className="flex list-disc flex-col pl-4">
+              {failedTxs.slice(0, MAX_LISTED_FAILED_TXS).map((tx, index) => (
                 <li key={`${tx.txId}-${index}`}>
-                  <span className="break-all font-mono">{tx.txId}</span>
-                  {' ('}
-                  {getNetworkName(tx.parentChainId)}
-                  {' <> '}
-                  {getNetworkName(tx.childChainId)})
+                  <ExternalLink
+                    href={`${getExplorerUrl(tx.txChainId)}/tx/${tx.txId}`}
+                    className="arb-hover font-mono underline"
+                  >
+                    {shortenTxHash(tx.txId)}
+                  </ExternalLink>{' '}
+                  ({getNetworkName(tx.parentChainId)} {'<>'} {getNetworkName(tx.childChainId)})
                 </li>
               ))}
+              {hiddenTxsCount > 0 && <li>and {hiddenTxsCount} more</li>}
             </ul>
           </div>
         )}

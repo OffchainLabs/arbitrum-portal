@@ -117,6 +117,8 @@ export type UseTransactionHistoryResult = {
 
 export type FailedTx = {
   txId: string;
+  // the chain the tx hash lives on, for the explorer link
+  txChainId: number;
   parentChainId: number;
   childChainId: number;
 };
@@ -278,6 +280,7 @@ export async function transformTransactionsPage(
     const tx = txs[i]!;
     const failedTx = {
       txId: getTxIdFromTransaction(tx) ?? 'unknown',
+      txChainId: getTxChainId(tx),
       parentChainId: Number(tx.parentChainId),
       childChainId: Number(tx.childChainId),
     };
@@ -296,6 +299,13 @@ export async function transformTransactionsPage(
   });
 
   return page;
+}
+
+function getTxChainId(tx: Transfer) {
+  if (isCctpTransfer(tx) || isOftTransfer(tx) || isLifiTransfer(tx)) {
+    return tx.sourceChainId;
+  }
+  return Number(isDeposit(tx) ? tx.parentChainId : tx.childChainId);
 }
 
 function getTxPageSize(page: TxPage) {
