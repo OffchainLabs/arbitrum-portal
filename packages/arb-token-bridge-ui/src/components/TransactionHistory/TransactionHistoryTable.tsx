@@ -147,10 +147,10 @@ const FailedLoadsWarning = ({
         {failedTxs.length > 0 && (
           <div className="flex flex-col gap-1">
             <span>We were unable to load the following transactions:</span>
-            <ul className="flex list-disc flex-col pl-4">
+            <ul className="flex max-h-40 list-disc flex-col overflow-y-auto pl-4">
               {failedTxs.map((tx, index) => (
-                <li key={`${tx.txId}-${index}`} className="break-all">
-                  <span className="font-mono">{tx.txId}</span>
+                <li key={`${tx.txId}-${index}`}>
+                  <span className="break-all font-mono">{tx.txId}</span>
                   {' ('}
                   {getNetworkName(tx.parentChainId)}
                   {' <> '}
