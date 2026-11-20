@@ -5,6 +5,7 @@ import { getIndexerApiUrl } from '../../../../api-utils/ServerIndexerUtils';
 import {
   type SubgraphSource,
   getL2SubgraphClient,
+  getQueryData,
 } from '../../../../api-utils/ServerSubgraphUtils';
 import { ChainId } from '../../../../types/ChainId';
 import { logger } from '../../../../util/logger';
@@ -98,15 +99,13 @@ export async function GET(
       return NextResponse.json({ data: NO_INDEXED_BLOCK }, { status: 200 });
     }
 
-    const result: {
-      data: {
-        _meta: {
-          block: {
-            number: number;
-          };
+    const result = await subgraph.client.query<{
+      _meta: {
+        block: {
+          number: number;
         };
       };
-    } = await subgraph.client.query({
+    }>({
       query: gql`
         {
           _meta {
@@ -121,7 +120,7 @@ export async function GET(
     return NextResponse.json(
       {
         meta: { source: subgraph.source },
-        data: result.data._meta.block.number,
+        data: getQueryData(result)._meta.block.number,
       },
       { status: 200 },
     );
