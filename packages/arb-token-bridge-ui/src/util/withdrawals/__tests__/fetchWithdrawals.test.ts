@@ -127,6 +127,25 @@ describe.sequential('fetchWithdrawals', () => {
       );
     });
 
+    it('skips the event-log scan when the indexer has caught up with the head', async () => {
+      fetchLatestIndexedBlockNumberMock.mockResolvedValue(HEAD);
+
+      await fetchWithdrawals(baseParams);
+
+      expect(fetchTokenWithdrawalsFromEventLogsSequentiallyMock).not.toHaveBeenCalled();
+      expect(fetchETHWithdrawalsFromEventLogsMock).not.toHaveBeenCalled();
+    });
+
+    it('bounds the event-log scan at the head it read', async () => {
+      fetchLatestIndexedBlockNumberMock.mockResolvedValue(500);
+
+      await fetchWithdrawals(baseParams);
+
+      expect(fetchTokenWithdrawalsFromEventLogsSequentiallyMock).toHaveBeenCalledWith(
+        expect.objectContaining({ fromBlock: 501, toBlock: HEAD }),
+      );
+    });
+
     it('scans the full range via event logs when nothing is indexed yet', async () => {
       // 0 == no indexer/subgraph coverage (down, or chain not indexed)
       fetchLatestIndexedBlockNumberMock.mockResolvedValue(0);

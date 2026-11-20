@@ -237,7 +237,7 @@ export async function fetchWithdrawals({
     sender,
     receiver,
     fromBlock: indexedBoundary,
-    toBlock,
+    toBlock: head,
     parentChainId,
     l2ChainId: l2ChainID,
     l2Provider,
