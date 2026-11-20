@@ -1,4 +1,5 @@
 import { ChainId } from '../../types/ChainId';
+import defaultIndexerChildChainIds from './defaultIndexerChildChainIds.json';
 
 /** `undefined` for anything that isn't a positive integer chain ID. */
 export function parseChainId(raw: string | null | undefined): number | undefined {
@@ -20,12 +21,10 @@ export function parseChainIds(raw: string | undefined): number[] {
   return Array.from(new Set(ids));
 }
 
-// The core chains have no other history source, so configuration may add
-// indexed chains but must never remove these required defaults.
-const DEFAULT_INDEXER_CHILD_CHAIN_IDS: readonly number[] = [
-  ChainId.ArbitrumOne,
-  ChainId.ArbitrumSepolia,
-];
+// Arbitrum One and Sepolia have no other history source, so configuration may add
+// indexed chains but must never remove these required defaults. Shared with the CI
+// preflight in .github/workflows/validateIndexerConfig.js.
+const DEFAULT_INDEXER_CHILD_CHAIN_IDS: readonly number[] = defaultIndexerChildChainIds;
 
 const configuredIndexerChildChainIds = parseChainIds(
   process.env.NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS,
