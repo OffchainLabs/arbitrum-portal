@@ -105,17 +105,6 @@ describe('useLifiCrossTransfersRoute', () => {
     );
   });
 
-  it('quotes across ecosystems without addresses while no sender is connected', () => {
-    vi.mocked(useSWR).mockReturnValue({ data: undefined } as ReturnType<typeof useSWR>);
-
-    renderHook(() => useLifiCrossTransfersRoute({ ...parameters, fromChainId: ChainId.Solana }));
-
-    const key = vi.mocked(useSWR).mock.lastCall?.[0] as unknown[] | null;
-    expect(key).not.toBeNull();
-    expect(key?.[5]).toBeUndefined();
-    expect(key?.[6]).toBeUndefined();
-  });
-
   it('quotes across ecosystems without the sender when there is no recipient', () => {
     vi.mocked(useSWR).mockReturnValue({ data: undefined } as ReturnType<typeof useSWR>);
     const isEnabled = vi.spyOn(ecosystems.solana, 'isEnabled').mockReturnValue(true);

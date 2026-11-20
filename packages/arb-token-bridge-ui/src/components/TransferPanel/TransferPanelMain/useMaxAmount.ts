@@ -84,8 +84,11 @@ export function useMaxAmount() {
     }
 
     // LiFi-only chains, such as Solana, have no gas estimate until a route is quoted
-    if (getEcosystemConfig(networks.sourceChain.id).isLifiOnly) {
-      const maxAmount = subtractReserve(nativeCurrencySourceBalance, networks.sourceChain.id);
+    const { isLifiOnly, gasBufferBeforeQuote } = getEcosystemConfig(networks.sourceChain.id);
+    if (isLifiOnly) {
+      const maxAmount = subtractReserve(nativeCurrencySourceBalance, networks.sourceChain.id).sub(
+        BigNumber.from(gasBufferBeforeQuote),
+      );
       return utils.formatUnits(
         maxAmount.gt(0) ? maxAmount : nativeCurrencySourceBalance,
         nativeCurrencyDecimalsOnSourceChain,

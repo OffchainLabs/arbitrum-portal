@@ -32,6 +32,11 @@ export type EcosystemConfig = {
   /** Native currency, in base units, that MAX leaves in the wallet on top of the route fees */
   nativeCurrencyReserve: bigint;
   /**
+   * Native currency, in base units, that MAX also leaves before a route is quoted, for the gas the
+   * quote adds
+   */
+  gasBufferBeforeQuote: bigint;
+  /**
    * Every chain of the ecosystem reaches Arbitrum only through LiFi: no parent/child token addresses
    * and no canonical bridge
    */

@@ -97,11 +97,11 @@ describe.sequential('useMaxAmount', () => {
   );
 
   it.each([
-    { balance: '98520000', expected: '0.09652' },
-    // Below the reserve, MAX fills the balance to show the insufficient gas error
-    { balance: '1500000', expected: '0.0015' },
+    { balance: '98520000', expected: '0.09552' },
+    // Below the reserve and gas buffer, MAX fills the balance to show the insufficient gas error
+    { balance: '2500000', expected: '0.0025' },
   ])(
-    'keeps the SOL reserve before a route is quoted, with balance $balance',
+    'keeps the SOL reserve and a gas buffer before a route is quoted, with balance $balance',
     async ({ balance, expected }) => {
       const address = 'So11111111111111111111111111111111111111112' as SolanaAddress;
       const wrapper = createBridgeTestWrapper({
