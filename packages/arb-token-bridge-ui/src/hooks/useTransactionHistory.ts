@@ -4,6 +4,7 @@ import { getCallsStatus } from '@wagmi/core';
 import dayjs from 'dayjs';
 import pLimit from 'p-limit';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSWRConfig } from 'swr';
 import useSWRImmutable from 'swr/immutable';
 import useSWRInfinite from 'swr/infinite';
 import { useAccount, useConfig } from 'wagmi';
@@ -1096,7 +1097,7 @@ export const useTransactionHistory = (
   } = useTransactionHistoryWithoutStatuses(address, debouncedChainFilter);
 
   const getCacheKey = useCallback(
-    (pageNumber: number, prevPageTxs: MergedTransaction[]) => {
+    (pageNumber: number, prevPageTxs: MergedTransaction[] | null) => {
       if (prevPageTxs) {
         if (prevPageTxs.length === 0) {
           // THIS is the last page
@@ -1181,6 +1182,7 @@ export const useTransactionHistory = (
     );
   }, [address, lifiTransactions, isTxHistoryEnabled, chainFilter]);
 
+  const { mutate: mutateSWRCache } = useSWRConfig();
   const {
     data: txPages,
     error: txPagesError,
@@ -1307,6 +1309,16 @@ export const useTransactionHistory = (
           return isSameTransaction(oldTx, newTx) ? newTx : oldTx;
         });
 
+        // `setPage` rebuilds the pages from each page's own cache entry, which this mutation
+        // doesn't reach, so update that entry too or the next `setPage` brings the old tx back
+        const pageKey = getCacheKey(
+          pageNumberToUpdate,
+          prevTxPages[pageNumberToUpdate - 1] ?? null,
+        );
+        if (pageKey) {
+          void mutateSWRCache(pageKey, updatedPage, { revalidate: false });
+        }
+
         // all old pages including the new updated page
         const newTxPages = [
           ...prevTxPages.slice(0, pageNumberToUpdate),
@@ -1317,7 +1329,14 @@ export const useTransactionHistory = (
         return newTxPages;
       }, false);
     },
-    [mutateNewTransactionsData, mutateTxPages, newTransactionsData, updateLifiTransactionInCache],
+    [
+      getCacheKey,
+      mutateNewTransactionsData,
+      mutateSWRCache,
+      mutateTxPages,
+      newTransactionsData,
+      updateLifiTransactionInCache,
+    ],
   );
 
   const removeCachedTransaction = useCallback(
