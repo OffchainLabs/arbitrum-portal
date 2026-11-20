@@ -60,7 +60,13 @@ const interactions = [
   },
 ];
 
+// The log shows which step a hung run stopped at
+function logStep(name) {
+  console.log(`${new Date().toISOString()} ${name}`);
+}
+
 async function runFlow(origin) {
+  logStep('Launch Chrome');
   const browser = await puppeteer.launch({
     executablePath: process.env.CHROME_PATH,
     headless: true,
@@ -72,14 +78,18 @@ async function runFlow(origin) {
     page.setDefaultTimeout(60_000);
 
     const flow = await startFlow(page, { name: 'Bridge user flow', config: desktopConfig });
+    logStep('Load bridge');
     await flow.navigate(new URL(bridgePath, origin).href, { name: 'Load bridge' });
     for (const interaction of interactions) {
+      logStep(interaction.name);
       await flow.startTimespan({ name: interaction.name });
       await interaction.run(page);
       await flow.endTimespan();
     }
+    logStep('Configured transfer');
     await flow.snapshot({ name: 'Configured transfer' });
 
+    logStep('Generate report');
     const [loadBridge] = flow.createArtifactsJson().gatherSteps;
     return {
       result: await flow.createFlowResult(),
@@ -87,6 +97,7 @@ async function runFlow(origin) {
       modules: measureModules(loadBridge.artifacts),
     };
   } finally {
+    logStep('Close Chrome');
     await browser.close();
   }
 }
@@ -101,3 +112,4 @@ await writeFile(`${file}.html`, html);
 if (run === '1') {
   await writeFile(`${outputDirectory}/modules.json`, JSON.stringify(modules));
 }
+logStep('Done');

@@ -21,11 +21,12 @@ export function EarnActionSubmitButton({
   disabled = false,
   isConnected = true,
 }: EarnActionSubmitButtonProps) {
-  const { openConnectModal } = useWalletModal();
+  const { openConnectModalFor } = useWalletModal();
 
   const handleClick = () => {
     if (!isConnected) {
-      openConnectModal();
+      // Earn only supports EVM wallets
+      openConnectModalFor('evm');
     } else {
       onClick();
     }

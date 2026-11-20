@@ -1,6 +1,6 @@
 import { twMerge } from 'tailwind-merge';
-import { useAccount } from 'wagmi';
 
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { MoveFundsButton } from '../TransferPanel/MoveFundsButton';
 import { ReceiveFundsHeader } from '../TransferPanel/ReceiveFundsHeader';
 import { ToSConfirmationCheckbox } from '../TransferPanel/ToSConfirmationCheckbox';
@@ -31,7 +31,9 @@ export function WidgetTransferPanel({
   tokenImportDialogProps,
   closeWithResetTokenImportDialog,
 }: WidgetTransferPanelProps) {
-  const { isConnected } = useAccount();
+  const {
+    sourceWallet: { isConnected },
+  } = useWallets();
 
   return (
     <>

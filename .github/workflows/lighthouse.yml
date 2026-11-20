@@ -31,6 +31,9 @@ jobs:
     name: Run Lighthouse (${{ matrix.run }})
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-4
+    # A run takes about 6 minutes. Without a limit, a hung Chrome or Lighthouse call keeps the runner,
+    # and the report that waits for it, going for GitHub's default of 6 hours
+    timeout-minutes: 12
     strategy:
       # One failed runner shouldn't cancel the others, the report compares the runners that finished
       fail-fast: false
@@ -115,6 +118,7 @@ jobs:
           for side in $sides; do
             port=$PR_PORT
             if [ "$side" = master ]; then port=$MASTER_PORT; fi
+            echo "Measuring $side on port $port"
             APP_URL="http://localhost:$port" OUTPUT_DIRECTORY="lighthouse-reports/$side" \
               node .github/lighthouse/flow.mjs
           done

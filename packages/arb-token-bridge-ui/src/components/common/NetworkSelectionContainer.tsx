@@ -9,7 +9,6 @@ import { useDebounce } from '@uidotdev/usehooks';
 import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import { twMerge } from 'tailwind-merge';
-import { useAccount } from 'wagmi';
 import { Chain } from 'wagmi/chains';
 
 import { Tooltip } from '@/app/components/common/Tooltip';
@@ -29,6 +28,7 @@ import { formatAmount } from '../../util/NumberUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { getChainMetadata } from '../../util/networkMetadata';
 import { getNetworkName, isCoreChainForDisplay, isNetwork } from '../../util/networks';
+import { useWalletForChain, useWallets } from '../../wallet/hooks/useWallets';
 import { useIsSwapTransfer } from '../TransferPanel/hooks/useIsSwapTransfer';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
@@ -170,22 +170,27 @@ export function NetworkButton({
   );
 }
 
-function NetworkRow({
+export function NetworkRow({
   chainId,
   isSelected,
+  isConnected,
   style,
   onClick,
   close,
 }: {
   chainId: ChainId;
   isSelected: boolean;
+  /** Whether any wallet is connected, so the column lists balances rather than native tokens */
+  isConnected: boolean;
   style: CSSProperties;
   onClick: (value: Chain) => void;
   close: (focusableElement?: HTMLElement) => void;
 }) {
   const { network, nativeTokenData } = getBridgeUiConfigForChain(chainId);
   const chain = getChainMetadata(chainId);
-  const { address: walletAddress } = useAccount();
+  const {
+    account: { address: walletAddress },
+  } = useWalletForChain(chainId);
   const {
     data: balanceState,
     isLoading: isLoadingBalance,
@@ -214,7 +219,8 @@ function NetworkRow({
         <span className="truncate text-base">{network.name}</span>
 
         <div className="text-xs leading-none text-white/70">
-          {!walletAddress && (
+          {/* Under "Native Balance", a row whose wallet isn't connected has no balance to show */}
+          {!walletAddress && !isConnected && (
             <Tooltip content={`${nativeTokenData?.symbol ?? 'ETH'} is the native token`}>
               <span className="leading-none text-white/70">{nativeTokenData?.symbol ?? 'ETH'}</span>
             </Tooltip>
@@ -292,7 +298,11 @@ export function NetworksPanel({
   const listRef = useRef<List>(null);
   const [isTestnetMode] = useIsTestnetMode();
   const { embedMode } = useMode();
-  const { isConnected } = useAccount();
+  const {
+    sourceWallet: { isConnected: isSourceWalletConnected },
+    destinationWallet: { isConnected: isDestinationWalletConnected },
+  } = useWallets();
+  const isConnected = isSourceWalletConnected || isDestinationWalletConnected;
   const showNovaWarningBanner = chainIds.includes(ChainId.ArbitrumNova);
 
   const networksToShow = useMemo(() => {
@@ -441,6 +451,7 @@ export function NetworksPanel({
           style={style}
           chainId={networkOrChainTypeName}
           isSelected={networkOrChainTypeName === selectedChainId}
+          isConnected={isConnected}
           onClick={onNetworkRowClick}
           close={close}
         />
