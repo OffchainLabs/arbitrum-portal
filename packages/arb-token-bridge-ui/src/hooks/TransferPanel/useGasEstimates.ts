@@ -2,7 +2,7 @@ import { BigNumber, constants } from 'ethers';
 import { useMemo } from 'react';
 import useSWR from 'swr';
 import { Config, useConfig } from 'wagmi';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { TransferEstimateGasResult } from '@/token-bridge-sdk/BridgeTransferStarter';
 import { BridgeTransferStarterFactory } from '@/token-bridge-sdk/BridgeTransferStarterFactory';
@@ -98,11 +98,10 @@ export function useGasEstimates({
   const balance = useBalanceOnSourceChain(selectedToken);
   const wagmiConfig = useConfig();
   const { selectedRouteContext, eligibleRouteTypes } = useRouteStore(
-    (state) => ({
+    useShallow((state) => ({
       selectedRouteContext: getSelectedRouteContext(state),
       eligibleRouteTypes: state.eligibleRouteTypes,
-    }),
-    shallow,
+    })),
   );
   const allRoutesAreLifi = eligibleRouteTypes.length === 1 && eligibleRouteTypes[0] === 'lifi';
   const isLifiRouteEligible = eligibleRouteTypes.includes('lifi');
@@ -117,12 +116,11 @@ export function useGasEstimates({
     [selectedToken?.address, sourceChain.id, destinationChain.id],
   );
   const { disabledBridges, disabledExchanges, slippage } = useLifiSettingsStore(
-    (state) => ({
+    useShallow((state) => ({
       disabledBridges: state.disabledBridges,
       disabledExchanges: state.disabledExchanges,
       slippage: state.slippage,
-    }),
-    shallow,
+    })),
   );
 
   const defaultFromTokenAddress = isDepositMode ? selectedToken?.address : selectedToken?.l2Address;

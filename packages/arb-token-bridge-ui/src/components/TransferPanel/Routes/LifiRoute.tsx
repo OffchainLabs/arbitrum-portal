@@ -1,6 +1,6 @@
 import { utils } from 'ethers';
 import { useMemo } from 'react';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import type { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi';
 import type { ERC20BridgeToken } from '../../../hooks/arbTokenBridge.types';
@@ -26,12 +26,11 @@ export function LifiRoute({
   overrideToken?: ERC20BridgeToken | undefined;
 }) {
   const { selectedRoute, setSelectedRoute, isLoading } = useRouteStore(
-    (state) => ({
+    useShallow((state) => ({
       selectedRoute: state.selectedRoute,
       setSelectedRoute: state.setSelectedRoute,
       isLoading: state.isLoading,
-    }),
-    shallow,
+    })),
   );
   const isSelected = selectedRoute === type;
   const lifiRoute = route.protocolData.route;
