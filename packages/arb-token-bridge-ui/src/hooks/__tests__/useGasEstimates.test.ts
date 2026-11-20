@@ -46,6 +46,11 @@ vi.mock('../../components/TransferPanel/hooks/useLifiSettingsStore', () => ({
   ),
 }));
 
+vi.mock('../../components/TransferPanel/TokenSearchUtils', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../components/TransferPanel/TokenSearchUtils')>()),
+  useTokensFromLists: () => ({ data: {}, isLoading: false }),
+}));
+
 vi.mock('../../app/api/crosschain-transfers/utils', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../app/api/crosschain-transfers/utils')>()),
   getTokenOverride: vi.fn(() => ({ source: null, destination: null })),

@@ -74,6 +74,7 @@ vi.mock('../../../hooks/useNetworks', () => ({
     {
       sourceChain: { id: networksMock.sourceChainId },
       sourceChainProvider: {},
+      destinationChain: { id: ChainId.ArbitrumOne },
     },
   ],
 }));

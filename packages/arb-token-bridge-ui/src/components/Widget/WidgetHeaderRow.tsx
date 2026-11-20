@@ -1,5 +1,4 @@
-import { useAccount } from 'wagmi';
-
+import { useWallets } from '../../wallet/hooks/useWallets';
 import { LifiSettingsButton } from '../TransferPanel/LifiSettingsButton';
 import { Button } from '../common/Button';
 import { OpenDialogFunction } from '../common/Dialog2';
@@ -12,7 +11,9 @@ type WidgetHeaderRowProps = {
 };
 
 export function WidgetHeaderRow({ openDialog }: WidgetHeaderRowProps) {
-  const { isConnected } = useAccount();
+  const {
+    sourceWallet: { isConnected },
+  } = useWallets();
 
   return (
     <div className="flex h-10 flex-row items-center justify-between text-lg">

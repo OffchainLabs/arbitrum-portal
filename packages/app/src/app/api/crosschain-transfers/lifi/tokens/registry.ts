@@ -160,6 +160,21 @@ function isExcludedToken(token: LifiSdkToken, chainId: number): boolean {
   return EXCLUDED_ADDRESSES[chainId]?.has(token.address.toLowerCase()) ?? false;
 }
 
+// LiFi lists about 5,800 Solana tokens and fewer than half are verified. Listing only the verified
+// ones among those without a coinKey keeps the token list small enough to load quickly.
+const VERIFIED_ONLY_UNMATCHED_TOKEN_CHAIN_IDS = new Set<number>([ChainId.Solana]);
+
+// LiFi's API returns `verificationStatus`, but its SDK `Token` type leaves it out
+type LifiApiToken = LifiSdkToken & { verificationStatus?: 'verified' | 'unverified' | 'flagged' };
+
+function isListedUnmatchedToken(token: LifiApiToken, chainId: number): boolean {
+  if (!isUnmatchedLifiTokenAllowed(chainId, token.address)) return false;
+
+  return (
+    !VERIFIED_ONLY_UNMATCHED_TOKEN_CHAIN_IDS.has(chainId) || token.verificationStatus === 'verified'
+  );
+}
+
 /**
  * Assigns a custom CoinKey to tokens that don't have one but are configured in CUSTOM_TOKENS.
  * Also normalizes bridged token variants (USDCe) to their native equivalents (USDC) on specific chains.
@@ -251,7 +266,7 @@ const fetchRegistry = async (): Promise<LifiTokenRegistry> => {
 
       const tokenWithCoinKey = assignCustomCoinKey(token, chainId);
       if (!tokenWithCoinKey) {
-        if (isUnmatchedLifiTokenAllowed(chainId, token.address)) {
+        if (isListedUnmatchedToken(token, chainId)) {
           acc.push(token);
         }
         return acc;

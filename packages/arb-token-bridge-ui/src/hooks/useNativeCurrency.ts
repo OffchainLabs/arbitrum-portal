@@ -77,7 +77,8 @@ export type TransferNativeCurrency = NativeCurrency & {
 /**
  * Native currency of a token row or amount input.
  * Within one ecosystem it is the child chain's currency; across ecosystems each side uses its own chain's.
- * The zero address token is ETH (e.g. next to APE on ApeChain routes).
+ * Within one ecosystem the zero address token is ETH (e.g. next to APE on ApeChain routes). Across
+ * ecosystems it is the row chain's native token, as LiFi lists it.
  */
 export function useNativeCurrencyForTransfer({
   isDestination = false,
@@ -134,7 +135,10 @@ function getTransferNativeCurrency(params: TransferNativeCurrencyParams): Transf
     isDestination,
   } = params;
 
-  if (addressesEqual(params.tokenAddress, constants.AddressZero)) {
+  const isCrossEcosystem =
+    getWalletEcosystem(sourceChainId) !== getWalletEcosystem(destinationChainId);
+
+  if (!isCrossEcosystem && addressesEqual(params.tokenAddress, constants.AddressZero)) {
     return {
       ...nativeCurrencyEther,
       balanceDecimals: getBalanceDecimals(params, nativeCurrencyEther),
@@ -143,7 +147,7 @@ function getTransferNativeCurrency(params: TransferNativeCurrencyParams): Transf
     };
   }
 
-  if (getWalletEcosystem(sourceChainId) !== getWalletEcosystem(destinationChainId)) {
+  if (isCrossEcosystem) {
     const chainId = isDestination ? destinationChainId : sourceChainId;
     const currency = isDestination ? destinationCurrency : sourceCurrency;
     return {

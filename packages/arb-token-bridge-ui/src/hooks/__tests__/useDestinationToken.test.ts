@@ -45,6 +45,12 @@ vi.mock('../useNetworks', () => ({
   useNetworks: vi.fn(),
 }));
 
+const tokensFromListsMock = vi.hoisted(() => ({ data: {} as Record<string, unknown> }));
+vi.mock('../../components/TransferPanel/TokenSearchUtils', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../components/TransferPanel/TokenSearchUtils')>()),
+  useTokensFromLists: () => ({ data: tokensFromListsMock.data, isLoading: false }),
+}));
+
 vi.mock('../../state', () => ({
   useAppState: vi.fn(),
 }));
@@ -117,6 +123,31 @@ describe.sequential('useDestinationToken', () => {
       { ...defaultQueryParams, destinationToken: mockSelectedToken.address },
       vi.fn(),
     ]);
+  });
+
+  it('reads a cross-ecosystem destination token from the token lists', () => {
+    // the Arbitrum token bridge doesn't load for a Solana source
+    mockedUseAppState.mockReturnValue({
+      app: { arbTokenBridge: { bridgeTokens: {} } },
+    } as unknown as Context['state']);
+    mockedUseNetworks.mockReturnValue([
+      {
+        sourceChain: { id: ChainId.Solana },
+        destinationChain: getWagmiChain(ChainId.ArbitrumOne),
+      },
+      vi.fn(),
+    ] as unknown as ReturnType<typeof useNetworks>);
+    mockedUseArbQueryParams.mockReturnValue([
+      { ...defaultQueryParams, destinationToken: mockDestinationToken.address },
+      vi.fn(),
+    ]);
+    tokensFromListsMock.data = { [mockDestinationToken.address]: mockDestinationToken };
+    try {
+      const { result } = renderHook(() => useDestinationToken());
+      expect(result.current).toBe(mockDestinationToken);
+    } finally {
+      tokensFromListsMock.data = {};
+    }
   });
 
   it.each([undefined, '0x80e0e24718dbfcad49ecaa6f1e6c89a190586ca8'])(
