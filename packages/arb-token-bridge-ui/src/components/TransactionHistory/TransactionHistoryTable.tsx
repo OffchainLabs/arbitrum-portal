@@ -253,12 +253,7 @@ export const TransactionHistoryTable = (props: TransactionHistoryTableProps) => 
         <EmptyTransactionHistory
           loading={loading}
           // with a chain unchecked, "no transactions" could be a lie
-          isError={
-            typeof error !== 'undefined' ||
-            failedChainPairs.length > 0 ||
-            // while paused, keep the Load more button instead of the error
-            (completed && failedTxs.length > 0)
-          }
+          isError={typeof error !== 'undefined' || failedChainPairs.length > 0}
           paused={paused}
           resume={resume}
           tabType={isPendingTab ? 'pending' : 'settled'}

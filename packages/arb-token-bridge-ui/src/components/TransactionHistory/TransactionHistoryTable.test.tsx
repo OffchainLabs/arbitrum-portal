@@ -64,13 +64,13 @@ describe.sequential('TransactionHistoryTable empty state', () => {
     );
   });
 
-  it('reports a load error when transactions failed to load', () => {
+  it('warns, without the outage error, when only some transactions failed to load', () => {
     renderEmptyTable({
       failedChainPairs: [],
       failedTxs: [{ txId: '0xabc', txChainId: 1, parentChainId: 1, childChainId: 42161 }],
     });
 
-    expect(screen.getByTestId('empty-history').textContent).toBe('error');
+    expect(screen.getByTestId('empty-history').textContent).toBe('empty');
     expect(screen.getByTestId('failed-chain-pairs-warning').getAttribute('aria-label')).toBe(
       'We were unable to load 1 transaction(s)',
     );

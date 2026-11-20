@@ -123,10 +123,13 @@ export type FailedTx = {
   childChainId: number;
 };
 
-type TxPage = {
+type TransformedTxPage = {
   transactions: MergedTransaction[];
   failedTxs: FailedTx[];
 };
+
+// `keepPreviousData` can show another address's pages, so each page keeps its address
+type TxPage = TransformedTxPage & { address: string };
 
 export type Deposit = Transaction;
 
@@ -267,9 +270,10 @@ async function transformTransaction(tx: Transfer): Promise<MergedTransaction> {
 export async function transformTransactionsPage(
   txs: Transfer[],
   transform: (tx: Transfer) => Promise<MergedTransaction> = transformTransaction,
-): Promise<TxPage> {
+): Promise<TransformedTxPage> {
   const results = await Promise.allSettled(txs.map(transform));
-  const page: TxPage = { transactions: [], failedTxs: [] };
+  const page: TransformedTxPage = { transactions: [], failedTxs: [] };
+  const errors: unknown[] = [];
 
   results.forEach((result, i) => {
     if (result.status === 'fulfilled') {
@@ -278,25 +282,28 @@ export async function transformTransactionsPage(
     }
 
     const tx = txs[i]!;
-    const failedTx = {
+    errors.push(result.reason);
+    page.failedTxs.push({
       txId: getTxIdFromTransaction(tx) ?? 'unknown',
       txChainId: getTxChainId(tx),
       parentChainId: Number(tx.parentChainId),
       childChainId: Number(tx.childChainId),
-    };
+    });
+  });
 
-    logger.warn(result.reason);
+  // one report per page, so an outage doesn't send an event per tx
+  if (page.failedTxs.length > 0) {
+    logger.warn(errors);
     captureSentryErrorWithExtraData({
-      error: result.reason,
+      error: errors[0],
       originFunction: 'useTransactionHistory transformTransactionsPage',
       additionalData: {
-        txId: failedTx.txId,
-        parentChainId: String(failedTx.parentChainId),
-        childChainId: String(failedTx.childChainId),
+        failedTxs: page.failedTxs
+          .map((tx) => `${tx.txId} (${tx.parentChainId} <> ${tx.childChainId})`)
+          .join(', '),
       },
     });
-    page.failedTxs.push(failedTx);
-  });
+  }
 
   return page;
 }
@@ -1255,7 +1262,7 @@ export const useTransactionHistory = (
     isLoading: isLoadingFirstPage,
   } = useSWRInfinite(
     getCacheKey,
-    ([, , _page, _data]) => {
+    async ([, _address, _page, _data]): Promise<TxPage> => {
       // we get cached data and dedupe here because we need to ensure _data never mutates
       // otherwise, if we added a new tx to cache, it would return a new reference and cause the SWR key to update, resulting in refetching
       // duplicates may occur when txs are taken from the local storage
@@ -1270,7 +1277,10 @@ export const useTransactionHistory = (
       const startIndex = _page * MAX_BATCH_SIZE;
       const endIndex = startIndex + MAX_BATCH_SIZE;
 
-      return transformTransactionsPage(dedupedTransactions.slice(startIndex, endIndex));
+      return {
+        ...(await transformTransactionsPage(dedupedTransactions.slice(startIndex, endIndex))),
+        address: _address,
+      };
     },
     {
       revalidateOnFocus: false,
@@ -1296,6 +1306,7 @@ export const useTransactionHistory = (
     data.length === txPages.reduce((count, txPage) => count + getTxPageSize(txPage), 0);
 
   const failedTxs = (txPages ?? [])
+    .filter((txPage) => txPage.address === address)
     .flatMap((txPage) => txPage.failedTxs)
     .filter((tx) =>
       matchesChainFilter({
@@ -1637,7 +1648,7 @@ export const useTransactionHistory = (
     const firstPage = txPages[0];
     const lastPage = txPages[txPages.length - 1];
 
-    if (!firstPage || !lastPage) {
+    if (!firstPage || !lastPage || lastPage.address !== address) {
       return;
     }
 
@@ -1655,6 +1666,12 @@ export const useTransactionHistory = (
 
     if (!shouldFetchNextPage) {
       setFetching(false);
+      return;
+    }
+
+    // a whole page failing usually means an outage, so wait for the user instead of paging on
+    if (lastPage.transactions.length === 0) {
+      pause();
       return;
     }
 
