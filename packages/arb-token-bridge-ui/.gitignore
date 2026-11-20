@@ -8,6 +8,7 @@
 # testing
 /coverage
 /render-profile
+/browser-bench-results
 
 # Playwright e2e
 /test-results
