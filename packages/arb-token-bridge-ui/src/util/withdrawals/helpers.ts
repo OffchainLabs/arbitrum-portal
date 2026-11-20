@@ -19,7 +19,7 @@ import {
 import { getExecutedMessagesCacheKey } from '../../hooks/useArbTokenBridge';
 import { getWithdrawalConfirmationDate } from '../../hooks/useTransferDuration';
 import { fetchEvmNativeCurrency } from '../../services/evm/nativeCurrency';
-import { addToLocalStorageObjectSequentially, isE2eTestingEnvironment } from '../CommonUtils';
+import { addToLocalStorageObjectSequentially } from '../CommonUtils';
 import { fetchErc20Data } from '../TokenUtils';
 import { WithdrawalFromSubgraph } from './fetchWithdrawalsFromSubgraph';
 
@@ -118,8 +118,7 @@ export async function mapETHWithdrawalToL2ToL1EventResult({
   };
 }
 
-// No throttle in e2e: the testnode confirms withdrawals in seconds.
-const STATUS_CHECK_THROTTLE_MS = isE2eTestingEnvironment ? 0 : 3 * 60_000;
+const STATUS_CHECK_THROTTLE_MS = 3 * 60_000;
 
 const lastStatusCheckByMessage: {
   [cacheKey: string]: { checkedAt: number; status: OutgoingMessageState };

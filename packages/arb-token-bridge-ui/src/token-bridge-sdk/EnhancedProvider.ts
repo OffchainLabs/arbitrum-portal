@@ -3,7 +3,6 @@ import { BigNumber } from 'ethers';
 import { ConnectionInfo } from 'ethers/lib/utils.js';
 
 import { ChainId } from '../types/ChainId';
-import { isE2eTestingEnvironment } from '../util/CommonUtils';
 import { isNetwork } from '../util/networks';
 
 interface Storage {
@@ -126,8 +125,6 @@ export class EnhancedProvider extends StaticJsonRpcProvider {
   ) {
     super(url, network);
     this.storage = storage;
-    // ethers polls every 4s; the e2e testnode confirms in under a second.
-    if (isE2eTestingEnvironment) this.pollingInterval = 250;
   }
 
   async getTransactionReceipt(
