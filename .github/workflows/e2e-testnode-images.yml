@@ -12,7 +12,7 @@ on:
       - .github/testnode/slim.Dockerfile
 
 env:
-  LITRO_VERSION: 0.6.8
+  LITRO_VERSION: 0.6.9
   BASE_IMAGE: ghcr.io/offchainlabs/arbitrum-litro
   IMAGE: ghcr.io/offchainlabs/arbitrum-portal-e2e-testnode
   IMAGE_REVISION: r2
