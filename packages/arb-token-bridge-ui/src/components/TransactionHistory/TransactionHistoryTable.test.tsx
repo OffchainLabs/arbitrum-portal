@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -15,9 +15,16 @@ vi.mock('./EmptyTransactionHistory', () => ({
 function renderEmptyTable({
   error,
   failedChainPairs,
+  failedTxs = [],
 }: {
   error?: unknown;
   failedChainPairs: { parentChainId: number; childChainId: number }[];
+  failedTxs?: {
+    txId: string;
+    txChainId: number;
+    parentChainId: number;
+    childChainId: number;
+  }[];
 }) {
   render(
     <TooltipProvider>
@@ -28,6 +35,7 @@ function renderEmptyTable({
           completed: true,
           error,
           failedChainPairs,
+          failedTxs,
           resume: vi.fn(),
           updateTransaction: vi.fn(),
           selectedTabIndex: 1,
@@ -54,6 +62,40 @@ describe.sequential('TransactionHistoryTable empty state', () => {
     expect(screen.getByTestId('failed-chain-pairs-warning').getAttribute('aria-label')).toBe(
       'We were unable to fetch data for the following chain pairs: Ethereum to Arbitrum One',
     );
+  });
+
+  it('warns, without the outage error, when only some transactions failed to load', () => {
+    renderEmptyTable({
+      failedChainPairs: [],
+      failedTxs: [{ txId: '0xabc', txChainId: 1, parentChainId: 1, childChainId: 42161 }],
+    });
+
+    expect(screen.getByTestId('empty-history').textContent).toBe('empty');
+    expect(screen.getByTestId('failed-chain-pairs-warning').getAttribute('aria-label')).toBe(
+      'We were unable to load 1 transaction(s)',
+    );
+  });
+
+  it('lists failed chain pairs and caps the failed tx hashes', () => {
+    const hash = (n: number) => `0x${String(n).padStart(64, '0')}`;
+    renderEmptyTable({
+      failedChainPairs: [{ parentChainId: 1, childChainId: 42170 }],
+      failedTxs: [1, 2, 3, 4, 5, 6, 7].map((n) => ({
+        txId: hash(n),
+        txChainId: 42161,
+        parentChainId: 1,
+        childChainId: 42161,
+      })),
+    });
+
+    fireEvent.click(screen.getByText(/Some transactions couldn't be loaded/));
+
+    expect(screen.getByText(/unable to fetch data for the following chain pairs/)).toBeTruthy();
+    expect(screen.getAllByRole('link')).toHaveLength(5);
+    expect(screen.getByRole('link', { name: '0x00000...0001' }).getAttribute('href')).toBe(
+      `https://arbiscan.io/tx/${hash(1)}`,
+    );
+    expect(screen.getByText('and 2 more')).toBeTruthy();
   });
 
   it('reports a load error on a fetch error', () => {

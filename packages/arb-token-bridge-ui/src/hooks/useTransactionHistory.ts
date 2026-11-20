@@ -107,12 +107,29 @@ export type UseTransactionHistoryResult = {
   completed: boolean;
   error: unknown;
   failedChainPairs: ChainPair[];
+  failedTxs: FailedTx[];
   pause: () => void;
   resume: () => void;
   addPendingTransaction: (tx: MergedTransaction) => void;
   updateTransaction: (tx: MergedTransaction) => void;
   updatePendingTransaction: (tx: MergedTransaction) => Promise<void>;
 };
+
+export type FailedTx = {
+  txId: string;
+  // the chain the tx hash lives on, for the explorer link
+  txChainId: number;
+  parentChainId: number;
+  childChainId: number;
+};
+
+type TransformedTxPage = {
+  transactions: MergedTransaction[];
+  failedTxs: FailedTx[];
+};
+
+// `keepPreviousData` can show another address's pages, so each page keeps its address
+type TxPage = TransformedTxPage & { address: string };
 
 export type Deposit = Transaction;
 
@@ -247,6 +264,59 @@ async function transformTransaction(tx: Transfer): Promise<MergedTransaction> {
   throw new Error(
     'An error has occurred while fetching a transaction. Please try again later or contact the support.',
   );
+}
+
+// One tx that fails to load (RPC error, missing receipt) must not fail the whole page.
+export async function transformTransactionsPage(
+  txs: Transfer[],
+  transform: (tx: Transfer) => Promise<MergedTransaction> = transformTransaction,
+): Promise<TransformedTxPage> {
+  const results = await Promise.allSettled(txs.map(transform));
+  const page: TransformedTxPage = { transactions: [], failedTxs: [] };
+  const errors: unknown[] = [];
+
+  results.forEach((result, i) => {
+    if (result.status === 'fulfilled') {
+      page.transactions.push(result.value);
+      return;
+    }
+
+    const tx = txs[i]!;
+    errors.push(result.reason);
+    page.failedTxs.push({
+      txId: getTxIdFromTransaction(tx) ?? 'unknown',
+      txChainId: getTxChainId(tx),
+      parentChainId: Number(tx.parentChainId),
+      childChainId: Number(tx.childChainId),
+    });
+  });
+
+  // one report per page, so an outage doesn't send an event per tx
+  if (page.failedTxs.length > 0) {
+    logger.warn(errors);
+    captureSentryErrorWithExtraData({
+      error: errors[0],
+      originFunction: 'useTransactionHistory transformTransactionsPage',
+      additionalData: {
+        failedTxs: page.failedTxs
+          .map((tx) => `${tx.txId} (${tx.parentChainId} <> ${tx.childChainId})`)
+          .join(', '),
+      },
+    });
+  }
+
+  return page;
+}
+
+function getTxChainId(tx: Transfer) {
+  if (isCctpTransfer(tx) || isOftTransfer(tx) || isLifiTransfer(tx)) {
+    return tx.sourceChainId;
+  }
+  return Number(isDeposit(tx) ? tx.parentChainId : tx.childChainId);
+}
+
+function getTxPageSize(page: TxPage) {
+  return page.transactions.length + page.failedTxs.length;
 }
 
 function getTxIdFromTransaction(tx: Transfer) {
@@ -1021,6 +1091,7 @@ function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
     completed: true,
     error,
     failedChainPairs: [],
+    failedTxs: [],
     pause: () => {},
     resume: () => {},
     addPendingTransaction: () => {},
@@ -1096,9 +1167,9 @@ export const useTransactionHistory = (
   } = useTransactionHistoryWithoutStatuses(address, debouncedChainFilter);
 
   const getCacheKey = useCallback(
-    (pageNumber: number, prevPageTxs: MergedTransaction[]) => {
-      if (prevPageTxs) {
-        if (prevPageTxs.length === 0) {
+    (pageNumber: number, prevPage: TxPage | null) => {
+      if (prevPage) {
+        if (getTxPageSize(prevPage) === 0) {
           // THIS is the last page
           return null;
         }
@@ -1191,7 +1262,7 @@ export const useTransactionHistory = (
     isLoading: isLoadingFirstPage,
   } = useSWRInfinite(
     getCacheKey,
-    ([, , _page, _data]) => {
+    async ([, _address, _page, _data]): Promise<TxPage> => {
       // we get cached data and dedupe here because we need to ensure _data never mutates
       // otherwise, if we added a new tx to cache, it would return a new reference and cause the SWR key to update, resulting in refetching
       // duplicates may occur when txs are taken from the local storage
@@ -1206,7 +1277,10 @@ export const useTransactionHistory = (
       const startIndex = _page * MAX_BATCH_SIZE;
       const endIndex = startIndex + MAX_BATCH_SIZE;
 
-      return Promise.all(dedupedTransactions.slice(startIndex, endIndex).map(transformTransaction));
+      return {
+        ...(await transformTransactionsPage(dedupedTransactions.slice(startIndex, endIndex))),
+        address: _address,
+      };
     },
     {
       revalidateOnFocus: false,
@@ -1227,7 +1301,20 @@ export const useTransactionHistory = (
     page > 0 && typeof txPages !== 'undefined' && typeof txPages[page - 1] === 'undefined';
 
   const completed =
-    !isLoadingFirstPage && typeof txPages !== 'undefined' && data.length === txPages.flat().length;
+    !isLoadingFirstPage &&
+    typeof txPages !== 'undefined' &&
+    data.length === txPages.reduce((count, txPage) => count + getTxPageSize(txPage), 0);
+
+  const failedTxs = (txPages ?? [])
+    .filter((txPage) => txPage.address === address)
+    .flatMap((txPage) => txPage.failedTxs)
+    .filter((tx) =>
+      matchesChainFilter({
+        filter: chainFilter,
+        sourceChainId: tx.parentChainId,
+        destinationChainId: tx.childChainId,
+      }),
+    );
 
   // transfers initiated by the user during the current session
   // we store it separately as there are a lot of side effects when mutating SWRInfinite
@@ -1240,7 +1327,7 @@ export const useTransactionHistory = (
     // the debounce window. Transfers initiated this session (newTransactions)
     // are exempt so a just-submitted transfer is always visible.
     const filteredTxPages = txPages?.map((txPage) =>
-      txPage.filter((tx) =>
+      txPage.transactions.filter((tx) =>
         matchesChainFilter({
           filter: chainFilter,
           sourceChainId: tx.sourceChainId,
@@ -1287,7 +1374,11 @@ export const useTransactionHistory = (
         let pageNumberToUpdate = 0;
 
         // search cache for the tx to update
-        while (!prevTxPages[pageNumberToUpdate]?.find((oldTx) => isSameTransaction(oldTx, newTx))) {
+        while (
+          !prevTxPages[pageNumberToUpdate]?.transactions.find((oldTx) =>
+            isSameTransaction(oldTx, newTx),
+          )
+        ) {
           pageNumberToUpdate++;
 
           if (pageNumberToUpdate > prevTxPages.length) {
@@ -1303,9 +1394,12 @@ export const useTransactionHistory = (
         }
 
         // replace the old tx with the new tx
-        const updatedPage = oldPageToUpdate.map((oldTx) => {
-          return isSameTransaction(oldTx, newTx) ? newTx : oldTx;
-        });
+        const updatedPage = {
+          ...oldPageToUpdate,
+          transactions: oldPageToUpdate.transactions.map((oldTx) => {
+            return isSameTransaction(oldTx, newTx) ? newTx : oldTx;
+          }),
+        };
 
         // all old pages including the new updated page
         const newTxPages = [
@@ -1329,9 +1423,12 @@ export const useTransactionHistory = (
       );
       mutateTxPages(
         (pages) =>
-          pages?.map((transactions) =>
-            transactions.filter((existing) => !isSameTransaction(existing, tx)),
-          ),
+          pages?.map((txPage) => ({
+            ...txPage,
+            transactions: txPage.transactions.filter(
+              (existing) => !isSameTransaction(existing, tx),
+            ),
+          })),
         false,
       );
     },
@@ -1551,39 +1648,47 @@ export const useTransactionHistory = (
     const firstPage = txPages[0];
     const lastPage = txPages[txPages.length - 1];
 
-    if (!firstPage || !lastPage) {
+    if (!firstPage || !lastPage || lastPage.address !== address) {
       return;
     }
 
+    // a page where every tx failed has no tx to read, so look across the loaded txs
+    const loadedTxs = txPages.flatMap((txPage) => txPage.transactions);
+
     // `keepPreviousData` shows the previous address's pages until the new ones load
-    const newestTx = firstPage[0];
+    const newestTx = loadedTxs[0];
     if (newestTx && !isTransactionForAddress(newestTx, address)) {
       return;
     }
 
     // if a full page is fetched, we need to fetch more
-    const shouldFetchNextPage = lastPage.length === MAX_BATCH_SIZE;
+    const shouldFetchNextPage = getTxPageSize(lastPage) === MAX_BATCH_SIZE;
 
     if (!shouldFetchNextPage) {
       setFetching(false);
       return;
     }
 
-    const oldestTx = lastPage[lastPage.length - 1];
-
-    if (!newestTx || !oldestTx) {
+    // a whole page failing usually means an outage, so wait for the user instead of paging on
+    if (lastPage.transactions.length === 0) {
+      pause();
       return;
     }
 
-    const oldestTxDaysAgo = dayjs().diff(dayjs(oldestTx.createdAt ?? 0), 'days');
+    const oldestTx = loadedTxs.at(-1);
 
-    const nextPauseThresholdDays = (pauseCount + 1) * PAUSE_SIZE_DAYS;
-    const shouldPause = oldestTxDaysAgo >= nextPauseThresholdDays;
+    // with no tx loaded yet there is no date to pause on, so keep paging
+    if (oldestTx) {
+      const oldestTxDaysAgo = dayjs().diff(dayjs(oldestTx.createdAt ?? 0), 'days');
 
-    if (shouldPause) {
-      pause();
-      setPauseCount((prevPauseCount) => prevPauseCount + 1);
-      return;
+      const nextPauseThresholdDays = (pauseCount + 1) * PAUSE_SIZE_DAYS;
+      const shouldPause = oldestTxDaysAgo >= nextPauseThresholdDays;
+
+      if (shouldPause) {
+        pause();
+        setPauseCount((prevPauseCount) => prevPauseCount + 1);
+        return;
+      }
     }
 
     // make sure we don't over-fetch
@@ -1629,6 +1734,7 @@ export const useTransactionHistory = (
       loading: isLoadingTxsWithoutStatus,
       error,
       failedChainPairs: [],
+      failedTxs: [],
       completed: true,
       pause,
       resume,
@@ -1644,6 +1750,7 @@ export const useTransactionHistory = (
     completed: completed && !isChainFilterSettling,
     error: txPagesError ?? error,
     failedChainPairs,
+    failedTxs,
     pause,
     resume,
     addPendingTransaction,
