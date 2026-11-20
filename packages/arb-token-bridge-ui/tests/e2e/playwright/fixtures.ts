@@ -253,28 +253,38 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         fs.cpSync(snapshotDir, userDataDir, { recursive: true });
         context = await launch(userDataDir);
         // An existing profile opens no MetaMask tab, and Synpress looks for one
-        const metamaskHome = await context.newPage();
-        await metamaskHome.goto(
-          `chrome-extension://${getUnpackedExtensionId(metamaskPath)}/home.html`,
-        );
-        // MetaMask 11 shows a "Protect your funds" backup reminder once a profile is 2 days old,
-        // after it loads the balance; its backdrop blocks the account menu Synpress clicks.
-        // Unlock and dismiss it first, and Synpress carries on with an unlocked wallet.
-        await metamaskHome
-          .locator('[data-testid="unlock-page"] #password')
-          .fill(getMetamaskPassword(e2eEnv));
-        await metamaskHome.locator('[data-testid="unlock-page"] .btn-default').click();
-        const dismissed = await metamaskHome
-          .getByRole('button', { name: 'Got it' })
-          .click({ timeout: 15_000 })
-          .then(() => true)
-          .catch(() => false);
-        console.log(`[e2e] MetaMask backup reminder dismissed: ${dismissed}`);
-        await initialSetup(chromium, {
-          secretWordsOrPrivateKey: e2eEnv.PRIVATE_KEY,
-          network: 'sepolia',
-          password: getMetamaskPassword(e2eEnv),
-        });
+        await (
+          await context.newPage()
+        ).goto(`chrome-extension://${getUnpackedExtensionId(metamaskPath)}/home.html`);
+        // MetaMask 11 shows a "Protect your funds" backup reminder on profiles a few days old, in
+        // the tab Synpress drives; its backdrop blocks the account menu Synpress clicks. Dismiss
+        // it in any tab while Synpress sets up, which keeps retrying that click.
+        let settingUp = true;
+        const dismissReminder = (async () => {
+          while (settingUp) {
+            // eslint-disable-next-line no-await-in-loop -- polling
+            await Promise.all(
+              context.pages().map((page) =>
+                page
+                  .getByRole('button', { name: 'Got it' })
+                  .click({ timeout: 250 })
+                  .catch(() => {}),
+              ),
+            );
+            // eslint-disable-next-line no-await-in-loop -- polling
+            await new Promise((resolve) => setTimeout(resolve, 500));
+          }
+        })();
+        try {
+          await initialSetup(chromium, {
+            secretWordsOrPrivateKey: e2eEnv.PRIVATE_KEY,
+            network: 'sepolia',
+            password: getMetamaskPassword(e2eEnv),
+          });
+        } finally {
+          settingUp = false;
+          await dismissReminder;
+        }
         registerSnapshotNetworks(e2eEnv);
       } else {
         context = await launch('');
