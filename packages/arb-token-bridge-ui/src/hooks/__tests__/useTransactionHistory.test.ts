@@ -293,6 +293,35 @@ describe.sequential('useTransactionHistory', () => {
     },
   );
 
+  it('keeps a LiFi transfer completed when the history mounts again', async () => {
+    const pending = { ...lifiTestBaseTx, txId: acceptedSourceTxHash, createdAt: Date.now() };
+    const completed = {
+      ...pending,
+      status: WithdrawalStatus.CONFIRMED,
+      destinationStatus: WithdrawalStatus.CONFIRMED,
+    };
+    useLifiMergedTransactionCacheStore.getState().addTransaction(pending);
+    vi.spyOn(transactionHelpers, 'getUpdatedLifiTransfer').mockResolvedValue(completed);
+    const wrapper = createWalletWrapper(MERGE_TEST_ADDRESS);
+    const renderHistory = () =>
+      renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS, { runFetcher: true }), {
+        wrapper,
+      });
+
+    const { result, unmount } = renderHistory();
+    await waitFor(() => expect(result.current.transactions).toHaveLength(1));
+    await act(async () => {
+      await result.current.updatePendingTransaction(pending);
+    });
+    expect(result.current.transactions.map(transactionHelpers.isTxCompleted)).toEqual([true]);
+    unmount();
+
+    // Leaving the history tab and coming back resets its pages from the SWR cache
+    const { result: remounted } = renderHistory();
+    await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
+    expect(remounted.current.transactions.map(transactionHelpers.isTxCompleted)).toEqual([true]);
+  });
+
   it('shows the rejected destination batch instead of an older pending history page', () => {
     const pending = createMockLifiBatchedTransaction();
     if (!pending.lifiRoute) throw new Error('Expected a saved route');
