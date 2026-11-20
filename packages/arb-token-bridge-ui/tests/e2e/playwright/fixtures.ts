@@ -258,7 +258,12 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
           `chrome-extension://${getUnpackedExtensionId(metamaskPath)}/home.html`,
         );
         // Every few days MetaMask 11 shows a "Protect your funds" backup reminder whose backdrop
-        // blocks the account menu Synpress clicks. Dismiss it first; MetaMask then stops showing it.
+        // blocks the account menu Synpress clicks. Unlock and dismiss it first; MetaMask then
+        // stops showing it, and Synpress carries on with an unlocked wallet.
+        await metamaskHome
+          .locator('[data-testid="unlock-page"] #password')
+          .fill(getMetamaskPassword(e2eEnv));
+        await metamaskHome.locator('[data-testid="unlock-page"] .btn-default').click();
         await metamaskHome.locator('[data-testid=account-options-menu-button]').waitFor();
         await metamaskHome
           .getByRole('button', { name: 'Got it' })
