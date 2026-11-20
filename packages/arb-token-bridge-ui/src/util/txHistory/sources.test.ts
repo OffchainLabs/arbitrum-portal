@@ -53,21 +53,14 @@ describe('isChildChainIndexed', { concurrent: false }, () => {
     const { isChildChainIndexed } = await importSourcesWith('');
 
     expect(isChildChainIndexed(ChainId.ArbitrumOne)).toBe(true);
-    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(false);
+    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
     expect(isChildChainIndexed(ChainId.ArbitrumSepolia)).toBe(true);
     expect(isChildChainIndexed(46630)).toBe(false);
   });
 
-  it('serves Nova from the indexer under the pinned list', async () => {
-    vi.resetModules();
-    const { isChildChainIndexed } = await import('./sources');
-
-    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
-  });
-
-  it('leaves Nova unindexed when the configured list leaves it out', async () => {
+  it('keeps Nova indexed when the configured list leaves it out', async () => {
     const { isChildChainIndexed } = await importSourcesWith('42161');
 
-    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(false);
+    expect(isChildChainIndexed(ChainId.ArbitrumNova)).toBe(true);
   });
 });

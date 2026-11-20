@@ -41,10 +41,8 @@ describe.sequential('bridge history availability', () => {
   });
 
   // Arbitrum One no longer qualifies: it is always served by the indexer.
-  it.each([
-    ['ApeChain, with no indexer entry', ChainId.ApeChain],
-    ['Nova when unlisted, now that its subgraph is gone', ChainId.ArbitrumNova],
-  ])('resolves empty without a request for %s', async (_label, l2ChainId) => {
+  it('resolves empty without a request for ApeChain, with no indexer entry', async () => {
+    const l2ChainId = ChainId.ApeChain;
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     const fetchers = await importFetchersWithIndexedChainsStubbed('46630');
@@ -60,13 +58,13 @@ describe.sequential('bridge history availability', () => {
 
   it.each([
     ['a chain the indexer serves', 46630],
-    ['Nova when listed', ChainId.ArbitrumNova],
+    ['Nova, a default even when unlisted', ChainId.ArbitrumNova],
   ])('requests history for %s', async (_label, l2ChainId) => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
     vi.stubGlobal('fetch', fetchMock);
-    const fetchers = await importFetchersWithIndexedChainsStubbed('46630,42170');
+    const fetchers = await importFetchersWithIndexedChainsStubbed('46630');
 
     await Promise.all(
       fetchers.map(([name, fetchHistory]) =>

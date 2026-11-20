@@ -20,7 +20,7 @@ export function parseChainIds(raw: string | undefined): number[] {
   return Array.from(new Set(ids));
 }
 
-// Arbitrum One and Sepolia have no other history source, so configuration may add
+// Arbitrum One, Nova and Sepolia have no other history source, so configuration may add
 // indexed chains but must never remove these required defaults. Shared with the CI
 // preflight in .github/workflows/validateIndexerConfig.js.
 const DEFAULT_INDEXER_CHILD_CHAIN_IDS: readonly number[] = defaultIndexerChildChainIds;
