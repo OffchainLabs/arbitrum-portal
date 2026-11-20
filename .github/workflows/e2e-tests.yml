@@ -45,7 +45,7 @@ jobs:
         test: ${{ fromJson(needs.load-e2e-files.outputs.matrix) }}
 
     steps:
-      # Litro v0.6.9 with the e2e setup prebaked (see e2e-testnode-images.yml). Started in the
+      # Litro v0.6.8 with the e2e setup prebaked (see e2e-testnode-images.yml). Started in the
       # background rather than as a service container: a service is pulled before the first step
       # and stopped after the last, which added 40-100s per job. L1 mines every 250ms instead of
       # 1s, so withdrawals turn claimable and deposits land sooner.
@@ -55,7 +55,7 @@ jobs:
           docker run -d --name testnode -e TESTNODE_VARIANT=${{ matrix.test.tag }} \
             -e TESTNODE_L1_BLOCK_TIME=0.25 \
             -p 8080:8080 -p 8545:8545 -p 8547:8547 -p 3347:8549 \
-            ghcr.io/offchainlabs/arbitrum-portal-e2e-testnode:v0.6.9-nc3.2-${{ matrix.test.tag }}-r2 \
+            ghcr.io/offchainlabs/arbitrum-portal-e2e-testnode:v0.6.8-nc3.2-${{ matrix.test.tag }}-r2 \
             > "$RUNNER_TEMP/testnode.log" 2>&1 &
         env:
           GH_TOKEN: ${{ github.token }}
