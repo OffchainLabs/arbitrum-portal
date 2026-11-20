@@ -1,0 +1,108 @@
+name: E2E testnode images
+
+# Bakes the e2e chain setup (funding, test ERC20, WETH) into litro testnode images so each
+# e2e job skips it, then slims and publishes them. Rebake (bump IMAGE_REVISION here and in
+# e2e-tests.yml) when prepareChain in globalSetup.ts changes; until then globalSetup detects
+# a stale image and falls back to running the setup itself.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/e2e-testnode-images.yml
+      - .github/testnode/slim.Dockerfile
+  # workflow_dispatch needs the file on master, so a PR that changes it bakes through this.
+  pull_request:
+    paths:
+      - .github/workflows/e2e-testnode-images.yml
+      - .github/testnode/slim.Dockerfile
+
+env:
+  LITRO_VERSION: 0.6.1
+  BASE_IMAGE: ghcr.io/offchainlabs/arbitrum-litro
+  IMAGE: ghcr.io/offchainlabs/arbitrum-portal-e2e-testnode
+  IMAGE_REVISION: r1
+
+jobs:
+  bake:
+    name: 'Bake ${{ matrix.tag }}'
+    runs-on: ubuntu-8
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { tag: l2, type: regular }
+          - { tag: l3-eth, type: orbit-eth }
+          - { tag: l3-custom-6, type: orbit-custom-6dec, decimals: 6 }
+          - { tag: l3-custom-18, type: orbit-custom-18dec, decimals: 18 }
+          - { tag: l3-custom-20, type: orbit-custom-20dec, decimals: 20 }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install node_modules
+        uses: OffchainLabs/actions/node-modules/install@main
+        with:
+          install-command: pnpm install --frozen-lockfile
+          cache-key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+          save: false
+
+      - name: Install litro
+        run: npm i -g https://github.com/OffchainLabs/arbitrum-litro/releases/download/v${LITRO_VERSION}/arbitrum-litro-${LITRO_VERSION}.tgz
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # litro bake re-pulls any base not prefixed local/, so pull and retag it first.
+      - name: Pull base image
+        run: |
+          docker pull $BASE_IMAGE:v${LITRO_VERSION}-nc3.2-${{ matrix.tag }}
+          docker tag $BASE_IMAGE:v${LITRO_VERSION}-nc3.2-${{ matrix.tag }} local/litro-base:${{ matrix.tag }}
+
+      - name: Bake
+        run: |
+          # incur reads `--l3-enabled false` as true; the = form is required.
+          l3=true; [ "${{ matrix.tag }}" = l2 ] && l3=false
+          dec=""; [ -n "${{ matrix.decimals }}" ] && dec="--fee-token-decimals ${{ matrix.decimals }}"
+          litro bake \
+            --base-image-ref local/litro-base:${{ matrix.tag }} \
+            --image-ref local/portal-e2e-testnode:${{ matrix.tag }} \
+            --l3-enabled=$l3 $dec \
+            --setup-working-directory packages/arb-token-bridge-ui \
+            --setup-command "npx --yes tsx@4.19.2 tests/e2e/playwright/bakeSetup.ts"
+        env:
+          E2E_ORBIT: ${{ matrix.type == 'orbit-eth' }}
+          E2E_ORBIT_CUSTOM_GAS_TOKEN: ${{ startsWith(matrix.type, 'orbit-custom') }}
+          ORBIT_CUSTOM_GAS_TOKEN: ${{ startsWith(matrix.type, 'orbit-custom') }}
+          PRIVATE_KEY_CUSTOM: ${{ secrets.E2E_PRIVATE_KEY }}
+          PRIVATE_KEY_USER: ${{ secrets.E2E_PRIVATE_KEY_USER }}
+          NEXT_PUBLIC_IS_E2E_TEST: true
+          NEXT_PUBLIC_RPC_PROVIDER: alchemy
+          NEXT_PUBLIC_INFURA_KEY: ${{ secrets.NEXT_PUBLIC_INFURA_KEY }}
+          NEXT_PUBLIC_ALCHEMY_KEY: ${{ secrets.NEXT_PUBLIC_ALCHEMY_KEY }}
+
+      - name: Slim and push
+        run: |
+          ref=$IMAGE:v${LITRO_VERSION}-nc3.2-${{ matrix.tag }}-$IMAGE_REVISION
+          docker build -f .github/testnode/slim.Dockerfile \
+            --build-arg BASE=local/portal-e2e-testnode:${{ matrix.tag }} \
+            --build-arg VARIANT=${{ matrix.tag }} \
+            --label org.opencontainers.image.source=https://github.com/${{ github.repository }} \
+            -t $ref .github/testnode
+          docker push $ref
