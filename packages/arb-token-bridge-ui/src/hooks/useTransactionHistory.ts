@@ -107,11 +107,22 @@ export type UseTransactionHistoryResult = {
   completed: boolean;
   error: unknown;
   failedChainPairs: ChainPair[];
+  failedTxs: FailedTx[];
   pause: () => void;
   resume: () => void;
   addPendingTransaction: (tx: MergedTransaction) => void;
   updateTransaction: (tx: MergedTransaction) => void;
   updatePendingTransaction: (tx: MergedTransaction) => Promise<void>;
+};
+
+export type FailedTx = {
+  txId: string;
+  childChainId: number | undefined;
+};
+
+type TxPage = {
+  transactions: MergedTransaction[];
+  failedTxs: FailedTx[];
 };
 
 export type Deposit = Transaction;
@@ -247,6 +258,39 @@ async function transformTransaction(tx: Transfer): Promise<MergedTransaction> {
   throw new Error(
     'An error has occurred while fetching a transaction. Please try again later or contact the support.',
   );
+}
+
+// One tx that fails to load (RPC error, missing receipt) must not fail the whole page.
+export async function transformTransactionsPage(
+  txs: Transfer[],
+  transform: (tx: Transfer) => Promise<MergedTransaction> = transformTransaction,
+): Promise<TxPage> {
+  const results = await Promise.allSettled(txs.map(transform));
+  const page: TxPage = { transactions: [], failedTxs: [] };
+
+  results.forEach((result, i) => {
+    if (result.status === 'fulfilled') {
+      page.transactions.push(result.value);
+      return;
+    }
+
+    const tx = txs[i]!;
+    const txId = getTxIdFromTransaction(tx) ?? 'unknown';
+    const childChainId = 'childChainId' in tx ? Number(tx.childChainId) : undefined;
+
+    captureSentryErrorWithExtraData({
+      error: result.reason,
+      originFunction: 'useTransactionHistory transformTransactionsPage',
+      additionalData: { txId, childChainId: String(childChainId ?? 'unknown') },
+    });
+    page.failedTxs.push({ txId, childChainId });
+  });
+
+  return page;
+}
+
+function getTxPageSize(page: TxPage) {
+  return page.transactions.length + page.failedTxs.length;
 }
 
 function getTxIdFromTransaction(tx: Transfer) {
@@ -1021,6 +1065,7 @@ function useTransactionHistoryByTxHash(chainFilter: TxHistoryChainFilter) {
     completed: true,
     error,
     failedChainPairs: [],
+    failedTxs: [],
     pause: () => {},
     resume: () => {},
     addPendingTransaction: () => {},
@@ -1096,9 +1141,9 @@ export const useTransactionHistory = (
   } = useTransactionHistoryWithoutStatuses(address, debouncedChainFilter);
 
   const getCacheKey = useCallback(
-    (pageNumber: number, prevPageTxs: MergedTransaction[]) => {
-      if (prevPageTxs) {
-        if (prevPageTxs.length === 0) {
+    (pageNumber: number, prevPage: TxPage | null) => {
+      if (prevPage) {
+        if (getTxPageSize(prevPage) === 0) {
           // THIS is the last page
           return null;
         }
@@ -1206,7 +1251,7 @@ export const useTransactionHistory = (
       const startIndex = _page * MAX_BATCH_SIZE;
       const endIndex = startIndex + MAX_BATCH_SIZE;
 
-      return Promise.all(dedupedTransactions.slice(startIndex, endIndex).map(transformTransaction));
+      return transformTransactionsPage(dedupedTransactions.slice(startIndex, endIndex));
     },
     {
       revalidateOnFocus: false,
@@ -1227,7 +1272,11 @@ export const useTransactionHistory = (
     page > 0 && typeof txPages !== 'undefined' && typeof txPages[page - 1] === 'undefined';
 
   const completed =
-    !isLoadingFirstPage && typeof txPages !== 'undefined' && data.length === txPages.flat().length;
+    !isLoadingFirstPage &&
+    typeof txPages !== 'undefined' &&
+    data.length === txPages.reduce((count, txPage) => count + getTxPageSize(txPage), 0);
+
+  const failedTxs = useMemo(() => txPages?.flatMap((txPage) => txPage.failedTxs) ?? [], [txPages]);
 
   // transfers initiated by the user during the current session
   // we store it separately as there are a lot of side effects when mutating SWRInfinite
@@ -1240,7 +1289,7 @@ export const useTransactionHistory = (
     // the debounce window. Transfers initiated this session (newTransactions)
     // are exempt so a just-submitted transfer is always visible.
     const filteredTxPages = txPages?.map((txPage) =>
-      txPage.filter((tx) =>
+      txPage.transactions.filter((tx) =>
         matchesChainFilter({
           filter: chainFilter,
           sourceChainId: tx.sourceChainId,
@@ -1287,7 +1336,11 @@ export const useTransactionHistory = (
         let pageNumberToUpdate = 0;
 
         // search cache for the tx to update
-        while (!prevTxPages[pageNumberToUpdate]?.find((oldTx) => isSameTransaction(oldTx, newTx))) {
+        while (
+          !prevTxPages[pageNumberToUpdate]?.transactions.find((oldTx) =>
+            isSameTransaction(oldTx, newTx),
+          )
+        ) {
           pageNumberToUpdate++;
 
           if (pageNumberToUpdate > prevTxPages.length) {
@@ -1303,9 +1356,12 @@ export const useTransactionHistory = (
         }
 
         // replace the old tx with the new tx
-        const updatedPage = oldPageToUpdate.map((oldTx) => {
-          return isSameTransaction(oldTx, newTx) ? newTx : oldTx;
-        });
+        const updatedPage = {
+          ...oldPageToUpdate,
+          transactions: oldPageToUpdate.transactions.map((oldTx) => {
+            return isSameTransaction(oldTx, newTx) ? newTx : oldTx;
+          }),
+        };
 
         // all old pages including the new updated page
         const newTxPages = [
@@ -1329,9 +1385,12 @@ export const useTransactionHistory = (
       );
       mutateTxPages(
         (pages) =>
-          pages?.map((transactions) =>
-            transactions.filter((existing) => !isSameTransaction(existing, tx)),
-          ),
+          pages?.map((txPage) => ({
+            ...txPage,
+            transactions: txPage.transactions.filter(
+              (existing) => !isSameTransaction(existing, tx),
+            ),
+          })),
         false,
       );
     },
@@ -1555,21 +1614,24 @@ export const useTransactionHistory = (
       return;
     }
 
+    // a page where every tx failed has no tx to read, so look across the loaded txs
+    const loadedTxs = txPages.flatMap((txPage) => txPage.transactions);
+
     // `keepPreviousData` shows the previous address's pages until the new ones load
-    const newestTx = firstPage[0];
+    const newestTx = loadedTxs[0];
     if (newestTx && !isTransactionForAddress(newestTx, address)) {
       return;
     }
 
     // if a full page is fetched, we need to fetch more
-    const shouldFetchNextPage = lastPage.length === MAX_BATCH_SIZE;
+    const shouldFetchNextPage = getTxPageSize(lastPage) === MAX_BATCH_SIZE;
 
     if (!shouldFetchNextPage) {
       setFetching(false);
       return;
     }
 
-    const oldestTx = lastPage[lastPage.length - 1];
+    const oldestTx = loadedTxs.at(-1);
 
     if (!newestTx || !oldestTx) {
       return;
@@ -1629,6 +1691,7 @@ export const useTransactionHistory = (
       loading: isLoadingTxsWithoutStatus,
       error,
       failedChainPairs: [],
+      failedTxs: [],
       completed: true,
       pause,
       resume,
@@ -1644,6 +1707,7 @@ export const useTransactionHistory = (
     completed: completed && !isChainFilterSettling,
     error: txPagesError ?? error,
     failedChainPairs,
+    failedTxs,
     pause,
     resume,
     addPendingTransaction,

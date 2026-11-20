@@ -15,9 +15,11 @@ vi.mock('./EmptyTransactionHistory', () => ({
 function renderEmptyTable({
   error,
   failedChainPairs,
+  failedTxs = [],
 }: {
   error?: unknown;
   failedChainPairs: { parentChainId: number; childChainId: number }[];
+  failedTxs?: { txId: string; childChainId: number | undefined }[];
 }) {
   render(
     <TooltipProvider>
@@ -28,6 +30,7 @@ function renderEmptyTable({
           completed: true,
           error,
           failedChainPairs,
+          failedTxs,
           resume: vi.fn(),
           updateTransaction: vi.fn(),
           selectedTabIndex: 1,
@@ -53,6 +56,18 @@ describe.sequential('TransactionHistoryTable empty state', () => {
     expect(screen.getByTestId('empty-history').textContent).toBe('error');
     expect(screen.getByTestId('failed-chain-pairs-warning').getAttribute('aria-label')).toBe(
       'We were unable to fetch data for the following chain pairs: Ethereum to Arbitrum One',
+    );
+  });
+
+  it('reports a load error when transactions failed to load', () => {
+    renderEmptyTable({
+      failedChainPairs: [],
+      failedTxs: [{ txId: '0xabc', childChainId: 42161 }],
+    });
+
+    expect(screen.getByTestId('empty-history').textContent).toBe('error');
+    expect(screen.getByTestId('failed-chain-pairs-warning').getAttribute('aria-label')).toBe(
+      'We were unable to load 1 transaction(s)',
     );
   });
 
