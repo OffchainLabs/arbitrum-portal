@@ -293,6 +293,18 @@ describe.sequential('useTransactionHistory', () => {
     },
   );
 
+  it('keeps the status update callback across renders', async () => {
+    const { result, rerender } = renderHook(() => useTransactionHistory(MERGE_TEST_ADDRESS), {
+      wrapper: createWalletWrapper(MERGE_TEST_ADDRESS),
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const { updatePendingTransaction } = result.current;
+
+    rerender();
+
+    expect(result.current.updatePendingTransaction).toBe(updatePendingTransaction);
+  });
+
   it('keeps a LiFi transfer completed when the history mounts again', async () => {
     const pending = { ...lifiTestBaseTx, txId: acceptedSourceTxHash, createdAt: Date.now() };
     const completed = {

@@ -1114,6 +1114,10 @@ export const useTransactionHistory = (
     },
     [address, isLoadingTxsWithoutStatus, data, isLoadingAccountType, debouncedChainFilterKey],
   );
+  // `data` is a new array on every render, so `getCacheKey` is too. Status updates read it through
+  // a ref, so their callbacks keep their identity and polling isn't reset by unrelated renders.
+  const getCacheKeyRef = useRef(getCacheKey);
+  getCacheKeyRef.current = getCacheKey;
 
   const depositsFromCache = useMemo(() => {
     if (isLoadingAccountType || !account.chainId || !isTxHistoryEnabled) {
@@ -1311,7 +1315,7 @@ export const useTransactionHistory = (
 
         // `setPage` rebuilds the pages from each page's own cache entry, which this mutation
         // doesn't reach, so update that entry too or the next `setPage` brings the old tx back
-        const pageKey = getCacheKey(
+        const pageKey = getCacheKeyRef.current(
           pageNumberToUpdate,
           prevTxPages[pageNumberToUpdate - 1] ?? null,
         );
@@ -1330,7 +1334,6 @@ export const useTransactionHistory = (
       }, false);
     },
     [
-      getCacheKey,
       mutateNewTransactionsData,
       mutateSWRCache,
       mutateTxPages,
