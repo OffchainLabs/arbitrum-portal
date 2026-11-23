@@ -156,8 +156,8 @@ const minReferenceTime = 2;
 
 // A whole run is often faster or slower than the others, e.g. depending on garbage collection, and
 // every component in it by about the same factor. The factor of a run is the median ratio between
-// the time of its components and their median time across all runs of master and the PR.
-function setSpeedFactors(runs) {
+// the time of its components and their median time across the given runs, stored as `property`.
+function setSpeedFactors(runs, property) {
   const times = new Map();
   runs.forEach((run) =>
     run.interactions.forEach(({ name, components }) =>
@@ -169,7 +169,7 @@ function setSpeedFactors(runs) {
   );
   const reference = new Map([...times].map(([key, values]) => [key, median(values)]));
   runs.forEach((run) => {
-    run.speed = median(
+    run[property] = median(
       run.interactions.flatMap(({ name, components }) =>
         components
           .filter(({ component }) => reference.get(`${name} › ${component}`) >= minReferenceTime)
@@ -190,14 +190,14 @@ function withoutTimes(run) {
   );
 }
 
-// Counts come from the development build, times from the profiling build divided by the speed
-// factor of their run. Hooks measured on their own aren't part of the components the factor
-// comes from, so their times aren't divided.
+// Counts come from the development build, times from the profiling build divided by the factor of
+// their run compared with the other runs of the same side. Hooks measured on their own aren't part
+// of the components the factor comes from, so their times aren't divided.
 function summarize(runs) {
   const countsRun = runs.find(({ build }) => build === 'development') ?? runs[0];
   const timedRuns = runs.filter(({ build }) => build === 'profiling');
   const samples = timedRuns.length > 0 ? timedRuns : runs;
-  const time = (run, value) => value / run.speed;
+  const time = (run, value) => value / run.runSpeed;
   return {
     ...countsRun,
     // The builds differ a little, e.g. in the names of the hooks, so runs are compared by build
@@ -239,7 +239,14 @@ function readProfiles({ prDirectory, baseDirectory }) {
   if (prRuns.length === 0) {
     throw new Error(`Missing render profile for the PR in ${prDirectory}.`);
   }
-  setSpeedFactors([...prRuns, ...baseRuns].filter(({ build }) => build === 'profiling'));
+  const timed = (runs) => runs.filter(({ build }) => build === 'profiling');
+  // Compared with the runs of both sides, the factor shows how much faster the PR's components are
+  setSpeedFactors([...timed(prRuns), ...timed(baseRuns)], 'speed');
+  // Times are divided by the factor compared with the runs of the same side, which only shows how
+  // fast the runner was. Across both sides, it would also take out the change of the PR: when a PR
+  // makes most components faster, an interaction that improves less would show as slower.
+  setSpeedFactors(timed(prRuns), 'runSpeed');
+  setSpeedFactors(timed(baseRuns), 'runSpeed');
   return {
     pr: summarize(prRuns),
     base: baseRuns.length > 0 ? summarize(baseRuns) : undefined,
@@ -278,7 +285,7 @@ function findCost(profile, name) {
 
 const timeReaders = {
   speed: () => (run) => run.speed,
-  duration: (name) => (run) => findInteraction(run, name).duration / run.speed,
+  duration: (name) => (run) => findInteraction(run, name).duration / run.runSpeed,
   // Each round runs the PR and master one after the other, so the raw times are already paired
   costTime: (name) => (run) => findCost(run, name).renderMs,
 };
