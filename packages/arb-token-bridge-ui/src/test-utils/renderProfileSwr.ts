@@ -34,6 +34,11 @@ export const swrKeyProfiler: Middleware = (useSWRNext) => (key, fetcher, config)
   return useSWRNext(key, fetcher, config);
 };
 
+// Lets a cache that is no longer used be garbage collected
+export function forgetSwrCache(cache: Cache) {
+  caches.delete(cache);
+}
+
 export async function recordSwrKeys(interaction: () => Promise<void>): Promise<SwrKeyStats> {
   serializedByKey = {};
   try {
