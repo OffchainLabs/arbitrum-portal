@@ -14,7 +14,7 @@
     "flickity": "^2.3.0",
     "fuse.js": "^7.5.0",
     "next-query-params": "^5.1.0",
-    "posthog-js": "^1.438.13",
+    "posthog-js": "catalog:",
     "query-string": "^9.5.1",
     "react-countdown": "^2.3.6",
     "react-countup": "^6.5.3",
