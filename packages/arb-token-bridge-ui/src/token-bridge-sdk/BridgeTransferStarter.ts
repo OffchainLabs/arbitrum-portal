@@ -79,10 +79,7 @@ export type QuotedGasEstimates = GasEstimates & {
 };
 
 export type TransferEstimateGasResult =
-  | GasEstimates
-  | DepositGasEstimates
-  | QuotedGasEstimates
-  | undefined;
+  GasEstimates | DepositGasEstimates | QuotedGasEstimates | undefined;
 
 export type RequiresNativeCurrencyApprovalProps = {
   amount: BigNumber;
