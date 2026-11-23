@@ -37,11 +37,15 @@ function createWrapper(destinationChain: ChainId, bridgeTokens = {}) {
   return createBridgeTestWrapper({
     query: { sourceChain: ChainId.Solana, destinationChain },
     bridgeTokens,
-    cacheEntries: [
-      [
-        [[], ChainId.Solana, destinationChain, 'useTokensFromLists'],
-        { [SOLANA_NATIVE_TOKEN_ADDRESS]: { priceUSD: 100 } },
-      ],
+    listTokens: [
+      {
+        chainId: ChainId.Solana,
+        address: SOLANA_NATIVE_TOKEN_ADDRESS,
+        name: 'Solana',
+        symbol: 'SOL',
+        decimals: 9,
+        extensions: { priceUSD: '100' },
+      },
     ],
   });
 }

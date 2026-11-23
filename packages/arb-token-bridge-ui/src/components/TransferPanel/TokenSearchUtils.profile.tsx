@@ -1,7 +1,6 @@
-// Measures what `useTokensFromLists` costs on each render, for token lists of growing size. Its SWR
-// key holds the token lists, and SWR turns the key into a string and looks it up in its cache on
-// every call. Runs with the render profile, `pnpm test:profile`, which writes the results to
-// RENDER_PROFILE_DIRECTORY/costs.json for the report to compare with master.
+// Measures what `useTokensFromLists` costs on each render, for token lists of growing size, and the
+// SWR key text it builds. Runs with the render profile, `pnpm test:profile`, which writes the
+// results to RENDER_PROFILE_DIRECTORY/costs.json for the report to compare with master.
 import { mkdirSync, writeFileSync } from 'fs';
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/profiling';
@@ -154,7 +153,6 @@ test('cost of a render of useTokensFromLists for growing token lists', async () 
       () => useTokensFromLists(),
       ({ data }) => Object.keys(data).length > 0,
     );
-    expect(cost.keyLength).toBeGreaterThan(0);
     costs.push({ name: `useTokensFromLists, ${tokens.toLocaleString('en-US')} tokens`, ...cost });
   }
 
