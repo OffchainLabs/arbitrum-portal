@@ -394,6 +394,9 @@ importers:
       '@synthetixio/synpress':
         specifier: ^3.7.3
         version: 3.7.3(@types/react@19.3.0)(bufferutil@4.0.9)(react-dom@19.3.1)(react@19.3.1)(supports-color@8.1.1)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      '@testing-library/dom':
+        specifier: ^10.4.1
+        version: 10.4.1
       '@testing-library/react':
         specifier: ^16.3.3
         version: 16.3.3(@testing-library/dom@10.4.1)(@types/react-dom@19.3.0)(@types/react@19.3.0)(react-dom@19.3.1)(react@19.3.1)

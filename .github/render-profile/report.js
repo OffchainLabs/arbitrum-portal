@@ -192,12 +192,14 @@ function withoutTimes(run) {
 
 // Counts come from the development build, times from the profiling build divided by the factor of
 // their run compared with the other runs of the same side. Hooks measured on their own aren't part
-// of the components the factor comes from, so their times aren't divided.
+// of the components the factor comes from, so their times aren't divided. A side without profiling
+// runs has no times.
 function summarize(runs) {
   const countsRun = runs.find(({ build }) => build === 'development') ?? runs[0];
-  const timedRuns = runs.filter(({ build }) => build === 'profiling');
-  const samples = timedRuns.length > 0 ? timedRuns : runs;
+  const samples = runs.filter(({ build }) => build === 'profiling');
+  const hasTimes = samples.length > 0;
   const time = (run, value) => value / run.runSpeed;
+  const medianTime = (read) => (hasTimes ? median(samples.map(read)) : undefined);
   return {
     ...countsRun,
     // The builds differ a little, e.g. in the names of the hooks, so runs are compared by build
@@ -206,19 +208,18 @@ function summarize(runs) {
     ),
     // Normalized samples by round, for the paired comparison
     rounds: new Map(samples.map((run) => [run.run, run])),
-    speed: median(samples.map(({ speed }) => speed)),
+    hasTimes,
+    speed: medianTime(({ speed }) => speed),
     interactions: countsRun.interactions.map((interaction, index) => ({
       ...interaction,
-      duration: median(samples.map((run) => time(run, run.interactions[index].duration))),
+      duration: medianTime((run) => time(run, run.interactions[index].duration)),
       components: interaction.components.map((component) => ({
         ...component,
-        selfDuration: median(
-          samples.map((run) =>
-            time(
-              run,
-              run.interactions[index].components.find((c) => c.component === component.component)
-                ?.selfDuration ?? 0,
-            ),
+        selfDuration: medianTime((run) =>
+          time(
+            run,
+            run.interactions[index].components.find((c) => c.component === component.component)
+              ?.selfDuration ?? 0,
           ),
         ),
       })),
@@ -226,7 +227,7 @@ function summarize(runs) {
     // Sizes come from the development run, times from the profiling runs
     costs: countsRun.costs.map((cost) => ({
       name: cost.name,
-      costTime: median(samples.map((run) => findCost(run, cost.name)?.renderMs ?? 0)),
+      costTime: medianTime((run) => findCost(run, cost.name)?.renderMs ?? 0),
       costKeyLength: cost.keyLength,
       costRetained: cost.retainedBytes,
     })),
@@ -321,7 +322,7 @@ function formatDelta({ id, difference, interval, base, pr }) {
 
 // The components whose renders changed, then those whose render time changed the most, to tell
 // where a change comes from and what it costs
-function formatComponents({ pr, base }) {
+function formatComponents({ pr, base, hasTimes }) {
   const baseComponents = new Map(base.components.map((c) => [c.component, c]));
   const prComponents = new Map(pr.components.map((c) => [c.component, c]));
   const empty = { renders: 0, selfDuration: 0 };
@@ -331,7 +332,12 @@ function formatComponents({ pr, base }) {
       base: baseComponents.get(component) ?? empty,
       pr: prComponents.get(component) ?? empty,
     }))
-    .map((row) => ({ ...row, difference: row.pr.selfDuration - row.base.selfDuration }))
+    .map((row) => ({
+      ...row,
+      difference: hasTimes
+        ? row.pr.selfDuration - row.base.selfDuration
+        : row.pr.renders - row.base.renders,
+    }))
     .sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference));
   const withNewRenders = components.filter(({ base: b, pr: p }) => b.renders !== p.renders);
   const shown =
@@ -339,6 +345,21 @@ function formatComponents({ pr, base }) {
       ? withNewRenders.slice(0, maxComponentsWithNewRenders)
       : components.slice(0, componentsPerInteraction);
   const hidden = withNewRenders.length - shown.length;
+  const renders = ({ base: b, pr: p }) =>
+    b.renders === p.renders
+      ? formatCount(p.renders)
+      : `${formatCount(b.renders)} → ${formatCount(p.renders)}`;
+  if (!hasTimes) {
+    return [
+      '',
+      'Components whose renders changed:',
+      '',
+      '| Component | Renders |',
+      '|:---|---:|',
+      ...shown.map((row) => `| \`${row.component}\` | ${renders(row)} |`),
+      ...(hidden > 0 ? ['', `${hidden} more components changed renders.`] : []),
+    ];
+  }
   return [
     '',
     withNewRenders.length > 0
@@ -348,8 +369,8 @@ function formatComponents({ pr, base }) {
     '| Component | Renders | Master | PR | Δ |',
     '|:---|---:|---:|---:|---:|',
     ...shown.map(
-      ({ component, base: b, pr: p, difference }) =>
-        `| \`${component}\` | ${b.renders === p.renders ? formatCount(p.renders) : `${formatCount(b.renders)} → ${formatCount(p.renders)}`} | ${formatTime(b.selfDuration)} | ${formatTime(p.selfDuration)} | ${difference > 0 ? '+' : '−'}${formatTime(Math.abs(difference))} |`,
+      (row) =>
+        `| \`${row.component}\` | ${renders(row)} | ${formatTime(row.base.selfDuration)} | ${formatTime(row.pr.selfDuration)} | ${row.difference > 0 ? '+' : '−'}${formatTime(Math.abs(row.difference))} |`,
     ),
     ...(hidden > 0 ? ['', `${hidden} more components changed renders.`] : []),
   ];
@@ -357,7 +378,7 @@ function formatComponents({ pr, base }) {
 
 // One collapsible section per status, with a nested one for each interaction that changed
 // A change of renders comes with the render time of the interaction, to show its impact
-function formatChanges({ sections, status, title }) {
+function formatChanges({ sections, status, title, hasTimes }) {
   const groups = sections
     .map((section) => ({ ...section, rows: section.rows.filter((row) => row.status === status) }))
     .filter(({ rows }) => rows.length > 0);
@@ -396,7 +417,7 @@ function formatChanges({ sections, status, title }) {
       ...(group.pr &&
       group.base &&
       group.rows.some(({ id }) => id === 'duration' || id === 'renders')
-        ? formatComponents({ pr: group.pr, base: group.base })
+        ? formatComponents({ pr: group.pr, base: group.base, hasTimes })
         : []),
       '',
       '</details>',
@@ -417,6 +438,15 @@ function formatWarnings({ pr, base }) {
       .map(
         ([side]) =>
           `⚠️ The counts differed between the runs of ${side}, something in the profile depends on timing. The report uses the run of the development build.`,
+      ),
+    ...[
+      ['this PR', pr],
+      ['master', base],
+    ]
+      .filter(([, profile]) => profile && !profile.hasTimes)
+      .map(
+        ([side]) =>
+          `⚠️ The profiling build didn't run on ${side}, so the comment leaves render times out.`,
       ),
     ...(pr.unhandledRequests.length > 0
       ? [
@@ -446,6 +476,8 @@ function formatFailures(failures) {
 }
 
 function formatReport({ pr, base, baseSha, runUrl }) {
+  const hasTimes = pr.hasTimes && (!base || base.hasTimes);
+  const shownMetrics = (ids) => ids.filter((id) => hasTimes || !metrics[id].isTime);
   // Interactions are matched by name, so interactions added by the PR are new
   const sections = pr.interactions.map((interaction) => {
     const baseInteraction = base && findInteraction(base, interaction.name);
@@ -453,7 +485,7 @@ function formatReport({ pr, base, baseSha, runUrl }) {
       name: interaction.name,
       pr: interaction,
       base: baseInteraction,
-      rows: interactionMetrics.map((id) =>
+      rows: shownMetrics(interactionMetrics).map((id) =>
         baseInteraction
           ? {
               id,
@@ -471,7 +503,7 @@ function formatReport({ pr, base, baseSha, runUrl }) {
       const baseCost = base && findCost(base, cost.name);
       return {
         name: cost.name,
-        rows: costMetrics.map((id) =>
+        rows: shownMetrics(costMetrics).map((id) =>
           baseCost
             ? {
                 id,
@@ -484,7 +516,7 @@ function formatReport({ pr, base, baseSha, runUrl }) {
       };
     }),
   );
-  if (base) {
+  if (base && hasTimes) {
     sections.unshift({
       name: 'All interactions',
       rows: [
@@ -502,9 +534,9 @@ function formatReport({ pr, base, baseSha, runUrl }) {
   const count = (status) => rows.filter((row) => row.status === status).length;
   const failures = getFailures(sections);
   const changes = [
-    ...formatChanges({ sections, status: 'worse', title: 'Regressions' }),
-    ...formatChanges({ sections, status: 'better', title: 'Improvements' }),
-    ...formatChanges({ sections, status: 'new', title: 'Not measured on master' }),
+    ...formatChanges({ sections, status: 'worse', title: 'Regressions', hasTimes }),
+    ...formatChanges({ sections, status: 'better', title: 'Improvements', hasTimes }),
+    ...formatChanges({ sections, status: 'new', title: 'Not measured on master', hasTimes }),
   ];
 
   const body = [
@@ -517,7 +549,9 @@ function formatReport({ pr, base, baseSha, runUrl }) {
     '',
     failures.length > 0
       ? `❌ ${formatFailures(failures)}. The check fails when an interaction renders more than on master, or a measured hook builds more SWR key text or keeps more memory.`
-      : '✅ No interaction renders more than on master, and no measured hook builds more SWR key text or keeps more memory.',
+      : base
+        ? '✅ No interaction renders more than on master, and no measured hook builds more SWR key text or keeps more memory.'
+        : '⚠️ The profile did not run on master, so nothing was compared.',
     '',
     `Compared with master at \`${baseSha.slice(0, 7)}\`.`,
     '',
