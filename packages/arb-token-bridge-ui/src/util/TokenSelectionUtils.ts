@@ -136,7 +136,13 @@ export function resolveDestinationSelection({
       isDepositMode,
     });
 
-  const repeatsSource = addressesEqual(destinationTokenLookupKey, sourceTokenAddress);
+  // On a LiFi-only destination, such as Elysium, the zero address is its own native token, even when
+  // the source token also has the zero address, such as ETH on Robinhood Chain
+  const isLifiOnlyNativeDestination =
+    isLifiOnlyChain(destinationChainId) &&
+    addressesEqual(destinationTokenLookupKey, constants.AddressZero);
+  const repeatsSource =
+    !isLifiOnlyNativeDestination && addressesEqual(destinationTokenLookupKey, sourceTokenAddress);
   let token: ERC20BridgeToken | null;
   let lookupKey = destinationTokenLookupKey;
   let isSwap = !repeatsSource;

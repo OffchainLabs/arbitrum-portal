@@ -276,6 +276,33 @@ describe('resolveDestinationSelection', () => {
     },
   );
 
+  it('shows native HYPE, not ETH, when the zero-address ETH of Robinhood Chain goes to Elysium', () => {
+    // LiFi lists ETH on Robinhood Chain as a source-only token with the zero address
+    const robinhoodEth = buildToken({
+      name: 'Ether',
+      symbol: 'ETH',
+      decimals: 18,
+      address: constants.AddressZero,
+      lifiOnlyChainId: ChainId.RobinhoodChain,
+      listIds: new Set([LIFI_TRANSFER_LIST_ID]),
+    });
+
+    expect(
+      resolveDestinationSelection({
+        sourceToken: robinhoodEth,
+        sourceChainId: ChainId.RobinhoodChain,
+        destinationChainId: ChainId.Elysium,
+        isDepositMode: true,
+        destinationTokenLookupKey: constants.AddressZero,
+      }),
+    ).toEqual({
+      token: null,
+      lookupKey: undefined,
+      isSwap: true,
+      destinationAddress: constants.AddressZero,
+    });
+  });
+
   it('keeps native-to-native transfers as non-swaps', () => {
     expect(
       resolveDestinationSelection({
