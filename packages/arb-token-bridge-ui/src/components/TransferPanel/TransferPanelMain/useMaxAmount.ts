@@ -11,6 +11,7 @@ import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship'
 import { useSelectedToken } from '../../../hooks/useSelectedToken';
 import { addressesEqual } from '../../../util/AddressUtils';
 import { NOVA_MAX_ETH_DEPOSIT_AMOUNT, isNovaDestination } from '../../../util/NovaUtils';
+import { isLifiOnlyChain } from '../../../wallet/ecosystems';
 import { getEcosystemConfig } from '../../../wallet/ecosystems/getEcosystemConfig';
 import { getSelectedRouteContext, useRouteStore } from '../hooks/useRouteStore';
 import { useNativeCurrencyBalances } from './useNativeCurrencyBalances';
@@ -84,8 +85,8 @@ export function useMaxAmount() {
     }
 
     // LiFi-only chains, such as Solana, have no gas estimate until a route is quoted
-    const { isLifiOnly, gasBufferBeforeQuote } = getEcosystemConfig(networks.sourceChain.id);
-    if (isLifiOnly) {
+    if (isLifiOnlyChain(networks.sourceChain.id)) {
+      const { gasBufferBeforeQuote } = getEcosystemConfig(networks.sourceChain.id);
       const maxAmount = subtractReserve(nativeCurrencySourceBalance, networks.sourceChain.id).sub(
         BigNumber.from(gasBufferBeforeQuote),
       );

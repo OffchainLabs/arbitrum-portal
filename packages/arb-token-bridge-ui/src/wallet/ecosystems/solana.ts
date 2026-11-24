@@ -59,7 +59,7 @@ export const solanaEcosystem: EcosystemConfig = {
   // 0.001 SOL. LiFi quotes 135,000 lamports of Solana gas per route, and takes its fees out of
   // the amount
   gasBufferBeforeQuote: 1_000_000n,
-  isLifiOnly: true,
+  lifiOnlyChains: [solanaChain],
   hasGasPrice: false,
   // AppKit identifies Solana networks by their genesis hash
   isAppKitNetworkIdChainId: false,

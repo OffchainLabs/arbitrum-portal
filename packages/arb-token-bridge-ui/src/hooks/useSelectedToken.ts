@@ -23,7 +23,7 @@ import {
 import { logger } from '../util/logger';
 import { getDestinationChainIds, isNetwork } from '../util/networks';
 import { sanitizeNullSelectedToken } from '../util/queryParamUtils';
-import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
+import { isLifiOnlyChain } from '../wallet/ecosystems';
 import { ERC20BridgeToken, TokenType } from './arbTokenBridge.types';
 import { useArbQueryParams } from './useArbQueryParams';
 import { useNetworks } from './useNetworks';
@@ -163,7 +163,7 @@ export async function getUsdcToken({
   childChainId: number;
 }): Promise<ERC20BridgeToken | null> {
   // Arbitrum USDC routing doesn't reach LiFi-only chains
-  if (getEcosystemConfig(parentChainId).isLifiOnly || getEcosystemConfig(childChainId).isLifiOnly) {
+  if (isLifiOnlyChain(parentChainId) || isLifiOnlyChain(childChainId)) {
     return null;
   }
 

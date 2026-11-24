@@ -1,5 +1,5 @@
 import { ChainId } from '../types/ChainId';
-import { findEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
+import { isLifiOnlyChain } from '../wallet/ecosystems';
 import { isDepositMode } from './isDepositMode';
 
 /**
@@ -33,7 +33,7 @@ export function getNetworksRelationship({
 
   // LiFi-only chains, such as Solana, only send LiFi deposits. Treat the source as the parent side of
   // the relationship so shared UI and history code keep the transfer direction consistent.
-  if (findEcosystemConfig(sourceChainId)?.isLifiOnly) {
+  if (isLifiOnlyChain(sourceChainId)) {
     return {
       parentChainId: sourceChainId,
       childChainId: destinationChainId,

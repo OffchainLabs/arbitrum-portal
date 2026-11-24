@@ -37,10 +37,10 @@ export type EcosystemConfig = {
    */
   gasBufferBeforeQuote: bigint;
   /**
-   * Every chain of the ecosystem reaches Arbitrum only through LiFi: no parent/child token addresses
-   * and no canonical bridge
+   * Built-in chains, also listed in `chains`, that reach Arbitrum only through LiFi: no parent/child
+   * token addresses and no canonical bridge
    */
-  isLifiOnly: boolean;
+  lifiOnlyChains: readonly Chain[];
   /** Chains price gas with an EVM gas price, as returned by `eth_gasPrice` */
   hasGasPrice: boolean;
   /** AppKit identifies the networks of this ecosystem by their chain id, so the connect modal can preselect one */
@@ -62,7 +62,14 @@ export const ecosystems: Record<WalletEcosystem, EcosystemConfig> = {
   solana: solanaEcosystem,
 };
 
-/** Ecosystems such as Solana whose chains only reach Arbitrum through LiFi */
-export function getLifiOnlyEcosystems(): EcosystemConfig[] {
-  return Object.values(ecosystems).filter((ecosystem) => ecosystem.isLifiOnly);
+/** Built-in chains that only reach Arbitrum through LiFi, such as Solana */
+export function getLifiOnlyChains({ includeDisabled = false } = {}): Chain[] {
+  return Object.values(ecosystems)
+    .filter((ecosystem) => includeDisabled || ecosystem.isEnabled())
+    .flatMap((ecosystem) => ecosystem.lifiOnlyChains);
+}
+
+/** Whether a chain only reaches Arbitrum through LiFi, whether or not its ecosystem is enabled */
+export function isLifiOnlyChain(chainId: number): boolean {
+  return getLifiOnlyChains({ includeDisabled: true }).some((chain) => chain.id === chainId);
 }

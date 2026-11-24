@@ -6,7 +6,8 @@ import { addressesEqual } from '../util/AddressUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
 import { isTokenArbitrumOneNativeUSDC, isTokenArbitrumSepoliaNativeUSDC } from '../util/TokenUtils';
 import { getNetworksRelationship } from '../util/getNetworksRelationship';
-import { getEcosystemConfig, getNativeTokenAddress } from './ecosystems/getEcosystemConfig';
+import { isLifiOnlyChain } from './ecosystems';
+import { getNativeTokenAddress } from './ecosystems/getEcosystemConfig';
 
 export function resolveTokenAddress({
   token,
@@ -30,7 +31,7 @@ export function resolveTokenAddress({
   const chainNativeCurrencyIsCustom = chainId === childChainId && !!childNativeCurrencyAddress;
 
   // A LiFi-only chain has no child chain address, so a token has a single address
-  if (getEcosystemConfig(chainId).isLifiOnly) {
+  if (isLifiOnlyChain(chainId)) {
     return token?.address ?? getNativeTokenAddress(chainId);
   }
 

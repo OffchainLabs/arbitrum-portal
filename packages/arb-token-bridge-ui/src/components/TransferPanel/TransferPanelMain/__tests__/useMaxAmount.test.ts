@@ -7,7 +7,7 @@ import { ChainId } from '../../../../types/ChainId';
 import type { SolanaAddress } from '../../../../util/AddressUtils';
 import { NOVA_MAX_ETH_DEPOSIT_AMOUNT } from '../../../../util/NovaUtils';
 import { defaultWalletContextValue } from '../../../../wallet/WalletContext';
-import { getEcosystemConfig } from '../../../../wallet/ecosystems/getEcosystemConfig';
+import { isLifiOnlyChain } from '../../../../wallet/ecosystems';
 import { SOLANA_NATIVE_TOKEN_ADDRESS } from '../../../../wallet/ecosystems/solana';
 import { useMaxAmount } from '../useMaxAmount';
 
@@ -27,7 +27,7 @@ vi.mock('../../../../wallet/ecosystems/solana', async (importOriginal) => {
 vi.mock('../../../../token-bridge-sdk/BridgeTransferStarterFactory', () => ({
   BridgeTransferStarterFactory: {
     create: ({ sourceChainId }: { sourceChainId: number }) => {
-      if (getEcosystemConfig(sourceChainId).isLifiOnly) {
+      if (isLifiOnlyChain(sourceChainId)) {
         throw new Error('A LiFi quote is required to transfer from this chain.');
       }
       return {
