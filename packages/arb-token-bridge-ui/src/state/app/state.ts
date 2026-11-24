@@ -105,7 +105,8 @@ export interface BaseMergedTransaction {
 }
 
 export interface LifiMergedTransaction
-  extends Omit<BaseMergedTransaction, 'isLifi'>, MergedTransactionLifiData {
+  extends Omit<BaseMergedTransaction, 'isLifi'>,
+    MergedTransactionLifiData {
   isLifi: true;
   showInHistory?: boolean;
   destinationStatus: WithdrawalStatus;
