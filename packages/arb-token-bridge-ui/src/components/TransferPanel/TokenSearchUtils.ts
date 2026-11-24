@@ -26,7 +26,7 @@ const tokensFromUserCache = new WeakMap<
   ContractStorage<ERC20BridgeToken>
 >();
 
-function getTokensFromLists(
+export function getTokensFromLists(
   tokenLists: TokenListWithId[],
   parentChainId: number,
   childChainId: number,
@@ -49,7 +49,7 @@ function getTokensFromLists(
   return tokens;
 }
 
-function getTokensFromUser(
+export function getTokensFromUser(
   bridgeTokens: ContractStorage<ERC20BridgeToken>,
 ): ContractStorage<ERC20BridgeToken> {
   let tokens = tokensFromUserCache.get(bridgeTokens);
