@@ -12,6 +12,7 @@ import { getValidatedTokenData } from '../../services/tokenMetadata';
 import { useAppState } from '../../state';
 import { isLifiOnlyToken } from '../../util/TokenListUtils';
 import { erc20DataToErc20BridgeToken } from '../../util/TokenUtils';
+import { isLifiOnlyChain } from '../../wallet/ecosystems';
 import { Dialog, UseDialogProps } from '../common/Dialog';
 import { NoteBox } from '../common/NoteBox';
 import { Loader } from '../common/atoms/Loader';
@@ -87,7 +88,10 @@ export function TokenImportDialog({
     eitherL1OrL2Address: tokenAddress,
     l2ChainId: childChain.id,
   });
-  const addressToImport = l1Address ?? sourceTokenAddress;
+  // On a LiFi-only source, such as Elysium, the URL address is the token's address on that chain,
+  // even when the same address is a bridged token with a parent on the other chain
+  const isLifiOnlySource = isLifiOnlyChain(networks.sourceChain.id);
+  const addressToImport = (isLifiOnlySource ? null : l1Address) ?? sourceTokenAddress;
   const isUnmatchedTokenImport = allowsUnmatchedTokenImport && isLifiOnlyToken(tokenToImport);
 
   // we use a different state to handle dialog visibility to trigger the entry transition,
@@ -114,7 +118,9 @@ export function TokenImportDialog({
   }, [status]);
 
   const getTokenData = useCallback(async () => {
-    if (!hasParentAddress && !isDepositMode && allowsUnmatchedTokenImport) {
+    // A child chain address with no parent in a withdrawal, or any address on a LiFi-only source
+    const isSourceChainAddress = isLifiOnlySource || (!hasParentAddress && !isDepositMode);
+    if (isSourceChainAddress && allowsUnmatchedTokenImport) {
       try {
         const data = await getValidatedTokenData(sourceTokenAddress, networks.sourceChain.id);
         return {
@@ -136,6 +142,7 @@ export function TokenImportDialog({
     allowsUnmatchedTokenImport,
     hasParentAddress,
     isDepositMode,
+    isLifiOnlySource,
     networks.sourceChain.id,
     parentChain.id,
     sourceTokenAddress,

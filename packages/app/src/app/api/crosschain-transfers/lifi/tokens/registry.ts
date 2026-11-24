@@ -1,4 +1,5 @@
 import { CoinKey, ChainId as LiFiChainId, type Token as LifiSdkToken, getTokens } from '@lifi/sdk';
+import { constants } from 'ethers';
 import { unstable_cache } from 'next/cache';
 
 import {
@@ -149,6 +150,9 @@ const EXCLUDED_ADDRESSES: Partial<Record<number, Set<string>>> = {
     // USDG, mapped in CUSTOM_TOKENS above. Excluding this one keeps a single USDG row.
     '0x0a3b763d66c0e8c7555c986a3701e1dc1bf3954f',
   ]),
+  // LiFi lists HYPE, Elysium's native currency, at the zero address. The bridge already shows it as the
+  // native currency, and reads the zero address as ETH on EVM routes.
+  [ChainId.Elysium]: new Set([constants.AddressZero]),
 };
 
 // Only the fields the route reads. LiFi tokens also carry verification data that takes most of the
