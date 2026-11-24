@@ -21,6 +21,15 @@ describe('native currency service', () => {
     expect(providers.getProviderForChainId).not.toHaveBeenCalled();
   });
 
+  it('reads HYPE as the Elysium native currency without constructing an EVM provider', async () => {
+    expect(await fetchNativeCurrency({ chainId: ChainId.Elysium })).toMatchObject({
+      symbol: 'HYPE',
+      decimals: 18,
+      isCustom: false,
+    });
+    expect(providers.getProviderForChainId).not.toHaveBeenCalled();
+  });
+
   it('rejects unsupported chains before requesting an EVM provider', async () => {
     await expect(fetchNativeCurrency({ chainId: 999999999 })).rejects.toThrow();
     expect(providers.getProviderForChainId).not.toHaveBeenCalled();
