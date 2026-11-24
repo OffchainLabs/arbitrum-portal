@@ -257,6 +257,25 @@ describe('resolveDestinationSelection', () => {
     },
   );
 
+  it.each([undefined, constants.AddressZero])(
+    'keeps native HYPE, not ETH, as the destination of ApeChain to Elysium with lookup key %s',
+    (destinationTokenLookupKey) => {
+      expect(
+        resolveDestinationSelection({
+          sourceToken: null,
+          sourceChainId: ChainId.ApeChain,
+          destinationChainId: ChainId.Elysium,
+          isDepositMode: true,
+          destinationTokenLookupKey,
+        }),
+      ).toMatchObject({
+        token: null,
+        lookupKey: undefined,
+        destinationAddress: constants.AddressZero,
+      });
+    },
+  );
+
   it('keeps native-to-native transfers as non-swaps', () => {
     expect(
       resolveDestinationSelection({
