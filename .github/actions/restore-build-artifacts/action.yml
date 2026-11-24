@@ -1,12 +1,12 @@
 name: Restore build artifacts
-description: Restore build artifacts
+description: Wait for this run's build artifact, then restore it
 
 runs:
   using: composite
   steps:
-    # The artifact's root is packages/app, the common folder of the uploaded paths
+    # Needs the `actions: read` permission
     - name: Restore build artifacts
-      uses: actions/download-artifact@v8
-      with:
-        name: build-artifacts
-        path: ./packages/app
+      shell: bash
+      run: .github/scripts/restore-build-artifacts.sh
+      env:
+        GH_TOKEN: ${{ github.token }}

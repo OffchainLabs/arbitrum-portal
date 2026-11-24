@@ -19,7 +19,7 @@ env:
 jobs:
   load-e2e-files:
     name: 'Load e2e files'
-    runs-on: ubuntu-8
+    runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.e2eFiles }}
     steps:
@@ -33,30 +33,33 @@ jobs:
     name: 'Test E2E - ${{ matrix.test.name }} ${{ matrix.test.typeName }}'
     # Called by test.yml after its build job, so the build artifacts already exist
     needs: [load-e2e-files]
-    runs-on: ubuntu-8
+    # GitHub's standard runners, free for public repos. The org's ubuntu-8 pool is shared, and with
+    # 51 jobs they waited up to 16 min for it.
+    runs-on: ubuntu-latest
+    # Healthy jobs take 3-5 min. A degraded runner (slow restores, page loads timing out) can
+    # otherwise hold the run for 20+ min.
+    timeout-minutes: 12
     strategy:
       fail-fast: false
       matrix:
         test: ${{ fromJson(needs.load-e2e-files.outputs.matrix) }}
 
-    # The testnode runs as a service container; its ports are published to the
-    # host runner so the (non-container) job and the app reach it on localhost.
-    services:
-      testnode:
-        # Litro v0.6.1 with the e2e setup prebaked (see e2e-testnode-images.yml).
-        image: ghcr.io/offchainlabs/arbitrum-portal-e2e-testnode:v0.6.1-nc3.2-${{ matrix.test.tag }}-r1
-        credentials:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          TESTNODE_VARIANT: ${{ matrix.test.tag }}
-        ports:
-          - 8080:8080
-          - 8545:8545
-          - 8547:8547
-          - 3347:8549
-
     steps:
+      # Litro v0.6.9 with the e2e setup prebaked (see e2e-testnode-images.yml). Started in the
+      # background rather than as a service container: a service is pulled before the first step
+      # and stopped after the last, which added 40-100s per job. L1 mines every 250ms instead of
+      # 1s, so withdrawals turn claimable and deposits land sooner.
+      - name: Start testnode
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker run -d --name testnode -e TESTNODE_VARIANT=${{ matrix.test.tag }} \
+            -e TESTNODE_L1_BLOCK_TIME=0.25 \
+            -p 8080:8080 -p 8545:8545 -p 8547:8547 -p 3347:8549 \
+            ghcr.io/offchainlabs/arbitrum-portal-e2e-testnode:v0.6.9-nc3.2-${{ matrix.test.tag }}-r2 \
+            > "$RUNNER_TEMP/testnode.log" 2>&1 &
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -77,44 +80,54 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-
           save: ${{ github.ref == 'refs/heads/master' }}
 
-      - name: Restore build artifacts
-        uses: ./.github/actions/restore-build-artifacts
-
-      - name: Install browser system dependencies
-        run: pnpm --filter arb-token-bridge-ui exec playwright install-deps chromium
-
       # Synpress/MetaMask 11.15.0 is a Manifest V2 extension that Playwright's bundled Chromium
       # refuses to load. fixtures.ts launches the pinned Chrome for Testing (Chrome 128, MV2) from
       # node_modules/.cache/synpress instead. `postinstall` skips it on CI, so install it here.
+      # The first pnpm command in a job spends ~23s checking the lockfile against the supply-chain
+      # policies. Pay it here, while the build runs, rather than before the tests.
+      - name: Check the lockfile in the background
+        run: pnpm --filter arb-token-bridge-ui exec true > "$RUNNER_TEMP/pnpm-check.log" 2>&1 &
+
       - name: Install pinned Chrome for Testing
         uses: ./.github/actions/install-chrome
 
-      - name: Install linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y \
-          fluxbox \
-          xvfb
-
-      - name: Run xvfb and fluxbox
-        run: |
-          Xvfb :0 -screen 0 1366x768x24 -listen tcp -ac &
-          fluxbox &
-        env:
-          DISPLAY: :0.0
-
-      # The runner only starts job steps once the testnode service container
-      # reports healthy (its HEALTHCHECK polls all chain RPCs), so the config
-      # is ready to fetch here.
+      # The image's HEALTHCHECK polls all chain RPCs, so healthy means the config is ready.
       - name: Fetch testnode config
-        run: curl -sf http://localhost:8080/config/localNetwork.json -o packages/arb-token-bridge-ui/src/util/networksNitroTestnode.generated.json
+        run: |
+          timeout 180 bash -c 'until [ "$(docker inspect -f "{{.State.Health.Status}}" testnode 2>/dev/null)" = healthy ]; do sleep 1; done' \
+            || { cat "$RUNNER_TEMP/testnode.log"; docker logs testnode; exit 1; }
+          curl -sf http://localhost:8080/config/localNetwork.json -o packages/arb-token-bridge-ui/src/util/networksNitroTestnode.generated.json
+
+      # The ubuntu-24.04 runner image already has Xvfb and Chrome's libraries.
+      - name: Run xvfb
+        run: Xvfb :0 -screen 0 1366x768x24 -listen tcp -ac &
+
+      # A MetaMask profile saved right after setup (see fixtures.ts), so most jobs only unlock it.
+      # Its vault password comes from the wallet's secret key, so the cached copy is safe to share.
+      # fixtures.ts rebuilds a profile whose wallet or networks differ from the current ones. Bump
+      # the version when setUpMetamask changes in another way.
+      - name: Cache MetaMask profile
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/metamask-profile
+          key: ${{ runner.os }}-metamask-v1-${{ matrix.test.type }}-${{ hashFiles('package.json') }}
 
       - name: Run e2e tests (Playwright)
+        # Playwright starts while the build may still be running: launching Chrome and unlocking
+        # MetaMask doesn't need the app, and fixtures.ts waits for it before the first test. The
+        # build is restored and served in the background. next is run directly because the first
+        # pnpm command in a job spends ~23s checking the lockfile.
         run: |
-          pnpm start &
-          npx --yes wait-on http://127.0.0.1:3000 --timeout 120000
-          pnpm test:e2e ${{ matrix.test.file }}
+          (
+            .github/scripts/restore-build-artifacts.sh
+            cd packages/app && exec ./node_modules/.bin/next start
+          ) > "$RUNNER_TEMP/app.log" 2>&1 &
+          pnpm test:e2e ${{ matrix.test.files }} ${E2E_GREP:+--grep "$E2E_GREP"} || { cat "$RUNNER_TEMP/app.log"; exit 1; }
         env:
+          GH_TOKEN: ${{ github.token }}
+          E2E_WAIT_FOR_APP: true
+          E2E_GREP: ${{ matrix.test.grep }}
+          E2E_METAMASK_PROFILE: ${{ runner.temp }}/metamask-profile
           DISPLAY: :0.0
           E2E_ORBIT: ${{ matrix.test.type == 'orbit-eth' }}
           E2E_ORBIT_CUSTOM_GAS_TOKEN: ${{ startsWith(matrix.test.type, 'orbit-custom') }}

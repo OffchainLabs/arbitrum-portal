@@ -16,6 +16,7 @@ import {
   selectTransactionsPanelTab,
   switchToTransactionHistoryTab,
   switchToTransferPanelTab,
+  waitForMetamaskNotification,
 } from '../support/actions';
 import { getInitialERC20Balance, getL2NetworkConfig, getL2NetworkName } from '../support/common';
 
@@ -75,9 +76,6 @@ test.describe('Redeem ERC20 Deposit', () => {
     // open transaction history and wait for deposit to fetch data
     await switchToTransactionHistoryTab(page, 'pending', { chainFilter: getL2NetworkName(e2eEnv) });
 
-    // give CI more time to fetch the transactions
-    await page.waitForTimeout(15_000);
-
     await findTransactionInTransactionHistory(page, {
       amount: wethAmountToDeposit,
       symbol: 'WETH',
@@ -89,8 +87,8 @@ test.describe('Redeem ERC20 Deposit', () => {
     await retryButton.click();
 
     // approve redeem transaction
+    await waitForMetamaskNotification(page);
     await metamask.confirmTransaction({ gasConfig: 'aggressive' });
-    await page.waitForTimeout(15_000);
     await selectTransactionsPanelTab(page, 'settled');
 
     // find the same transaction redeemed successfully
@@ -101,10 +99,10 @@ test.describe('Redeem ERC20 Deposit', () => {
 
     await switchToTransferPanelTab(page);
 
-    // wait for the destination balance to update
-    await page.waitForTimeout(5_000);
+    // token balances refresh every 15s; allow a few refreshes
     await expect(page.getByLabel('WETH balance amount on childChain')).toHaveText(
       formatAmount(Number(l2Erc20Bal) + wethAmountToDeposit),
+      { timeout: 65_000 },
     );
   });
 });

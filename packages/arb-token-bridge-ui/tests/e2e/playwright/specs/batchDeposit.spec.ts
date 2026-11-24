@@ -15,13 +15,12 @@ import {
   findGasFeeSummary,
   findMoveFundsButton,
   findSelectTokenButton,
+  findSettledTransaction,
   findSourceChainButton,
   findTransactionDetailsCustomDestinationAddress,
-  findTransactionInTransactionHistory,
   login,
   openTransactionDetails,
   searchAndSelectToken,
-  selectTransactionsPanelTab,
   switchToTransferPanelTab,
   typeAmount,
   typeAmount2,
@@ -34,6 +33,7 @@ import {
   getL1NetworkName,
   getL2NetworkConfig,
   getL2NetworkName,
+  getRandomAmount,
   getZeroToLessThanOneToken,
 } from '../support/common';
 
@@ -74,9 +74,8 @@ test.describe('Batch Deposit', () => {
     page,
     e2eEnv,
   }) => {
-    const amount = Number((Math.random() * 0.001).toFixed(5));
+    const amount = getRandomAmount();
     const nativeCurrencyAmountToSend = 0.002;
-    const depositTime = e2eEnv.ORBIT_TEST === '1' ? 'Less than a minute' : '9 minutes';
     const nativeTokenSymbol = e2eEnv.NATIVE_TOKEN_SYMBOL;
     const { childErc20Balance, childNativeTokenBalance, parentErc20Balance } =
       await readBalances(e2eEnv);
@@ -110,8 +109,12 @@ test.describe('Batch Deposit', () => {
     await expect(await findMoveFundsButton(page)).toBeDisabled();
 
     await typeAmount(page, amount);
-    await page.waitForTimeout(5_000);
     await typeAmount2(page, nativeCurrencyAmountToSend);
+    // The route lists the native amount once it has worked out that the batch is supported. Moving
+    // funds before then sends a token-only deposit.
+    await expect(page.getByLabel('Route arbitrum')).toContainText(
+      formatAmount(nativeCurrencyAmountToSend, { symbol: nativeTokenSymbol }),
+    );
     await findGasFeeSummary(page, zeroToLessThanOneEth);
 
     const txData = {
@@ -123,26 +126,25 @@ test.describe('Batch Deposit', () => {
 
     await acceptTnC(page);
     await clickMoveFundsButton(page);
-    await findTransactionInTransactionHistory(page, { ...txData, duration: depositTime });
-
-    await selectTransactionsPanelTab(page, 'settled');
-    await findTransactionInTransactionHistory(page, { duration: 'a few seconds ago', ...txData });
+    await findSettledTransaction(page, txData);
     await switchToTransferPanelTab(page);
 
     // funds should reach destination account successfully.
     // The balances refresh asynchronously after the deposit settles, so poll instead of taking a
-    // single snapshot (the Cypress `.should(($el) => ...)` form retried the callback).
+    // single snapshot (the Cypress `.should(($el) => ...)` form retried the callback). Native
+    // balances refresh every 30s and token balances every 15s, so allow two refreshes.
+    const balanceTimeout = { timeout: 65_000 };
     const childErc20 = page.getByLabel(`${ERC20TokenSymbol} balance amount on childChain`);
     await expect
-      .poll(async () => parseFloat(await childErc20.innerText()))
+      .poll(async () => parseFloat(await childErc20.innerText()), balanceTimeout)
       .toBeGreaterThan(Number(childErc20Balance));
     const childNative = page.getByLabel(`${nativeTokenSymbol} balance amount on childChain`);
     await expect
-      .poll(async () => parseFloat(await childNative.innerText()))
+      .poll(async () => parseFloat(await childNative.innerText()), balanceTimeout)
       .toBeGreaterThan(Number(childNativeTokenBalance));
     const parentErc20 = page.getByLabel(`${ERC20TokenSymbol} balance amount on parentChain`);
     await expect
-      .poll(async () => parseFloat(await parentErc20.innerText()))
+      .poll(async () => parseFloat(await parentErc20.innerText()), balanceTimeout)
       .toBeLessThan(Number(parentErc20Balance));
 
     await expect(findAmountInput(page)).toHaveValue('');
@@ -154,9 +156,8 @@ test.describe('Batch Deposit', () => {
     page,
     e2eEnv,
   }) => {
-    const amount = Number((Math.random() * 0.001).toFixed(5));
+    const amount = getRandomAmount();
     const nativeCurrencyAmountToSend = 0.002;
-    const depositTime = e2eEnv.ORBIT_TEST === '1' ? 'Less than a minute' : '9 minutes';
     const nativeTokenSymbol = e2eEnv.NATIVE_TOKEN_SYMBOL;
 
     await login(page, e2eEnv, { networkType: 'parentChain' });
@@ -174,8 +175,12 @@ test.describe('Batch Deposit', () => {
     await expect(await findMoveFundsButton(page)).toBeDisabled();
 
     await typeAmount(page, amount);
-    await page.waitForTimeout(5_000);
     await typeAmount2(page, nativeCurrencyAmountToSend);
+    // The route lists the native amount once it has worked out that the batch is supported. Moving
+    // funds before then sends a token-only deposit.
+    await expect(page.getByLabel('Route arbitrum')).toContainText(
+      formatAmount(nativeCurrencyAmountToSend, { symbol: nativeTokenSymbol }),
+    );
     await findGasFeeSummary(page, zeroToLessThanOneEth);
 
     const txData = {
@@ -187,16 +192,7 @@ test.describe('Batch Deposit', () => {
 
     await acceptTnC(page);
     await clickMoveFundsButton(page);
-    await findTransactionInTransactionHistory(page, { ...txData, duration: depositTime });
-    await openTransactionDetails(page, txData);
-    await findTransactionDetailsCustomDestinationAddress(
-      page,
-      e2eEnv.CUSTOM_DESTINATION_ADDRESS as string,
-    );
-    await closeTransactionDetails(page);
-
-    await selectTransactionsPanelTab(page, 'settled');
-    await findTransactionInTransactionHistory(page, { duration: 'a few seconds ago', ...txData });
+    await findSettledTransaction(page, txData);
     await openTransactionDetails(page, txData);
     await findTransactionDetailsCustomDestinationAddress(
       page,
