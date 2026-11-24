@@ -16,6 +16,7 @@ catalog:
   # Used by several packages. Bump the version here, packages use `catalog:`.
   posthog-js: ^1.438.13
   zod: ^4.6.7
+  zustand: ^5.0.15
 
 overrides:
   # Keeps synpress (^1.37.0) and next's peer on the catalog version, see `catalog` above.

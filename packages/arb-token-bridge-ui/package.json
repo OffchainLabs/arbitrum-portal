@@ -54,7 +54,7 @@
     "viem": "^2.57.14",
     "wagmi": "^2.19.5",
     "zod": "catalog:",
-    "zustand": "^5.0.15"
+    "zustand": "catalog:"
   },
   "scripts": {
     "predev": "pnpm run generateDenylist",
