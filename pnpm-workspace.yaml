@@ -10,6 +10,12 @@ catalog:
   # next. Two copies break vi.mock('next/navigation'). Bump the version here: packages use
   # `catalog:` and the override below follows it.
   next: 16.4.6
+  # Must match wagmi's @wagmi/core. The app and bridge use `catalog:`, and the appkit adapter
+  # override below follows it.
+  '@wagmi/core': 2.22.1
+  # Used by several packages. Bump the version here, packages use `catalog:`.
+  posthog-js: ^1.438.13
+  zod: ^4.6.7
 
 overrides:
   # Keeps synpress (^1.37.0) and next's peer on the catalog version, see `catalog` above.
@@ -40,7 +46,9 @@ overrides:
   '@typescript-eslint/parser': 8.59.3
   # Keeps the next peer of next-query-params and @offchainlabs/cobalt on the catalog version, see `catalog` above.
   next: 'catalog:'
-  '@reown/appkit-adapter-wagmi>@wagmi/core': 2.22.1
+  # The adapter asks for @wagmi/core 3, while wagmi 2 needs 2.x. Two copies give two wagmi
+  # configs, so its peer follows the catalog version.
+  '@reown/appkit-adapter-wagmi>@wagmi/core': 'catalog:'
   'eslint-plugin-react-hooks': 7.1.1
   'utf-8-validate': 6.0.6
   'hono': 4.13.18

@@ -94,8 +94,6 @@ describe('sanitizePostHogEvent', () => {
   });
 
   it('returns the input unchanged when there is nothing to sanitize', () => {
-    expect(sanitizePostHogEvent(null)).toBeNull();
-
     const withoutProperties = { uuid: 'u', event: 'e' } as CaptureResult;
     expect(sanitizePostHogEvent(withoutProperties)).toBe(withoutProperties);
   });

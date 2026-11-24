@@ -24,6 +24,7 @@
     "@uidotdev/usehooks": "^2.4.1",
     "@uniswap/token-lists": "^1.0.0-beta.34",
     "@unstoppabledomains/resolution": "^9.3.3",
+    "@wagmi/core": "catalog:",
     "apollo-link-timeout": "^5.1.0",
     "axios": "^1.20.0",
     "boring-avatars": "^2.0.4",
@@ -37,7 +38,7 @@
     "next": "catalog:",
     "next-query-params": "^5.1.0",
     "p-limit": "^7.3.3",
-    "posthog-js": "^1.424.1",
+    "posthog-js": "catalog:",
     "query-string": "^9.5.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
@@ -52,7 +53,7 @@
     "use-query-params": "^2.2.2",
     "viem": "^2.57.14",
     "wagmi": "^2.19.5",
-    "zod": "^3.25.76",
+    "zod": "catalog:",
     "zustand": "^4.5.7"
   },
   "scripts": {
