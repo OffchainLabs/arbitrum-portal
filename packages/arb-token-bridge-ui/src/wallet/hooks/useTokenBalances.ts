@@ -2,9 +2,10 @@ import { useCallback } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 
 import { addressesEqual, isValidAddressForChain, normalizeAddress } from '../../util/AddressUtils';
+import { e2ePollingInterval } from '../../util/CommonUtils';
 import { fetchBalances } from '../balance/fetchBalances';
 
-const BALANCE_REFRESH_INTERVAL = 15_000;
+const BALANCE_REFRESH_INTERVAL = e2ePollingInterval(15_000);
 
 export function useTokenBalances({
   chainId,
