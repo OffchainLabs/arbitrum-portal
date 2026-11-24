@@ -54,6 +54,10 @@ const chainToLogo: { [key: Chain]: string } = {
   [ChainId.ArbitrumSepolia]: 'https://l2beat.com/icons/arbitrum.png',
   [ChainId.Base]: 'https://l2beat.com/icons/base.png',
   [ChainId.Solana]: 'https://l2beat.com/icons/solana.png',
+  // l2beat has no Elysium icon, so the bridge's own logo is inlined
+  [ChainId.Elysium]: `data:image/svg+xml;base64,${fs
+    .readFileSync('../app/public/images/ElysiumLogo.svg')
+    .toString('base64')}`,
 };
 
 const configs: ChainCombination[] = [
@@ -68,11 +72,18 @@ const configs: ChainCombination[] = [
   ),
 ];
 
-// Pairs with a single direction, e.g. Base only reaches Arbitrum One through LiFi
+// Pairs generated only in the listed direction, e.g. Base only reaches Arbitrum One through LiFi.
+// Elysium is neither a core nor an Orbit chain, so each of its directions is listed
 const oneWayConfigs: ChainCombination[] = [
   [ChainId.Base, ChainId.ArbitrumOne],
   [ChainId.ArbitrumNova, ChainId.ArbitrumOne],
   [ChainId.Solana, ChainId.ArbitrumOne],
+  [ChainId.Ethereum, ChainId.Elysium],
+  [ChainId.Elysium, ChainId.Ethereum],
+  [ChainId.ArbitrumOne, ChainId.Elysium],
+  [ChainId.Elysium, ChainId.ArbitrumOne],
+  [ChainId.Base, ChainId.Elysium],
+  [ChainId.Solana, ChainId.Elysium],
 ];
 
 const imagesDirectory = '../app/public/images/__auto-generated/open-graph';
