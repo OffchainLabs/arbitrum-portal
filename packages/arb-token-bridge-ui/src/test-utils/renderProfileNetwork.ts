@@ -158,7 +158,7 @@ export function startProfileNetwork() {
 // Resolves once no request is in flight and a few event loop turns passed without any, so the
 // responses were parsed and the updates they trigger were scheduled
 export async function waitForNetworkIdle() {
-  for (let idleTurns = 0; idleTurns < 5; ) {
+  for (let idleTurns = 0; idleTurns < 5;) {
     const activityBefore = networkActivity;
     // eslint-disable-next-line no-await-in-loop
     await new Promise((resolve) => setImmediate(resolve));

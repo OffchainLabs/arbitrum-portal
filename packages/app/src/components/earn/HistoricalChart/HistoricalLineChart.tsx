@@ -25,8 +25,10 @@ interface HistoricalLineChartProps {
   xDomain?: [number, number];
 }
 
-interface ChartTooltipContentProps
-  extends Omit<Partial<TooltipContentProps<number, string>>, 'payload'> {
+interface ChartTooltipContentProps extends Omit<
+  Partial<TooltipContentProps<number, string>>,
+  'payload'
+> {
   metricType?: MetricType;
   xFormat?: string;
   payload?: Array<{ name: string; value: number }>;
