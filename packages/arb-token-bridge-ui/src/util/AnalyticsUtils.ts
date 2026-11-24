@@ -11,7 +11,8 @@ import { isProductionEnvironment } from './CommonUtils';
 import { FastBridgeNames, SpecialTokenSymbol } from './fastBridges';
 
 type AccountType = 'EOA' | 'Delegated EOA' | 'Smart Contract';
-type AssetType = EcosystemConfig['nativeAssetType'] | 'ERC-20';
+type NativeAssetType = EcosystemConfig['nativeAssetType'] | 'HYPE';
+type AssetType = NativeAssetType | 'ERC-20';
 type TransferDirection = 'Deposit' | 'Withdrawal';
 type FastBridgeName = `${FastBridgeNames}`;
 type TokenPickerSide = 'source' | 'destination';
@@ -204,13 +205,21 @@ export function getAnalyticsAccountType(
   return walletAccountType === 'delegated-account' ? 'Delegated EOA' : 'EOA';
 }
 
+export function getNativeAssetType(chainId: number): NativeAssetType {
+  // Elysium is an EVM chain, but its native currency is HYPE
+  if (chainId === ChainId.Elysium) {
+    return 'HYPE';
+  }
+  return getEcosystemConfig(chainId).nativeAssetType;
+}
+
 export function getLifiAssetType({
   tokenAddress,
   chainId,
 }: {
   tokenAddress: string | undefined;
   chainId: number;
-}): 'ERC20' | EcosystemConfig['nativeAssetType'] {
+}): 'ERC20' | NativeAssetType {
   // ApeChain uses APE token (ERC20) for native token
   if (chainId === ChainId.ApeChain) {
     return 'ERC20';
@@ -219,7 +228,7 @@ export function getLifiAssetType({
   if (!addressesEqual(tokenAddress, getNativeTokenAddress(chainId))) {
     return 'ERC20';
   }
-  return getEcosystemConfig(chainId).nativeAssetType;
+  return getNativeAssetType(chainId);
 }
 
 export function trackEvent(
