@@ -31,9 +31,10 @@ export function getNetworksRelationship({
     };
   }
 
-  // LiFi-only chains, such as Solana, only send LiFi deposits. Treat the source as the parent side of
-  // the relationship so shared UI and history code keep the transfer direction consistent.
-  if (isLifiOnlyChain(sourceChainId)) {
+  // LiFi-only chains, such as Solana and Elysium, have no parent or child chain. Treat every transfer
+  // from or to one as a LiFi deposit from the source, so shared UI and history code keep the transfer
+  // direction consistent.
+  if (isLifiOnlyChain(sourceChainId) || isLifiOnlyChain(destinationChainId)) {
     return {
       parentChainId: sourceChainId,
       childChainId: destinationChainId,

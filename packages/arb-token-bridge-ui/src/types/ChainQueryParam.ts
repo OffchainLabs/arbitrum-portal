@@ -8,6 +8,8 @@ import { getCustomChainFromLocalStorageById, getSupportedChainIds } from '../uti
 import { getOrbitChains, orbitChains } from '../util/orbitChainsList';
 import * as customChains from '../util/wagmi/wagmiAdditionalNetworks';
 import { chainToWagmiChain } from '../util/wagmi/wagmiAdditionalNetworks';
+import { isLifiOnlyChain } from '../wallet/ecosystems';
+import { elysium } from '../wallet/ecosystems/evm';
 import { findEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 
 // Orbit chains use the slug from `orbitChainsData`
@@ -32,6 +34,7 @@ const coreChains = {
     getChain: () => customChains.localL2Network,
   },
   [ChainId.L3Local]: { slug: 'nitro-testnode-l3', getChain: () => customChains.localL3Network },
+  [ChainId.Elysium]: { slug: 'elysium', getChain: () => elysium },
 } as const satisfies Record<
   Exclude<ChainId, OrbitChainId>,
   { slug: string; getChain: () => Chain }
@@ -47,8 +50,11 @@ function isCoreChainId(chainId: number): chainId is CoreChainId {
   return chainId in coreChains;
 }
 
-// Chains of other ecosystems are only valid while that ecosystem is enabled
-function isEcosystemEnabled(chainId: number): boolean {
+// Chains of other ecosystems, and LiFi-only chains such as Elysium, are only valid while enabled
+function isChainEnabled(chainId: number): boolean {
+  if (isLifiOnlyChain(chainId)) {
+    return getEnabledLifiOnlyChainIds().includes(chainId);
+  }
   return findEcosystemConfig(chainId)?.isEnabled() ?? true;
 }
 
@@ -58,7 +64,7 @@ export function isValidChainQueryParam(value: string | number): boolean {
     if (!coreChain) {
       return getOrbitChains().some((chain) => chain.slug === value);
     }
-    return isEcosystemEnabled(coreChain.getChain().id);
+    return isChainEnabled(coreChain.getChain().id);
   }
 
   const supportedNetworkIds = getSupportedChainIds({ includeTestnets: true });

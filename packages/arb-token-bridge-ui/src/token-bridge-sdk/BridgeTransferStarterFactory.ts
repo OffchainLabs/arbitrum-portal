@@ -51,8 +51,8 @@ export class BridgeTransferStarterFactory {
     }
 
     // A LiFi-only chain has no canonical bridge to fall back to
-    if (isLifiOnlyChain(props.sourceChainId)) {
-      throw new Error('A LiFi quote is required to transfer from this chain.');
+    if (isLifiOnlyChain(props.sourceChainId) || isLifiOnlyChain(props.destinationChainId)) {
+      throw new Error('A LiFi quote is required to transfer between these chains.');
     }
 
     const sourceChainProvider = getProviderForChainId(props.sourceChainId);

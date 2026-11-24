@@ -1,6 +1,7 @@
 import { Chain, arbitrum, mainnet } from 'wagmi/chains';
 
 import { ChainId } from '../../types/ChainId';
+import { elysium } from '../../wallet/ecosystems/evm';
 import { getCustomChainFromLocalStorageById } from '../networks';
 import { orbitChains } from '../orbitChainsList';
 import {
@@ -39,6 +40,9 @@ export function getWagmiChain(chainId: number): Chain {
 
     case ChainId.Base:
       return base;
+
+    case ChainId.Elysium:
+      return elysium;
 
     // Testnets
     case ChainId.Sepolia:

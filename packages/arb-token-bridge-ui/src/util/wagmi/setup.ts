@@ -7,6 +7,7 @@ import { baseAccount } from 'wagmi/connectors';
 
 import { unica } from '../../components/common/Font';
 import { PORTAL_DOMAIN } from '../../constants';
+import { elysium } from '../../wallet/ecosystems/evm';
 import { appKitAdapters, appKitCustomRpcUrls, appKitNetworks } from '../../wallet/solana/appKit';
 import { isDevelopmentEnvironment, isE2eTestingEnvironment } from '../CommonUtils';
 import { logger } from '../logger';
@@ -44,6 +45,7 @@ const defaultChains: AppKitNetworkList = [
   arbitrum,
   arbitrumNova,
   base,
+  elysium,
   sepolia,
   arbitrumSepolia,
   baseSepolia,

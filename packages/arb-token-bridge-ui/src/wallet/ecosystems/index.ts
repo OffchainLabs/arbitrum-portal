@@ -1,7 +1,8 @@
 import type { Chain } from 'viem';
 
+import { ChainId } from '../../types/ChainId';
 import type { WalletEcosystem } from '../types';
-import { evmEcosystem } from './evm';
+import { evmEcosystem, isElysiumEnabled } from './evm';
 import { solanaEcosystem } from './solana';
 
 export type ValidationOptions = {
@@ -62,11 +63,15 @@ export const ecosystems: Record<WalletEcosystem, EcosystemConfig> = {
   solana: solanaEcosystem,
 };
 
-/** Built-in chains that only reach Arbitrum through LiFi, such as Solana */
+/** Built-in chains that only reach Arbitrum through LiFi, such as Solana and Elysium */
 export function getLifiOnlyChains({ includeDisabled = false } = {}): Chain[] {
-  return Object.values(ecosystems)
-    .filter((ecosystem) => includeDisabled || ecosystem.isEnabled())
-    .flatMap((ecosystem) => ecosystem.lifiOnlyChains);
+  return (
+    Object.values(ecosystems)
+      .filter((ecosystem) => includeDisabled || ecosystem.isEnabled())
+      .flatMap((ecosystem) => ecosystem.lifiOnlyChains)
+      // Elysium has its own feature flag, since the EVM ecosystem is always enabled
+      .filter((chain) => includeDisabled || chain.id !== ChainId.Elysium || isElysiumEnabled())
+  );
 }
 
 /** Whether a chain only reaches Arbitrum through LiFi, whether or not its ecosystem is enabled */

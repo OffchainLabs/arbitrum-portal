@@ -112,6 +112,21 @@ export function getBridgeUiConfigForChain(chainId: number): BridgeUiConfig {
           description: 'Base is an Optimistic Rollup built by Coinbase with the OP Stack.',
         },
       };
+    case ChainId.Elysium:
+      return {
+        color: '#2B8FB6',
+        network: {
+          name: 'Elysium',
+          logo: '/images/ElysiumLogo.svg',
+          description: 'Kinetiq’s Layer 2 for Hyperliquid, with HYPE as its gas token.',
+        },
+        nativeTokenData: {
+          name: 'HYPE',
+          symbol: 'HYPE',
+          logoUrl:
+            'https://static.debank.com/image/hyper_token/logo_url/hyper/0b3e288cfe418e9ce69eef4c96374583.png',
+        },
+      };
     case ChainId.BaseSepolia:
       return {
         color: '#0052ff',

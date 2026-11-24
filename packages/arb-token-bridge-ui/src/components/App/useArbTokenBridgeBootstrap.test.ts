@@ -66,6 +66,13 @@ describe.sequential('bridge bootstrap', () => {
     });
   });
 
+  it('loads the token bridge store for an EVM chain that only LiFi reaches', () => {
+    fixture.destinationChainId = ChainId.Elysium;
+    const { result } = renderHook(useArbTokenBridgeBootstrap);
+    expect(result.current?.l1.network.id).toBe(ChainId.Ethereum);
+    expect(result.current?.l2.network.id).toBe(ChainId.Elysium);
+  });
+
   it('clears EVM bridge state when selecting a cross-ecosystem pair', () => {
     const { result, rerender } = renderHook(useArbTokenBridgeBootstrap);
     expect(result.current?.l1.network.id).toBe(ChainId.Ethereum);

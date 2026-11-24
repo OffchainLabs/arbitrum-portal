@@ -20,4 +20,6 @@ export enum ChainId {
   RobinhoodChain = 4663,
   // Orbit Testnets
   RobinhoodChainTestnet = 46630,
+  // EVM chains reached only through LiFi
+  Elysium = 99901,
 }

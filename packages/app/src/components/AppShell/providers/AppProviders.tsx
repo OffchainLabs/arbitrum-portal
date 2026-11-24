@@ -15,6 +15,7 @@ import { isE2eTestingEnvironment, isProductionEnvironment } from '@/bridge/util/
 import { registerLocalNetwork } from '@/bridge/util/networks';
 import { wagmiConfig } from '@/bridge/util/wagmi/setup';
 import { WalletProvider } from '@/bridge/wallet/WalletProvider';
+import { elysium } from '@/bridge/wallet/ecosystems/evm';
 import { solanaRpcUrl } from '@/bridge/wallet/solana/network';
 
 import { initializeDayjs } from '../../../initialization';
@@ -54,7 +55,12 @@ const integratorId =
 
 const queryClient = new QueryClient();
 
-createConfig({ integrator: integratorId, rpcUrls: { [LiFiChainId.SOL]: [solanaRpcUrl] } });
+// Keyed by number: LiFi's chain id enum doesn't list Elysium yet
+const lifiRpcUrls: Record<number, string[]> = {
+  [LiFiChainId.SOL]: [solanaRpcUrl],
+  [elysium.id]: [...elysium.rpcUrls.default.http],
+};
+createConfig({ integrator: integratorId, rpcUrls: lifiRpcUrls });
 initializeDayjs();
 
 if (!isProductionEnvironment || isE2eTestingEnvironment) {
