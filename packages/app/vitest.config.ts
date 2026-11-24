@@ -9,6 +9,8 @@ export default defineConfig({
     environment: 'node',
     env: {
       NEXT_PUBLIC_INFURA_KEY: 'test-infura-key',
+      // Elysium tests need its LiFi routes
+      NEXT_PUBLIC_FEATURE_FLAG_ELYSIUM_ENABLED: 'true',
     },
   },
   resolve: {
