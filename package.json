@@ -44,7 +44,7 @@
     "eslint-plugin-prettier": "^5.5.7",
     "eslint-plugin-zustand-rules": "https://github.com/OffchainLabs/eslint-plugin-zustand-rules",
     "lighthouse": "12.6.1",
-    "prettier": "3.6.2",
+    "prettier": "3.7.4",
     "prettier-plugin-tailwindcss": "^0.6.14",
     "puppeteer-core": "24.43.1",
     "typescript": "^5.9.3"
