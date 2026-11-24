@@ -101,10 +101,58 @@ let l2WethAddress = isOrbitTest
   ? l3Network.tokenBridge!.childWeth
   : defaultL2Network.tokenBridge!.childWeth;
 
-function isNonZeroAddress(address: string | undefined) {
+export function isNonZeroAddress(address: string | undefined) {
   return (
     typeof address === 'string' && address !== constants.AddressZero && utils.isAddress(address)
   );
+}
+
+export type PreparedChainState = {
+  userAddress: string;
+  erc20ParentAddress: string;
+  erc20ChildAddress: string;
+  l2WethAddress: string;
+};
+
+export const PREBAKED_STATE_FILE = 'e2e-prebaked.json';
+
+/**
+ * Reads the state `bakeSetup.ts` baked into the testnode image, served by the image's config
+ * server. Returns undefined, so the caller runs the full prep, when the image has none, when it
+ * was baked for another wallet, or when the baked balances are not on chain.
+ */
+async function loadPrebakedState(userAddress: string): Promise<PreparedChainState | undefined> {
+  const url =
+    process.env.E2E_PREBAKED_STATE_URL ?? `http://127.0.0.1:8080/config/${PREBAKED_STATE_FILE}`;
+  let state: PreparedChainState;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      return undefined;
+    }
+    state = (await response.json()) as PreparedChainState;
+  } catch {
+    return undefined;
+  }
+
+  if (!addressesEqual(state.userAddress, userAddress)) {
+    console.log(
+      `Prebaked state is for ${state.userAddress}, not ${userAddress}; running full setup.`,
+    );
+    return undefined;
+  }
+
+  const [parentCode, childBalance] = await Promise.all([
+    parentProvider.getCode(state.erc20ParentAddress),
+    TestERC20__factory.connect(state.erc20ChildAddress, childProvider).balanceOf(userAddress),
+  ]);
+  if (parentCode === '0x' || childBalance.isZero()) {
+    console.log('Prebaked state is not on chain; running full setup.');
+    return undefined;
+  }
+
+  console.log('Using prebaked chain state from the testnode image.');
+  return state;
 }
 
 export default async function globalSetup() {
@@ -129,6 +177,30 @@ export default async function globalSetup() {
 
   const userWalletAddress = await userWallet.getAddress();
 
+  const prepared =
+    (await loadPrebakedState(userWalletAddress)) ??
+    (await prepareChain({ erc20Bridger, ethBridger, isCustomFeeToken, userWalletAddress }));
+  l2WethAddress = prepared.l2WethAddress;
+
+  await finishSetup({ ethBridger, isCustomFeeToken, userWalletAddress, prepared });
+}
+
+/**
+ * The on-chain prep that only depends on the testnode image and the wallet keys. `bakeSetup.ts`
+ * runs it once while baking the image; `globalSetup` runs it only when the image has no baked
+ * state for this wallet.
+ */
+export async function prepareChain({
+  erc20Bridger,
+  ethBridger,
+  isCustomFeeToken,
+  userWalletAddress,
+}: {
+  erc20Bridger: Erc20Bridger;
+  ethBridger: EthBridger;
+  isCustomFeeToken: boolean;
+  userWalletAddress: string;
+}): Promise<PreparedChainState> {
   // Fund the userWallet. We do this to run tests on a small amount of ETH.
   await Promise.all([
     fundEth({
@@ -214,12 +286,37 @@ export default async function globalSetup() {
     l2Provider: childProvider,
   });
 
+  return {
+    userAddress: userWalletAddress,
+    erc20ParentAddress: l1ERC20Token.address,
+    erc20ChildAddress: erc20TokenChildAddress,
+    l2WethAddress,
+  };
+}
+
+async function finishSetup({
+  ethBridger,
+  isCustomFeeToken,
+  userWalletAddress,
+  prepared,
+}: {
+  ethBridger: EthBridger;
+  isCustomFeeToken: boolean;
+  userWalletAddress: string;
+  prepared: PreparedChainState;
+}) {
+  // Not baked: a retryable expires 7 days after creation, so a baked one would break the
+  // redeem spec a week after the image was built.
   const redeemRetryableTestTx = await generateTestTxForRedeemRetryable();
 
   const nativeTokenDecimals = await getNativeTokenDecimals({
     parentProvider,
     childProvider,
   });
+  // litro v0.2.x named the fee token TN; v0.5.x names it by decimals (FEE6, FEE18, FEE20).
+  const nativeTokenSymbol = isCustomFeeToken
+    ? await TestERC20__factory.connect(ethBridger.nativeToken!, parentProvider).symbol()
+    : 'ETH';
   const customDestinationAddress = await getCustomDestinationAddress();
 
   writeE2EConfig({
@@ -230,14 +327,14 @@ export default async function globalSetup() {
     ADDRESS: userWalletAddress,
     PRIVATE_KEY: userWallet.privateKey,
     INFURA_KEY,
-    ERC20_TOKEN_ADDRESS_PARENT_CHAIN: l1ERC20Token.address,
+    ERC20_TOKEN_ADDRESS_PARENT_CHAIN: prepared.erc20ParentAddress,
     LOCAL_WALLET_PRIVATE_KEY: localWallet.privateKey,
     ORBIT_TEST: isOrbitTest ? '1' : '0',
-    NATIVE_TOKEN_SYMBOL: isCustomFeeToken ? 'TN' : 'ETH',
+    NATIVE_TOKEN_SYMBOL: nativeTokenSymbol,
     NATIVE_TOKEN_ADDRESS: ethBridger.nativeToken,
     NATIVE_TOKEN_DECIMALS: nativeTokenDecimals,
     CUSTOM_DESTINATION_ADDRESS: customDestinationAddress,
-    ERC20_TOKEN_ADDRESS_CHILD_CHAIN: erc20TokenChildAddress,
+    ERC20_TOKEN_ADDRESS_CHILD_CHAIN: prepared.erc20ChildAddress,
     L1_WETH_ADDRESS: l1WethAddress,
     L2_WETH_ADDRESS: l2WethAddress,
     REDEEM_RETRYABLE_TEST_TX: redeemRetryableTestTx,
@@ -362,8 +459,14 @@ async function fundWethOnParentChain() {
 
 async function approveWeth() {
   console.log('Approving WETH...');
+  // Custom gas token chains have no WETH gateway; WETH then bridges through the router's gateway.
+  const spender = isNonZeroAddress(l1WethGateway)
+    ? l1WethGateway
+    : await (
+        await Erc20Bridger.fromProvider(childProvider)
+      ).getParentGatewayAddress(l1WethAddress, parentProvider);
   const tx = await getWethContract(parentProvider, l1WethAddress).approve(
-    l1WethGateway,
+    spender,
     constants.MaxInt256,
   );
   await tx.wait();
