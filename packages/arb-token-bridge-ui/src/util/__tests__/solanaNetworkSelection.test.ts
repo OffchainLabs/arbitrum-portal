@@ -24,7 +24,12 @@ async function loadWithSolanaFlag(enabled: boolean) {
   return { isSupportedChainId, getDestinationChainIds, getTxHistoryRoutes, ...queryParamUtils };
 }
 
-const destinations = [ChainId.ArbitrumOne, ChainId.RobinhoodChain, ChainId.ApeChain];
+const destinations = [
+  ChainId.ArbitrumOne,
+  ChainId.RobinhoodChain,
+  ChainId.ApeChain,
+  ChainId.Elysium,
+];
 const solanaRoute = { parentChainId: ChainId.Solana, childChainId: ChainId.ArbitrumOne };
 
 describe.sequential('Solana network selection', () => {

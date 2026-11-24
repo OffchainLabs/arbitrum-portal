@@ -640,4 +640,16 @@ describe('getTokenOverride', () => {
     expect(xaiToArbOverride.source).toEqual(null);
     expect(xaiToArbOverride.destination).toEqual(null);
   });
+
+  it('keeps Arbitrum One USDC.e as the source of an Elysium transfer', () => {
+    // LiFi pairs it with Elysium USDC.e by coin key, so no USDC override applies
+    const override = getTokenOverride({
+      fromToken: CommonAddress.ArbitrumOne['USDC.e'],
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: ChainId.Elysium,
+    });
+
+    expect(override.source).toBeNull();
+    expect(override.destination).toBeNull();
+  });
 });

@@ -21,12 +21,39 @@ describe('lifiDestinationChainIds', () => {
         ChainId.ArbitrumNova,
         ChainId.ApeChain,
         ChainId.RobinhoodChain,
+        ChainId.Elysium,
       ],
-      [ChainId.ArbitrumOne]: [ChainId.Ethereum, ChainId.ApeChain, ChainId.RobinhoodChain],
+      [ChainId.ArbitrumOne]: [
+        ChainId.Ethereum,
+        ChainId.ApeChain,
+        ChainId.RobinhoodChain,
+        ChainId.Elysium,
+      ],
       [ChainId.ArbitrumNova]: [ChainId.Ethereum, ChainId.ArbitrumOne],
-      [ChainId.ApeChain]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.RobinhoodChain],
-      [ChainId.Base]: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.RobinhoodChain],
-      [ChainId.RobinhoodChain]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain],
+      [ChainId.ApeChain]: [
+        ChainId.Ethereum,
+        ChainId.ArbitrumOne,
+        ChainId.RobinhoodChain,
+        ChainId.Elysium,
+      ],
+      [ChainId.Base]: [
+        ChainId.ArbitrumOne,
+        ChainId.ApeChain,
+        ChainId.RobinhoodChain,
+        ChainId.Elysium,
+      ],
+      [ChainId.RobinhoodChain]: [
+        ChainId.Ethereum,
+        ChainId.ArbitrumOne,
+        ChainId.ApeChain,
+        ChainId.Elysium,
+      ],
+      [ChainId.Elysium]: [
+        ChainId.Ethereum,
+        ChainId.ArbitrumOne,
+        ChainId.ApeChain,
+        ChainId.RobinhoodChain,
+      ],
     });
   });
 });
@@ -145,5 +172,26 @@ describe('isUnmatchedLifiTokenAllowed', () => {
     expect(isUnmatchedLifiTokenAllowed(ChainId.ArbitrumNova, CommonAddress.ArbitrumOne.USDC)).toBe(
       false,
     );
+  });
+});
+
+describe('Elysium LiFi routes', () => {
+  const twoWayChainIds = [
+    ChainId.Ethereum,
+    ChainId.ArbitrumOne,
+    ChainId.ApeChain,
+    ChainId.RobinhoodChain,
+  ];
+
+  it('connects Elysium both ways with Ethereum, Arbitrum One, ApeChain and Robinhood Chain', () => {
+    expect(lifiDestinationChainIds[ChainId.Elysium]).toEqual(twoWayChainIds);
+    for (const chainId of twoWayChainIds) {
+      expect(lifiDestinationChainIds[chainId]).toContain(ChainId.Elysium);
+    }
+  });
+
+  it('only deposits to Elysium from Base', () => {
+    expect(lifiDestinationChainIds[ChainId.Base]).toContain(ChainId.Elysium);
+    expect(lifiDestinationChainIds[ChainId.Elysium]).not.toContain(ChainId.Base);
   });
 });

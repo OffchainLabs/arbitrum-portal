@@ -1,7 +1,7 @@
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual } from '../../../util/AddressEquality';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
-import { ecosystems } from '../../../wallet/ecosystems';
+import { ecosystems, getLifiOnlyChains } from '../../../wallet/ecosystems';
 import type { WalletEcosystem } from '../../../wallet/types';
 
 type NonEvmEcosystem = Exclude<WalletEcosystem, 'evm'>;
@@ -57,6 +57,23 @@ const evmLifiChains: Record<number, LifiChainConfig> = {
     destinationChainIds: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain],
     allowsUnmatchedTokens: true,
   },
+  // LiFi has no route between Elysium and Arbitrum Nova
+  [ChainId.Elysium]: {
+    destinationChainIds: [
+      ChainId.Ethereum,
+      ChainId.ArbitrumOne,
+      ChainId.ApeChain,
+      ChainId.RobinhoodChain,
+    ],
+    sourceChainIds: [
+      ChainId.Ethereum,
+      ChainId.ArbitrumOne,
+      ChainId.ApeChain,
+      ChainId.Base,
+      ChainId.RobinhoodChain,
+      ChainId.Solana,
+    ],
+  },
 };
 
 // Keyed by ecosystem, so a new ecosystem fails to compile until it declares its LiFi chains
@@ -75,12 +92,17 @@ const lifiChains: Record<number, LifiChainConfig> = Object.assign(
   ...Object.values(nonEvmLifiChains),
 );
 
-// Chains of a disabled ecosystem, such as Solana while its flag is off, have no LiFi routes
-const disabledChainIds = new Set(
-  Object.values(ecosystems)
+// Chains of a disabled ecosystem, such as Solana while its flag is off, and LiFi-only chains whose
+// flag is off, such as Elysium, have no LiFi routes
+const enabledLifiOnlyChainIds = new Set(getLifiOnlyChains().map((chain) => chain.id));
+const disabledChainIds = new Set([
+  ...Object.values(ecosystems)
     .filter((ecosystem) => !ecosystem.isEnabled())
     .flatMap((ecosystem) => ecosystem.chains.map((chain) => chain.id)),
-);
+  ...getLifiOnlyChains({ includeDisabled: true })
+    .map((chain) => chain.id)
+    .filter((chainId) => !enabledLifiOnlyChainIds.has(chainId)),
+]);
 
 /** Merges each chain's destinations and sources into one list of destinations per source chain */
 export function buildLifiDestinationChainIds(
