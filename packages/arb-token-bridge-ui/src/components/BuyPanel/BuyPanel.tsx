@@ -1,9 +1,8 @@
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { ExclamationCircleIcon } from '@heroicons/react/24/solid';
 import { BigNumber, utils } from 'ethers';
-import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
-import React, { PropsWithChildren, memo, useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { Chain } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
@@ -15,7 +14,6 @@ import { useMode } from '../../hooks/useMode';
 import { useNativeCurrency } from '../../hooks/useNativeCurrency';
 import { ChainId } from '../../types/ChainId';
 import { formatAmount, formatUSD } from '../../util/NumberUtils';
-import { isOnrampEnabled, isOnrampServiceEnabled } from '../../util/featureFlag';
 import { getNetworkName } from '../../util/networks';
 import { TokenLogoFallback } from '../TransferPanel/TokenInfo';
 import { Button } from '../common/Button';
@@ -28,38 +26,9 @@ import { SearchPanel } from '../common/SearchPanel/SearchPanel';
 import { Loader } from '../common/atoms/Loader';
 import { Homepage } from './Homepage';
 import { LinkoutOnrampPanel } from './LinkoutOnrampPanel';
-import { MoonPayPanel, MoonPaySkeleton } from './MoonPayPanel';
 import { onrampServices } from './utils';
 
-const MoonPayProvider = dynamic(
-  () => import('@moonpay/moonpay-react').then((mod) => mod.MoonPayProvider),
-  {
-    ssr: false,
-    loading: () => <MoonPaySkeleton />,
-  },
-);
-
-const isMoonPayEnabled = isOnrampServiceEnabled('moonpay');
-
-function OnRampProviders({ children }: PropsWithChildren) {
-  if (!isOnrampEnabled()) {
-    return children;
-  }
-
-  if (!isMoonPayEnabled) {
-    return children;
-  }
-
-  const moonPayApiKey = process.env.NEXT_PUBLIC_MOONPAY_PK;
-
-  if (typeof moonPayApiKey === 'undefined') {
-    throw new Error('NEXT_PUBLIC_MOONPAY_PK variable missing.');
-  }
-
-  return <MoonPayProvider apiKey={moonPayApiKey}>{children}</MoonPayProvider>;
-}
-
-const moonPayChainIds = [ChainId.Ethereum, ChainId.ArbitrumOne];
+const buyPanelChainIds = [ChainId.Ethereum, ChainId.ArbitrumOne];
 
 type BuyPanelStore = {
   selectedChainId: ChainId;
@@ -99,7 +68,7 @@ export const BuyPanelNetworkSelectionContainer = React.memo(
         <SearchPanel>
           <SearchPanel.MainPage className="flex h-full max-w-[500px] flex-col py-4">
             <NetworksPanel
-              chainIds={moonPayChainIds}
+              chainIds={buyPanelChainIds}
               selectedChainId={selectedChainId}
               close={() => props.onClose(false)}
               onNetworkRowClick={(chain: Chain) => {
@@ -223,10 +192,6 @@ function OnrampServicePanel() {
   const pathname = usePathname();
   const onrampService = pathname.split('/').pop();
 
-  if (onrampService === 'moonpay' && isMoonPayEnabled) {
-    return <MoonPayPanel />;
-  }
-
   if (
     typeof onrampService !== 'undefined' &&
     (allOnrampServices as string[]).includes(onrampService)
@@ -250,9 +215,7 @@ export function BuyPanel() {
       >
         <BalanceWrapper />
 
-        <OnRampProviders>
-          <OnrampServicePanel />
-        </OnRampProviders>
+        <OnrampServicePanel />
 
         <OnrampDisclaimer />
       </div>

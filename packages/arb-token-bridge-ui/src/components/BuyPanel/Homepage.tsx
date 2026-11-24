@@ -6,13 +6,9 @@ import { useCallback } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 import { trackEvent } from '@/bridge/util/AnalyticsUtils';
-import MoonPay from '@/images/onramp/moonpay.svg';
 
-import { isOnrampServiceEnabled } from '../../util/featureFlag';
 import { Button } from '../common/Button';
 import { onrampServices } from './utils';
-
-const isMoonPayWidgetEnabled = isOnrampServiceEnabled('moonpay');
 
 function OnrampServiceTile({ name, logo, slug }: { name: string; logo: string; slug: string }) {
   const pathname = usePathname();
@@ -38,33 +34,6 @@ function OnrampServiceTile({ name, logo, slug }: { name: string; logo: string; s
   );
 }
 
-function MoonPayTile() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  return (
-    <Link
-      href={{ pathname: `${pathname}/moonpay`, query: searchParams.toString() }}
-      className={twMerge(
-        'relative col-span-2 flex h-full w-full flex-col md:col-span-3 items-center justify-center overflow-hidden rounded-md bg-white/5 p-4 text-white hover:opacity-80',
-      )}
-      onClick={() => {
-        trackEvent('Onramp Service Click', { service: 'MoonPay' });
-      }}
-    >
-      <div className="absolute left-0 top-0 h-[190px] w-full bg-[url('/images/gray_square_background.svg')] rounded-md moonpay-ellipse"></div>
-      <div className="relative flex flex-col items-center justify-center">
-        <Image src={MoonPay} alt="MoonPay" width={50} height={50} />
-        <p className="mt-2 text-lg">MoonPay</p>
-        <p className="mt-1 text-xs text-white/60">Pay using PayPal, Apple Pay & more</p>
-      </div>
-      <span className="mt-2 py-2 relative w-[200px] bg-white/10 rounded-lg text-sm text-white flex items-center justify-center">
-        Buy now
-      </span>
-    </Link>
-  );
-}
-
 export function Homepage() {
   const router = useRouter();
 
@@ -72,15 +41,9 @@ export function Homepage() {
     router.push('/projects?subcategories=fiat-on-ramp');
   }, [router]);
 
-  /** When the embedded widget is enabled, MoonPay gets its own tile instead of a grid card. */
-  const gridServices = isMoonPayWidgetEnabled
-    ? onrampServices.filter((service) => service.slug !== 'moonpay')
-    : onrampServices;
-
   return (
     <div className={twMerge('grid gap-3', 'grid-cols-2 md:grid-cols-3')}>
-      {isMoonPayWidgetEnabled && <MoonPayTile />}
-      {gridServices.map((service) => (
+      {onrampServices.map((service) => (
         <OnrampServiceTile key={service.name} {...service} />
       ))}
       <Button
