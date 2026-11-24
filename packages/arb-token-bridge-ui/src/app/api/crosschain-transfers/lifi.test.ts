@@ -3,6 +3,7 @@ import { constants } from 'ethers';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ETHER_TOKEN_LOGO } from '../../../constants';
 import { createMockLifiRoute } from '../../../test-utils/lifi';
 import { ChainId } from '../../../types/ChainId';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
@@ -243,6 +244,43 @@ describe('parseLifiRoute', () => {
         estimate: undefined,
       }),
     ]);
+  });
+
+  it('keeps the LiFi logo of native HYPE on Elysium and the local logo of ETH elsewhere', () => {
+    const hypeLogo = 'https://example.com/hype.png';
+    const step = createMockLifiStep({
+      id: 'step-1',
+      tool: 'relay',
+      fromChainId: ChainId.Elysium,
+      toChainId: ChainId.ArbitrumOne,
+      fromAmount: '1000',
+      toAmount: '900',
+      gasAmount: '10',
+      gasAmountUSD: '1',
+      feeAmount: '20',
+      feeAmountUSD: '2',
+      executionDuration: 4,
+    });
+    // Elysium's zero address is HYPE, with LiFi's logo
+    const hype = { ...step.action.fromToken, symbol: 'HYPE', name: 'HYPE', logoURI: hypeLogo };
+    step.action.fromToken = hype;
+    step.action.toToken = { ...step.action.toToken, logoURI: 'https://example.com/eth.png' };
+    step.estimate.gasCosts = step.estimate.gasCosts.map((cost) => ({ ...cost, token: hype }));
+    step.estimate.feeCosts = step.estimate.feeCosts.map((cost) => ({ ...cost, token: hype }));
+
+    const route = parseLifiRoute({
+      route: {
+        id: 'elysium-route',
+        steps: [step],
+      } as unknown as Parameters<typeof parseLifiRoute>[0]['route'],
+      fromChainId: String(ChainId.Elysium),
+      toChainId: String(ChainId.ArbitrumOne),
+    });
+
+    expect(route.fromAmount.token.logoURI).toBe(hypeLogo);
+    expect(route.gas.map((cost) => cost.token.logoURI)).toEqual([hypeLogo]);
+    expect(route.fee.map((cost) => cost.token.logoURI)).toEqual([hypeLogo]);
+    expect(route.toAmount.token.logoURI).toBe(ETHER_TOKEN_LOGO);
   });
 });
 
