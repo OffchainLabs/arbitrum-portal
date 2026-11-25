@@ -3,11 +3,10 @@ import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
 import { nativeCurrencyEther } from '../services/evm/nativeCurrency';
-import { fetchNativeCurrency } from '../services/nativeCurrency';
+import { fetchNativeCurrency, getMetadataNativeCurrency } from '../services/nativeCurrency';
 import { ChainId } from '../types/ChainId';
 import { addressesEqual, normalizeAddress } from '../util/AddressUtils';
 import { CommonAddress } from '../util/CommonAddressUtils';
-import { getChainMetadata } from '../util/networkMetadata';
 import { isNetwork } from '../util/networks';
 import { isLifiOnlyChain } from '../wallet/ecosystems';
 import { getNativeTokenAddress } from '../wallet/ecosystems/getEcosystemConfig';
@@ -58,10 +57,8 @@ export function useNativeCurrency({ chainId }: { chainId: number }): NativeCurre
 const fallbackNativeCurrencies: Record<WalletEcosystem, (chainId: number) => NativeCurrencyEther> =
   {
     evm: (chainId) =>
-      isLifiOnlyChain(chainId)
-        ? { ...getChainMetadata(chainId).nativeCurrency, isCustom: false }
-        : nativeCurrencyEther,
-    solana: (chainId) => ({ ...getChainMetadata(chainId).nativeCurrency, isCustom: false }),
+      isLifiOnlyChain(chainId) ? getMetadataNativeCurrency(chainId) : nativeCurrencyEther,
+    solana: getMetadataNativeCurrency,
   };
 
 function getFallbackNativeCurrency(chainId: number): NativeCurrencyEther {

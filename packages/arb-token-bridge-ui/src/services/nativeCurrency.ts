@@ -1,5 +1,5 @@
 import type { ContractStorage, ERC20BridgeToken } from '../hooks/arbTokenBridge.types';
-import type { NativeCurrency } from '../hooks/useNativeCurrency';
+import type { NativeCurrency, NativeCurrencyEther } from '../hooks/useNativeCurrency';
 import { getProviderForChainId } from '../token-bridge-sdk/utils';
 import { getBridgeUiConfigForChain } from '../util/bridgeUiConfig';
 import { getChainMetadata } from '../util/networkMetadata';
@@ -11,7 +11,7 @@ import { fetchEvmNativeCurrency } from './evm/nativeCurrency';
 type Params = { chainId: number; parentChainIdFromQueryParam?: number };
 
 // The chain metadata has the native currency of chains the Arbitrum SDK doesn't know
-function getMetadataNativeCurrency(chainId: number): NativeCurrency {
+export function getMetadataNativeCurrency(chainId: number): NativeCurrencyEther {
   return {
     ...getChainMetadata(chainId).nativeCurrency,
     isCustom: false,
