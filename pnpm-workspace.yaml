@@ -80,14 +80,6 @@ overrides:
   '@synthetixio/synpress>cypress-wait-until': '-'
   '@synthetixio/synpress>etherscan-api': '-'
 
-# Oxlint runs eslint-plugin-zustand-rules as a JS plugin, so the plugin doesn't need ESLint.
-# Without this, autoInstallPeers installs ESLint for its peer dependency.
-packageExtensions:
-  eslint-plugin-zustand-rules:
-    peerDependenciesMeta:
-      eslint:
-        optional: true
-
 autoInstallPeers: true
 shamefullyHoist: true
 dedupePeerDependents: true
