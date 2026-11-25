@@ -12,6 +12,9 @@ on:
 jobs:
   main:
     name: Validate PR title
+    # The action needs a pull_request payload, which merge_group events don't have. The title was
+    # already checked on the PR, and a skipped job counts as passing for a required check
+    if: github.event_name != 'merge_group'
     runs-on: ubuntu-4
     steps:
       - uses: amannn/action-semantic-pull-request@v5
