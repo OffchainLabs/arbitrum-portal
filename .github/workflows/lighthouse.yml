@@ -10,7 +10,6 @@ on:
       - opened
       - reopened
       - synchronize
-      - ready_for_review
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -29,7 +28,8 @@ jobs:
   # the report compares the two runs of each runner
   lighthouse:
     name: Run Lighthouse (${{ matrix.run }})
-    if: github.event.pull_request.draft == false
+    # Inner stack layers target the layer below them, not master, so skip Lighthouse there
+    if: github.base_ref == 'master'
     runs-on: ubuntu-4
     # A run takes about 6 minutes. Without a limit, a hung Chrome or Lighthouse call keeps the runner,
     # and the report that waits for it, going for GitHub's default of 6 hours
@@ -133,7 +133,7 @@ jobs:
   report:
     name: Report results
     needs: lighthouse
-    # Runs when some runners failed, but not when the PR is a draft and the runners were skipped
+    # Runs when some runners failed, but not on inner stack layers where the runners were skipped
     if: ${{ !cancelled() && needs.lighthouse.result != 'skipped' }}
     runs-on: ubuntu-latest
     # Only this job comments on the PR. The other jobs build and run the PR's code.
