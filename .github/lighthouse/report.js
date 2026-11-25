@@ -2,8 +2,8 @@
 // as a PR comment. Each runner measures both, so a run of the PR is compared with the run of master
 // on the same runner. Values are medians of all runs, changes are means of the differences between
 // the PR and master on each runner, with their 99% confidence interval.
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 const marker = '<!-- lighthouse-report -->';
 const resultsDirectory = 'lighthouse-reports/pr';
@@ -425,7 +425,7 @@ function formatReport({ pr, base, modules, runs, baseSha, runUrl }) {
   return { body, notCompared };
 }
 
-module.exports = async ({ github, context, core }) => {
+export default async ({ github, context, core }) => {
   const { owner, repo } = context.repo;
   const flows = { pr: readFlows(resultsDirectory), base: readFlows(baselineDirectory) };
 

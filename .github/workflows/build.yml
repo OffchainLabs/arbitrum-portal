@@ -35,7 +35,7 @@ jobs:
       # Fork PRs get no secrets. Outside pull_request events the field is null, so this still runs
       - name: Validate indexer configuration
         if: github.event.pull_request.head.repo.fork != true
-        run: node .github/workflows/validateIndexerConfig.cjs
+        run: node .github/workflows/validateIndexerConfig.js
 
       - name: Install node_modules
         uses: OffchainLabs/actions/node-modules/install@main

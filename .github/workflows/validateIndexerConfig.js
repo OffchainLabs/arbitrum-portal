@@ -1,5 +1,5 @@
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
 const configuredChainIds = (process.env.NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS ?? '')
   .split(',')
@@ -14,7 +14,7 @@ if (configuredChainIds.length === 0) {
 const defaultChainIds = JSON.parse(
   fs.readFileSync(
     path.join(
-      __dirname,
+      import.meta.dirname,
       '../../packages/arb-token-bridge-ui/src/util/txHistory/defaultIndexerChildChainIds.json',
     ),
     'utf8',
