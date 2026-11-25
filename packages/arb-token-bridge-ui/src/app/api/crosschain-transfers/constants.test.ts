@@ -2,9 +2,87 @@ import { describe, expect, it } from 'vitest';
 
 import { ChainId } from '../../../types/ChainId';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
-import { allowsUnmatchedLifiTokens, isUnmatchedLifiTokenAllowed } from './constants';
+import {
+  allowsUnmatchedLifiTokens,
+  buildLifiDestinationChainIds,
+  isUnmatchedLifiTokenAllowed,
+  lifiDestinationChainIds,
+} from './constants';
 
 const unlistedAddress = '0x0000000000000000000000000000000000000001';
+
+describe('lifiDestinationChainIds', () => {
+  it('lists the LiFi routes of each EVM source chain', () => {
+    // Solana's routes depend on its feature flag, which the tests don't pin
+    const { [ChainId.Solana]: _solanaRoutes, ...evmRoutes } = lifiDestinationChainIds;
+    expect(evmRoutes).toEqual({
+      [ChainId.Ethereum]: [
+        ChainId.ArbitrumOne,
+        ChainId.ArbitrumNova,
+        ChainId.ApeChain,
+        ChainId.RobinhoodChain,
+      ],
+      [ChainId.ArbitrumOne]: [ChainId.Ethereum, ChainId.ApeChain, ChainId.RobinhoodChain],
+      [ChainId.ArbitrumNova]: [ChainId.Ethereum, ChainId.ArbitrumOne],
+      [ChainId.ApeChain]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.RobinhoodChain],
+      [ChainId.Base]: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.RobinhoodChain],
+      [ChainId.RobinhoodChain]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain],
+    });
+  });
+});
+
+describe('buildLifiDestinationChainIds', () => {
+  const newChainId = 1234;
+
+  it("adds a chain's sources to their own destinations", () => {
+    expect(
+      buildLifiDestinationChainIds(
+        {
+          [ChainId.Ethereum]: { destinationChainIds: [ChainId.ArbitrumOne] },
+          [newChainId]: {
+            destinationChainIds: [ChainId.Ethereum],
+            sourceChainIds: [ChainId.Ethereum, ChainId.Base],
+          },
+        },
+        new Set(),
+      ),
+    ).toEqual({
+      [ChainId.Ethereum]: [ChainId.ArbitrumOne, newChainId],
+      [ChainId.Base]: [newChainId],
+      [newChainId]: [ChainId.Ethereum],
+    });
+  });
+
+  it('lists a route declared on both chains once', () => {
+    expect(
+      buildLifiDestinationChainIds(
+        {
+          [ChainId.Ethereum]: { destinationChainIds: [newChainId] },
+          [newChainId]: { sourceChainIds: [ChainId.Ethereum] },
+        },
+        new Set(),
+      ),
+    ).toEqual({ [ChainId.Ethereum]: [newChainId] });
+  });
+
+  it('drops the routes from and to a disabled chain', () => {
+    expect(
+      buildLifiDestinationChainIds(
+        {
+          [ChainId.Solana]: { destinationChainIds: [ChainId.ArbitrumOne] },
+          [newChainId]: {
+            destinationChainIds: [ChainId.ArbitrumOne],
+            sourceChainIds: [ChainId.Solana, ChainId.ArbitrumOne],
+          },
+        },
+        new Set([ChainId.Solana]),
+      ),
+    ).toEqual({
+      [ChainId.ArbitrumOne]: [newChainId],
+      [newChainId]: [ChainId.ArbitrumOne],
+    });
+  });
+});
 
 describe('allowsUnmatchedLifiTokens', () => {
   it('allows all unmatched tokens only on Robinhood Chain', () => {

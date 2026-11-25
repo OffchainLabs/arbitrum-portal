@@ -6,46 +6,103 @@ import type { WalletEcosystem } from '../../../wallet/types';
 
 type NonEvmEcosystem = Exclude<WalletEcosystem, 'evm'>;
 
-// Keyed by ecosystem, so a new ecosystem fails to compile until it declares its LiFi routes
-const nonEvmLifiRoutes: Record<
-  NonEvmEcosystem,
-  {
-    destinationChainIds: Record<number, number[]>;
-    /**
-     * Its chains allow "unmatched" tokens, which exist on that chain but not on the other one, so
-     * LiFi swaps can send or receive them
-     */
-    allowsUnmatchedTokens: boolean;
-  }
-> = {
-  solana: {
-    destinationChainIds: {
-      [ChainId.Solana]: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.RobinhoodChain],
-    },
+/** LiFi settings of one chain, whether or not it also has a canonical bridge */
+export type LifiChainConfig = {
+  /** Chains it sends to through LiFi */
+  destinationChainIds?: readonly number[];
+  /**
+   * Chains that send to it through LiFi. They are added to those chains' destinations, so a new
+   * chain declares its routes in both directions in its own entry
+   */
+  sourceChainIds?: readonly number[];
+  /**
+   * It allows all "unmatched" tokens, which exist on that chain but not on the other one, so LiFi
+   * swaps can send or receive them. For example stock tokens on Robinhood Chain
+   */
+  allowsUnmatchedTokens?: boolean;
+  /** Unmatched tokens allowed one by one, on a chain that doesn't allow all of them */
+  unmatchedTokenAddresses?: readonly string[];
+};
+
+const evmLifiChains: Record<number, LifiChainConfig> = {
+  [ChainId.Ethereum]: {
+    destinationChainIds: [
+      ChainId.ArbitrumOne,
+      ChainId.ArbitrumNova,
+      ChainId.ApeChain,
+      ChainId.RobinhoodChain,
+    ],
+  },
+  [ChainId.ArbitrumOne]: {
+    destinationChainIds: [ChainId.Ethereum, ChainId.ApeChain, ChainId.RobinhoodChain],
+  },
+  [ChainId.ArbitrumNova]: { destinationChainIds: [ChainId.Ethereum, ChainId.ArbitrumOne] },
+  [ChainId.ApeChain]: {
+    destinationChainIds: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.RobinhoodChain],
+  },
+  [ChainId.Base]: {
+    destinationChainIds: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.RobinhoodChain],
+    // Base USDC can fund swaps even though Base has no bridged counterpart entry
+    unmatchedTokenAddresses: [CommonAddress.Base.USDC],
+  },
+  [ChainId.RobinhoodChain]: {
+    destinationChainIds: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain],
     allowsUnmatchedTokens: true,
   },
 };
-const nonEvmEcosystems = Object.keys(nonEvmLifiRoutes) as NonEvmEcosystem[];
 
-export const lifiDestinationChainIds: Record<number, number[]> = {
-  [ChainId.Ethereum]: [
-    ChainId.ArbitrumOne,
-    ChainId.ArbitrumNova,
-    ChainId.ApeChain,
-    ChainId.RobinhoodChain,
-  ],
-  [ChainId.ArbitrumOne]: [ChainId.Ethereum, ChainId.ApeChain, ChainId.RobinhoodChain],
-  [ChainId.ArbitrumNova]: [ChainId.Ethereum, ChainId.ArbitrumOne],
-  [ChainId.ApeChain]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.RobinhoodChain],
-  [ChainId.Base]: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.RobinhoodChain],
-  [ChainId.RobinhoodChain]: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.ApeChain],
-  ...Object.assign(
-    {},
-    ...nonEvmEcosystems
-      .filter((ecosystem) => ecosystems[ecosystem].isEnabled())
-      .map((ecosystem) => nonEvmLifiRoutes[ecosystem].destinationChainIds),
-  ),
+// Keyed by ecosystem, so a new ecosystem fails to compile until it declares its LiFi chains
+const nonEvmLifiChains: Record<NonEvmEcosystem, Record<number, LifiChainConfig>> = {
+  solana: {
+    [ChainId.Solana]: {
+      destinationChainIds: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.RobinhoodChain],
+      allowsUnmatchedTokens: true,
+    },
+  },
 };
+
+const lifiChains: Record<number, LifiChainConfig> = Object.assign(
+  {},
+  evmLifiChains,
+  ...Object.values(nonEvmLifiChains),
+);
+
+// Chains of a disabled ecosystem, such as Solana while its flag is off, have no LiFi routes
+const disabledChainIds = new Set(
+  Object.values(ecosystems)
+    .filter((ecosystem) => !ecosystem.isEnabled())
+    .flatMap((ecosystem) => ecosystem.chains.map((chain) => chain.id)),
+);
+
+/** Merges each chain's destinations and sources into one list of destinations per source chain */
+export function buildLifiDestinationChainIds(
+  chains: Record<number, LifiChainConfig>,
+  disabled: ReadonlySet<number>,
+): Record<number, number[]> {
+  const routes: Record<number, number[]> = {};
+  const addRoute = (sourceChainId: number, destinationChainId: number) => {
+    if (disabled.has(sourceChainId) || disabled.has(destinationChainId)) {
+      return;
+    }
+    const destinationChainIds = (routes[sourceChainId] ??= []);
+    if (!destinationChainIds.includes(destinationChainId)) {
+      destinationChainIds.push(destinationChainId);
+    }
+  };
+
+  for (const [chainId, config] of Object.entries(chains)) {
+    config.destinationChainIds?.forEach((destinationChainId) =>
+      addRoute(Number(chainId), destinationChainId),
+    );
+    config.sourceChainIds?.forEach((sourceChainId) => addRoute(sourceChainId, Number(chainId)));
+  }
+  return routes;
+}
+
+export const lifiDestinationChainIds: Record<number, number[]> = buildLifiDestinationChainIds(
+  lifiChains,
+  disabledChainIds,
+);
 
 export const allowedLifiSourceChainIds: number[] = Object.keys(lifiDestinationChainIds).map((id) =>
   Number(id),
@@ -54,47 +111,26 @@ export const allowedLifiDestinationChainIds: number[] = Object.values(
   lifiDestinationChainIds,
 ).flatMap((id) => id);
 
-/**
- * All LiFi chains allowed to have "unmatched" tokens.
- * Some tokens only exist on one chain (for example stock tokens on Robinhood),
- * we want to allow them to be source or destination of swaps through LiFi
- */
-const UNMATCHED_LIFI_TOKEN_CHAIN_IDS = new Set<number>([
-  ChainId.RobinhoodChain,
-  ...nonEvmEcosystems
-    .filter((ecosystem) => nonEvmLifiRoutes[ecosystem].allowsUnmatchedTokens)
-    .flatMap((ecosystem) =>
-      Object.keys(nonEvmLifiRoutes[ecosystem].destinationChainIds).map(Number),
-    ),
-]);
-
-/**
- * Individual tokens allowed to be "unmatched" on chains that don't allow all of them.
- * Base USDC can fund swaps even though Base has no bridged counterpart entry.
- */
-const UNMATCHED_LIFI_TOKEN_ADDRESSES: Partial<Record<number, readonly string[]>> = {
-  [ChainId.Base]: [CommonAddress.Base.USDC],
-};
-
 export function allowsUnmatchedLifiTokens(chainId: number): boolean {
-  return UNMATCHED_LIFI_TOKEN_CHAIN_IDS.has(chainId);
+  return lifiChains[chainId]?.allowsUnmatchedTokens ?? false;
 }
 
 /** Whether a chain allows any unmatched tokens, including individually allowlisted addresses. */
 export function hasUnmatchedLifiTokens(chainId: number): boolean {
   return (
-    allowsUnmatchedLifiTokens(chainId) || (UNMATCHED_LIFI_TOKEN_ADDRESSES[chainId]?.length ?? 0) > 0
+    allowsUnmatchedLifiTokens(chainId) ||
+    (lifiChains[chainId]?.unmatchedTokenAddresses?.length ?? 0) > 0
   );
 }
 
 /**
  * Superset of {@link allowsUnmatchedLifiTokens}: returns true for every address on a chain that
- * allows all unmatched tokens, and additionally for the individually allowlisted addresses above.
+ * allows all unmatched tokens, and additionally for its `unmatchedTokenAddresses`.
  */
 export function isUnmatchedLifiTokenAllowed(chainId: number, address: string): boolean {
   return (
     allowsUnmatchedLifiTokens(chainId) ||
-    (UNMATCHED_LIFI_TOKEN_ADDRESSES[chainId]?.some((allowedAddress) =>
+    (lifiChains[chainId]?.unmatchedTokenAddresses?.some((allowedAddress) =>
       addressesEqual(allowedAddress, address),
     ) ??
       false)
