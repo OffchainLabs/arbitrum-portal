@@ -73,6 +73,7 @@ const evmLifiChains: Record<number, LifiChainConfig> = {
       ChainId.RobinhoodChain,
       ChainId.Solana,
     ],
+    allowsUnmatchedTokens: false,
   },
 };
 
