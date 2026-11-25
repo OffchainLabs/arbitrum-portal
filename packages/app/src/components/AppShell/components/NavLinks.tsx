@@ -54,7 +54,7 @@ export function NavLinks() {
     <div
       ref={containerRef}
       className={twMerge(
-        'fixed bottom-0 left-0 right-0 z-50 flex h-[90px] p-2 w-full items-center justify-around bg-black/80 backdrop-blur-sm',
+        'fixed bottom-0 left-0 right-0 z-50 flex h-[90px] p-2 w-full items-center justify-around bg-black/80 backdrop-blur-xs',
         'gap-1.5 md:bg-neutral-25 rounded-md',
         'md:top-3 md:left-1/2 md:-translate-x-1/2 md:w-fit md:h-10 md:p-0 md:justify-normal',
         isBannerVisible && 'md:top-12',

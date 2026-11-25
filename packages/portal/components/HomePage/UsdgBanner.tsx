@@ -7,7 +7,7 @@ export function UsdgBanner() {
     <Card
       cardType="externalLink"
       href="https://arbitrum.io/products/usdg-vaults"
-      className="relative aspect-[2000/483] overflow-hidden p-0 md:aspect-auto md:h-[282px]"
+      className="relative aspect-2000/483 overflow-hidden p-0 md:aspect-auto md:h-[282px]"
       analyticsProps={{
         eventName: 'Homepage USDG Banner Click',
       }}

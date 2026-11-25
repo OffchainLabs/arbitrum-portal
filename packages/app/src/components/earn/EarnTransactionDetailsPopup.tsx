@@ -136,7 +136,7 @@ export function EarnTransactionDetailsPopup({
       }
       closeable
       isFooterHidden
-      className="!border-0 md:!max-w-[450px]"
+      className="border-0! md:max-w-[450px]!"
     >
       <div className="flex flex-col gap-6 items-start w-full pb-6">
         {isLoading && (
