@@ -17,9 +17,10 @@ export type LifiChainConfig = {
   sourceChainIds?: readonly number[];
   /**
    * It allows all "unmatched" tokens, which exist on that chain but not on the other one, so LiFi
-   * swaps can send or receive them. For example stock tokens on Robinhood Chain
+   * swaps can send or receive them. For example stock tokens on Robinhood Chain. Required, so each
+   * chain states it
    */
-  allowsUnmatchedTokens?: boolean;
+  allowsUnmatchedTokens: boolean;
   /** Unmatched tokens allowed one by one, on a chain that doesn't allow all of them */
   unmatchedTokenAddresses?: readonly string[];
 };
@@ -32,16 +33,23 @@ const evmLifiChains: Record<number, LifiChainConfig> = {
       ChainId.ApeChain,
       ChainId.RobinhoodChain,
     ],
+    allowsUnmatchedTokens: false,
   },
   [ChainId.ArbitrumOne]: {
     destinationChainIds: [ChainId.Ethereum, ChainId.ApeChain, ChainId.RobinhoodChain],
+    allowsUnmatchedTokens: false,
   },
-  [ChainId.ArbitrumNova]: { destinationChainIds: [ChainId.Ethereum, ChainId.ArbitrumOne] },
+  [ChainId.ArbitrumNova]: {
+    destinationChainIds: [ChainId.Ethereum, ChainId.ArbitrumOne],
+    allowsUnmatchedTokens: false,
+  },
   [ChainId.ApeChain]: {
     destinationChainIds: [ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.RobinhoodChain],
+    allowsUnmatchedTokens: false,
   },
   [ChainId.Base]: {
     destinationChainIds: [ChainId.ArbitrumOne, ChainId.ApeChain, ChainId.RobinhoodChain],
+    allowsUnmatchedTokens: false,
     // Base USDC can fund swaps even though Base has no bridged counterpart entry
     unmatchedTokenAddresses: [CommonAddress.Base.USDC],
   },
@@ -76,7 +84,7 @@ const disabledChainIds = new Set(
 
 /** Merges each chain's destinations and sources into one list of destinations per source chain */
 export function buildLifiDestinationChainIds(
-  chains: Record<number, LifiChainConfig>,
+  chains: Record<number, Pick<LifiChainConfig, 'destinationChainIds' | 'sourceChainIds'>>,
   disabled: ReadonlySet<number>,
 ): Record<number, number[]> {
   const routes: Record<number, number[]> = {};
