@@ -90,10 +90,13 @@ export function buildLifiDestinationChainIds(
     }
   };
 
+  // A chain's own destinations come first, so a new chain's routes don't reorder its sources' lists
   for (const [chainId, config] of Object.entries(chains)) {
     config.destinationChainIds?.forEach((destinationChainId) =>
       addRoute(Number(chainId), destinationChainId),
     );
+  }
+  for (const [chainId, config] of Object.entries(chains)) {
     config.sourceChainIds?.forEach((sourceChainId) => addRoute(sourceChainId, Number(chainId)));
   }
   return routes;

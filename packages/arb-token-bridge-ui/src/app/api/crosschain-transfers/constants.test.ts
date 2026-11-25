@@ -53,6 +53,18 @@ describe('buildLifiDestinationChainIds', () => {
     });
   });
 
+  it("keeps a source chain's own destinations first", () => {
+    expect(
+      buildLifiDestinationChainIds(
+        {
+          [newChainId]: { sourceChainIds: [ChainId.Solana] },
+          [ChainId.Solana]: { destinationChainIds: [ChainId.ArbitrumOne] },
+        },
+        new Set(),
+      ),
+    ).toEqual({ [ChainId.Solana]: [ChainId.ArbitrumOne, newChainId] });
+  });
+
   it('lists a route declared on both chains once', () => {
     expect(
       buildLifiDestinationChainIds(
