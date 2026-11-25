@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { shallow } from 'zustand/shallow';
+import { useShallow } from 'zustand/react/shallow';
 
 import { LifiCrosschainTransfersRoute } from '../../../app/api/crosschain-transfers/lifi';
 import { getTokenOverride, isValidLifiTransfer } from '../../../app/api/crosschain-transfers/utils';
@@ -292,20 +292,18 @@ export function useRoutesUpdater() {
   const [{ destinationAddress }] = useArbQueryParams();
   const amountBN = useAmountBigNumber();
   const { disabledBridges, disabledExchanges, slippage } = useLifiSettingsStore(
-    (state) => ({
+    useShallow((state) => ({
       disabledBridges: state.disabledBridges,
       disabledExchanges: state.disabledExchanges,
       slippage: state.slippage,
-    }),
-    shallow,
+    })),
   );
 
   const { setRouteState, userSelectedRoute } = useRouteStore(
-    (state) => ({
+    useShallow((state) => ({
       setRouteState: state.setRouteState,
       userSelectedRoute: state.userSelectedRoute,
-    }),
-    shallow,
+    })),
   );
 
   const overrideSourceToken = useMemo(
