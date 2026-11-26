@@ -9,7 +9,7 @@ import useSWRImmutable from 'swr/immutable';
 import { expect, test, vi } from 'vitest';
 
 import { generateArbitrumTokenList } from '../../test-utils/renderProfileFixtures';
-import { recordSwrKeys, swrKeyProfiler } from '../../test-utils/renderProfileSwr';
+import { forgetSwrCache, recordSwrKeys, swrKeyProfiler } from '../../test-utils/renderProfileSwr';
 import { ChainId } from '../../types/ChainId';
 import type { TokenListWithId } from '../../util/TokenListUtils';
 import { useTokensFromLists } from './TokenSearchUtils';
@@ -40,17 +40,37 @@ const listFiles = [
 const scales = [1, 4];
 const measuredRenders = 50;
 
-// Repeats every token `scale` times with new addresses
+// The address of a token in its copy `copy`, the same in every list so the lists still overlap
+const copyAddress = (address: string, copy: number) =>
+  copy === 0 ? address : `0x${copy.toString(16).padStart(2, '0')}${address.slice(4).toLowerCase()}`;
+
+// Repeats every token `scale` times as new tokens. The bridge keys a child chain token by its parent
+// chain address, so the copies get new parent chain addresses too.
 function createTokenLists(scale: number): TokenListWithId[] {
-  let address = 0;
   return listFiles.map((file) => {
     const list = generateArbitrumTokenList(file);
     return {
       ...list,
-      tokens: Array.from({ length: scale }, () =>
+      tokens: Array.from({ length: scale }, (_, copy) =>
         list.tokens.map((token) => {
-          address += 1;
-          return { ...token, address: `0x${address.toString(16).padStart(40, '0')}` };
+          const bridgeInfo = token.extensions?.bridgeInfo as
+            | Record<string, { tokenAddress: string }>
+            | undefined;
+          return {
+            ...token,
+            address: copyAddress(token.address, copy),
+            ...(bridgeInfo && {
+              extensions: {
+                ...token.extensions,
+                bridgeInfo: Object.fromEntries(
+                  Object.entries(bridgeInfo).map(([chainId, info]) => [
+                    chainId,
+                    { ...info, tokenAddress: copyAddress(info.tokenAddress, copy) },
+                  ]),
+                ),
+              },
+            }),
+          };
         }),
       ).flat(),
       l2ChainId: String(ChainId.ArbitrumOne),
@@ -119,6 +139,14 @@ async function measure<Result>(useHook: () => Result, isReady: (result: Result) 
   });
   const retainedBytes = heapUsed() - heapBefore;
   root.unmount();
+  // Releases the cache and the last result, and lets React finish the unmount, so the next
+  // measurement doesn't start with this one's data
+  forgetSwrCache(cache);
+  latest = undefined;
+  for (let turn = 0; turn < 5; turn += 1) {
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise((resolve) => setImmediate(resolve));
+  }
   return {
     renderMs: median(durations),
     keyLength:
@@ -141,7 +169,26 @@ test('cost of a render of useTokensFromLists for growing token lists', async () 
       ...(await measure(useSmallKey, ({ data }) => !!data)),
     },
   ];
+  // Measurements that aren't reported. The first ones also pay one-time costs, like the code the
+  // engine optimizes, and made the first reported heap off by up to 300 KB.
   for (const scale of scales) {
+    tokenLists.current = createTokenLists(scale);
+    // eslint-disable-next-line no-await-in-loop
+    await measure(
+      () => useTokensFromLists(),
+      ({ data }) => Object.keys(data).length > 0,
+    );
+  }
+  for (const scale of scales) {
+    // A first conversion of the same lists fills viem's cache of checked addresses, shared by the
+    // whole app, so the measurement only keeps what the hook keeps. Without it, the result depended
+    // on which size ran before.
+    tokenLists.current = createTokenLists(scale);
+    // eslint-disable-next-line no-await-in-loop
+    await measure(
+      () => useTokensFromLists(),
+      ({ data }) => Object.keys(data).length > 0,
+    );
     tokenLists.current = createTokenLists(scale);
     const tokens = (tokenLists.current as TokenListWithId[]).reduce(
       (total, list) => total + list.tokens.length,

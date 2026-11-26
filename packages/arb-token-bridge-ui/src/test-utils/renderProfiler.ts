@@ -310,7 +310,12 @@ export function installRenderProfiler() {
         return rendererId;
       },
       onCommitFiberRoot(_rendererId: number, root: FiberRoot) {
-        roots.add(root);
+        // An unmounted root keeps its last tree, so forgetting it lets that tree be collected
+        if (root.current.child) {
+          roots.add(root);
+        } else {
+          roots.delete(root);
+        }
         commitCount += 1;
         if (!commits) {
           return;
