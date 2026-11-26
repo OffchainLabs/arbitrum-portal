@@ -91,11 +91,15 @@ describe.sequential('mint address compatibility', () => {
     render(<TokenInfo token={token} showFullAddress />, {
       wrapper: createBridgeTestWrapper({
         query: { sourceChain: ChainId.Solana, destinationChain: ChainId.ArbitrumOne },
-        cacheEntries: [
-          [
-            [[], ChainId.Solana, ChainId.ArbitrumOne, 'useTokensFromLists'],
-            { [mint]: { ...token, logoURI: '/list.svg' } },
-          ],
+        listTokens: [
+          {
+            chainId: ChainId.Solana,
+            address: mint,
+            name: token.name,
+            symbol: token.symbol,
+            decimals: token.decimals,
+            logoURI: '/list.svg',
+          },
         ],
       }),
     });

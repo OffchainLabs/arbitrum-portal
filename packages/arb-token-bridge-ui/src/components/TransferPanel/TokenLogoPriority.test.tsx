@@ -44,11 +44,15 @@ describe.sequential('curated token logos', () => {
     render(<TokenInfo token={token} />, {
       wrapper: createBridgeTestWrapper({
         query: { sourceChain: ChainId.ArbitrumOne, destinationChain: ChainId.Ethereum },
-        cacheEntries: [
-          [
-            [[], ChainId.Ethereum, ChainId.ArbitrumOne, 'useTokensFromLists'],
-            { [token.address]: { ...token, logoURI: '/list.svg' } },
-          ],
+        listTokens: [
+          {
+            chainId: ChainId.Ethereum,
+            address: token.address,
+            name: token.name,
+            symbol: token.symbol,
+            decimals: token.decimals,
+            logoURI: '/list.svg',
+          },
         ],
       }),
     });

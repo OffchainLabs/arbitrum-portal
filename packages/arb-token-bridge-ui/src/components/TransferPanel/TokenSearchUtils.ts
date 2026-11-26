@@ -1,6 +1,3 @@
-import { useMemo } from 'react';
-import useSWRImmutable from 'swr/immutable';
-
 import { isUnmatchedLifiTokenAllowed } from '../../app/api/crosschain-transfers/constants';
 import {
   ArbTokenBridgeToken,
@@ -16,6 +13,61 @@ import { mergeBridgeTokens } from '../../util/mergeBridgeTokens';
 
 // keeps the reference stable
 const emptyData: ContractStorage<ERC20BridgeToken> = {};
+
+// About 1,400 components call these hooks when switching networks. An SWR key with the token
+// lists in it is turned into a string on every call, so the converted tokens are kept next to the
+// object they come from instead. An entry goes away with that object.
+const tokensFromListsCache = new WeakMap<
+  TokenListWithId[],
+  Map<string, ContractStorage<ERC20BridgeToken>>
+>();
+const tokensFromUserCache = new WeakMap<
+  ContractStorage<ERC20BridgeToken>,
+  ContractStorage<ERC20BridgeToken>
+>();
+
+export function getTokensFromLists(
+  tokenLists: TokenListWithId[],
+  parentChainId: number,
+  childChainId: number,
+): ContractStorage<ERC20BridgeToken> {
+  const chains = `${parentChainId}-${childChainId}`;
+  let tokensByChains = tokensFromListsCache.get(tokenLists);
+  if (!tokensByChains) {
+    tokensByChains = new Map();
+    tokensFromListsCache.set(tokenLists, tokensByChains);
+  }
+  let tokens = tokensByChains.get(chains);
+  if (!tokens) {
+    tokens = tokenListsToSearchableTokenStorage(
+      tokenLists,
+      String(parentChainId),
+      String(childChainId),
+    );
+    tokensByChains.set(chains, tokens);
+  }
+  return tokens;
+}
+
+export function getTokensFromUser(
+  bridgeTokens: ContractStorage<ERC20BridgeToken>,
+): ContractStorage<ERC20BridgeToken> {
+  let tokens = tokensFromUserCache.get(bridgeTokens);
+  if (!tokens) {
+    const storage: ContractStorage<ERC20BridgeToken> = {};
+    Object.keys(bridgeTokens).forEach((_address: string) => {
+      const bridgeToken = bridgeTokens[_address];
+
+      // Any tokens in the bridge that don't have a list id were added by the user.
+      if (bridgeToken && bridgeToken.listIds.size === 0) {
+        storage[_address] = { ...bridgeToken, listIds: new Set() };
+      }
+    });
+    tokens = storage;
+    tokensFromUserCache.set(bridgeTokens, tokens);
+  }
+  return tokens;
+}
 
 export type AddTokenFromSearchResult = 'success' | 'disabled' | 'not-found';
 
@@ -57,19 +109,12 @@ export async function addTokenFromSearch({
 export function useTokensFromLists() {
   const [networks] = useNetworks();
   const { childChain, parentChain } = useNetworksRelationship(networks);
-  const { data: tokenLists, isLoading: isLoadingTokenLists } = useTokenLists(childChain.id);
+  const { data: tokenLists, isLoading } = useTokenLists(childChain.id);
+  const data = tokenLists
+    ? getTokensFromLists(tokenLists, parentChain.id, childChain.id)
+    : emptyData;
 
-  const { data = emptyData, isLoading } = useSWRImmutable(
-    [tokenLists ?? [], parentChain.id, childChain.id, 'useTokensFromLists'],
-    ([_tokenLists, _parentChainId, _childChainId]) =>
-      tokenListsToSearchableTokenStorage(
-        _tokenLists,
-        String(_parentChainId),
-        String(_childChainId),
-      ),
-  );
-
-  return { data, isLoading: isLoadingTokenLists || isLoading };
+  return { data, isLoading };
 }
 
 export function useTokensFromUser(): ContractStorage<ERC20BridgeToken> {
@@ -78,32 +123,13 @@ export function useTokensFromUser(): ContractStorage<ERC20BridgeToken> {
       arbTokenBridge: { bridgeTokens },
     },
   } = useAppState();
-  const emptyData = useMemo(() => ({}), []);
 
-  const { data = emptyData } = useSWRImmutable(
-    [bridgeTokens, 'useTokensFromUser'],
-    ([_bridgeTokens]) => {
-      const storage: ContractStorage<ERC20BridgeToken> = {};
+  // Can happen when switching networks.
+  if (typeof bridgeTokens === 'undefined') {
+    return emptyData;
+  }
 
-      // Can happen when switching networks.
-      if (typeof _bridgeTokens === 'undefined') {
-        return {};
-      }
-
-      Object.keys(_bridgeTokens).forEach((_address: string) => {
-        const bridgeToken = _bridgeTokens[_address];
-
-        // Any tokens in the bridge that don't have a list id were added by the user.
-        if (bridgeToken && bridgeToken.listIds.size === 0) {
-          storage[_address] = { ...bridgeToken, listIds: new Set() };
-        }
-      });
-
-      return storage;
-    },
-  );
-
-  return data;
+  return getTokensFromUser(bridgeTokens);
 }
 
 export function tokenListsToSearchableTokenStorage(

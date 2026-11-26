@@ -8,7 +8,12 @@ import {
   type TokenListWithId,
   isTokenAvailableOnChain,
 } from '../../util/TokenListUtils';
-import { addTokenFromSearch, tokenListsToSearchableTokenStorage } from './TokenSearchUtils';
+import {
+  addTokenFromSearch,
+  getTokensFromLists,
+  getTokensFromUser,
+  tokenListsToSearchableTokenStorage,
+} from './TokenSearchUtils';
 
 describe('addTokenFromSearch', () => {
   const address = '0x0000000000000000000000000000000000000001';
@@ -434,5 +439,116 @@ describe('tokenListsToSearchableTokenStorage', () => {
 
     expect(isTokenAvailableOnChain(token, 1)).toBe(true);
     expect(isTokenAvailableOnChain(token, 42161)).toBe(true);
+  });
+});
+
+// Child-only LiFi tokens, so each chain pair converts a different token from the same lists
+function createTokenLists(): TokenListWithId[] {
+  return [
+    {
+      name: 'LiFi Tokens',
+      timestamp: new Date().toISOString(),
+      version: { major: 1, minor: 0, patch: 0 },
+      tokens: [
+        {
+          chainId: ChainId.ArbitrumOne,
+          address: '0x0000000000000000000000000000000000042161',
+          name: 'Arbitrum One token',
+          symbol: 'ONE',
+          decimals: 18,
+        },
+        {
+          chainId: ChainId.ArbitrumNova,
+          address: '0x0000000000000000000000000000000000042170',
+          name: 'Arbitrum Nova token',
+          symbol: 'NOVA',
+          decimals: 18,
+        },
+      ],
+      l2ChainId: String(ChainId.ArbitrumOne),
+      bridgeTokenListId: LIFI_TRANSFER_LIST_ID,
+    },
+  ];
+}
+
+describe('getTokensFromLists', () => {
+  it('returns the same tokens object while the lists and chains stay the same', () => {
+    const tokenLists = createTokenLists();
+
+    const tokens = getTokensFromLists(tokenLists, ChainId.Ethereum, ChainId.ArbitrumOne);
+
+    expect(getTokensFromLists(tokenLists, ChainId.Ethereum, ChainId.ArbitrumOne)).toBe(tokens);
+    expect(tokens).toEqual(
+      tokenListsToSearchableTokenStorage(
+        tokenLists,
+        String(ChainId.Ethereum),
+        String(ChainId.ArbitrumOne),
+      ),
+    );
+  });
+
+  it('converts the tokens again when the lists array is replaced', () => {
+    const tokens = getTokensFromLists(createTokenLists(), ChainId.Ethereum, ChainId.ArbitrumOne);
+    const newTokens = getTokensFromLists(createTokenLists(), ChainId.Ethereum, ChainId.ArbitrumOne);
+
+    expect(newTokens).not.toBe(tokens);
+    expect(newTokens).toEqual(tokens);
+  });
+
+  it('keeps one result per chain pair for the same lists array', () => {
+    const tokenLists = createTokenLists();
+
+    const oneTokens = getTokensFromLists(tokenLists, ChainId.Ethereum, ChainId.ArbitrumOne);
+    const novaTokens = getTokensFromLists(tokenLists, ChainId.Ethereum, ChainId.ArbitrumNova);
+
+    expect(Object.keys(oneTokens)).toEqual(['0x0000000000000000000000000000000000042161']);
+    expect(Object.keys(novaTokens)).toEqual(['0x0000000000000000000000000000000000042170']);
+    expect(getTokensFromLists(tokenLists, ChainId.Ethereum, ChainId.ArbitrumOne)).toBe(oneTokens);
+    expect(getTokensFromLists(tokenLists, ChainId.Ethereum, ChainId.ArbitrumNova)).toBe(novaTokens);
+  });
+});
+
+describe('getTokensFromUser', () => {
+  function createToken(address: string, listIds: string[]): ERC20BridgeToken {
+    return {
+      type: TokenType.ERC20,
+      name: 'Token',
+      symbol: 'TKN',
+      decimals: 18,
+      address,
+      listIds: new Set(listIds),
+    };
+  }
+
+  const userAddress = '0x0000000000000000000000000000000000000001';
+  const listAddress = '0x0000000000000000000000000000000000000002';
+
+  it('keeps only the tokens without a list id', () => {
+    const tokens = getTokensFromUser({
+      [userAddress]: createToken(userAddress, []),
+      [listAddress]: createToken(listAddress, ['1']),
+    });
+
+    expect(Object.keys(tokens)).toEqual([userAddress]);
+  });
+
+  it('returns the same tokens object while the bridge tokens stay the same', () => {
+    const bridgeTokens = { [userAddress]: createToken(userAddress, []) };
+
+    expect(getTokensFromUser(bridgeTokens)).toBe(getTokensFromUser(bridgeTokens));
+  });
+
+  it('reads the new bridge tokens when they are replaced', () => {
+    const bridgeTokens = { [userAddress]: createToken(userAddress, []) };
+    const tokens = getTokensFromUser(bridgeTokens);
+    const otherAddress = '0x0000000000000000000000000000000000000003';
+
+    const newTokens = getTokensFromUser({
+      ...bridgeTokens,
+      [otherAddress]: createToken(otherAddress, []),
+    });
+
+    expect(newTokens).not.toBe(tokens);
+    expect(Object.keys(newTokens)).toEqual([userAddress, otherAddress]);
   });
 });

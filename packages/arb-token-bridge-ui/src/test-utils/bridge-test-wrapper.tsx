@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { TokenInfo } from '@uniswap/token-lists';
 import { type PropsWithChildren, useState } from 'react';
 import type { Key } from 'swr';
 import { vi } from 'vitest';
@@ -11,6 +12,7 @@ import type { ERC20BridgeToken } from '../hooks/arbTokenBridge.types';
 import { useAppStore } from '../state';
 import { type AppState, defaultState } from '../state/app/state';
 import type { EvmAddress } from '../util/AddressUtils';
+import { LIFI_TRANSFER_LIST_ID, type TokenListWithId } from '../util/TokenListUtils';
 import { getNetworksRelationship } from '../util/getNetworksRelationship';
 import { initializeBridgeNetworks } from '../util/networks';
 import { defaultWalletContextValue } from '../wallet/WalletContext';
@@ -26,6 +28,7 @@ export function createBridgeTestWrapper({
   fetchBalance = async () => ({}),
   bridgeTokens = {},
   cacheEntries = [],
+  listTokens = [],
   app = {},
   wagmiConfig = createConfig({
     storage: null,
@@ -42,6 +45,8 @@ export function createBridgeTestWrapper({
   fetchBalance?: BalanceClient['fetchBalance'];
   bridgeTokens?: Record<string, ERC20BridgeToken>;
   cacheEntries?: ReadonlyArray<readonly [Key, unknown]>;
+  // Tokens of the LiFi token list, for the hooks that read the token lists
+  listTokens?: TokenInfo[];
   app?: Partial<AppState>;
   wagmiConfig?: Config;
 }) {
@@ -69,8 +74,21 @@ export function createBridgeTestWrapper({
             ]
           : [],
       ),
-      [['useTokenLists', childChainId, parentChainId], []],
-      [[[], parentChainId, childChainId, 'useTokensFromLists'], {}],
+      [
+        ['useTokenLists', childChainId, parentChainId],
+        listTokens.length > 0
+          ? [
+              {
+                name: 'Test token list',
+                timestamp: new Date(0).toISOString(),
+                version: { major: 1, minor: 0, patch: 0 },
+                tokens: listTokens,
+                l2ChainId: String(childChainId),
+                bridgeTokenListId: LIFI_TRANSFER_LIST_ID,
+              } satisfies TokenListWithId,
+            ]
+          : [],
+      ],
       ...cacheEntries,
     ],
   });
