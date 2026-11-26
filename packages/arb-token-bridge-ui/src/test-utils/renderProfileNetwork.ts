@@ -92,7 +92,8 @@ function track(
   };
 }
 
-const server = setupServer(
+// Also answers the requests of the browser benchmark, see tests/browser-bench
+export const profileHandlers = [
   http.get(
     'https://tokenlist.arbitrum.io/ArbTokenLists/:file',
     track(({ params }) => HttpResponse.json(generateArbitrumTokenList(String(params.file)))),
@@ -149,7 +150,9 @@ const server = setupServer(
       return HttpResponse.error();
     }),
   ),
-);
+];
+
+const server = setupServer(...profileHandlers);
 
 export function startProfileNetwork() {
   server.listen();
