@@ -158,7 +158,7 @@ export function toHeldTokens({
 export async function getHeldTokens(account: Address): Promise<HeldTokens> {
   const [index, top] = await Promise.all([getIndexFile(), getTopFile()]);
   // The held tokens come with their prices, so the page does not wait for the balances to ask.
-  const registry = getLifiTokenRegistry();
+  const registry = getLifiTokenRegistry(index.chains.map(({ chainId }) => chainId));
   const results = await Promise.all(
     index.chains.map(async ({ chainId }) => {
       try {

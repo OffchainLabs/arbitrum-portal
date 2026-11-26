@@ -10,7 +10,7 @@ export const PRICE_REQUEST_LIMIT = 20;
 // A caller can start reading the registry before it knows the tokens.
 export async function getTokenPrices(
   tokens: Pick<TopToken, 'chainId' | 'address'>[],
-  registry = getLifiTokenRegistry(),
+  registry = getLifiTokenRegistry(tokens.map((token) => token.chainId)),
 ): Promise<Record<string, number>> {
   const { tokensByChain } = await registry;
   const wanted = new Set(tokens.map(tokenKey));
