@@ -22,12 +22,6 @@ declare module '*.json' {
   export default value;
 }
 
-// msw only declares its Node entry point in the exports of its package.json, which
-// "moduleResolution": "node" doesn't read
-declare module 'msw/node' {
-  export * from 'msw/lib/node/index';
-}
-
 // React's profiling build of react-dom/client, see vitest.profile.setup.ts
 declare module 'react-dom/profiling' {
   export * from 'react-dom/client';
