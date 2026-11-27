@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { mockAnimationsApi } from 'jsdom-testing-mocks';
 import React from 'react';
-import { vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 
 vi.mock('@arbitrum/sdk/dist/lib/abi/factories/Inbox__factory', async () => {
   const { BigNumber } = await import('ethers');
@@ -50,6 +50,37 @@ vi.mock('react-virtualized', () => ({
     );
   }),
 }));
+
+const pendingTokenListFetches = vi.hoisted(() => new Set<Promise<void>>());
+
+// TokenListSyncer and TokenSearch do not await addBridgeTokenListToBridge. Wait for its fetches
+// after each test: a fetch that settles after the test file's DOM environment is gone calls
+// setState without `window`, and vitest fails the run on that unhandled rejection.
+vi.mock('./src/util/TokenListUtils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./src/util/TokenListUtils')>();
+
+  return {
+    ...actual,
+    addBridgeTokenListToBridge: (...args: Parameters<typeof actual.addBridgeTokenListToBridge>) => {
+      const promise = actual.addBridgeTokenListToBridge(...args);
+      const forget = () => pendingTokenListFetches.delete(promise);
+      pendingTokenListFetches.add(promise);
+      promise.then(forget, forget);
+      return promise;
+    },
+  };
+});
+
+async function waitForTokenListFetches(): Promise<void> {
+  if (pendingTokenListFetches.size === 0) {
+    return;
+  }
+  await Promise.allSettled(pendingTokenListFetches);
+  // A settled fetch can trigger more fetches.
+  return waitForTokenListFetches();
+}
+
+afterEach(waitForTokenListFetches, 120_000);
 
 // Avoid error when reown is making request to walletConnect endpoint
 vi.mock('./src/wallet/hooks/useWalletModal', () => ({

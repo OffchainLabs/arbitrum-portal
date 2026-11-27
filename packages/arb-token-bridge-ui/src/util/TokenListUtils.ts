@@ -293,8 +293,8 @@ export interface TokenListWithId extends TokenList {
 export const addBridgeTokenListToBridge = (
   bridgeTokenList: BridgeTokenList,
   arbTokenBridge: ArbTokenBridge,
-) => {
-  fetchBridgeTokenList(bridgeTokenList).then(({ data: tokenList }) => {
+): Promise<void> => {
+  return fetchBridgeTokenList(bridgeTokenList).then(({ data: tokenList }) => {
     if (!tokenList) {
       return;
     }
