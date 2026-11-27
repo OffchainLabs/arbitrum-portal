@@ -10,7 +10,7 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
 import { getLifiOnlyChains } from '../wallet/ecosystems';
-import type { CoreEvmChainId } from '../wallet/ecosystems/evm';
+import { type CoreEvmChainId, elysium } from '../wallet/ecosystems/evm';
 import { findEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils';
 import { Erc20Data, fetchErc20Data } from './TokenUtils';
@@ -69,8 +69,8 @@ const baseNetworks: { [chainId: number]: BlockNumberReferenceNetwork } = {
   },
 };
 
-// LiFi-only chains, such as Solana, have no Arbitrum child chain: they are only roots for their LiFi
-// pairs
+// LiFi-only chains, such as Solana and Elysium, have no Arbitrum child chain: they are only roots for
+// their LiFi pairs
 function getLifiOnlyNetworks(): BlockNumberReferenceNetwork[] {
   return getLifiOnlyChains().map((chain) => ({
     chainId: chain.id,
@@ -296,7 +296,9 @@ const defaultRpcUrls = {
     env: process.env.NEXT_PUBLIC_RPC_URL_BASE_SEPOLIA,
     fallback: getRpcUrl(ChainId.BaseSepolia),
   }),
-} satisfies Record<CoreEvmChainId, string>;
+  // LiFi-only EVM chain, read from `NEXT_PUBLIC_RPC_URL_ELYSIUM` or its public RPC
+  [ChainId.Elysium]: elysium.rpcUrls.default.http[0],
+} satisfies Record<CoreEvmChainId | ChainId.Elysium, string>;
 
 export const rpcURLs: { [chainId: number]: string } =
   !isProductionEnvironment || isE2eTestingEnvironment

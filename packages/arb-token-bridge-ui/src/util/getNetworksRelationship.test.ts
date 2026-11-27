@@ -46,6 +46,36 @@ describe('getNetworksRelationship', () => {
       },
     },
     {
+      label: 'Arbitrum One to Elysium LiFi deposit',
+      sourceChainId: ChainId.ArbitrumOne,
+      destinationChainId: ChainId.Elysium,
+      expected: {
+        parentChainId: ChainId.ArbitrumOne,
+        childChainId: ChainId.Elysium,
+        isDepositMode: true,
+      },
+    },
+    {
+      label: 'Elysium to Arbitrum One LiFi transfer',
+      sourceChainId: ChainId.Elysium,
+      destinationChainId: ChainId.ArbitrumOne,
+      expected: {
+        parentChainId: ChainId.Elysium,
+        childChainId: ChainId.ArbitrumOne,
+        isDepositMode: true,
+      },
+    },
+    {
+      label: 'ApeChain to Elysium LiFi deposit',
+      sourceChainId: ChainId.ApeChain,
+      destinationChainId: ChainId.Elysium,
+      expected: {
+        parentChainId: ChainId.ApeChain,
+        childChainId: ChainId.Elysium,
+        isDepositMode: true,
+      },
+    },
+    {
       label: 'Robinhood Chain to ApeChain sibling transfer',
       sourceChainId: ChainId.RobinhoodChain,
       destinationChainId: ChainId.ApeChain,

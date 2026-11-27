@@ -30,8 +30,9 @@ export function resolveTokenAddress({
   const chainRole = chainId === parentChainId ? 'parent' : 'child';
   const chainNativeCurrencyIsCustom = chainId === childChainId && !!childNativeCurrencyAddress;
 
-  // A LiFi-only chain has no child chain address, so a token has a single address
-  if (isLifiOnlyChain(chainId)) {
+  // On a LiFi-only parent chain, the token's parent address is its address on that chain. As a child
+  // chain, such as Elysium, it reads `l2Address` like any child chain
+  if (chainRole === 'parent' && isLifiOnlyChain(chainId)) {
     return token?.address ?? getNativeTokenAddress(chainId);
   }
 

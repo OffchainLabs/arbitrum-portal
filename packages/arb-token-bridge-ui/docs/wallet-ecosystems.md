@@ -24,7 +24,7 @@ We want to add Solana as a LiFi source without changing what EVM users see. We a
 
 - address and transaction id validation and normalization
 - the native token address used in balance requests and LiFi quotes
-- which of its chains only reach Arbitrum through LiFi (`lifiOnlyChains`), with no parent and child token addresses and no canonical bridge
+- which of its chains only reach Arbitrum through LiFi (`lifiOnlyChains`), with no parent and child token addresses and no canonical bridge: every Solana chain, and Elysium on EVM. Elysium stays hidden until `NEXT_PUBLIC_FEATURE_FLAG_ELYSIUM_ENABLED` is `true`
 - whether its chains have an EVM gas price, and whether AppKit identifies its networks by chain id
 - the explorer account path
 - the built-in chains

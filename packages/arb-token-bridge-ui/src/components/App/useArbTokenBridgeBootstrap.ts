@@ -5,7 +5,7 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useActions } from '../../state';
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
-import { isLifiOnlyChain } from '../../wallet/ecosystems';
+import { getWalletEcosystem } from '../../wallet/getWalletEcosystem';
 
 export function useArbTokenBridgeBootstrap(): TokenBridgeParams | null {
   const actions = useActions();
@@ -14,8 +14,9 @@ export function useArbTokenBridgeBootstrap(): TokenBridgeParams | null {
   const [tokenBridgeParams, setTokenBridgeParams] = useState<TokenBridgeParams | null>(null);
   const nextTokenBridgeParams = useMemo<TokenBridgeParams | null>(
     () => {
-      // LiFi-only chains have no Arbitrum token bridge to set up
-      if (isLifiOnlyChain(parentChain.id) || isLifiOnlyChain(childChain.id)) {
+      // The token bridge store reads both chains through EVM providers. It still loads for EVM
+      // chains that only reach Arbitrum through LiFi, such as Elysium, to hold their token lists
+      if (getWalletEcosystem(parentChain.id) !== getWalletEcosystem(childChain.id)) {
         return null;
       }
 

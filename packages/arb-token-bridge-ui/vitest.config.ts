@@ -19,6 +19,8 @@ export default defineConfig({
       ...loadEnv('', '../app/', ''),
       // pinned so history routing doesn't depend on the ambient env
       NEXT_PUBLIC_INDEXER_CHILD_CHAIN_IDS: '42170,4663,46630',
+      // Elysium tests need its routes and network entry
+      NEXT_PUBLIC_FEATURE_FLAG_ELYSIUM_ENABLED: 'true',
     },
     environment: 'happy-dom',
     setupFiles: ['./vitest.mocks.ts'],

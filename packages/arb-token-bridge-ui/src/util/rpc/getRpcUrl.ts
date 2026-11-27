@@ -5,9 +5,10 @@ import { getInfuraRpcUrl } from './infura';
 
 type RpcProvider = 'infura' | 'alchemy';
 
+// Solana and Elysium have their own RPC URLs: neither Infura nor Alchemy serve them here
 export type ProductionChainId = Exclude<
   ChainId,
-  ChainId.Local | ChainId.ArbitrumLocal | ChainId.L3Local | ChainId.Solana
+  ChainId.Local | ChainId.ArbitrumLocal | ChainId.L3Local | ChainId.Solana | ChainId.Elysium
 >;
 
 function getRpcProvider(): RpcProvider {

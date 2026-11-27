@@ -15,7 +15,11 @@ export default defineConfig({
     },
     testTimeout: 120_000,
     include: ['./src/**/*.integration.test.ts', './src/**/*.integration.test.tsx'],
-    env: loadEnv('', '../app/', ''),
+    env: {
+      ...loadEnv('', '../app/', ''),
+      // Elysium tests need its routes and network entry. The app server needs the flag too
+      NEXT_PUBLIC_FEATURE_FLAG_ELYSIUM_ENABLED: 'true',
+    },
     environment: 'happy-dom',
     environmentOptions: {
       happyDOM: {

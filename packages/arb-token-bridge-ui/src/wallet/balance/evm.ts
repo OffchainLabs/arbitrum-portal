@@ -1,10 +1,22 @@
 import { MultiCaller } from '@arbitrum/sdk';
+import type { Provider } from '@ethersproject/providers';
 import { zeroAddress } from 'viem';
 
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
 import { isValidAddressForChain } from '../../util/AddressUtils';
 import { captureSentryErrorWithExtraData } from '../../util/SentryUtils';
+import { getChainMetadata } from '../../util/networkMetadata';
+import { isLifiOnlyChain } from '../ecosystems';
 import type { BalanceClient, FetchBalanceInput, FetchBalanceResult } from '../types';
+
+// The Arbitrum SDK only finds the multicall contract of Arbitrum chains and their parents
+function getMultiCaller(chainId: number, provider: Provider): Promise<MultiCaller> {
+  const multicall3Address = getChainMetadata(chainId).contracts?.multicall3?.address;
+  if (isLifiOnlyChain(chainId) && multicall3Address) {
+    return Promise.resolve(new MultiCaller(provider, multicall3Address));
+  }
+  return MultiCaller.fromProvider(provider);
+}
 
 export async function fetchEvmBalance({
   chainId,
@@ -21,7 +33,7 @@ export async function fetchEvmBalance({
   const [nativeBalance, tokenData] = await Promise.all([
     tokenAddresses.includes(zeroAddress) ? provider.getBalance(walletAddress) : undefined,
     erc20TokenAddresses.length > 0
-      ? MultiCaller.fromProvider(provider)
+      ? getMultiCaller(chainId, provider)
           .then((multiCaller) =>
             multiCaller.getTokenData(erc20TokenAddresses, {
               balanceOf: { account: walletAddress },
