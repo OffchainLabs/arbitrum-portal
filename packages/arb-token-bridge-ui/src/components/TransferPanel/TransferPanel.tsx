@@ -52,7 +52,12 @@ import { ChainId } from '../../types/ChainId';
 import { UiDriverStepExecutor, drive } from '../../ui-driver/UiDriver';
 import { stepGeneratorForCctp } from '../../ui-driver/UiDriverCctp';
 import { addressesEqual } from '../../util/AddressUtils';
-import { getAnalyticsAccountType, getLifiAssetType, trackEvent } from '../../util/AnalyticsUtils';
+import {
+  getAnalyticsAccountType,
+  getLifiAssetType,
+  getNativeAssetType,
+  trackEvent,
+} from '../../util/AnalyticsUtils';
 import { isNovaDestination } from '../../util/NovaUtils';
 import { isGatewayRegistered, isTokenNativeUSDC } from '../../util/TokenUtils';
 import { isCctpEnabled } from '../../util/featureFlag';
@@ -62,10 +67,7 @@ import { getNetworkName, isNetwork } from '../../util/networks';
 import { normalizeTimestamp } from '../../util/normalizeTimestamp';
 import { isOnrampFeatureEnabled } from '../../util/queryParamUtils';
 import { useWalletContext } from '../../wallet/WalletContext';
-import {
-  getEcosystemConfig,
-  getNativeTokenAddress,
-} from '../../wallet/ecosystems/getEcosystemConfig';
+import { getNativeTokenAddress } from '../../wallet/ecosystems/getEcosystemConfig';
 import { getSigners } from '../../wallet/getSigners';
 import { useRefreshTokenBalances } from '../../wallet/hooks/useTokenBalances';
 import { useWallets } from '../../wallet/hooks/useWallets';
@@ -1316,9 +1318,7 @@ export function TransferPanel() {
       type: isDepositMode ? 'Deposit' : 'Withdrawal',
       selectedRoute,
       tokenSymbol: selectedToken?.symbol,
-      assetType: selectedToken
-        ? 'ERC-20'
-        : getEcosystemConfig(networks.sourceChain.id).nativeAssetType,
+      assetType: selectedToken ? 'ERC-20' : getNativeAssetType(networks.sourceChain.id),
       accountType: getAnalyticsAccountType(accountType),
       network: childChain.name,
       amount: Number(amount),
@@ -1355,7 +1355,7 @@ export function TransferPanel() {
         trackEvent('Switch Network and Transfer', {
           type: isDepositMode ? 'Deposit' : 'Withdrawal',
           tokenSymbol: selectedToken?.symbol,
-          assetType: selectedToken ? 'ERC-20' : 'ETH',
+          assetType: selectedToken ? 'ERC-20' : getNativeAssetType(sourceChainId),
           accountType: getAnalyticsAccountType(accountType),
           network: childChainName,
           amount: Number(amount),

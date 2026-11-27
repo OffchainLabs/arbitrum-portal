@@ -34,6 +34,15 @@ describe('getLifiAssetType', () => {
     ).toBe('SOL');
   });
 
+  it('classifies native HYPE transfers on Elysium as HYPE', () => {
+    expect(
+      getLifiAssetType({
+        tokenAddress: constants.AddressZero,
+        chainId: ChainId.Elysium,
+      }),
+    ).toBe('HYPE');
+  });
+
   it('classifies zero-address ApeChain transfers as ERC20', () => {
     expect(
       getLifiAssetType({
