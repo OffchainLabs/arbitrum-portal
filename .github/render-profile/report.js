@@ -9,8 +9,9 @@
 // The check fails when an interaction renders more than on master, or a hook measured on its own
 // builds more SWR key text or keeps more memory, values that are the same on every run. Times
 // only show the impact.
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const marker = '<!-- render-profile-report -->';
 const resultsDirectory = 'render-profile/pr';
@@ -568,7 +569,7 @@ function formatFailure(failures) {
   return `Higher than on master: ${formatFailures(failures)}.`;
 }
 
-module.exports = async ({ github, context, core }) => {
+export default async ({ github, context, core }) => {
   const { owner, repo } = context.repo;
   const { pr, base } = readProfiles({
     prDirectory: resultsDirectory,
@@ -611,7 +612,7 @@ module.exports = async ({ github, context, core }) => {
   }
 };
 
-if (require.main === module) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [prDirectory = 'render-profile/pr', baseDirectory] = process.argv.slice(2);
   const { pr, base } = readProfiles({ prDirectory, baseDirectory });
   const { body, failures } = formatReport({

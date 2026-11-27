@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const specFiles = require('../../packages/arb-token-bridge-ui/tests/e2e/specfiles.json');
+import specFiles from '../../packages/arb-token-bridge-ui/tests/e2e/specfiles.json' with { type: 'json' };
 
 const tests = [];
 
