@@ -7,6 +7,7 @@ import {
   TokenType,
 } from '../hooks/arbTokenBridge.types';
 import { ChainId } from '../types/ChainId';
+import { isLifiOnlyChain } from '../wallet/ecosystems';
 import { getNativeTokenAddress } from '../wallet/ecosystems/getEcosystemConfig';
 import { addressesEqual } from './AddressEquality';
 import { CommonAddress } from './CommonAddressUtils';
@@ -135,7 +136,13 @@ export function resolveDestinationSelection({
       isDepositMode,
     });
 
-  const repeatsSource = addressesEqual(destinationTokenLookupKey, sourceTokenAddress);
+  // On a LiFi-only destination, such as Elysium, the zero address is its own native token, even when
+  // the source token also has the zero address, such as ETH on Robinhood Chain
+  const isLifiOnlyNativeDestination =
+    isLifiOnlyChain(destinationChainId) &&
+    addressesEqual(destinationTokenLookupKey, constants.AddressZero);
+  const repeatsSource =
+    !isLifiOnlyNativeDestination && addressesEqual(destinationTokenLookupKey, sourceTokenAddress);
   let token: ERC20BridgeToken | null;
   let lookupKey = destinationTokenLookupKey;
   let isSwap = !repeatsSource;
@@ -154,6 +161,10 @@ export function resolveDestinationSelection({
       override = getOverride(sourceTokenAddress);
     }
   } else if (!lookupKey || addressesEqual(lookupKey, constants.AddressZero)) {
+    // On a LiFi-only destination, such as Elysium, the zero address is its own native token
+    if (isLifiOnlyChain(destinationChainId)) {
+      lookupKey = undefined;
+    }
     override = getOverride(lookupKey || undefined);
     // Keep an unset native selection as null for display consumers. Returning native APE's
     // zero-address metadata would make their override lookup reinterpret it as WETH.
@@ -168,9 +179,15 @@ export function resolveDestinationSelection({
     }
   }
 
-  if (!token && !override && sourceChainId === ChainId.ApeChain) {
+  if (
+    !token &&
+    !override &&
+    sourceChainId === ChainId.ApeChain &&
+    !isLifiOnlyChain(destinationChainId)
+  ) {
     // An unsupported destination falls back to ETH. Null would make display consumers
     // interpret it as the default APE transfer instead, so retain explicit ETH metadata.
+    // On a LiFi-only chain, such as Elysium, null is its own native token instead.
     override = getOverride(constants.AddressZero);
     token = override;
     lookupKey = constants.AddressZero;

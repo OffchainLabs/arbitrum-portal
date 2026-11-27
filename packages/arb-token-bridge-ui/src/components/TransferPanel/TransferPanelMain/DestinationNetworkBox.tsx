@@ -10,10 +10,15 @@ import {
 } from '../../../hooks/useBalanceOnDestinationChain';
 import { useDestinationToken } from '../../../hooks/useDestinationToken';
 import { useETHPrice } from '../../../hooks/useETHPrice';
-import { NativeCurrency, useNativeCurrency } from '../../../hooks/useNativeCurrency';
+import {
+  NativeCurrency,
+  useNativeCurrency,
+  useNativeCurrencyForTransfer,
+} from '../../../hooks/useNativeCurrency';
 import { useNetworks } from '../../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../../hooks/useNetworksRelationship';
 import { getRecipientToHighlight } from '../../../services/destinationAddress';
+import { getNativeCurrencyPrice } from '../../../services/nativeCurrency';
 import { CommonAddress } from '../../../util/CommonAddressUtils';
 import { formatAmount, formatUSD } from '../../../util/NumberUtils';
 import { getUsdValueForAmount } from '../../../util/TokenPriceUtils';
@@ -109,8 +114,17 @@ function BalancesContainer() {
   const destinationToken = useDestinationToken();
   const [{ amount2 }] = useArbQueryParams();
   const destinationNativeCurrency = useNativeCurrency({ chainId: childChain.id });
+  const { priceAddress: destinationNativeCurrencyPriceAddress } = useNativeCurrencyForTransfer({
+    isDestination: true,
+  });
   const { ethPrice } = useETHPrice();
   const { data: tokensFromLists } = useTokensFromLists();
+  // Native currencies other than ETH, such as APE or HYPE, are priced through the token lists
+  const nativeCurrencyPrice = getNativeCurrencyPrice({
+    priceAddress: destinationNativeCurrencyPriceAddress,
+    tokensFromLists,
+    ethPrice,
+  });
 
   const selectedRoute = useRouteStore((state) => state.selectedRoute);
   const { amount: receivedAmount, amountRaw: receivedAmountRaw, isLoading } = useReceivedAmount();
@@ -153,9 +167,6 @@ function BalancesContainer() {
 
   const isShowingBatchedTransfer = isBatchTransferSupported && isAmount2InputVisible;
   const receivedAmountUsd = useMemo(() => {
-    const nativeCurrencyPrice = destinationNativeCurrency.isCustom
-      ? tokensFromLists[destinationNativeCurrency.address.toLowerCase()]?.priceUSD
-      : ethPrice;
     const value = getUsdValueForAmount({
       amount: receivedAmountRaw,
       selectedToken: destinationToken,
@@ -165,12 +176,15 @@ function BalancesContainer() {
     });
 
     return value ? formatUSD(value) : null;
-  }, [destinationNativeCurrency, destinationToken, ethPrice, receivedAmountRaw, tokensFromLists]);
+  }, [
+    destinationNativeCurrency,
+    destinationToken,
+    nativeCurrencyPrice,
+    receivedAmountRaw,
+    tokensFromLists,
+  ]);
 
   const amount2Usd = useMemo(() => {
-    const nativeCurrencyPrice = destinationNativeCurrency.isCustom
-      ? tokensFromLists[destinationNativeCurrency.address.toLowerCase()]?.priceUSD
-      : ethPrice;
     const value = getUsdValueForAmount({
       amount: amount2,
       selectedToken: null,
@@ -180,7 +194,7 @@ function BalancesContainer() {
     });
 
     return value ? formatUSD(value) : null;
-  }, [amount2, destinationNativeCurrency, ethPrice, tokensFromLists]);
+  }, [amount2, destinationNativeCurrency, nativeCurrencyPrice, tokensFromLists]);
 
   return (
     <div className="flex min-h-[96px] w-full flex-col items-center justify-center gap-2 rounded bg-white/10 p-3 text-white/70">

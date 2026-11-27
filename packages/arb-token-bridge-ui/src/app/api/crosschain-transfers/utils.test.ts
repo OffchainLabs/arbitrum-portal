@@ -652,4 +652,15 @@ describe('getTokenOverride', () => {
     expect(override.source).toBeNull();
     expect(override.destination).toBeNull();
   });
+
+  it('keeps native HYPE as the native token of Elysium routes', () => {
+    const override = getTokenOverride({
+      fromToken: undefined,
+      sourceChainId: ChainId.Elysium,
+      destinationChainId: ChainId.ArbitrumOne,
+    });
+
+    expect(override.source).toBeNull();
+    expect(override.destination).toBeNull();
+  });
 });

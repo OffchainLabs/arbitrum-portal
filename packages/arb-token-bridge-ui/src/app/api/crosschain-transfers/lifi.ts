@@ -16,6 +16,7 @@ import { APE_TOKEN_LOGO, ETHER_TOKEN_LOGO } from '../../../constants';
 import { ChainId } from '../../../types/ChainId';
 import { addressesEqual, isValidAddressForChain } from '../../../util/AddressUtils';
 import { getLifiRouteStepLabel, getLifiToolDetails } from '../../../util/LifiRouteUtils';
+import { isLifiOnlyChain } from '../../../wallet/ecosystems';
 import { getWalletEcosystem } from '../../../wallet/getWalletEcosystem';
 import { CrosschainTransfersRouteBase, QueryParams, RouteCost, Token } from './types';
 import { isValidLifiTransfer } from './utils';
@@ -91,6 +92,10 @@ function overrideTokenMetadata(token: Token, chainId: number): Token & { name?: 
  */
 function overrideTokenLogo(token: Token, chainId: number): Token {
   if (addressesEqual(token.address, constants.AddressZero)) {
+    // On a LiFi-only EVM chain, such as Elysium, the zero address is the chain's own native token
+    if (isLifiOnlyChain(chainId)) {
+      return token;
+    }
     if (chainId === ChainId.ApeChain) {
       return {
         ...token,

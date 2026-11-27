@@ -9,6 +9,7 @@ import { normalizeAddress } from '../../util/AddressUtils';
 import { TokenListWithId } from '../../util/TokenListUtils';
 import { getBridgeUiConfigForChain } from '../../util/bridgeUiConfig';
 import { orbitChains } from '../../util/orbitChainsList';
+import { isLifiOnlyChain } from '../../wallet/ecosystems';
 import { isCrossEcosystemTransfer } from '../../wallet/getWalletEcosystem';
 
 // TODO: cache
@@ -41,10 +42,14 @@ export const TransactionsTableTokenImage = ({ tx }: { tx: MergedTransaction }) =
     const sourceNativeTokenLogoSrc = getBridgeUiConfigForChain(tx.sourceChainId).nativeTokenData
       ?.logoUrl;
 
-    // Across ecosystems the asset is the source chain's native token, whatever the child chain's
-    const nativeTokenLogoSrc = isCrossEcosystemTransfer(tx)
-      ? sourceNativeTokenLogoSrc
-      : (orbitChain?.bridgeUiConfig.nativeTokenData?.logoUrl ?? sourceNativeTokenLogoSrc);
+    // Across ecosystems, and to or from a LiFi-only chain, the asset is the source chain's native
+    // token, whatever the child chain's
+    const nativeTokenLogoSrc =
+      isCrossEcosystemTransfer(tx) ||
+      isLifiOnlyChain(tx.sourceChainId) ||
+      isLifiOnlyChain(tx.destinationChainId)
+        ? sourceNativeTokenLogoSrc
+        : (orbitChain?.bridgeUiConfig.nativeTokenData?.logoUrl ?? sourceNativeTokenLogoSrc);
 
     if (nativeTokenLogoSrc) {
       return (
