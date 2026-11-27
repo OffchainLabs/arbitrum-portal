@@ -215,22 +215,30 @@ function compare(pr, base, id) {
   const { higherIsBetter = false, minDelta, minRatio = 0, decimals = 0 } = metrics[id];
   // Runners differ in speed by up to 2 times, so each run of the PR is compared with the run of
   // master on the same runner. Runners where the audit failed on either side are left out.
-  const differences = [...pr.values.keys()]
-    .filter((run) => base.values.has(run))
-    .map((run) => pr.values.get(run) - base.values.get(run));
+  const runs = [...pr.values.keys()].filter((run) => base.values.has(run));
+  const differences = runs.map((run) => pr.values.get(run) - base.values.get(run));
   if (differences.length === 0) {
     return { status: 'unavailable' };
   }
   const interval = confidenceInterval(differences);
   const difference = Number(interval.mean.toFixed(decimals));
+  // The change is a mean, so it's relative to master's mean on the same runners. Master's median
+  // is lower when a few runners are slow, and a mean change divided by it went past -100%.
+  const baseMean = runs.reduce((total, run) => total + base.values.get(run), 0) / runs.length;
+  const ratio = baseMean === 0 ? undefined : interval.mean / baseMean;
   // A change counts when its whole 99% confidence interval is past the smallest change that
   // matters. An interval that only excludes zero is too easy to reach by chance with this many
   // metrics, or with a small difference between the two sides of a runner.
   const threshold = Math.max(minDelta, minRatio * Math.abs(base.value));
   if (interval.low >= threshold || interval.high <= -threshold) {
-    return { difference, interval, status: difference > 0 === higherIsBetter ? 'better' : 'worse' };
+    return {
+      difference,
+      interval,
+      ratio,
+      status: difference > 0 === higherIsBetter ? 'better' : 'worse',
+    };
   }
-  return { difference, interval, status: 'same' };
+  return { difference, interval, ratio, status: 'same' };
 }
 
 function withUnit(value, id) {
@@ -243,13 +251,13 @@ function formatSigned(value, id) {
 }
 
 // Relative changes are only shown for measurements, scores are already percentages
-function formatDelta({ id, difference, interval, base }) {
+function formatDelta({ id, difference, interval, ratio }) {
   const delta = formatSigned(difference, id);
   const range = `<br><sub>99% CI ${formatSigned(interval.low, id)} to ${formatSigned(interval.high, id)}</sub>`;
-  if (!metrics[id].unit || base === 0) {
+  if (!metrics[id].unit || ratio === undefined) {
     return `${delta}${range}`;
   }
-  const percent = Math.round((difference / base) * 100);
+  const percent = Math.round(ratio * 100);
   return `${delta} (${percent > 0 ? '+' : ''}${percent}%)${range}`;
 }
 
