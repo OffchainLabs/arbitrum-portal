@@ -8,6 +8,7 @@ import {
   getBlockNumberReferenceChainIdByChainId,
   getDestinationChainIds,
   getSupportedChainIds,
+  isNetwork,
   sortChainIds,
 } from '../networks';
 import { orbitMainnets, orbitTestnets } from '../orbitChainsList';
@@ -353,7 +354,7 @@ describe('getDestinationChainIds', () => {
         disableTransfersToNonArbitrumChains: false,
         includeLifiEnabledChainPairs: true,
       });
-      expect(result2).toEqual([1, ChainId.RobinhoodChain, 3333, ChainId.ApeChain]);
+      expect(result2).toEqual([1, ChainId.RobinhoodChain, 3333, ChainId.ApeChain, ChainId.Elysium]);
 
       const result3 = getDestinationChainIds(ChainId.ApeChain, {
         disableTransfersToNonArbitrumChains: false,
@@ -376,7 +377,13 @@ describe('getDestinationChainIds', () => {
         disableTransfersToNonArbitrumChains: false,
         includeLifiEnabledChainPairs: true,
       });
-      expect(result2).toEqual([ChainId.Ethereum, ChainId.RobinhoodChain, 3333, ChainId.ApeChain]);
+      expect(result2).toEqual([
+        ChainId.Ethereum,
+        ChainId.RobinhoodChain,
+        3333,
+        ChainId.ApeChain,
+        ChainId.Elysium,
+      ]);
 
       const result3 = getDestinationChainIds(ChainId.ApeChain, {
         disableTransfersToNonArbitrumChains: true,
@@ -388,7 +395,18 @@ describe('getDestinationChainIds', () => {
         disableTransfersToNonArbitrumChains: false,
         includeLifiEnabledChainPairs: true,
       });
-      expect(result4).toEqual([ChainId.Ethereum, ChainId.ArbitrumOne, ChainId.RobinhoodChain]);
+      expect(result4).toEqual([
+        ChainId.Ethereum,
+        ChainId.ArbitrumOne,
+        ChainId.RobinhoodChain,
+        ChainId.Elysium,
+      ]);
+    });
+
+    it('treats LiFi-only chains as non-Arbitrum chains', () => {
+      expect(isNetwork(ChainId.Elysium).isNonArbitrumNetwork).toBe(true);
+      expect(isNetwork(ChainId.Solana).isNonArbitrumNetwork).toBe(true);
+      expect(isNetwork(ChainId.RobinhoodChain).isNonArbitrumNetwork).toBe(false);
     });
   });
 

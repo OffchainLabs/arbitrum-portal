@@ -9,7 +9,7 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
-import { getLifiOnlyChains } from '../wallet/ecosystems';
+import { getLifiOnlyChains, isLifiOnlyChain } from '../wallet/ecosystems';
 import { type CoreEvmChainId, elysium } from '../wallet/ecosystems/evm';
 import { findEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils';
@@ -456,7 +456,8 @@ export function isNetwork(chainId: ChainId) {
 
   const isCoreChain = isEthereumMainnetOrTestnet || isArbitrum;
   const isOrbitChain = getIsArbitrumChain(chainId) && !isCoreChain;
-  const isNonArbitrumNetwork = isBase || isEthereumMainnetOrTestnet;
+  // LiFi-only chains, such as Solana and Elysium, aren't Arbitrum chains either
+  const isNonArbitrumNetwork = isBase || isEthereumMainnetOrTestnet || isLifiOnlyChain(chainId);
 
   return {
     // L1

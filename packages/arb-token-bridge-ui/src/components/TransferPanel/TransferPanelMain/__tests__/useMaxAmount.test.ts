@@ -26,9 +26,15 @@ vi.mock('../../../../wallet/ecosystems/solana', async (importOriginal) => {
 });
 vi.mock('../../../../token-bridge-sdk/BridgeTransferStarterFactory', () => ({
   BridgeTransferStarterFactory: {
-    create: ({ sourceChainId }: { sourceChainId: number }) => {
-      if (isLifiOnlyChain(sourceChainId)) {
-        throw new Error('A LiFi quote is required to transfer from this chain.');
+    create: ({
+      sourceChainId,
+      destinationChainId,
+    }: {
+      sourceChainId: number;
+      destinationChainId: number;
+    }) => {
+      if (isLifiOnlyChain(sourceChainId) || isLifiOnlyChain(destinationChainId)) {
+        throw new Error('A LiFi quote is required to transfer between these chains.');
       }
       return {
         transferEstimateGas: async () => ({
@@ -72,6 +78,19 @@ describe.sequential('useMaxAmount', () => {
       destinationChain: ChainId.ArbitrumOne,
       balance: '1',
       expected: 1,
+    },
+    // Before a route is quoted, MAX leaves a gas buffer of 0.001 of the native currency
+    {
+      sourceChain: ChainId.Elysium,
+      destinationChain: ChainId.ArbitrumOne,
+      balance: '1',
+      expected: 0.999,
+    },
+    {
+      sourceChain: ChainId.Base,
+      destinationChain: ChainId.Elysium,
+      balance: '1',
+      expected: 0.999,
     },
   ])(
     'limits $sourceChain to $destinationChain with balance $balance to $expected',

@@ -84,8 +84,9 @@ export function useMaxAmount() {
       });
     }
 
-    // LiFi-only chains, such as Solana, have no gas estimate until a route is quoted
-    if (isLifiOnlyChain(networks.sourceChain.id)) {
+    // Transfers from or to a LiFi-only chain, such as Solana or Elysium, have no gas estimate until
+    // a route is quoted
+    if (isLifiOnlyChain(networks.sourceChain.id) || isLifiOnlyChain(networks.destinationChain.id)) {
       const { gasBufferBeforeQuote } = getEcosystemConfig(networks.sourceChain.id);
       const maxAmount = subtractReserve(nativeCurrencySourceBalance, networks.sourceChain.id).sub(
         BigNumber.from(gasBufferBeforeQuote),
@@ -137,6 +138,7 @@ export function useMaxAmount() {
     nativeCurrency.isCustom,
     nativeCurrencyBalances.sourceBalance,
     nativeCurrencyDecimalsOnSourceChain,
+    networks.destinationChain.id,
     networks.sourceChain.id,
     selectedRouteContext,
   ]);
