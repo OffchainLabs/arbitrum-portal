@@ -1,6 +1,0 @@
-**/.next
-**/out
-**/packages/app/build
-**/dist
-**/public/
-pnpm-lock.yaml

@@ -71,8 +71,8 @@ const ItemContent = ({
       {/* Show cover-pic with the tile if it's a spotlight mode */}
       {displayMode === 'spotlight' && images.bannerUrl && (
         <>
-          <div className="absolute left-0 top-0 z-10 h-full w-full bg-linear-to-t from-black/70 from-25% to-transparent" />
-          <div className="absolute left-0 top-0 z-10 h-full w-full bg-linear-to-r from-black/70 from-25% to-transparent" />
+          <div className="absolute top-0 left-0 z-10 h-full w-full bg-linear-to-t from-black/70 from-25% to-transparent" />
+          <div className="absolute top-0 left-0 z-10 h-full w-full bg-linear-to-r from-black/70 from-25% to-transparent" />
           <Image
             alt={`${title} banner`}
             src={images.bannerUrl}
@@ -104,7 +104,7 @@ const ItemContent = ({
         {/* Content */}
         <div className="relative grow text-left">
           <div className="flex flex-col gap-2">
-            <h5 className="flex items-center gap-2 text-left text-lg font-semibold leading-7">
+            <h5 className="flex items-center gap-2 text-left text-lg leading-7 font-semibold">
               {title}
             </h5>
 

@@ -13,7 +13,7 @@ export const ChainInfoWidget = ({ project }: { project: FullProject }) => {
 
   return (
     <div className="col-span-4 flex flex-row flex-nowrap items-center gap-4 rounded-lg bg-default-black p-6">
-      <span className="shrink-0 whitespace-nowrap pr-4">Runs on</span>
+      <span className="shrink-0 pr-4 whitespace-nowrap">Runs on</span>
 
       <div className="flex flex-row flex-wrap gap-6 lg:gap-4">
         {project.chains.map((chainTitle) => {

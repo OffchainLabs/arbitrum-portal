@@ -22,7 +22,7 @@ export function EarnActionTabs<T extends string>({
   if (!tabs || tabs.length === 0 || tabs.length === 1) return null;
 
   return (
-    <div role="tablist" className="bg-white/5 rounded flex gap-0.5 p-0.5">
+    <div role="tablist" className="flex gap-0.5 rounded bg-white/5 p-0.5">
       {tabs.map((tab) => (
         <button
           key={tab.id}

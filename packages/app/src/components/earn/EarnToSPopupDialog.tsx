@@ -37,7 +37,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
           }
         },
       }}
-      className="border-0! h-dvh! min-h-dvh! max-h-dvh! rounded-none! md:h-auto! md:min-h-0! md:max-w-[400px]! md:rounded!"
+      className="h-dvh! max-h-dvh! min-h-dvh! rounded-none! border-0! md:h-auto! md:min-h-0! md:max-w-[400px]! md:rounded!"
     >
       <div className="flex h-full w-full flex-col gap-6 pt-4 pb-8 md:pt-0 md:pb-4">
         <div className="flex w-full flex-1 flex-col items-start gap-5">
@@ -45,7 +45,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
             <ExclamationTriangleIcon className="h-8 w-8 text-pending" />
           </div>
 
-          <h2 className="text-[28px] font-medium leading-normal text-white">
+          <h2 className="text-[28px] leading-normal font-medium text-white">
             Please acknowledge before proceeding
           </h2>
 
@@ -74,7 +74,7 @@ export function EarnToSPopupDialog(props: DialogProps & { isOpen: boolean }) {
           </div>
         </div>
 
-        <div className="flex w-full gap-6 h-24 items-start">
+        <div className="flex h-24 w-full items-start gap-6">
           <Checkbox
             checked={isChecked}
             onChange={setIsChecked}

@@ -13,13 +13,13 @@ const TOKEN_BADGE_CLASS =
 function TokenBadgeContent({ symbol, logoUrl }: { symbol: string; logoUrl?: string }) {
   return (
     <>
-      <div className="relative rounded-full overflow-hidden w-5 h-5">
+      <div className="relative h-5 w-5 overflow-hidden rounded-full">
         <SafeImage
           src={logoUrl}
           alt={`${symbol} logo`}
           className={twMerge('rounded-full', 'w-5 h-5')}
           fallback={
-            <div className="w-full h-full bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">
+            <div className="flex h-full w-full items-center justify-center rounded-full bg-blue-600 text-xs text-white">
               {symbol[0]}
             </div>
           }
@@ -44,7 +44,7 @@ function SelectableTokenBadge({ symbol, logoUrl, onClick }: SelectableTokenBadge
       className={twMerge(TOKEN_BADGE_CLASS, 'focus:outline-hidden')}
     >
       <TokenBadgeContent symbol={symbol} logoUrl={logoUrl} />
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
       </svg>
     </button>
@@ -84,7 +84,7 @@ export function EarnTokenSelector({ options, selected, onSelect }: EarnTokenSele
         onClick={() => setIsOpen((open) => !open)}
       />
       {isOpen && (
-        <div className="absolute top-full right-0 mt-1 bg-neutral-100 border border-neutral-200 rounded-lg overflow-hidden z-50 min-w-[200px]">
+        <div className="absolute top-full right-0 z-50 mt-1 min-w-[200px] overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100">
           {options.map((token) => (
             <button
               key={token.symbol}

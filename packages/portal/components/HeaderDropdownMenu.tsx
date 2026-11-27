@@ -29,7 +29,7 @@ export const HeaderDropdownMenu = () => {
           <UserCircleIcon className="h-5 w-5" />
         </div>
         <span className="flex shrink-0 items-center justify-center p-1 lg:block">
-          <ChevronDownIcon className=" h-3 w-3 stroke-white stroke-2 lg:h-4 lg:w-4" />
+          <ChevronDownIcon className="h-3 w-3 stroke-white stroke-2 lg:h-4 lg:w-4" />
         </span>
       </Popover.Button>
       <Popover.Panel className="absolute right-0 z-50 mt-4 flex max-h-[350px] w-full min-w-max origin-top-right flex-col overflow-scroll rounded-md bg-default-black p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.2)]">

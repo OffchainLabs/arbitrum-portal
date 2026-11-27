@@ -21,7 +21,7 @@ export function Checkbox({ labelClassName, label, ...props }: CheckboxProps) {
             : 'border-[1px] border-gray-6 bg-dark',
         )}
       >
-        <CheckIcon className="ml-[2px] mt-[2px] h-[10px] w-[10px] stroke-5 text-dark" />
+        <CheckIcon className="mt-[2px] ml-[2px] h-[10px] w-[10px] stroke-5 text-dark" />
       </Switch>
       <Switch.Label
         className={twMerge(

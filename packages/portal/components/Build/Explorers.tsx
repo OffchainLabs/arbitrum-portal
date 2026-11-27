@@ -56,7 +56,7 @@ export const Explorers = () => {
             height={20}
             width={100}
             alt={card.title}
-            className="absolute bottom-4 right-4"
+            className="absolute right-4 bottom-4"
           />
         </Card>
       ))}

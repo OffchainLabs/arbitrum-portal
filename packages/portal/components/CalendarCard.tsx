@@ -39,8 +39,8 @@ export const CalendarCard = ({
       }}
     >
       <h6 className={twMerge(getTypeTextColor(type), 'text-sm')}>{type}</h6>
-      <p className="leading-extra-tight line-clamp-1 text-lg lg:text-xl">{title}</p>
-      <span className="leading-extra-tight text-lg opacity-50 lg:text-xl">{subTitle}</span>
+      <p className="line-clamp-1 text-lg leading-extra-tight lg:text-xl">{title}</p>
+      <span className="text-lg leading-extra-tight opacity-50 lg:text-xl">{subTitle}</span>
       <span
         className={twMerge('mt-12 border-b py-[3px] text-xs leading-none', 'lg:mt-11')}
         aria-label={`Learn more about ${title}`}
