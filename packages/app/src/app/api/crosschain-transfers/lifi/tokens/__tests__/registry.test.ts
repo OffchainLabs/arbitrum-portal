@@ -149,6 +149,34 @@ describe('getLifiTokenRegistry', () => {
     );
   });
 
+  it('drops HYPE at the zero address and keeps unverified Elysium-only tokens', async () => {
+    const hype = withVerificationStatus(
+      buildLifiToken({
+        address: '0x0000000000000000000000000000000000000000',
+        name: 'HYPE',
+        symbol: 'HYPE',
+        chainId: ChainId.Elysium,
+      }),
+      'unverified',
+    );
+    const kHype = withVerificationStatus(
+      buildLifiToken({
+        address: '0x248888D396A546A69A188f3Deb476964e581E9d0',
+        name: 'Kinetiq Staked HYPE',
+        symbol: 'kHYPE',
+        chainId: ChainId.Elysium,
+      }),
+      'unverified',
+    );
+    getTokens.mockResolvedValue({ tokens: { [ChainId.Elysium]: [hype, kHype] } });
+
+    const registry = await getLifiTokenRegistry([ChainId.Elysium]);
+
+    expect(registry.tokensByChain[ChainId.Elysium]?.map((token) => token.symbol)).toEqual([
+      'kHYPE',
+    ]);
+  });
+
   it('retains an unmatched Solana mint through registry, grouping, and selection', async () => {
     const solanaMint = virtualToken('XsQAm7K8RQuTg4BXy9qfXUxqHkHRwLNxikbRfn9kw4w', ChainId.Solana);
     const unmatched = withVerificationStatus({ ...solanaMint }, 'verified');

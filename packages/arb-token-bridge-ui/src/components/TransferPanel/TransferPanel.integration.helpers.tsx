@@ -28,7 +28,8 @@ export type ChainQuerySlug =
   | 'arbitrum-nova'
   | 'base'
   | 'apechain'
-  | 'robinhood-chain';
+  | 'robinhood-chain'
+  | 'elysium';
 const INTEGRATION_ASSERT_TIMEOUT_MS = 2_000;
 const POLL_INTERVAL_MS = 50;
 const TOKEN_BUTTON_ASSERT_TIMEOUT_MS = 6_000;

@@ -15,6 +15,7 @@ import {
 
 const ROBINHOOD_ONLY_TOKEN_ADDRESS = '0x1111111111111111111111111111111111111111';
 const ROBINHOOD_ONLY_IMPORTED_TOKEN_ADDRESS = '0x2222222222222222222222222222222222222222';
+const ELYSIUM_ONLY_IMPORTED_TOKEN_ADDRESS = '0x3333333333333333333333333333333333333333';
 const ROBINHOOD_BWLK_ADDRESS = '0x523fc1c7649155d8f8a13ed860ead39af1a3019c';
 const ETHEREUM_BWLK_ADDRESS = '0xf9a352b7c7b62a852e5c8a64a455246dd9596461';
 const ROBINHOOD_ENA_ADDRESS = '0x58538e6a46e07434d7e7375bc268d3cb839c0133';
@@ -74,9 +75,11 @@ vi.mock('../../util/TokenUtils', async (importOriginal) => {
         return ETHEREUM_BWLK_ADDRESS;
       }
       if (
-        [ROBINHOOD_ONLY_IMPORTED_TOKEN_ADDRESS, ETHEREUM_BWLK_ADDRESS].includes(
-          erc20L2Address.toLowerCase(),
-        )
+        [
+          ROBINHOOD_ONLY_IMPORTED_TOKEN_ADDRESS,
+          ELYSIUM_ONLY_IMPORTED_TOKEN_ADDRESS,
+          ETHEREUM_BWLK_ADDRESS,
+        ].includes(erc20L2Address.toLowerCase())
       ) {
         return null;
       }
@@ -104,6 +107,15 @@ vi.mock('../../util/TokenUtils', async (importOriginal) => {
       if (address.toLowerCase() === ETHEREUM_BWLK_ADDRESS) {
         return (await provider.getNetwork()).chainId === ChainId.Ethereum;
       }
+      if (address.toLowerCase() === ELYSIUM_ONLY_IMPORTED_TOKEN_ADDRESS) {
+        return (await provider.getNetwork()).chainId === ChainId.Elysium;
+      }
+      if (
+        address.toLowerCase() === ROBINHOOD_BWLK_ADDRESS &&
+        (await provider.getNetwork()).chainId === ChainId.Elysium
+      ) {
+        return true;
+      }
 
       return actual.isValidErc20(...args);
     },
@@ -118,6 +130,29 @@ vi.mock('../../util/TokenUtils', async (importOriginal) => {
           name: 'Robinhood imported token',
           symbol: 'RHI',
           address: ROBINHOOD_ONLY_IMPORTED_TOKEN_ADDRESS,
+          decimals: 18,
+        };
+      }
+      if (
+        address.toLowerCase() === ROBINHOOD_BWLK_ADDRESS &&
+        (await provider.getNetwork()).chainId === ChainId.Elysium
+      ) {
+        return {
+          name: 'Elysium token at a bridged address',
+          symbol: 'ELB',
+          address: ROBINHOOD_BWLK_ADDRESS,
+          decimals: 18,
+        };
+      }
+      if (address.toLowerCase() === ELYSIUM_ONLY_IMPORTED_TOKEN_ADDRESS) {
+        if ((await provider.getNetwork()).chainId !== ChainId.Elysium) {
+          throw new Error('Elysium token queried on the wrong chain');
+        }
+
+        return {
+          name: 'Elysium imported token',
+          symbol: 'ELI',
+          address: ELYSIUM_ONLY_IMPORTED_TOKEN_ADDRESS,
           decimals: 18,
         };
       }
@@ -437,6 +472,56 @@ describe.sequential('TransferPanel Robinhood token import integration', () => {
         }),
       ).queryByText('RHI'),
     ).toBeNull();
+  });
+
+  it('imports and selects an Elysium-only token from a URL', async () => {
+    await renderTransferPanel({
+      sourceChain: 'elysium',
+      destinationChain: 'arbitrum-one',
+      token: ELYSIUM_ONLY_IMPORTED_TOKEN_ADDRESS,
+    });
+
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Import unknown token',
+    });
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Import token' }));
+    });
+
+    await expectTokenButtonContent({
+      isDestination: false,
+      tokenExpectation: { symbol: 'ELI' },
+    });
+    expect(
+      useAppStore.getState().arbTokenBridge.bridgeTokens?.[ELYSIUM_ONLY_IMPORTED_TOKEN_ADDRESS],
+    ).toMatchObject({
+      address: ELYSIUM_ONLY_IMPORTED_TOKEN_ADDRESS,
+      lifiOnlyChainId: ChainId.Elysium,
+    });
+  });
+
+  it('imports an Elysium token from a URL even when its address has a parent on Arbitrum One', async () => {
+    // The mocked parent lookup maps this address to Ethereum BWLK on any child chain
+    await renderTransferPanel({
+      sourceChain: 'elysium',
+      destinationChain: 'arbitrum-one',
+      token: ROBINHOOD_BWLK_ADDRESS,
+    });
+
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Import unknown token',
+    });
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Import token' }));
+    });
+
+    await expectTokenButtonContent({
+      isDestination: false,
+      tokenExpectation: { symbol: 'ELB' },
+    });
+    expect(
+      useAppStore.getState().arbTokenBridge.bridgeTokens?.[ROBINHOOD_BWLK_ADDRESS],
+    ).toMatchObject({ lifiOnlyChainId: ChainId.Elysium });
   });
 
   it('imports and selects canonical BWLK from a URL with its Ethereum parent', async () => {

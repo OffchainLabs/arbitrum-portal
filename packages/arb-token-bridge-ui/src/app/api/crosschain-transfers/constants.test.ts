@@ -124,8 +124,9 @@ describe('buildLifiDestinationChainIds', () => {
 });
 
 describe('allowsUnmatchedLifiTokens', () => {
-  it('allows all unmatched tokens only on Robinhood Chain', () => {
+  it('allows all unmatched tokens only on Robinhood Chain and Elysium', () => {
     expect(allowsUnmatchedLifiTokens(ChainId.RobinhoodChain)).toBe(true);
+    expect(allowsUnmatchedLifiTokens(ChainId.Elysium)).toBe(true);
 
     for (const chainId of [
       ChainId.Ethereum,

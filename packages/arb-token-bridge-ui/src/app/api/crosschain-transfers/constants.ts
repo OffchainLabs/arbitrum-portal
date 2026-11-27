@@ -73,7 +73,8 @@ const evmLifiChains: Record<number, LifiChainConfig> = {
       ChainId.RobinhoodChain,
       ChainId.Solana,
     ],
-    allowsUnmatchedTokens: false,
+    // Most Elysium tokens, such as kHYPE and KNTQ, have no counterpart on other chains
+    allowsUnmatchedTokens: true,
   },
 };
 
