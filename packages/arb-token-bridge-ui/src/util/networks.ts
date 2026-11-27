@@ -9,7 +9,7 @@ import { StaticJsonRpcProvider } from '@ethersproject/providers';
 
 import { lifiDestinationChainIds } from '../app/api/crosschain-transfers/constants';
 import { ChainId } from '../types/ChainId';
-import { getLifiOnlyEcosystems } from '../wallet/ecosystems';
+import { getLifiOnlyChains } from '../wallet/ecosystems';
 import type { CoreEvmChainId } from '../wallet/ecosystems/evm';
 import { findEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
 import { isE2eTestingEnvironment, isProductionEnvironment } from './CommonUtils';
@@ -72,15 +72,12 @@ const baseNetworks: { [chainId: number]: BlockNumberReferenceNetwork } = {
 // LiFi-only chains, such as Solana, have no Arbitrum child chain: they are only roots for their LiFi
 // pairs
 function getLifiOnlyNetworks(): BlockNumberReferenceNetwork[] {
-  return getLifiOnlyEcosystems()
-    .filter((ecosystem) => ecosystem.isEnabled())
-    .flatMap((ecosystem) => ecosystem.chains)
-    .map((chain) => ({
-      chainId: chain.id,
-      // viem chains give the block time in milliseconds
-      blockTime: (chain.blockTime ?? 0) / 1_000,
-      isTestnet: Boolean(chain.testnet),
-    }));
+  return getLifiOnlyChains().map((chain) => ({
+    chainId: chain.id,
+    // viem chains give the block time in milliseconds
+    blockTime: (chain.blockTime ?? 0) / 1_000,
+    isTestnet: Boolean(chain.testnet),
+  }));
 }
 
 export const getChains = (
@@ -313,11 +310,9 @@ export const rpcURLs: { [chainId: number]: string } =
 
 export const explorerUrls: { [chainId: number]: string } = {
   ...Object.fromEntries(
-    getLifiOnlyEcosystems()
-      .flatMap((ecosystem) => ecosystem.chains)
-      .flatMap((chain) =>
-        chain.blockExplorers ? [[chain.id, chain.blockExplorers.default.url]] : [],
-      ),
+    getLifiOnlyChains({ includeDisabled: true }).flatMap((chain) =>
+      chain.blockExplorers ? [[chain.id, chain.blockExplorers.default.url]] : [],
+    ),
   ),
   // L1
   [ChainId.Ethereum]: 'https://etherscan.io',

@@ -5,7 +5,7 @@ import { useNetworks } from '../../hooks/useNetworks';
 import { useNetworksRelationship } from '../../hooks/useNetworksRelationship';
 import { useActions } from '../../state';
 import { getProviderForChainId } from '../../token-bridge-sdk/utils';
-import { getEcosystemConfig } from '../../wallet/ecosystems/getEcosystemConfig';
+import { isLifiOnlyChain } from '../../wallet/ecosystems';
 
 export function useArbTokenBridgeBootstrap(): TokenBridgeParams | null {
   const actions = useActions();
@@ -15,10 +15,7 @@ export function useArbTokenBridgeBootstrap(): TokenBridgeParams | null {
   const nextTokenBridgeParams = useMemo<TokenBridgeParams | null>(
     () => {
       // LiFi-only chains have no Arbitrum token bridge to set up
-      if (
-        getEcosystemConfig(parentChain.id).isLifiOnly ||
-        getEcosystemConfig(childChain.id).isLifiOnly
-      ) {
+      if (isLifiOnlyChain(parentChain.id) || isLifiOnlyChain(childChain.id)) {
         return null;
       }
 

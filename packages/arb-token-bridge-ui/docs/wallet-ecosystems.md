@@ -24,7 +24,7 @@ We want to add Solana as a LiFi source without changing what EVM users see. We a
 
 - address and transaction id validation and normalization
 - the native token address used in balance requests and LiFi quotes
-- whether every chain of the ecosystem only reaches Arbitrum through LiFi (`isLifiOnly`), with no parent and child token addresses and no canonical bridge
+- which of its chains only reach Arbitrum through LiFi (`lifiOnlyChains`), with no parent and child token addresses and no canonical bridge
 - whether its chains have an EVM gas price, and whether AppKit identifies its networks by chain id
 - the explorer account path
 - the built-in chains
@@ -84,7 +84,7 @@ Signers read the wallet when called, not when created, so a route signs with the
 
 `util/networkMetadata.ts` registers every built-in chain with its ecosystem. Chain names, native currency and explorers come from that registry. Code paths that used to create an ethers provider just to read chain data now read the registry, so selecting Solana doesn't create an EVM provider for it. Arbitrum-specific setup, such as the token bridge parameters, runs only when neither chain is LiFi-only.
 
-The supported chain ids, the root networks of the network list and the explorer URLs of LiFi-only ecosystems are read from their `chains`, so those chains need no per-chain entry. Built-in EVM chains do: `defaultRpcUrls` in `util/networks.ts` must have an entry for each of them, or the build fails.
+The supported chain ids, the root networks of the network list and the explorer URLs of LiFi-only chains are read from `lifiOnlyChains`, so those chains need no per-chain entry. Built-in EVM chains do: `defaultRpcUrls` in `util/networks.ts` must have an entry for each of them, or the build fails.
 
 ### Balances share one cache
 

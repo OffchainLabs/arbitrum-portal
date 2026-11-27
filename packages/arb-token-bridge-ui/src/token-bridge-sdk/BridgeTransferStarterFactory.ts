@@ -1,5 +1,5 @@
 import type { LifiCrosschainTransfersRoute } from '../app/api/crosschain-transfers/lifi';
-import { getEcosystemConfig } from '../wallet/ecosystems/getEcosystemConfig';
+import { isLifiOnlyChain } from '../wallet/ecosystems';
 import {
   BridgeTransferStarter,
   BridgeTransferStarterPropsWithChainIds,
@@ -51,7 +51,7 @@ export class BridgeTransferStarterFactory {
     }
 
     // A LiFi-only chain has no canonical bridge to fall back to
-    if (getEcosystemConfig(props.sourceChainId).isLifiOnly) {
+    if (isLifiOnlyChain(props.sourceChainId)) {
       throw new Error('A LiFi quote is required to transfer from this chain.');
     }
 
