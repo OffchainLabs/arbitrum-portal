@@ -88,6 +88,19 @@ describe('resolveTokenAddress', () => {
     ).toBe(constants.AddressZero);
   });
 
+  it('reads native APE on ApeChain when sending it to Elysium', () => {
+    // The source token picker passes ApeChain's own currency, APE on Arbitrum One, as the custom one
+    expect(
+      resolveTokenAddress({
+        token: null,
+        side: 'source',
+        sourceChainId: ChainId.ApeChain,
+        destinationChainId: ChainId.Elysium,
+        childNativeCurrencyAddress: CommonAddress.ArbitrumOne.APE,
+      }),
+    ).toBe(constants.AddressZero);
+  });
+
   it('uses Solana token identities without EVM mapping', () => {
     expect(
       resolveTokenAddress({

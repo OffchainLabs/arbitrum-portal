@@ -98,6 +98,9 @@ export const CommonAddress = {
     VIRTUAL: '0xc6911796042b15d7fa4f6cde69e245ddcd3d9c31',
     VIRTUAL_CANONICAL: '0x8124dc4802d5d68fc848f6997ca4e7be125a78e9',
   },
+  Elysium: {
+    WHYPE: '0xba876237b0f021a6c6d852d6c26e107997cc5e81',
+  },
 } as const;
 
 export const commonUsdcToken = {

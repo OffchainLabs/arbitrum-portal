@@ -36,8 +36,11 @@ export function resolveTokenAddress({
     return token?.address ?? getNativeTokenAddress(chainId);
   }
 
+  // Each side of a LiFi-only pair keeps its own native currency, so a parent chain such as ApeChain
+  // reads its zero address, not the child currency's parent address
+  const isLifiOnlyPair = isLifiOnlyChain(sourceChainId) || isLifiOnlyChain(destinationChainId);
   if (!token) {
-    return chainRole === 'parent' && childNativeCurrencyAddress
+    return chainRole === 'parent' && childNativeCurrencyAddress && !isLifiOnlyPair
       ? childNativeCurrencyAddress
       : getNativeTokenAddress(chainId);
   }

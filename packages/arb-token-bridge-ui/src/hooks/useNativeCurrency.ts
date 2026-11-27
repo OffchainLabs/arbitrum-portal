@@ -3,10 +3,12 @@ import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
 
 import { nativeCurrencyEther } from '../services/evm/nativeCurrency';
-import { fetchNativeCurrency } from '../services/nativeCurrency';
+import { fetchNativeCurrency, getMetadataNativeCurrency } from '../services/nativeCurrency';
+import { ChainId } from '../types/ChainId';
 import { addressesEqual, normalizeAddress } from '../util/AddressUtils';
-import { getChainMetadata } from '../util/networkMetadata';
+import { CommonAddress } from '../util/CommonAddressUtils';
 import { isNetwork } from '../util/networks';
+import { isLifiOnlyChain } from '../wallet/ecosystems';
 import { getNativeTokenAddress } from '../wallet/ecosystems/getEcosystemConfig';
 import { getWalletEcosystem } from '../wallet/getWalletEcosystem';
 import type { WalletEcosystem } from '../wallet/types';
@@ -54,8 +56,9 @@ export function useNativeCurrency({ chainId }: { chainId: number }): NativeCurre
 
 const fallbackNativeCurrencies: Record<WalletEcosystem, (chainId: number) => NativeCurrencyEther> =
   {
-    evm: () => nativeCurrencyEther,
-    solana: (chainId) => ({ ...getChainMetadata(chainId).nativeCurrency, isCustom: false }),
+    evm: (chainId) =>
+      isLifiOnlyChain(chainId) ? getMetadataNativeCurrency(chainId) : nativeCurrencyEther,
+    solana: getMetadataNativeCurrency,
   };
 
 function getFallbackNativeCurrency(chainId: number): NativeCurrencyEther {
@@ -76,7 +79,8 @@ export type TransferNativeCurrency = NativeCurrency & {
 
 /**
  * Native currency of a token row or amount input.
- * Within one ecosystem it is the child chain's currency; across ecosystems each side uses its own chain's.
+ * Within one ecosystem it is the child chain's currency; across ecosystems, and to or from a LiFi-only
+ * chain, each side uses its own chain's.
  * Within one ecosystem the zero address token is ETH (e.g. next to APE on ApeChain routes). Across
  * ecosystems it is the row chain's native token, as LiFi lists it.
  */
@@ -135,10 +139,14 @@ function getTransferNativeCurrency(params: TransferNativeCurrencyParams): Transf
     isDestination,
   } = params;
 
-  const isCrossEcosystem =
-    getWalletEcosystem(sourceChainId) !== getWalletEcosystem(destinationChainId);
+  // Across ecosystems, or to and from a LiFi-only chain such as Elysium, each side keeps its own
+  // native currency
+  const hasNativeCurrencyPerSide =
+    getWalletEcosystem(sourceChainId) !== getWalletEcosystem(destinationChainId) ||
+    isLifiOnlyChain(sourceChainId) ||
+    isLifiOnlyChain(destinationChainId);
 
-  if (!isCrossEcosystem && addressesEqual(params.tokenAddress, constants.AddressZero)) {
+  if (!hasNativeCurrencyPerSide && addressesEqual(params.tokenAddress, constants.AddressZero)) {
     return {
       ...nativeCurrencyEther,
       balanceDecimals: getBalanceDecimals(params, nativeCurrencyEther),
@@ -147,7 +155,7 @@ function getTransferNativeCurrency(params: TransferNativeCurrencyParams): Transf
     };
   }
 
-  if (isCrossEcosystem) {
+  if (hasNativeCurrencyPerSide) {
     const chainId = isDestination ? destinationChainId : sourceChainId;
     const currency = isDestination ? destinationCurrency : sourceCurrency;
     return {
@@ -189,8 +197,15 @@ function getEthChainId({
   return undefined;
 }
 
+// Native currencies other than ETH that the token lists price through their wrapped token
+const wrappedNativeCurrencyPriceAddresses: Partial<Record<number, string>> = {
+  [ChainId.Elysium]: CommonAddress.Elysium.WHYPE,
+};
+
 function getPriceAddress(currency: NativeCurrency, chainId: number): string | undefined {
   if (currency.isCustom) return normalizeAddress(currency.address);
+  const wrappedNativeCurrencyAddress = wrappedNativeCurrencyPriceAddresses[chainId];
+  if (wrappedNativeCurrencyAddress) return normalizeAddress(wrappedNativeCurrencyAddress);
   const nativeTokenAddress = getNativeTokenAddress(chainId);
   // The zero address means the ETH price
   return addressesEqual(nativeTokenAddress, constants.AddressZero) ? undefined : nativeTokenAddress;

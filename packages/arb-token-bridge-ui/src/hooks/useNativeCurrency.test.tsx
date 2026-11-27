@@ -8,6 +8,7 @@ import { getNativeCurrencyPrice } from '../services/nativeCurrency';
 import { createWalletTestWrapper } from '../test-utils/wallet-test-wrapper';
 import { ChainId } from '../types/ChainId';
 import { CommonAddress } from '../util/CommonAddressUtils';
+import { getBridgeUiConfigForChain } from '../util/bridgeUiConfig';
 import { getChainMetadata } from '../util/networkMetadata';
 import { removeCustomChainFromLocalStorage, saveCustomChainToLocalStorage } from '../util/networks';
 import orbitChainsData from '../util/orbitChainsData.json';
@@ -70,6 +71,22 @@ describe.sequential('useNativeCurrency', () => {
     });
     const { result } = renderHook(() => useNativeCurrency({ chainId }), { wrapper });
     expect(result.current).toMatchObject({ symbol, decimals });
+  });
+
+  it('shows HYPE with its logo on Elysium while loading', () => {
+    const wrapper = createWalletTestWrapper({
+      query: { sourceChain: ChainId.ArbitrumOne, destinationChain: ChainId.Elysium },
+    });
+    const { result } = renderHook(() => useNativeCurrency({ chainId: ChainId.Elysium }), {
+      wrapper,
+    });
+    expect(result.current).toMatchObject({
+      symbol: 'HYPE',
+      decimals: 18,
+      isCustom: false,
+      logoUrl: getBridgeUiConfigForChain(ChainId.Elysium).nativeTokenData?.logoUrl,
+    });
+    expect(result.current.logoUrl).toBeDefined();
   });
 
   it('uses resolved custom gas token metadata', async () => {
